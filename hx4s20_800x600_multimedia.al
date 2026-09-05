@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Project Version="3" Minor="2" Path="D:/Anlogic_information/hx4s20_multimedia_main">
+<Project Version="3" Minor="2" Path="D:/VSCode/CodeFiles/Git_TD/Anlogic">
     <Project_Created_Time></Project_Created_Time>
     <TD_Version>6.2.168116</TD_Version>
     <Name>hx4s20_800x600_multimedia</Name>
@@ -133,6 +133,7 @@
             </File>
             <File Path="src/video/osd_status.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&amp;R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -141,6 +142,7 @@
             </File>
             <File Path="src/video/osd_status_rgb888.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&amp;R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -303,6 +305,7 @@
             </File>
             <File Path="src/clock/video_pll_40m.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&amp;R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -414,7 +417,7 @@
             </File>
         </Verilog>
         <VHDL>
-            <File Path="../HX4S20_Contest_2025_9/2_DEMO/DEMO_TD_5.6.2/31_hdmi_tx_display_B/source_code/rtl/hdmi_tx.vhd">
+            <File Path="vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/hdmi_tx.vhd">
                 <FileInfo>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&amp;R" Val="true"/>
@@ -422,7 +425,7 @@
                     <Attr Name="CompileOrder" Val="41"/>
                 </FileInfo>
             </File>
-            <File Path="../HX4S20_Contest_2025_9/2_DEMO/DEMO_TD_5.6.2/31_hdmi_tx_display_B/source_code/rtl/enc_file/DVITransmitter.enc.vhd">
+            <File Path="vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/DVITransmitter.enc.vhd">
                 <FileInfo>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&amp;R" Val="true"/>
@@ -430,7 +433,7 @@
                     <Attr Name="CompileOrder" Val="43"/>
                 </FileInfo>
             </File>
-            <File Path="../HX4S20_Contest_2025_9/2_DEMO/DEMO_TD_5.6.2/31_hdmi_tx_display_B/source_code/rtl/enc_file/SerializerN_1_lvds.enc.vhd">
+            <File Path="vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/SerializerN_1_lvds.enc.vhd">
                 <FileInfo>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&amp;R" Val="true"/>
@@ -438,7 +441,7 @@
                     <Attr Name="CompileOrder" Val="46"/>
                 </FileInfo>
             </File>
-            <File Path="../HX4S20_Contest_2025_9/2_DEMO/DEMO_TD_5.6.2/31_hdmi_tx_display_B/source_code/rtl/enc_file/SerializerN_1_lvds_dat.enc.vhd">
+            <File Path="vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/SerializerN_1_lvds_dat.enc.vhd">
                 <FileInfo>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&amp;R" Val="true"/>
@@ -446,7 +449,7 @@
                     <Attr Name="CompileOrder" Val="48"/>
                 </FileInfo>
             </File>
-            <File Path="../HX4S20_Contest_2025_9/2_DEMO/DEMO_TD_5.6.2/31_hdmi_tx_display_B/source_code/rtl/enc_file/TMDSEncoder.enc.vhd">
+            <File Path="vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/TMDSEncoder.enc.vhd">
                 <FileInfo>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&amp;R" Val="true"/>
@@ -469,8 +472,8 @@
             <File Path="constraints/top_800x600_adaptive_v69_subtitle_bram_aligned.sdc">
                 <FileInfo>
                     <Attr Name="AutoExcluded" Val="true"/>
-                    <Attr Name="UsedInSyn" Val="true"/>
-                    <Attr Name="UsedInP&amp;R" Val="true"/>
+                    <Attr Name="UsedInSyn" Val="false"/>
+                    <Attr Name="UsedInP&amp;R" Val="false"/>
                     <Attr Name="BelongTo" Val="constraint_1"/>
                     <Attr Name="CompileOrder" Val="2"/>
                 </FileInfo>
@@ -478,8 +481,8 @@
             <File Path="constraints/top_1280x720_v71_full_features.sdc">
                 <FileInfo>
                     <Attr Name="AutoExcluded" Val="true"/>
-                    <Attr Name="UsedInSyn" Val="true"/>
-                    <Attr Name="UsedInP&amp;R" Val="true"/>
+                    <Attr Name="UsedInSyn" Val="false"/>
+                    <Attr Name="UsedInP&amp;R" Val="false"/>
                     <Attr Name="BelongTo" Val="constraint_1"/>
                     <Attr Name="CompileOrder" Val="3"/>
                 </FileInfo>

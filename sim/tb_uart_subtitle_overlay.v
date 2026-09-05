@@ -82,6 +82,8 @@ module tb_uart_subtitle_overlay #(
     task send_packet;
         input scroll_packet;
         input corrupt_crc;
+        input [10:0] content_width;
+        input [2:0] speed;
         integer i;
         reg [15:0] crc;
         reg [7:0] value;
@@ -89,9 +91,9 @@ module tb_uart_subtitle_overlay #(
             crc = 16'hffff;
             send_byte(8'h55); send_byte(8'haa);
             value = BPP; crc = crc16_next(crc, value); send_byte(value);
-            value = scroll_packet ? 8'h03 : 8'h00; crc = crc16_next(crc, value); send_byte(value);
-            value = 8'h20; crc = crc16_next(crc, value); send_byte(value);
-            value = 8'h03; crc = crc16_next(crc, value); send_byte(value);
+            value = scroll_packet ? {4'd0, speed, 1'b1} : 8'h00; crc = crc16_next(crc, value); send_byte(value);
+            value = content_width[7:0]; crc = crc16_next(crc, value); send_byte(value);
+            value = {5'd0, content_width[10:8]}; crc = crc16_next(crc, value); send_byte(value);
             value = 8'h20; crc = crc16_next(crc, value); send_byte(value);
             value = (3200 * BPP) & 8'hff; crc = crc16_next(crc, value); send_byte(value);
             value = (3200 * BPP) >> 8; crc = crc16_next(crc, value); send_byte(value);
@@ -201,7 +203,7 @@ module tb_uart_subtitle_overlay #(
         $display("TEST no packet");
         sample_pixel(11'd0, 10'd568, 24'h123456);
         $display("TEST static packet");
-        send_packet(1'b0, 1'b0);
+        send_packet(1'b0, 1'b0, 11'd800, 3'd1);
         expect_tx_byte("O"); expect_tx_byte("K");
         expect_tx_byte(8'h0d); expect_tx_byte(8'h0a);
         repeat (6) @(posedge video_clk);
@@ -218,14 +220,14 @@ module tb_uart_subtitle_overlay #(
 
         // A bad CRC leaves the currently visible bank alone.
         $display("TEST CRC reject");
-        send_packet(1'b0, 1'b1);
+        send_packet(1'b0, 1'b1, 11'd800, 3'd1);
         repeat (6) @(posedge video_clk); frame_tick;
         sample_pixel(X_START, 10'd568, 24'hdffcff);
 
         // New scroll bank is atomic. The 720p resource-optimized mode moves
         // the existing 800-pixel bitmap across the complete display width.
         $display("TEST scroll packet");
-        send_packet(1'b1, 1'b0);
+        send_packet(1'b1, 1'b0, 11'd800, 3'd1);
         repeat (6) @(posedge video_clk); frame_tick;
         if (FULL_WIDTH_SCROLL) begin
             sample_pixel(DISPLAY_WIDTH - 1, 10'd568, 24'h101820);
@@ -235,6 +237,22 @@ module tb_uart_subtitle_overlay #(
             sample_pixel(DISPLAY_WIDTH - 1, 10'd568, 24'hdffcff);
             repeat (DISPLAY_WIDTH - 2) frame_tick;
             sample_pixel(11'd1, 10'd568, 24'hdffcff);
+
+            // Two copies, one display-width apart, make the next subtitle
+            // enter from the right while the previous copy leaves the left.
+            $display("TEST continuous full-width scroll re-entry");
+            send_packet(1'b1, 1'b0, 11'd2, 3'd7);
+            expect_tx_byte("O"); expect_tx_byte("K");
+            expect_tx_byte(8'h0d); expect_tx_byte(8'h0a);
+            repeat (6) @(posedge video_clk); frame_tick;
+            if (dut.scroll_width != 11'd2) begin
+                $display("FAIL scroll width got=%0d expected=2", dut.scroll_width);
+                failures = failures + 1;
+            end
+            repeat (183) frame_tick; // 183 * 7 = 1281 = 1282 - 1
+            sample_pixel(11'd0, 10'd568, 24'hdffcff);
+            frame_tick; // Offset advances from 1281 to 1288.
+            sample_pixel(DISPLAY_WIDTH - 7, 10'd568, 24'hdffcff);
         end else begin
             sample_pixel(X_START + 1, 10'd568, 24'hdffcff);
             frame_tick;

@@ -5,7 +5,7 @@ from tkinter import filedialog, messagebox, ttk
 
 from PIL import Image, ImageTk
 
-from send_subtitle import HEIGHT, WIDTH, packet, rasterize
+from send_subtitle import HEIGHT, WIDTH, packet, rasterize, text_width
 
 
 BG = "#0b1220"
@@ -79,7 +79,7 @@ class SubtitleSender(tk.Tk):
         content = self.card(main)
         content.grid(row=1, column=0, sticky="ew", pady=(12, 0))
         self.label(content, "字幕内容", font=("Microsoft YaHei UI", 10, "bold"), fg=TEXT).grid(row=0, column=0, sticky="w")
-        self.label(content, "静态字幕居中；滚动会横跨全屏并快速回绕", anchor="e").grid(row=0, column=1, sticky="e")
+        self.label(content, "静态字幕居中；滚动左出右入连续循环", anchor="e").grid(row=0, column=1, sticky="e")
         self.text = tk.Text(content, width=65, height=3, wrap="word", bg=FIELD, fg=TEXT, insertbackground=TEXT,
                             relief="flat", highlightthickness=1, highlightbackground="#31435f", font=("Microsoft YaHei UI", 11))
         self.text.grid(row=1, column=0, columnspan=2, pady=(8, 12))
@@ -136,7 +136,11 @@ class SubtitleSender(tk.Tk):
             return
         try:
             import serial
-            payload = packet(self.bitmap(), self.scroll.get(), int(self.speed.get()), 2)
+            content = self.text.get("1.0", "end-1c")
+            scroll_width = (text_width(content, self.font.get(), int(self.size.get()))
+                            if self.scroll.get() else None)
+            payload = packet(self.bitmap(), self.scroll.get(), int(self.speed.get()), 2,
+                             scroll_width=scroll_width)
             self.status.set("正在发送…")
             self.update_idletasks()
             with serial.Serial(self.port.get(), 115200, timeout=2) as port:

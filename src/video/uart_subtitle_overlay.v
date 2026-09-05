@@ -142,6 +142,7 @@ reg [24:0] idle_count;
 reg commit_pending;
 reg commit_toggle;
 reg [7:0] commit_mode;
+reg [15:0] commit_width;
 reg ack_sync1, ack_sync2, ack_seen;
 reg ack_toggle;
 reg [2:0] response_pending;
@@ -167,6 +168,7 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
         commit_pending <= 1'b0;
         commit_toggle <= 1'b0;
         commit_mode <= 8'd0;
+        commit_width <= EXPECTED_WIDTH;
         write_enable <= 1'b0;
         write_addr <= 12'd0;
         write_data <= 8'd0;
@@ -240,8 +242,14 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
                         3'd5: header_length[7:0] <= rx_data;
                         default: begin
                             header_length[15:8] <= rx_data;
+                            // In full-width scroll mode the width field is the
+                            // rendered text width.  Static subtitles and older
+                            // senders keep the original fixed 800-pixel value.
                             header_good <= (header_version == PROTOCOL_VERSION) &&
-                                           (header_width == EXPECTED_WIDTH) &&
+                                           ((FULL_WIDTH_SCROLL && header_mode[0]) ?
+                                            ((header_width >= 16'd1) &&
+                                             (header_width <= EXPECTED_WIDTH)) :
+                                            (header_width == EXPECTED_WIDTH)) &&
                                            (header_height == EXPECTED_HEIGHT) &&
                                            (header_length[7:0] == EXPECTED_LENGTH[7:0]) &&
                                            (rx_data == EXPECTED_LENGTH[15:8]);
@@ -278,6 +286,7 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
                         response_pending <= R_CRC;
                     else begin
                         commit_mode <= header_mode;
+                        commit_width <= header_width;
                         commit_pending <= 1'b1;
                         commit_toggle <= ~commit_toggle;
                         response_pending <= R_OK;
@@ -300,11 +309,16 @@ reg active_bank;
 reg subtitle_valid;
 reg scroll_enable;
 reg [2:0] scroll_step;
+reg [10:0] scroll_width;
 reg [11:0] scroll_offset;
 reg [11:0] next_scroll_offset;
 reg [11:0] scroll_position;
 reg [10:0] mapped_x;
 reg mapped_valid;
+reg [10:0] static_mapped_x;
+reg static_mapped_valid;
+reg [10:0] full_scroll_mapped_x;
+reg full_scroll_mapped_valid;
 reg mapped_valid_q;
 reg [9:0] subtitle_row;
 reg [RAM_ADDR_WIDTH-1:0] read_addr;
@@ -343,17 +357,35 @@ subtitle_bitmap_ram #(
 always @(*) begin
     next_scroll_offset = scroll_offset + {9'd0, scroll_step};
     if (FULL_WIDTH_SCROLL) begin
-        if (next_scroll_offset >= DISPLAY_WIDTH + WIDTH)
-            next_scroll_offset = next_scroll_offset - (DISPLAY_WIDTH + WIDTH);
+        // Keep two copies of the text one display-width apart.  The second
+        // copy enters at the right edge as the first leaves the left edge.
+        if (next_scroll_offset >= 2 * DISPLAY_WIDTH)
+            next_scroll_offset = next_scroll_offset - (2 * DISPLAY_WIDTH);
     end else if (next_scroll_offset >= WIDTH)
         next_scroll_offset = next_scroll_offset - WIDTH;
 
     scroll_position = {1'b0, x_i} + scroll_offset;
-    if (scroll_enable && FULL_WIDTH_SCROLL) begin
-        mapped_valid = (x_i < DISPLAY_WIDTH) &&
-                       (scroll_position >= DISPLAY_WIDTH) &&
-                       (scroll_position < DISPLAY_WIDTH + WIDTH);
-        mapped_x = mapped_valid ? scroll_position - DISPLAY_WIDTH : 11'd0;
+    if (FULL_WIDTH_SCROLL) begin
+        // Keep the static and scrolling address calculations independent.
+        // Selecting between their finished results keeps scroll_enable off
+        // the BRAM address adder chain at the 75 MHz video clock.
+        static_mapped_valid = (x_i >= X_START) && (x_i < X_START + WIDTH);
+        static_mapped_x = static_mapped_valid ? {1'b0, x_i - X_START} : 11'd0;
+        full_scroll_mapped_valid = (x_i < DISPLAY_WIDTH) &&
+                                   (((scroll_position >= DISPLAY_WIDTH) &&
+                                     (scroll_position < DISPLAY_WIDTH + scroll_width)) ||
+                                    ((scroll_position >= 2 * DISPLAY_WIDTH) &&
+                                     (scroll_position < 2 * DISPLAY_WIDTH + scroll_width)));
+        if ((scroll_position >= DISPLAY_WIDTH) &&
+            (scroll_position < DISPLAY_WIDTH + scroll_width))
+            full_scroll_mapped_x = scroll_position - DISPLAY_WIDTH;
+        else if ((scroll_position >= 2 * DISPLAY_WIDTH) &&
+                 (scroll_position < 2 * DISPLAY_WIDTH + scroll_width))
+            full_scroll_mapped_x = scroll_position - (2 * DISPLAY_WIDTH);
+        else
+            full_scroll_mapped_x = 11'd0;
+        mapped_valid = scroll_enable ? full_scroll_mapped_valid : static_mapped_valid;
+        mapped_x = scroll_enable ? full_scroll_mapped_x : static_mapped_x;
     end else begin
         mapped_valid = (x_i >= X_START) && (x_i < X_START + WIDTH);
         mapped_x = mapped_valid ? ({1'b0, x_i - X_START} +
@@ -398,6 +430,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
         subtitle_valid <= 1'b0;
         scroll_enable <= 1'b0;
         scroll_step <= 3'd1;
+        scroll_width <= WIDTH;
         scroll_offset <= 12'd0;
         ack_toggle <= 1'b0;
         hs_o <= 1'b1;
@@ -420,6 +453,8 @@ always @(posedge video_clk or negedge video_rst_n) begin
                 subtitle_valid <= !commit_mode[7];
                 scroll_enable <= !commit_mode[7] && commit_mode[0];
                 scroll_step <= (commit_mode[3:1] == 3'd0) ? 3'd1 : commit_mode[3:1];
+                scroll_width <= (FULL_WIDTH_SCROLL && commit_mode[0]) ?
+                                commit_width[10:0] : WIDTH;
                 scroll_offset <= 12'd0;
                 ack_toggle <= ~ack_toggle;
             end else if (subtitle_valid && scroll_enable)

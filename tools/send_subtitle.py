@@ -54,6 +54,16 @@ def rasterize(text: str, font_path: str, font_size: int, bits_per_pixel: int,
     return bytes(out)
 
 
+def text_width(text: str, font_path: str, font_size: int, pixel_scale: int = 1) -> int:
+    """Return the rendered width used as the cyclic full-screen scroll span."""
+    font = ImageFont.truetype(font_path, max(1, font_size // pixel_scale))
+    left, _top, right, _bottom = font.getbbox(text)
+    width = (right - left) * pixel_scale
+    if not 1 <= width <= WIDTH:
+        raise ValueError(f"text is {width}px wide; maximum is {WIDTH}px")
+    return width
+
+
 def level_bars(bits_per_pixel: int) -> bytes:
     """Return wide, constant-grey diagnostic bars for subtitle RAM readback."""
     out = bytearray()
@@ -71,13 +81,17 @@ def level_bars(bits_per_pixel: int) -> bytes:
     return bytes(out)
 
 
-def packet(bitmap: bytes, scroll: bool, speed: int, version: int, clear: bool = False) -> bytes:
+def packet(bitmap: bytes, scroll: bool, speed: int, version: int, clear: bool = False,
+           scroll_width: int | None = None) -> bytes:
     if len(bitmap) not in (WIDTH * HEIGHT // 8, WIDTH * HEIGHT // 4):
         raise ValueError("internal bitmap length error")
     mode = ((speed & 0x07) << 1) | int(scroll)
     if clear:
         mode |= 0x80
-    header = bytes((version, mode)) + struct.pack("<HBH", WIDTH, HEIGHT, len(bitmap))
+    content_width = scroll_width if scroll and scroll_width is not None else WIDTH
+    if not 1 <= content_width <= WIDTH:
+        raise ValueError("scroll_width must be in 1..800")
+    header = bytes((version, mode)) + struct.pack("<HBH", content_width, HEIGHT, len(bitmap))
     body = header + bitmap
     return b"\x55\xAA" + body + struct.pack("<H", crc16_ccitt(body))
 
@@ -114,7 +128,9 @@ def main() -> int:
                 parser.error("--text and --font are required unless --pattern is used")
             bitmap = rasterize(args.text, args.font, args.size, bits_per_pixel,
                                args.thicken, args.pixel_scale, center=not args.scroll)
-        payload = packet(bitmap, args.scroll, args.speed, version, args.clear)
+        scroll_width = (text_width(args.text, args.font, args.size, args.pixel_scale)
+                        if args.scroll and args.text else None)
+        payload = packet(bitmap, args.scroll, args.speed, version, args.clear, scroll_width)
     except (OSError, ValueError) as exc:
         parser.error(str(exc))
     if args.dry_run:
