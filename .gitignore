@@ -1,0 +1,24 @@
+# Anlogic TD build outputs
+_media_*/
+Runs/
+*.area
+*.qdb
+*.qpg
+*.qtl
+*.prj
+*.log
+*.logw
+*.err
+transcript
+
+# ModelSim generated libraries and local configuration
+sim/work*/
+sim/modelsim.ini
+sim/transcript
+**/__pycache__/
+*.pyc
+
+# Editor and OS noise
+.DS_Store
+Thumbs.db
+.vscode/*.user
