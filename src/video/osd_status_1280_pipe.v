@@ -10,7 +10,6 @@ module osd_status_1280_pipe (
     input wire [3:0] image_index, input wire auto_mode,
     input wire [1:0] brightness_level, input wire [1:0] contrast_level,
     input wire [1:0] audio_track_index,
-    input wire [1:0] auto_speed_level, input wire audio_paused,
     input wire [15:0] source_width_bcd, input wire [15:0] source_height_bcd,
     output wire [23:0] rgb_o
 );
@@ -18,7 +17,7 @@ module osd_status_1280_pipe (
 localparam [4:0] SP=0, I=1, M=2, G=3, A=4, U=5, T=6, O=7, N=8;
 localparam [4:0] B=9, R=10, C=11, PCT=12, D0=13, D1=14, D2=15;
 localparam [4:0] D3=16, D4=17, D5=18, D6=19, D7=20, D8=21, D9=22;
-localparam [4:0] D=23, X=24, P=25, S=26;
+localparam [4:0] D=23, X=24;
 
 reg [4:0] dim0, dim1, dim2, dim3, dim4, dim5, dim6, dim7, dim8;
 reg de_s0;
@@ -50,8 +49,6 @@ function [4:0] cell_glyph;
     input [1:0] br;
     input [1:0] ct;
     input [1:0] audio_track;
-    input [1:0] auto_speed;
-    input paused;
     begin
         cell_glyph=SP;
         case(pos)
@@ -66,10 +63,6 @@ function [4:0] cell_glyph;
             25:cell_glyph=D0; 26:cell_glyph=PCT;
             28:cell_glyph=A; 29:cell_glyph=U; 30:cell_glyph=D;
             31:cell_glyph=digit(audio_track);
-            52:cell_glyph=S; 53:cell_glyph=P; 54:cell_glyph=D;
-            55:cell_glyph=digit(auto_speed + 1'b1);
-            57:cell_glyph=paused?P:SP; 58:cell_glyph=paused?A:SP;
-            59:cell_glyph=paused?U:SP; 60:cell_glyph=paused?S:SP;
             36:cell_glyph=D; 37:cell_glyph=I; 38:cell_glyph=M;
             40:cell_glyph=dim0; 41:cell_glyph=dim1; 42:cell_glyph=dim2;
             43:cell_glyph=dim3; 44:cell_glyph=dim4; 45:cell_glyph=dim5;
@@ -96,8 +89,6 @@ function [34:0] font_bitmap;
             C:   font_bitmap={5'b01110,5'b10001,5'b10000,5'b10000,5'b10000,5'b10001,5'b01110};
             D:   font_bitmap={5'b11110,5'b10001,5'b10001,5'b10001,5'b10001,5'b10001,5'b11110};
             X:   font_bitmap={5'b10001,5'b01010,5'b00100,5'b00100,5'b00100,5'b01010,5'b10001};
-            P:   font_bitmap={5'b11110,5'b10001,5'b10001,5'b11110,5'b10000,5'b10000,5'b10000};
-            S:   font_bitmap={5'b01111,5'b10000,5'b10000,5'b01110,5'b00001,5'b00001,5'b11110};
             PCT: font_bitmap={5'b11001,5'b11010,5'b00100,5'b01000,5'b10110,5'b10011,5'b00000};
             D0:  font_bitmap={5'b01110,5'b10001,5'b10011,5'b10101,5'b11001,5'b10001,5'b01110};
             D1:  font_bitmap={5'b00100,5'b01100,5'b00100,5'b00100,5'b00100,5'b00100,5'b01110};
@@ -202,13 +193,11 @@ always @(posedge clk or negedge rst_n) begin
         glyph_active_s1<=!x_s0[10]&&(y_s0>=10'd4)&&(y_s0<10'd11)&&(x_s0[2:0]<3'd5)&&
                          (cell_glyph(x_s0[9:3],image_index,auto_mode,
                                      brightness_level,contrast_level,
-                                     audio_track_index,auto_speed_level,
-                                     audio_paused)!=SP);
+                                     audio_track_index)!=SP);
         row_s1<=y_s0-10'd4;
         col_s1<=x_s0[2:0];
         glyph_s1<=cell_glyph(x_s0[9:3],image_index,auto_mode,
-                             brightness_level,contrast_level,audio_track_index,
-                             auto_speed_level,audio_paused);
+                             brightness_level,contrast_level,audio_track_index);
         rgb_s1<=rgb_s0;
 
         de_s2<=de_s1;

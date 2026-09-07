@@ -420,7 +420,6 @@ reg audio_paused;
 reg [19:0] audio_switch_reset_count;
 wire audio_switch_reset = (audio_switch_reset_count != 0);
 reg [1:0] audio_track_ff1, audio_track_ff2;
-reg [1:0] auto_speed_ff1, auto_speed_ff2;
 reg audio_paused_ff1, audio_paused_ff2;
 wire axis_user, axis_valid, axis_last;
 wire [23:0] axis_data;
@@ -771,8 +770,6 @@ always @(posedge video_clk or negedge video_rst_n) begin
         audio_file_error_ff2   <= 1'b0;
         audio_track_ff1        <= 2'd0;
         audio_track_ff2        <= 2'd0;
-        auto_speed_ff1         <= 2'd0;
-        auto_speed_ff2         <= 2'd0;
         audio_paused_ff1       <= 1'b0;
         audio_paused_ff2       <= 1'b0;
     end else begin
@@ -782,8 +779,6 @@ always @(posedge video_clk or negedge video_rst_n) begin
         audio_file_error_ff2   <= audio_file_error_ff1;
         audio_track_ff1        <= audio_track_index;
         audio_track_ff2        <= audio_track_ff1;
-        auto_speed_ff1         <= auto_speed_level;
-        auto_speed_ff2         <= auto_speed_ff1;
         audio_paused_ff1       <= audio_paused;
         audio_paused_ff2       <= audio_paused_ff1;
     end
@@ -1518,7 +1513,6 @@ generate
                 .auto_mode(auto_mode_ff2), .brightness_level(brightness_level_ff2),
                 .contrast_level(contrast_level_ff2),
                 .audio_track_index(audio_track_ff2),
-                .auto_speed_level(auto_speed_ff2), .audio_paused(audio_paused_ff2),
                 .source_width_bcd(display_source_width_bcd),
                 .source_height_bcd(display_source_height_bcd),
                 .rgb_o(video_osd_1280_rgb)
