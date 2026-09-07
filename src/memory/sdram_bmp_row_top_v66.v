@@ -1004,19 +1004,26 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         if (audio_track_switch_ack)
             audio_switch_reset_count <= AUDIO_SWITCH_RESET_CYCLES;
 
-        if (key_press_pulse[1] && !auto_mode) begin
-            if (manual_image_index == VIDEO_FRAME_COUNT - 1)
-                manual_image_index <= 4'd0;
-            else
-                manual_image_index <= manual_image_index + 1'b1;
-        end
-
-        if (key_press_pulse[2]) begin
+        if (key_press_pulse[1]) begin
             if (sw[2]) begin
                 if (audio_track_index == 0)
                     audio_track_index <= AUDIO_TRACK_COUNT - 1;
                 else
                     audio_track_index <= audio_track_index - 1'b1;
+            end else if (!auto_mode) begin
+                if (manual_image_index == VIDEO_FRAME_COUNT - 1)
+                    manual_image_index <= 4'd0;
+                else
+                    manual_image_index <= manual_image_index + 1'b1;
+            end
+        end
+
+        if (key_press_pulse[2]) begin
+            if (sw[2]) begin
+                if (audio_track_index == AUDIO_TRACK_COUNT - 1)
+                    audio_track_index <= 2'd0;
+                else
+                    audio_track_index <= audio_track_index + 1'b1;
             end else begin
                 case (brightness_level)
                     2'd0: brightness_level <= 2'd1;
@@ -1025,12 +1032,7 @@ always @(posedge clk_50m or negedge write_rst_n) begin
                 endcase
             end
         end else if (key_press_pulse[3]) begin
-            if (sw[2]) begin
-                if (audio_track_index == AUDIO_TRACK_COUNT - 1)
-                    audio_track_index <= 2'd0;
-                else
-                    audio_track_index <= audio_track_index + 1'b1;
-            end else begin
+            if (!sw[2]) begin
                 case (contrast_level)
                     2'd0: contrast_level <= 2'd1;
                     2'd1: contrast_level <= 2'd2;
