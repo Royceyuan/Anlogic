@@ -52,6 +52,8 @@ always @(posedge clk or posedge rst) begin
         if (paused) begin
             sample_left  <= 16'sd0;
             sample_right <= 16'sd0;
+            if (sample_tick)
+                sample_valid <= 1'b1;
             underflow_ticks <= 7'd0;
             underflow <= 1'b0;
         end else if (sample_tick && active) begin
