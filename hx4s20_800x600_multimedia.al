@@ -415,6 +415,42 @@
                     <Attr Name="CompileOrder" Val="54"/>
                 </FileInfo>
             </File>
+            <File Path="vendor/official_ref/lab_ex5_i2s_audio_hdmi/lane_lvds_10_1.v">
+                <FileInfo><Attr Name="UsedInSyn" Val="true"/><Attr Name="UsedInP&amp;R" Val="true"/><Attr Name="BelongTo" Val="design_1"/><Attr Name="CompileOrder" Val="55"/></FileInfo>
+            </File>
+            <File Path="vendor/official_ref/lab_ex5_i2s_audio_hdmi/hdmi_phy_warpper.v">
+                <FileInfo><Attr Name="UsedInSyn" Val="true"/><Attr Name="UsedInP&amp;R" Val="true"/><Attr Name="BelongTo" Val="design_1"/><Attr Name="CompileOrder" Val="56"/></FileInfo>
+            </File>
+            <File Path="vendor/official_ref/lab_ex5_i2s_audio_hdmi/hdmi_1_4b_transmitter_core_wrapper.enc.v">
+                <FileInfo><Attr Name="UsedInSyn" Val="true"/><Attr Name="UsedInP&amp;R" Val="true"/><Attr Name="BelongTo" Val="design_1"/><Attr Name="CompileOrder" Val="57"/></FileInfo>
+            </File>
+            <File Path="src/audio/audio_arc_calculate.v">
+                <FileInfo><Attr Name="UsedInSyn" Val="true"/><Attr Name="UsedInP&amp;R" Val="true"/><Attr Name="BelongTo" Val="design_1"/><Attr Name="CompileOrder" Val="58"/></FileInfo>
+            </File>
+            <File Path="src/audio/audio_pcm_player_48k.v">
+                <FileInfo><Attr Name="UsedInSyn" Val="true"/><Attr Name="UsedInP&amp;R" Val="true"/><Attr Name="BelongTo" Val="design_1"/><Attr Name="CompileOrder" Val="59"/></FileInfo>
+            </File>
+            <File Path="src/audio/audio_goertzel8.v">
+                <FileInfo><Attr Name="UsedInSyn" Val="true"/><Attr Name="UsedInP&amp;R" Val="true"/><Attr Name="BelongTo" Val="design_1"/><Attr Name="CompileOrder" Val="60"/></FileInfo>
+            </File>
+            <File Path="src/audio/fat32_wav_streamer.v">
+                <FileInfo><Attr Name="UsedInSyn" Val="true"/><Attr Name="UsedInP&amp;R" Val="true"/><Attr Name="BelongTo" Val="design_1"/><Attr Name="CompileOrder" Val="61"/></FileInfo>
+            </File>
+            <File Path="src/video/audio_visualizer_overlay.v">
+                <FileInfo><Attr Name="UsedInSyn" Val="true"/><Attr Name="UsedInP&amp;R" Val="true"/><Attr Name="BelongTo" Val="design_1"/><Attr Name="CompileOrder" Val="62"/></FileInfo>
+            </File>
+            <File Path="src/video/video_rgb_to_axis_1280x720.v">
+                <FileInfo><Attr Name="UsedInSyn" Val="true"/><Attr Name="UsedInP&amp;R" Val="true"/><Attr Name="BelongTo" Val="design_1"/><Attr Name="CompileOrder" Val="63"/></FileInfo>
+            </File>
+            <File Path="src/video/lane_lvds_10_1_v73.v">
+                <FileInfo><Attr Name="UsedInSyn" Val="true"/><Attr Name="UsedInP&amp;R" Val="true"/><Attr Name="BelongTo" Val="design_1"/><Attr Name="CompileOrder" Val="64"/></FileInfo>
+            </File>
+            <File Path="src/video/hdmi_phy_wrapper_v73.v">
+                <FileInfo><Attr Name="UsedInSyn" Val="true"/><Attr Name="UsedInP&amp;R" Val="true"/><Attr Name="BelongTo" Val="design_1"/><Attr Name="CompileOrder" Val="65"/></FileInfo>
+            </File>
+            <File Path="src/memory/top_1280x720_feature_v73_audio_visualizer.v">
+                <FileInfo><Attr Name="UsedInSyn" Val="true"/><Attr Name="UsedInP&amp;R" Val="true"/><Attr Name="BelongTo" Val="design_1"/><Attr Name="CompileOrder" Val="66"/></FileInfo>
+            </File>
         </Verilog>
         <VHDL>
             <File Path="vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/hdmi_tx.vhd">

@@ -74,6 +74,7 @@ module top_v66 #(
     ,parameter integer SUBTITLE_FULL_WIDTH_SCROLL = 0
     ,parameter integer RESOURCE_OPT_CONSTANT_MULT = 0
     ,parameter integer SUBTITLE_RESOURCE_OPT_ADDR = 0
+    ,parameter integer ENABLE_AUDIO_VISUALIZER = 0
 ) (
     input  wire        clk_50m,
     input  wire [3:0]  key_n,
@@ -92,6 +93,8 @@ module top_v66 #(
     output wire        hdmi1_d2_p,
     output wire        hdmi1_d1_p,
     output wire        hdmi1_d0_p,
+    output wire        hdmi1_ddc_scl,
+    inout  wire        hdmi1_ddc_sda,
     input  wire        uart_rxd,
     output wire        uart_txd
 );
@@ -120,6 +123,10 @@ wire [31:0] sd_sec_read_addr;
 wire [7:0] sd_sec_read_data;
 wire sd_sec_read_data_valid;
 wire sd_sec_read_end;
+wire image_sd_sec_read;
+wire [31:0] image_sd_sec_read_addr;
+wire audio_sd_sec_read;
+wire [31:0] audio_sd_sec_read_addr;
 reg image_load_start;
 reg writer_start;
 reg load_active;
@@ -170,6 +177,7 @@ wire image_load_busy;
 wire image_load_done;
 wire image_load_error;
 wire [3:0] image_load_status;
+wire [3:0] image_load_error_stage;
 wire [15:0] image_source_width;
 wire [15:0] image_source_height;
 
@@ -221,6 +229,12 @@ wire [23:0] video_faded_rgb;
 wire [23:0] video_transition_rgb;
 wire [23:0] video_osd_1280_rgb;
 wire [23:0] video_output_rgb;
+wire [23:0] video_post_audio_rgb;
+wire        video_post_audio_hs;
+wire        video_post_audio_vs;
+wire        video_post_audio_de;
+wire [10:0] video_post_audio_x;
+wire [9:0]  video_post_audio_y;
 wire        video_post_osd_hs;
 wire        video_post_osd_vs;
 wire        video_post_osd_de;
@@ -368,6 +382,38 @@ wire [15:0] normal_seg_value;
 wire [15:0] diag_seg_value;
 
 wire [3:0] key_press_pulse;
+
+// v73 audio path: TF-sector ownership changes only after every cached image
+// is valid, so image loading and continuous WAV playback never contend.
+wire audio_sd_owner = ENABLE_AUDIO_VISUALIZER && (frame_valid == 5'b11111) &&
+                      !load_active;
+wire audio_fifo_wr_en;
+wire [31:0] audio_fifo_wr_data;
+wire audio_fifo_full;
+wire audio_fifo_empty;
+wire audio_fifo_almost_full;
+wire audio_fifo_valid;
+wire [8:0] audio_fifo_wr_used;
+wire [8:0] audio_fifo_rd_used;
+wire [31:0] audio_fifo_rd_data;
+wire audio_fifo_rd_en;
+wire audio_wav_ready;
+wire audio_format_error_50m;
+wire audio_file_error_50m;
+reg audio_format_error_ff1, audio_format_error_ff2;
+reg audio_file_error_ff1, audio_file_error_ff2;
+wire audio_sample_valid;
+wire signed [15:0] audio_sample_left;
+wire signed [15:0] audio_sample_right;
+wire audio_active;
+wire audio_underflow;
+wire axis_user, axis_valid, axis_last;
+wire [23:0] axis_data;
+wire axis_ready;
+wire acr_valid;
+wire [19:0] acr_cts;
+wire [19:0] acr_n;
+wire [9:0] audio_tmds_ch0, audio_tmds_ch1, audio_tmds_ch2, audio_tmds_clk;
 
 // Keep the last registered column addressed through horizontal blanking.  It
 // remains available for the one boundary cycle where the 20-clock DE path
@@ -537,6 +583,27 @@ assign video_output_rgb = (RIGHT_EDGE_MASK_COLUMNS != 0 && video_post_osd_de &&
                            video_right_edge_pixel : video_osd_rgb);
 
 generate
+    if (ENABLE_AUDIO_VISUALIZER) begin : g_audio_visualizer_overlay
+        audio_visualizer_overlay u_audio_visualizer_overlay (
+            .clk(video_clk), .rst_n(video_rst_n), .sample_valid(audio_sample_valid),
+            .sample_left(audio_sample_left), .sample_right(audio_sample_right),
+            .frame_tick(video_frame_tick), .hs_i(video_subtitle_hs),
+            .vs_i(video_subtitle_vs), .de_i(video_subtitle_de), .x_i(video_post_osd_x),
+            .y_i(video_post_osd_y), .rgb_i(video_subtitle_rgb), .hs_o(video_post_audio_hs),
+            .vs_o(video_post_audio_vs), .de_o(video_post_audio_de), .x_o(video_post_audio_x),
+            .y_o(video_post_audio_y), .rgb_o(video_post_audio_rgb)
+        );
+    end else begin : g_no_audio_visualizer_overlay
+        assign video_post_audio_hs  = video_subtitle_hs;
+        assign video_post_audio_vs  = video_subtitle_vs;
+        assign video_post_audio_de  = video_subtitle_de;
+        assign video_post_audio_x   = video_post_osd_x;
+        assign video_post_audio_y   = video_post_osd_y;
+        assign video_post_audio_rgb = video_subtitle_rgb;
+    end
+endgenerate
+
+generate
     if (ENABLE_SUBTITLE) begin : g_uart_subtitle
         uart_subtitle_overlay #(
             .WIDTH(SUBTITLE_WIDTH), .HEIGHT(32),
@@ -578,6 +645,9 @@ sd_card_top u_sd_card_top (
     .sd_sec_write_data(8'd0), .sd_sec_write_data_req(), .sd_sec_write_end()
 );
 
+assign sd_sec_read      = audio_sd_owner ? audio_sd_sec_read : image_sd_sec_read;
+assign sd_sec_read_addr = audio_sd_owner ? audio_sd_sec_read_addr : image_sd_sec_read_addr;
+
 fat32_image_loader #(
     .IMAGE_WIDTH(SOURCE_W), .IMAGE_HEIGHT(SOURCE_H), .IMAGE_ADDR_BITS(21),
     .BMP_MAX_WIDTH(ADAPTIVE_BMP ? ADAPTIVE_BMP_MAX_WIDTH :
@@ -598,8 +668,8 @@ fat32_image_loader #(
                        {3'd0, (load_active ? load_image_index : load_start_image_index[0])})),
     .bmp_mode(VIDEO_BIN ? 1'b0 : 1'b1),
     .sequence_mode(VIDEO_SEQUENCE != 0),
-    .sd_init_done(sd_init_done), .sd_sec_read(sd_sec_read),
-    .sd_sec_read_addr(sd_sec_read_addr), .sd_sec_read_data(sd_sec_read_data),
+    .sd_init_done(sd_init_done), .sd_sec_read(image_sd_sec_read),
+    .sd_sec_read_addr(image_sd_sec_read_addr), .sd_sec_read_data(sd_sec_read_data),
     .sd_sec_read_data_valid(sd_sec_read_data_valid),
     .sd_sec_read_end(sd_sec_read_end),
     .image_continue(row_input_continue),
@@ -608,9 +678,84 @@ fat32_image_loader #(
     .image_wr_col(image_wr_col), .busy(image_load_busy),
     .load_done(image_load_done), .load_error(image_load_error),
     .status_code(image_load_status),
+    .error_stage(image_load_error_stage),
     .bmp_source_width(image_source_width),
     .bmp_source_height(image_source_height)
 );
+
+generate
+    if (ENABLE_AUDIO_VISUALIZER) begin : g_audio_wav
+        fat32_wav_streamer u_wav_streamer (
+            .clk(clk_50m), .rst_n(write_rst_n), .start(audio_sd_owner),
+            .sd_init_done(sd_init_done), .sd_sec_read(audio_sd_sec_read),
+            .sd_sec_read_addr(audio_sd_sec_read_addr),
+            .sd_sec_read_data(sd_sec_read_data),
+            .sd_sec_read_data_valid(sd_sec_read_data_valid), .sd_sec_read_end(sd_sec_read_end),
+            .fifo_almost_full(audio_fifo_almost_full), .fifo_wr_en(audio_fifo_wr_en),
+            .fifo_wr_data(audio_fifo_wr_data), .audio_ready(audio_wav_ready),
+            .format_error(audio_format_error_50m), .file_error(audio_file_error_50m)
+        );
+
+        // One sector holds 128 stereo frames.  The almost-full threshold
+        // leaves that whole sector of headroom before issuing another read.
+        wfifo_32_32_512 #(
+            .AL_FULL_NUM(384), .AL_EMPTY_NUM(2), .SHOW_AHEAD_EN(1'b1),
+            .OUTREG_EN("NOREG")
+        ) u_audio_fifo (
+            .rst(~write_rst_n), .clkw(clk_50m), .clkr(video_clk),
+            .we(audio_fifo_wr_en), .di(audio_fifo_wr_data), .re(audio_fifo_rd_en),
+            .dout(audio_fifo_rd_data), .valid(audio_fifo_valid), .full_flag(audio_fifo_full),
+            .empty_flag(audio_fifo_empty), .afull(audio_fifo_almost_full), .aempty(),
+            .wrusedw(audio_fifo_wr_used), .rdusedw(audio_fifo_rd_used)
+        );
+
+        audio_pcm_player_48k #(
+            .PIXEL_CLK_HZ(75_000_000), .SAMPLE_RATE_HZ(48_000), .START_FRAMES(256)
+        ) u_audio_player (
+            .clk(video_clk), .rst(~video_rst_n), .fifo_data(audio_fifo_rd_data),
+            .fifo_valid(audio_fifo_valid), .fifo_empty(audio_fifo_empty),
+            .fifo_used(audio_fifo_rd_used), .fifo_rd_en(audio_fifo_rd_en),
+            .sample_valid(audio_sample_valid), .sample_left(audio_sample_left),
+            .sample_right(audio_sample_right), .active(audio_active), .underflow(audio_underflow)
+        );
+
+    end else begin : g_no_audio_wav
+        assign audio_sd_sec_read      = 1'b0;
+        assign audio_sd_sec_read_addr = 32'd0;
+        assign audio_fifo_wr_en       = 1'b0;
+        assign audio_fifo_wr_data     = 32'd0;
+        assign audio_fifo_full        = 1'b0;
+        assign audio_fifo_empty       = 1'b1;
+        assign audio_fifo_almost_full = 1'b0;
+        assign audio_fifo_valid       = 1'b0;
+        assign audio_fifo_wr_used     = 9'd0;
+        assign audio_fifo_rd_used     = 9'd0;
+        assign audio_fifo_rd_data     = 32'd0;
+        assign audio_fifo_rd_en       = 1'b0;
+        assign audio_wav_ready        = 1'b0;
+        assign audio_format_error_50m = 1'b0;
+        assign audio_file_error_50m   = 1'b0;
+        assign audio_sample_valid     = 1'b0;
+        assign audio_sample_left      = 16'sd0;
+        assign audio_sample_right     = 16'sd0;
+        assign audio_active           = 1'b0;
+        assign audio_underflow        = 1'b0;
+    end
+endgenerate
+
+always @(posedge video_clk or negedge video_rst_n) begin
+    if (!video_rst_n) begin
+        audio_format_error_ff1 <= 1'b0;
+        audio_format_error_ff2 <= 1'b0;
+        audio_file_error_ff1   <= 1'b0;
+        audio_file_error_ff2   <= 1'b0;
+    end else begin
+        audio_format_error_ff1 <= audio_format_error_50m;
+        audio_format_error_ff2 <= audio_format_error_ff1;
+        audio_file_error_ff1   <= audio_file_error_50m;
+        audio_file_error_ff2   <= audio_file_error_ff1;
+    end
+end
 
 assign row_input_continue = VIDEO_BIN ? bin_sector_continue :
                             bmp_row_input_continue;
@@ -1327,12 +1472,15 @@ generate
     end
 endgenerate
 
-// The compact 720p OSD uses two pixel pipeline stages. Delay the accompanying
+// The compact 720p OSD uses three pixel pipeline stages. Delay the accompanying
 // raster metadata by the same amount before the subtitle and HDMI stages.
 reg osd1280_hs_d, osd1280_vs_d, osd1280_de_d;
 reg osd1280_hs_d2, osd1280_vs_d2, osd1280_de_d2;
 reg [10:0] osd1280_x_d, osd1280_x_d2;
 reg [9:0] osd1280_y_d, osd1280_y_d2;
+reg osd1280_hs_d3, osd1280_vs_d3, osd1280_de_d3;
+reg [10:0] osd1280_x_d3;
+reg [9:0] osd1280_y_d3;
 always @(posedge video_clk or negedge video_rst_n) begin
     if (!video_rst_n) begin
         osd1280_hs_d <= 1'b1;
@@ -1345,6 +1493,11 @@ always @(posedge video_clk or negedge video_rst_n) begin
         osd1280_de_d2 <= 1'b0;
         osd1280_x_d2 <= 11'd0;
         osd1280_y_d2 <= 10'd0;
+        osd1280_hs_d3 <= 1'b1;
+        osd1280_vs_d3 <= 1'b1;
+        osd1280_de_d3 <= 1'b0;
+        osd1280_x_d3 <= 11'd0;
+        osd1280_y_d3 <= 10'd0;
     end else begin
         osd1280_hs_d <= video_hs;
         osd1280_vs_d <= video_vs;
@@ -1356,13 +1509,18 @@ always @(posedge video_clk or negedge video_rst_n) begin
         osd1280_de_d2 <= osd1280_de_d;
         osd1280_x_d2 <= osd1280_x_d;
         osd1280_y_d2 <= osd1280_y_d;
+        osd1280_hs_d3 <= osd1280_hs_d2;
+        osd1280_vs_d3 <= osd1280_vs_d2;
+        osd1280_de_d3 <= osd1280_de_d2;
+        osd1280_x_d3 <= osd1280_x_d2;
+        osd1280_y_d3 <= osd1280_y_d2;
     end
 end
-assign video_post_osd_hs = (ENABLE_OSD && VIDEO_MODE_1280) ? osd1280_hs_d2 : video_hs;
-assign video_post_osd_vs = (ENABLE_OSD && VIDEO_MODE_1280) ? osd1280_vs_d2 : video_vs;
-assign video_post_osd_de = (ENABLE_OSD && VIDEO_MODE_1280) ? osd1280_de_d2 : video_de;
-assign video_post_osd_x  = (ENABLE_OSD && VIDEO_MODE_1280) ? osd1280_x_d2 : video_x_delayed;
-assign video_post_osd_y  = (ENABLE_OSD && VIDEO_MODE_1280) ? osd1280_y_d2 : video_y_delayed;
+assign video_post_osd_hs = (ENABLE_OSD && VIDEO_MODE_1280) ? osd1280_hs_d3 : video_hs;
+assign video_post_osd_vs = (ENABLE_OSD && VIDEO_MODE_1280) ? osd1280_vs_d3 : video_vs;
+assign video_post_osd_de = (ENABLE_OSD && VIDEO_MODE_1280) ? osd1280_de_d3 : video_de;
+assign video_post_osd_x  = (ENABLE_OSD && VIDEO_MODE_1280) ? osd1280_x_d3 : video_x_delayed;
+assign video_post_osd_y  = (ENABLE_OSD && VIDEO_MODE_1280) ? osd1280_y_d3 : video_y_delayed;
 
 always @(posedge mem_clk or negedge mem_rst_n) begin
     if (!mem_rst_n)
@@ -1380,7 +1538,10 @@ always @(*) begin
         status_code = image_load_status;
 end
 
-assign normal_seg_value = {status_code, 4'h0, row_index[3:0], image_load_status};
+assign normal_seg_value = (row_overflow || writer_error || image_load_error) ?
+                          {4'hf, image_load_error ? image_load_error_stage : 4'h0,
+                           row_index[3:0], image_load_status} :
+                          {status_code, 4'h0, row_index[3:0], image_load_status};
 assign diag_seg_value = (row_overflow || writer_error || image_load_error || diag_fail) ?
                         ((diag_fail && sw == 4'b0001) ? diag_first_error_addr[15:0] :
                          (diag_fail && sw == 4'b0010) ? diag_first_error_actual[15:0] :
@@ -1428,9 +1589,9 @@ generate
                 rgb_q <= 24'h000000;
                 rgb_q_d <= 24'h000000;
             end else begin
-                hs_q  <= video_subtitle_hs;
-                vs_q  <= video_subtitle_vs;
-                de_q  <= video_subtitle_de;
+                hs_q  <= video_post_audio_hs;
+                vs_q  <= video_post_audio_vs;
+                de_q  <= video_post_audio_de;
                 hs_q_d <= hs_q;
                 vs_q_d <= vs_q;
                 de_q_d <= de_q;
@@ -1439,9 +1600,9 @@ generate
                 // its data one cycle before de_q_d falls, so without this
                 // hold the final active pixel of every line becomes black.
                 if (LINEBUF_V26_OUTPUT_PIPELINE)
-                    rgb_q <= video_subtitle_rgb;
-                else if (video_subtitle_de)
-                    rgb_q <= video_subtitle_rgb;
+                    rgb_q <= video_post_audio_rgb;
+                else if (video_post_audio_de)
+                    rgb_q <= video_post_audio_rgb;
             end
         end
         assign video_hs_out  = hs_q_d;
@@ -1456,10 +1617,10 @@ generate
                                  !ENABLE_OSD && !ENABLE_FADE && de_q_d && !de_q) ?
                                 unpacked_rgb : rgb_q);
     end else begin : g_hdmi_output_direct
-        assign video_hs_out  = video_subtitle_hs;
-        assign video_vs_out  = video_subtitle_vs;
-        assign video_de_out  = video_subtitle_de;
-        assign video_rgb_out = video_subtitle_rgb;
+        assign video_hs_out  = video_post_audio_hs;
+        assign video_vs_out  = video_post_audio_vs;
+        assign video_de_out  = video_post_audio_de;
+        assign video_rgb_out = video_post_audio_rgb;
     end
 endgenerate
 
@@ -1467,12 +1628,57 @@ assign vga_hs = video_hs_out;
 assign vga_vs = video_vs_out;
 assign vga_d  = video_rgb_out[23:12];
 
-hdmi_tx u_hdmi_tx (
-    .PXLCLK_I(video_clk), .PXLCLK_5X_I(video_clk_5x), .RST_N(video_rst_n),
-    .VGA_HS(video_hs_out), .VGA_VS(video_vs_out), .VGA_DE(video_de_out),
-    .VGA_RGB(video_rgb_out), .HDMI_CLK_P(hdmi1_clk_p),
-    .HDMI_D2_P(hdmi1_d2_p), .HDMI_D1_P(hdmi1_d1_p), .HDMI_D0_P(hdmi1_d0_p)
-);
+generate
+    if (ENABLE_AUDIO_VISUALIZER) begin : g_hdmi_audio_output
+        video_rgb_to_axis_1280x720 u_video_rgb_to_axis (
+            .clk(video_clk), .rst(~video_rst_n), .vs_i(video_vs_out), .de_i(video_de_out),
+            .rgb_i(video_rgb_out), .axis_user(axis_user), .axis_valid(axis_valid),
+            .axis_last(axis_last), .axis_data(axis_data)
+        );
+
+        audio_arc_calculate #(.ACR_N(20'd6144)) u_audio_arc_calculate (
+            .clk(video_clk), .rst(~video_rst_n), .sample_valid(audio_sample_valid),
+            .acr_valid(acr_valid), .acr_cts(acr_cts), .acr_n(acr_n)
+        );
+
+        hdmi_1_4b_transmitter_core_wrapper #(
+            .DEVICE("EG"), .HTOTAL(1650), .HSA(40), .HFP(110), .HBP(220),
+            .HACTIVE(1280), .VTOTAL(750), .VSA(5), .VFP(5), .VBP(20),
+            .VACTIVE(720), .VIDEO_VIC(4), .VIDEO_TPG("Disable"), .VIDEO_FORMAT("RGB"),
+            .AUDIO_SAMPLE_RATE("48K"), .IIC_SCL_DIV(750)
+        ) u_hdmi_audio_core (
+            .I_pixel_clk(video_clk), .I_rst(~video_rst_n), .I_edid_read_trig(1'b0),
+            .O_edid_read_valid(), .O_edid_read_data(),
+            .I_axis_s_user(axis_user), .I_axis_s_valid(axis_valid), .I_axis_s_last(axis_last),
+            .I_axis_s_data(axis_data), .O_axis_s_ready(axis_ready),
+            .I_audio_valid(audio_sample_valid),
+            .I_audio_left_data({audio_sample_left,8'd0}),
+            .I_audio_right_data({audio_sample_right,8'd0}),
+            .I_acr_valid(acr_valid), .I_acr_cts(acr_cts), .I_acr_n(acr_n),
+            .O_video_locked(), .O_ddc_scl(hdmi1_ddc_scl), .IO_ddc_sda(hdmi1_ddc_sda),
+            .O_ch0_tmds_data(audio_tmds_ch0), .O_ch1_tmds_data(audio_tmds_ch1),
+            .O_ch2_tmds_data(audio_tmds_ch2), .O_clk_tmds_data(audio_tmds_clk)
+        );
+
+        hdmi_phy_wrapper_v73 #(.DEVICE("EG")) u_hdmi_audio_phy (
+            .I_pixel_clk(video_clk), .I_serial_clk(video_clk_5x),
+            .I_pixel_rst(~video_rst_n), .I_serial_rst(~video_rst_n),
+            .I_tmds_channel_0(audio_tmds_ch0), .I_tmds_channel_1(audio_tmds_ch1),
+            .I_tmds_channel_2(audio_tmds_ch2), .I_tmds_channel_clk(audio_tmds_clk),
+            .O_tmds_ch0_p(hdmi1_d0_p), .O_tmds_ch1_p(hdmi1_d1_p),
+            .O_tmds_ch2_p(hdmi1_d2_p), .O_tmds_clk_p(hdmi1_clk_p)
+        );
+    end else begin : g_hdmi_video_output
+        assign hdmi1_ddc_scl = 1'b1;
+        assign hdmi1_ddc_sda = 1'bz;
+        hdmi_tx u_hdmi_tx (
+            .PXLCLK_I(video_clk), .PXLCLK_5X_I(video_clk_5x), .RST_N(video_rst_n),
+            .VGA_HS(video_hs_out), .VGA_VS(video_vs_out), .VGA_DE(video_de_out),
+            .VGA_RGB(video_rgb_out), .HDMI_CLK_P(hdmi1_clk_p),
+            .HDMI_D2_P(hdmi1_d2_p), .HDMI_D1_P(hdmi1_d1_p), .HDMI_D0_P(hdmi1_d0_p)
+        );
+    end
+endgenerate
 
 endmodule
 

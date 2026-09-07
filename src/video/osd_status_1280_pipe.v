@@ -19,6 +19,10 @@ localparam [4:0] D3=16, D4=17, D5=18, D6=19, D7=20, D8=21, D9=22;
 localparam [4:0] D=23, X=24;
 
 reg [4:0] dim0, dim1, dim2, dim3, dim4, dim5, dim6, dim7, dim8;
+reg de_s0;
+reg [10:0] x_s0;
+reg [9:0] y_s0;
+reg [23:0] rgb_s0;
 reg de_s1, panel_s1, glyph_active_s1;
 reg [2:0] row_s1, col_s1;
 reg [4:0] glyph_s1;
@@ -169,22 +173,27 @@ end
 
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
+        de_s0<=1'b0; x_s0<=0; y_s0<=0; rgb_s0<=0;
         de_s1<=1'b0; panel_s1<=1'b0; glyph_active_s1<=1'b0;
         row_s1<=3'd0; col_s1<=3'd0; glyph_s1<=SP; rgb_s1<=24'd0;
         de_s2<=1'b0; panel_s2<=1'b0; text_s2<=1'b0; rgb_s2<=24'd0;
     end else begin
-        de_s1<=de_i;
-        panel_s1<=(x_i<11'd1280)&&(y_i<10'd16);
+        de_s0<=de_i;
+        x_s0<=x_i;
+        y_s0<=y_i;
+        rgb_s0<=rgb_i;
+        de_s1<=de_s0;
+        panel_s1<=(x_s0<11'd1280)&&(y_s0<10'd16);
         // x[9:3] deliberately remains a compact 7-bit glyph selector;
         // qualify x[10] so it cannot wrap and redraw the OSD at x=1024.
-        glyph_active_s1<=!x_i[10]&&(y_i>=10'd4)&&(y_i<10'd11)&&(x_i[2:0]<3'd5)&&
-                         (cell_glyph(x_i[9:3],image_index,auto_mode,
+        glyph_active_s1<=!x_s0[10]&&(y_s0>=10'd4)&&(y_s0<10'd11)&&(x_s0[2:0]<3'd5)&&
+                         (cell_glyph(x_s0[9:3],image_index,auto_mode,
                                      brightness_level,contrast_level)!=SP);
-        row_s1<=y_i-10'd4;
-        col_s1<=x_i[2:0];
-        glyph_s1<=cell_glyph(x_i[9:3],image_index,auto_mode,
+        row_s1<=y_s0-10'd4;
+        col_s1<=x_s0[2:0];
+        glyph_s1<=cell_glyph(x_s0[9:3],image_index,auto_mode,
                              brightness_level,contrast_level);
-        rgb_s1<=rgb_i;
+        rgb_s1<=rgb_s0;
 
         de_s2<=de_s1;
         panel_s2<=panel_s1;

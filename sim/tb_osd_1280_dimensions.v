@@ -27,7 +27,7 @@ task sample;
         @(negedge clk);
         de_i=1'b1; x_i=sx; y_i=sy;
         expected=want;
-        @(posedge clk); @(posedge clk); #1;
+        @(posedge clk); @(posedge clk); @(posedge clk); #1;
         if (rgb_o !== expected) begin
             if (failures < 16)
                 $display("FAIL osd x=%0d y=%0d got=%h expected=%h",sx,sy,rgb_o,expected);

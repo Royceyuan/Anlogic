@@ -50,6 +50,8 @@ module fat32_image_loader #(
     output reg         load_done,
     output reg         load_error,
     output reg [3:0]   status_code,
+    // Latched only when an image transaction fails; retained for board diagnosis.
+    output reg [3:0]   error_stage,
     // Original BMP dimensions, captured from the validated header.  These
     // remain stable until the next accepted image load.
     output reg [15:0]  bmp_source_width,
@@ -103,6 +105,15 @@ localparam [4:0] S_ADAPT_CALC = 5'd16;
 localparam [4:0] S_ADAPT_LOAD = 5'd17;
 localparam [4:0] S_ADAPT_ACTIVE = 5'd18;
 localparam [4:0] S_ADAPT_BLACK = 5'd19;
+
+localparam [3:0] ERR_NONE     = 4'd0;
+localparam [3:0] ERR_VOLUME   = 4'd1;
+localparam [3:0] ERR_ROOT     = 4'd2;
+localparam [3:0] ERR_BMP      = 4'd3;
+localparam [3:0] ERR_ROW_FIFO = 4'd4;
+localparam [3:0] ERR_INCOMPLETE = 4'd5;
+localparam [3:0] ERR_FAT      = 4'd6;
+localparam [3:0] ERR_INTERNAL = 4'd7;
 
 reg [4:0] state;
 reg [8:0] sector_byte_index;
@@ -377,6 +388,7 @@ always @(posedge clk or negedge rst_n) begin
         load_done            <= 1'b0;
         load_error           <= 1'b0;
         status_code          <= 4'd0;
+        error_stage          <= ERR_NONE;
         bmp_source_width     <= 16'd0;
         bmp_source_height    <= 16'd0;
         partition_start      <= 32'd0;
@@ -482,6 +494,7 @@ always @(posedge clk or negedge rst_n) begin
                     busy             <= 1'b1;
                     load_done        <= 1'b0;
                     load_error       <= 1'b0;
+                    error_stage      <= ERR_NONE;
                     partition_start  <= 32'd0;
                     active_bmp_mode  <= bmp_mode;
                     bmp_header_valid <= 1'b0;
@@ -558,6 +571,7 @@ always @(posedge clk or negedge rst_n) begin
                         volume_start <= partition_start;
                         state <= S_REQ_VBR;
                     end else begin
+                        error_stage <= ERR_VOLUME;
                         state <= S_ERROR;
                     end
                 end
@@ -658,12 +672,14 @@ always @(posedge clk or negedge rst_n) begin
                             adapt_v_acc          <= 32'd0;
                             state             <= S_REQ_IMAGE;
                         end else begin
+                            error_stage <= ERR_ROOT;
                             state <= S_ERROR;
                         end
                     end else if (root_sector_index + 8'd1 < bpb_sectors_per_cluster) begin
                         root_sector_index <= root_sector_index + 8'd1;
                         state <= S_REQ_ROOT;
                     end else begin
+                        error_stage <= ERR_ROOT;
                         state <= S_ERROR;
                     end
                 end
@@ -761,6 +777,7 @@ always @(posedge clk or negedge rst_n) begin
                                 end
                             end
                         end else if (!bmp_header_valid) begin
+                            error_stage <= ERR_BMP;
                             state <= S_ERROR;
                         end else if (file_bytes_seen < bmp_data_offset) begin
                             // Standard 24-bit BMPs normally use offset 54, but
@@ -786,6 +803,7 @@ always @(posedge clk or negedge rst_n) begin
                                     default: begin
                                         if (adapt_fifo_mode) begin
                                             if (adapt_fifo_count == ADAPT_FIFO_DEPTH - 1) begin
+                                                error_stage <= ERR_ROW_FIFO;
                                                 state <= S_ERROR;
                                             end else begin
                                                 adapt_fifo_wr_ptr <= adapt_fifo_wr_ptr + 1'b1;
@@ -960,6 +978,7 @@ always @(posedge clk or negedge rst_n) begin
                 status_code <= 4'd6;
                 sd_sec_read <= 1'b0;
                 if (!bmp_header_valid || adapt_fit_w == 0 || adapt_fit_h == 0) begin
+                    error_stage <= ERR_BMP;
                     state <= S_ERROR;
                 end else if (adapt_q >= IMAGE_HEIGHT) begin
                     load_done <= 1'b1;
@@ -986,6 +1005,7 @@ always @(posedge clk or negedge rst_n) begin
                 end else if (adapt_src_row >= bmp_height_abs) begin
                     if (file_bytes_seen == expected_file_size &&
                         adapt_fifo_count == 0) begin
+                        error_stage <= ERR_INCOMPLETE;
                         state <= S_ERROR;
                     end else if (image_continue) begin
                         if (image_resume_fat) begin
@@ -1007,6 +1027,7 @@ always @(posedge clk or negedge rst_n) begin
                         state <= S_ADAPT_LOAD;
                     end
                 end else if (file_bytes_seen == expected_file_size) begin
+                    error_stage <= ERR_INCOMPLETE;
                     state <= S_ERROR;
                 end else if (image_continue) begin
                     if (image_resume_fat) begin
@@ -1182,6 +1203,7 @@ always @(posedge clk or negedge rst_n) begin
                         sector_in_cluster <= 8'd0;
                         state <= S_REQ_IMAGE;
                     end else begin
+                        error_stage <= ERR_FAT;
                         state <= S_ERROR;
                     end
                 end
@@ -1194,6 +1216,7 @@ always @(posedge clk or negedge rst_n) begin
                     busy            <= 1'b1;
                     load_done       <= 1'b0;
                     load_error      <= 1'b0;
+                    error_stage     <= ERR_NONE;
                     active_bmp_mode <= bmp_mode;
                     bmp_header_valid <= 1'b0;
                     partition_start <= 32'd0;
@@ -1219,6 +1242,7 @@ always @(posedge clk or negedge rst_n) begin
                     busy            <= 1'b1;
                     load_done       <= 1'b0;
                     load_error      <= 1'b0;
+                    error_stage     <= ERR_NONE;
                     active_bmp_mode <= bmp_mode;
                     bmp_header_valid <= 1'b0;
                     partition_start <= 32'd0;
@@ -1240,7 +1264,10 @@ always @(posedge clk or negedge rst_n) begin
                 end
             end
 
-            default: state <= S_ERROR;
+            default: begin
+                error_stage <= ERR_INTERNAL;
+                state <= S_ERROR;
+            end
         endcase
     end
 end
