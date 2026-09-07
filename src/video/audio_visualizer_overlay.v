@@ -54,8 +54,6 @@ function [23:0] bar_color;
     end
 endfunction
 
-wire in_box = de_s2 && x_s2 >= 11'd96 && x_s2 <= 11'd1183 &&
-              y_s2 >= 10'd540 && y_s2 <= 10'd660;
 wire in_bar_span = de_s2 && x_s2 >= BAR_X0 && x_s2 < BAR_X0 + 11'd1024 &&
                    y_s2 >= 10'd550 && y_s2 <= 10'd650;
 wire [10:0] bar_offset = x_s2 - BAR_X0;
@@ -69,12 +67,8 @@ always @(*) begin
     rgb_visualizer = rgb_s2;
     if (!de_s2)
         rgb_visualizer = 24'h000000;
-    else if (in_box) begin
-        if (y_s2 == CENTER_Y)
-            rgb_visualizer = 24'h203040;
-        if (bar_hit)
-            rgb_visualizer = bar_color(bar_draw_index);
-    end
+    else if (bar_hit)
+        rgb_visualizer = bar_color(bar_draw_index);
 end
 
 always @(posedge clk or negedge rst_n) begin
