@@ -383,6 +383,9 @@ wire [15:0] diag_seg_value;
 
 wire [3:0] key_press_pulse;
 
+localparam integer AUDIO_TRACK_COUNT = 4;
+localparam integer AUDIO_SWITCH_RESET_CYCLES = 50_000;
+
 // v73 audio path: TF-sector ownership changes only after every cached image
 // is valid, so image loading and continuous WAV playback never contend.
 wire audio_sd_owner = ENABLE_AUDIO_VISUALIZER && (frame_valid == 5'b11111) &&
@@ -398,6 +401,7 @@ wire [8:0] audio_fifo_rd_used;
 wire [31:0] audio_fifo_rd_data;
 wire audio_fifo_rd_en;
 wire audio_wav_ready;
+wire audio_track_switch_ack;
 wire audio_format_error_50m;
 wire audio_file_error_50m;
 reg audio_format_error_ff1, audio_format_error_ff2;
@@ -407,6 +411,10 @@ wire signed [15:0] audio_sample_left;
 wire signed [15:0] audio_sample_right;
 wire audio_active;
 wire audio_underflow;
+reg [1:0] audio_track_index;
+reg [19:0] audio_switch_reset_count;
+wire audio_switch_reset = (audio_switch_reset_count != 0);
+reg [1:0] audio_track_ff1, audio_track_ff2;
 wire axis_user, axis_valid, axis_last;
 wire [23:0] axis_data;
 wire axis_ready;
@@ -687,12 +695,14 @@ generate
     if (ENABLE_AUDIO_VISUALIZER) begin : g_audio_wav
         fat32_wav_streamer u_wav_streamer (
             .clk(clk_50m), .rst_n(write_rst_n), .start(audio_sd_owner),
+            .track_index(audio_track_index),
             .sd_init_done(sd_init_done), .sd_sec_read(audio_sd_sec_read),
             .sd_sec_read_addr(audio_sd_sec_read_addr),
             .sd_sec_read_data(sd_sec_read_data),
             .sd_sec_read_data_valid(sd_sec_read_data_valid), .sd_sec_read_end(sd_sec_read_end),
             .fifo_almost_full(audio_fifo_almost_full), .fifo_wr_en(audio_fifo_wr_en),
             .fifo_wr_data(audio_fifo_wr_data), .audio_ready(audio_wav_ready),
+            .track_switch_ack(audio_track_switch_ack),
             .format_error(audio_format_error_50m), .file_error(audio_file_error_50m)
         );
 
@@ -702,7 +712,7 @@ generate
             .AL_FULL_NUM(384), .AL_EMPTY_NUM(2), .SHOW_AHEAD_EN(1'b1),
             .OUTREG_EN("NOREG")
         ) u_audio_fifo (
-            .rst(~write_rst_n), .clkw(clk_50m), .clkr(video_clk),
+            .rst(~write_rst_n | audio_switch_reset), .clkw(clk_50m), .clkr(video_clk),
             .we(audio_fifo_wr_en), .di(audio_fifo_wr_data), .re(audio_fifo_rd_en),
             .dout(audio_fifo_rd_data), .valid(audio_fifo_valid), .full_flag(audio_fifo_full),
             .empty_flag(audio_fifo_empty), .afull(audio_fifo_almost_full), .aempty(),
@@ -712,7 +722,8 @@ generate
         audio_pcm_player_48k #(
             .PIXEL_CLK_HZ(75_000_000), .SAMPLE_RATE_HZ(48_000), .START_FRAMES(256)
         ) u_audio_player (
-            .clk(video_clk), .rst(~video_rst_n), .fifo_data(audio_fifo_rd_data),
+            .clk(video_clk), .rst(~video_rst_n | audio_switch_reset),
+            .fifo_data(audio_fifo_rd_data),
             .fifo_valid(audio_fifo_valid), .fifo_empty(audio_fifo_empty),
             .fifo_used(audio_fifo_rd_used), .fifo_rd_en(audio_fifo_rd_en),
             .sample_valid(audio_sample_valid), .sample_left(audio_sample_left),
@@ -733,6 +744,7 @@ generate
         assign audio_fifo_rd_data     = 32'd0;
         assign audio_fifo_rd_en       = 1'b0;
         assign audio_wav_ready        = 1'b0;
+        assign audio_track_switch_ack = 1'b0;
         assign audio_format_error_50m = 1'b0;
         assign audio_file_error_50m   = 1'b0;
         assign audio_sample_valid     = 1'b0;
@@ -749,11 +761,15 @@ always @(posedge video_clk or negedge video_rst_n) begin
         audio_format_error_ff2 <= 1'b0;
         audio_file_error_ff1   <= 1'b0;
         audio_file_error_ff2   <= 1'b0;
+        audio_track_ff1        <= 2'd0;
+        audio_track_ff2        <= 2'd0;
     end else begin
         audio_format_error_ff1 <= audio_format_error_50m;
         audio_format_error_ff2 <= audio_format_error_ff1;
         audio_file_error_ff1   <= audio_file_error_50m;
         audio_file_error_ff2   <= audio_file_error_ff1;
+        audio_track_ff1        <= audio_track_index;
+        audio_track_ff2        <= audio_track_ff1;
     end
 end
 
@@ -956,6 +972,8 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         manual_image_index <= 4'd0;
         brightness_level <= 2'd0;
         contrast_level <= 2'd0;
+        audio_track_index <= 2'd0;
+        audio_switch_reset_count <= 20'd0;
         frame_ready_toggle <= 1'b0;
         auto_mode_d       <= 1'b0;
         auto_image_index  <= 4'd0;
@@ -981,6 +999,11 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         preload_select_source_width_bcd <= 16'd0;
         preload_select_source_height_bcd <= 16'd0;
     end else begin
+        if (audio_switch_reset_count != 0)
+            audio_switch_reset_count <= audio_switch_reset_count - 1'b1;
+        if (audio_track_switch_ack)
+            audio_switch_reset_count <= AUDIO_SWITCH_RESET_CYCLES;
+
         if (key_press_pulse[1] && !auto_mode) begin
             if (manual_image_index == VIDEO_FRAME_COUNT - 1)
                 manual_image_index <= 4'd0;
@@ -989,19 +1012,31 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         end
 
         if (key_press_pulse[2]) begin
-            case (brightness_level)
-                2'd0: brightness_level <= 2'd1;
-                2'd1: brightness_level <= 2'd2;
-                default: brightness_level <= 2'd0;
-            endcase
-        end
-
-        if (key_press_pulse[3]) begin
-            case (contrast_level)
-                2'd0: contrast_level <= 2'd1;
-                2'd1: contrast_level <= 2'd2;
-                default: contrast_level <= 2'd0;
-            endcase
+            if (sw[2]) begin
+                if (audio_track_index == 0)
+                    audio_track_index <= AUDIO_TRACK_COUNT - 1;
+                else
+                    audio_track_index <= audio_track_index - 1'b1;
+            end else begin
+                case (brightness_level)
+                    2'd0: brightness_level <= 2'd1;
+                    2'd1: brightness_level <= 2'd2;
+                    default: brightness_level <= 2'd0;
+                endcase
+            end
+        end else if (key_press_pulse[3]) begin
+            if (sw[2]) begin
+                if (audio_track_index == AUDIO_TRACK_COUNT - 1)
+                    audio_track_index <= 2'd0;
+                else
+                    audio_track_index <= audio_track_index + 1'b1;
+            end else begin
+                case (contrast_level)
+                    2'd0: contrast_level <= 2'd1;
+                    2'd1: contrast_level <= 2'd2;
+                    default: contrast_level <= 2'd0;
+                endcase
+            end
         end
 
         auto_mode_d <= auto_mode;
@@ -1217,7 +1252,12 @@ always @(posedge video_clk or negedge video_rst_n) begin
         preload_select_source_height_ff2 <= preload_select_source_height_ff1;
         auto_mode_ff1      <= auto_mode;
         auto_mode_ff2      <= auto_mode_ff1;
-        transition_mode_ff1 <= sw[2:0];
+        case (sw[1:0])
+            2'b00: transition_mode_ff1 <= 3'b000; // fade
+            2'b01: transition_mode_ff1 <= 3'b001; // left slide
+            2'b10: transition_mode_ff1 <= 3'b100; // checker blocks
+            default: transition_mode_ff1 <= 3'b101; // centre expand
+        endcase
         transition_mode_ff2 <= transition_mode_ff1;
         brightness_level_ff1 <= brightness_level;
         brightness_level_ff2 <= brightness_level_ff1;
@@ -1446,6 +1486,7 @@ generate
                 .rgb_i(video_transition_rgb), .image_index(display_media_index),
                 .auto_mode(auto_mode_ff2), .brightness_level(brightness_level_ff2),
                 .contrast_level(contrast_level_ff2),
+                .audio_track_index(audio_track_ff2),
                 .source_width_bcd(display_source_width_bcd),
                 .source_height_bcd(display_source_height_bcd),
                 .rgb_o(video_osd_1280_rgb)

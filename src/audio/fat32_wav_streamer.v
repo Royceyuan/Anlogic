@@ -1,13 +1,14 @@
 `timescale 1ns / 1ps
 `default_nettype none
 
-// Read a fixed-format AUDIO.WAV from a FAT32 root directory.  It deliberately
-// accepts only canonical PCM16/48k/stereo WAV files: keeping the parser small
-// prevents an audio feature from destabilising the already-proven image path.
+// Read one fixed-format WAV from a FAT32 root directory.  The four fixed names
+// are AUDIO0.WAV through AUDIO3.WAV.  Canonical PCM16/48k/stereo remains
+// mandatory so this small selector cannot destabilise the proven image path.
 module fat32_wav_streamer (
     input  wire        clk,
     input  wire        rst_n,
     input  wire        start,
+    input  wire [1:0]  track_index,
     input  wire        sd_init_done,
     output reg         sd_sec_read,
     output reg [31:0]  sd_sec_read_addr,
@@ -20,6 +21,7 @@ module fat32_wav_streamer (
     output reg [31:0]  fifo_wr_data,
 
     output reg         audio_ready,
+    output reg         track_switch_ack,
     output reg         format_error,
     output reg         file_error
 );
@@ -79,6 +81,7 @@ reg [7:0] left_lo;
 reg [7:0] left_hi;
 reg [7:0] right_lo;
 reg [7:0] right_hi;
+reg [1:0] active_track;
 
 function [31:0] cluster_lba;
     input [31:0] cluster;
@@ -157,6 +160,26 @@ function header_byte_ok;
     end
 endfunction
 
+function root_name_byte_match;
+    input [1:0] track;
+    input [3:0] index;
+    input [7:0] value;
+    begin
+        case (index)
+            4'd0: root_name_byte_match = (value == "A");
+            4'd1: root_name_byte_match = (value == "U");
+            4'd2: root_name_byte_match = (value == "D");
+            4'd3: root_name_byte_match = (value == "I");
+            4'd4: root_name_byte_match = (value == "O");
+            4'd5: root_name_byte_match = (value == (8'h30 + track));
+            4'd6, 4'd7: root_name_byte_match = (value == " ");
+            4'd8: root_name_byte_match = (value == "W");
+            4'd9: root_name_byte_match = (value == "A");
+            default: root_name_byte_match = (value == "V");
+        endcase
+    end
+endfunction
+
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         state                  <= S_WAIT_CARD;
@@ -165,6 +188,7 @@ always @(posedge clk or negedge rst_n) begin
         fifo_wr_en             <= 1'b0;
         fifo_wr_data           <= 32'd0;
         audio_ready            <= 1'b0;
+        track_switch_ack       <= 1'b0;
         format_error           <= 1'b0;
         file_error             <= 1'b0;
         byte_index             <= 9'd0;
@@ -204,12 +228,15 @@ always @(posedge clk or negedge rst_n) begin
         left_hi                <= 8'd0;
         right_lo               <= 8'd0;
         right_hi               <= 8'd0;
+        active_track           <= 2'd0;
     end else begin
         fifo_wr_en <= 1'b0;
+        track_switch_ack <= 1'b0;
         case (state)
             S_WAIT_CARD: begin
                 sd_sec_read <= 1'b0;
                 if (start && sd_init_done) begin
+                    active_track <= track_index;
                     state <= S_REQ_MBR;
                 end
             end
@@ -304,17 +331,14 @@ always @(posedge clk or negedge rst_n) begin
                 if (sd_sec_read_data_valid) begin
                     case (byte_index[4:0])
                         5'd0:  begin
-                            entry_match   <= (sd_sec_read_data == "A");
+                            entry_match   <= root_name_byte_match(track_index, 4'd0,
+                                                                  sd_sec_read_data);
                             entry_deleted <= (sd_sec_read_data == 8'he5);
                         end
-                        5'd1:  if (sd_sec_read_data != "U") entry_match <= 1'b0;
-                        5'd2:  if (sd_sec_read_data != "D") entry_match <= 1'b0;
-                        5'd3:  if (sd_sec_read_data != "I") entry_match <= 1'b0;
-                        5'd4:  if (sd_sec_read_data != "O") entry_match <= 1'b0;
-                        5'd5,5'd6,5'd7: if (sd_sec_read_data != " ") entry_match <= 1'b0;
-                        5'd8:  if (sd_sec_read_data != "W") entry_match <= 1'b0;
-                        5'd9:  if (sd_sec_read_data != "A") entry_match <= 1'b0;
-                        5'd10: if (sd_sec_read_data != "V") entry_match <= 1'b0;
+                        5'd1,5'd2,5'd3,5'd4,5'd5,5'd6,5'd7,5'd8,5'd9,5'd10:
+                            if (!root_name_byte_match(track_index, byte_index[3:0],
+                                                      sd_sec_read_data))
+                                entry_match <= 1'b0;
                         5'd11: entry_attr <= sd_sec_read_data;
                         5'd20: entry_cluster_hi[7:0] <= sd_sec_read_data;
                         5'd21: entry_cluster_hi[15:8] <= sd_sec_read_data;
@@ -339,7 +363,16 @@ always @(posedge clk or negedge rst_n) begin
                 end
                 if (sd_sec_read_end) begin
                     sd_sec_read <= 1'b0;
-                    if (file_found) begin
+                    if (track_index != active_track) begin
+                        active_track <= track_index;
+                        audio_ready <= 1'b0;
+                        format_error <= 1'b0;
+                        file_error <= 1'b0;
+                        root_cluster_scan <= root_cluster;
+                        root_sector_in_cluster <= 8'd0;
+                        track_switch_ack <= 1'b1;
+                        state <= S_REQ_ROOT;
+                    end else if (file_found) begin
                         first_cluster     <= found_cluster;
                         current_cluster   <= found_cluster;
                         file_size         <= found_file_size;
@@ -353,8 +386,9 @@ always @(posedge clk or negedge rst_n) begin
                         root_sector_in_cluster <= root_sector_in_cluster + 1'b1;
                         state <= S_REQ_ROOT;
                     end else begin
-                        // AUDIO.WAV is expected in the first root cluster.
-                        // The media preparation rule keeps directory lookup bounded.
+                        // The four fixed audio names are expected in the first
+                        // root cluster.  The media preparation rule keeps lookup
+                        // bounded while still allowing normal FAT fragmentation.
                         state <= S_ERROR;
                     end
                 end
@@ -410,7 +444,16 @@ always @(posedge clk or negedge rst_n) begin
                 end
                 if (sd_sec_read_end) begin
                     sd_sec_read <= 1'b0;
-                    if (format_error) begin
+                    if (track_index != active_track) begin
+                        active_track <= track_index;
+                        audio_ready <= 1'b0;
+                        format_error <= 1'b0;
+                        file_error <= 1'b0;
+                        root_cluster_scan <= root_cluster;
+                        root_sector_in_cluster <= 8'd0;
+                        track_switch_ack <= 1'b1;
+                        state <= S_REQ_ROOT;
+                    end else if (format_error) begin
                         state <= S_ERROR;
                     end else if (file_bytes_seen >= file_size ||
                                  (sd_sec_read_data_valid && file_bytes_seen + 1'b1 >= file_size)) begin
@@ -457,7 +500,18 @@ always @(posedge clk or negedge rst_n) begin
                 end
                 if (sd_sec_read_end) begin
                     sd_sec_read <= 1'b0;
-                    state <= S_FAT_NEXT;
+                    if (track_index != active_track) begin
+                        active_track <= track_index;
+                        audio_ready <= 1'b0;
+                        format_error <= 1'b0;
+                        file_error <= 1'b0;
+                        root_cluster_scan <= root_cluster;
+                        root_sector_in_cluster <= 8'd0;
+                        track_switch_ack <= 1'b1;
+                        state <= S_REQ_ROOT;
+                    end else begin
+                        state <= S_FAT_NEXT;
+                    end
                 end
             end
             S_FAT_NEXT: begin
@@ -473,9 +527,20 @@ always @(posedge clk or negedge rst_n) begin
 
             default: begin
                 sd_sec_read <= 1'b0;
-                if (!format_error)
-                    file_error <= 1'b1;
-                state <= S_ERROR;
+                if (track_index != active_track && start && sd_init_done) begin
+                    active_track <= track_index;
+                    audio_ready <= 1'b0;
+                    format_error <= 1'b0;
+                    file_error <= 1'b0;
+                    root_cluster_scan <= root_cluster;
+                    root_sector_in_cluster <= 8'd0;
+                    track_switch_ack <= 1'b1;
+                    state <= S_REQ_ROOT;
+                end else begin
+                    if (!format_error)
+                        file_error <= 1'b1;
+                    state <= S_ERROR;
+                end
             end
         endcase
     end

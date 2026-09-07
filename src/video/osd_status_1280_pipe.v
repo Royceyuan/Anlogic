@@ -9,6 +9,7 @@ module osd_status_1280_pipe (
     input wire [10:0] x_i, input wire [9:0] y_i, input wire [23:0] rgb_i,
     input wire [3:0] image_index, input wire auto_mode,
     input wire [1:0] brightness_level, input wire [1:0] contrast_level,
+    input wire [1:0] audio_track_index,
     input wire [15:0] source_width_bcd, input wire [15:0] source_height_bcd,
     output wire [23:0] rgb_o
 );
@@ -47,6 +48,7 @@ function [4:0] cell_glyph;
     input mode;
     input [1:0] br;
     input [1:0] ct;
+    input [1:0] audio_track;
     begin
         cell_glyph=SP;
         case(pos)
@@ -59,6 +61,8 @@ function [4:0] cell_glyph;
             20:cell_glyph=C; 21:cell_glyph=T;
             23:cell_glyph=(ct==2)?SP:D1; 24:cell_glyph=(ct==0)?D0:D5;
             25:cell_glyph=D0; 26:cell_glyph=PCT;
+            28:cell_glyph=A; 29:cell_glyph=U; 30:cell_glyph=D;
+            31:cell_glyph=digit(audio_track);
             36:cell_glyph=D; 37:cell_glyph=I; 38:cell_glyph=M;
             40:cell_glyph=dim0; 41:cell_glyph=dim1; 42:cell_glyph=dim2;
             43:cell_glyph=dim3; 44:cell_glyph=dim4; 45:cell_glyph=dim5;
@@ -188,11 +192,12 @@ always @(posedge clk or negedge rst_n) begin
         // qualify x[10] so it cannot wrap and redraw the OSD at x=1024.
         glyph_active_s1<=!x_s0[10]&&(y_s0>=10'd4)&&(y_s0<10'd11)&&(x_s0[2:0]<3'd5)&&
                          (cell_glyph(x_s0[9:3],image_index,auto_mode,
-                                     brightness_level,contrast_level)!=SP);
+                                     brightness_level,contrast_level,
+                                     audio_track_index)!=SP);
         row_s1<=y_s0-10'd4;
         col_s1<=x_s0[2:0];
         glyph_s1<=cell_glyph(x_s0[9:3],image_index,auto_mode,
-                             brightness_level,contrast_level);
+                             brightness_level,contrast_level,audio_track_index);
         rgb_s1<=rgb_s0;
 
         de_s2<=de_s1;

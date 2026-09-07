@@ -3,23 +3,24 @@
 
 module tb_fat32_wav_streamer;
 reg clk = 0, rst_n = 0, start = 0, sd_init_done = 1;
+reg [1:0] track_index = 0;
 wire sd_read;
 wire [31:0] sd_addr;
 reg [7:0] sd_data = 0;
 reg sd_valid = 0, sd_end = 0;
 wire fifo_wr;
 wire [31:0] fifo_data;
-wire ready, format_error, file_error;
+wire ready, track_switch_ack, format_error, file_error;
 reg [7:0] sector [0:6][0:511];
 reg serving = 0;
 integer byte_no = 0, lba = 0, writes = 0, seen_lba6 = 0;
-reg ready_seen = 0, ready_dropped = 0;
+reg ready_seen = 0, ready_dropped = 0, track_switch_seen = 0;
 
-fat32_wav_streamer dut (.clk(clk), .rst_n(rst_n), .start(start), .sd_init_done(sd_init_done),
+fat32_wav_streamer dut (.clk(clk), .rst_n(rst_n), .start(start), .track_index(track_index), .sd_init_done(sd_init_done),
     .sd_sec_read(sd_read), .sd_sec_read_addr(sd_addr), .sd_sec_read_data(sd_data),
     .sd_sec_read_data_valid(sd_valid), .sd_sec_read_end(sd_end), .fifo_almost_full(1'b0),
     .fifo_wr_en(fifo_wr), .fifo_wr_data(fifo_data), .audio_ready(ready),
-    .format_error(format_error), .file_error(file_error));
+    .track_switch_ack(track_switch_ack), .format_error(format_error), .file_error(file_error));
 always #5 clk = ~clk;
 always @(negedge clk) begin
     sd_valid = 0; sd_end = 0;
@@ -42,9 +43,11 @@ always @(posedge clk) begin
     if (!rst_n) begin
         ready_seen <= 1'b0;
         ready_dropped <= 1'b0;
+        track_switch_seen <= 1'b0;
     end else begin
         if (ready_seen && !ready) ready_dropped <= 1'b1;
         if (ready) ready_seen <= 1'b1;
+        if (track_switch_ack) track_switch_seen <= 1'b1;
     end
 end
 integer i;
@@ -58,9 +61,9 @@ initial begin
     // FAT32 VBR: one-sector clusters, FAT at LBA2, data at LBA3, root cluster 2.
     sector[1][11]=0; sector[1][12]=2; sector[1][13]=1; sector[1][14]=1;
     sector[1][16]=1; sector[1][36]=1; sector[1][44]=2;
-    // Root entry AUDIO.WAV: two linked clusters, canonical header plus 512 bytes.
+    // Root entry AUDIO0.WAV: two linked clusters, canonical header plus 512 bytes.
     sector[3][0]="A"; sector[3][1]="U"; sector[3][2]="D"; sector[3][3]="I"; sector[3][4]="O";
-    sector[3][5]=" "; sector[3][6]=" "; sector[3][7]=" "; sector[3][8]="W"; sector[3][9]="A"; sector[3][10]="V";
+    sector[3][5]="0"; sector[3][6]=" "; sector[3][7]=" "; sector[3][8]="W"; sector[3][9]="A"; sector[3][10]="V";
     sector[3][26]=4; sector[3][28]=44; sector[3][29]=2;
     sector[2][16]=5;
     sector[5][0]="R"; sector[5][1]="I"; sector[5][2]="F"; sector[5][3]="F";
@@ -76,13 +79,21 @@ initial begin
     repeat (4000) @(posedge clk);
     if (!ready || ready_dropped || format_error || file_error || writes < 128 || !seen_lba6)
         $fatal(1, "fragmented WAV parse or loop failed");
+    // The active sector completes before the selector restarts at AUDIO1.WAV.
+    @(negedge clk); track_index = 1; sector[3][5] = "1";
+    repeat (4000) @(posedge clk);
+    if (!track_switch_seen || !ready || format_error || file_error) begin
+        $fatal(1, "AUDIO1.WAV selection failed");
+    end
     // Root-directory miss is a sticky file error, not a silent audio loop.
-    @(negedge clk); rst_n = 0; start = 0; serving = 0; sector[3][0] = 0;
+    @(negedge clk); rst_n = 0; start = 0; track_index = 0; sector[3][0] = 0;
+    repeat (520) @(posedge clk); serving = 0;
     repeat (3) @(posedge clk); rst_n = 1; start = 1;
     repeat (1900) @(posedge clk);
-    if (!file_error || format_error) $fatal(1, "missing AUDIO.WAV was not reported");
+    if (!file_error || format_error) $fatal(1, "missing AUDIO0.WAV was not reported");
     // A malformed standard header is explicitly rejected.
-    @(negedge clk); rst_n = 0; start = 0; serving = 0; sector[3][0] = "A"; sector[5][8] = "X";
+    @(negedge clk); rst_n = 0; start = 0; sector[3][0] = "A"; sector[3][5] = "0"; sector[5][8] = "X";
+    repeat (520) @(posedge clk); serving = 0;
     repeat (3) @(posedge clk); rst_n = 1; start = 1;
     repeat (2600) @(posedge clk);
     if (!format_error) $fatal(1, "invalid WAV header was not reported");
