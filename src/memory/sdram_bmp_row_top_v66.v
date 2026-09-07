@@ -145,6 +145,7 @@ reg published_frame_index;
 reg [3:0] manual_image_index;
 reg [1:0] brightness_level;
 reg [1:0] contrast_level;
+reg [1:0] auto_speed_level;
 reg auto_mode_d;
 reg [3:0] auto_image_index;
 reg [27:0] auto_period_count;
@@ -167,6 +168,9 @@ localparam integer AUTO_PERIOD_CYCLES = 250_000_000;
 // The TF transfer itself takes most of a second. Add a short dwell so the
 // completed frame remains visible for about one second in total.
 localparam integer SEQUENCE_HOLD_CYCLES = 25_000_000;
+wire [27:0] auto_period_limit = (auto_speed_level == 0) ? AUTO_PERIOD_CYCLES :
+                                (auto_speed_level == 1) ? (AUTO_PERIOD_CYCLES / 2) :
+                                                          (AUTO_PERIOD_CYCLES / 3);
 
 wire image_wr_en;
 wire [20:0] image_wr_addr;
@@ -412,9 +416,12 @@ wire signed [15:0] audio_sample_right;
 wire audio_active;
 wire audio_underflow;
 reg [1:0] audio_track_index;
+reg audio_paused;
 reg [19:0] audio_switch_reset_count;
 wire audio_switch_reset = (audio_switch_reset_count != 0);
 reg [1:0] audio_track_ff1, audio_track_ff2;
+reg [1:0] auto_speed_ff1, auto_speed_ff2;
+reg audio_paused_ff1, audio_paused_ff2;
 wire axis_user, axis_valid, axis_last;
 wire [23:0] axis_data;
 wire axis_ready;
@@ -726,6 +733,7 @@ generate
             .fifo_data(audio_fifo_rd_data),
             .fifo_valid(audio_fifo_valid), .fifo_empty(audio_fifo_empty),
             .fifo_used(audio_fifo_rd_used), .fifo_rd_en(audio_fifo_rd_en),
+            .paused(audio_paused_ff2),
             .sample_valid(audio_sample_valid), .sample_left(audio_sample_left),
             .sample_right(audio_sample_right), .active(audio_active), .underflow(audio_underflow)
         );
@@ -763,6 +771,10 @@ always @(posedge video_clk or negedge video_rst_n) begin
         audio_file_error_ff2   <= 1'b0;
         audio_track_ff1        <= 2'd0;
         audio_track_ff2        <= 2'd0;
+        auto_speed_ff1         <= 2'd0;
+        auto_speed_ff2         <= 2'd0;
+        audio_paused_ff1       <= 1'b0;
+        audio_paused_ff2       <= 1'b0;
     end else begin
         audio_format_error_ff1 <= audio_format_error_50m;
         audio_format_error_ff2 <= audio_format_error_ff1;
@@ -770,6 +782,10 @@ always @(posedge video_clk or negedge video_rst_n) begin
         audio_file_error_ff2   <= audio_file_error_ff1;
         audio_track_ff1        <= audio_track_index;
         audio_track_ff2        <= audio_track_ff1;
+        auto_speed_ff1         <= auto_speed_level;
+        auto_speed_ff2         <= auto_speed_ff1;
+        audio_paused_ff1       <= audio_paused;
+        audio_paused_ff2       <= audio_paused_ff1;
     end
 end
 
@@ -972,7 +988,9 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         manual_image_index <= 4'd0;
         brightness_level <= 2'd0;
         contrast_level <= 2'd0;
+        auto_speed_level <= 2'd0;
         audio_track_index <= 2'd0;
+        audio_paused <= 1'b0;
         audio_switch_reset_count <= 20'd0;
         frame_ready_toggle <= 1'b0;
         auto_mode_d       <= 1'b0;
@@ -1010,6 +1028,12 @@ always @(posedge clk_50m or negedge write_rst_n) begin
                     audio_track_index <= AUDIO_TRACK_COUNT - 1;
                 else
                     audio_track_index <= audio_track_index - 1'b1;
+                audio_paused <= 1'b0;
+            end else if (auto_mode) begin
+                if (auto_speed_level == 2)
+                    auto_speed_level <= 2'd0;
+                else
+                    auto_speed_level <= auto_speed_level + 1'b1;
             end else if (!auto_mode) begin
                 if (manual_image_index == VIDEO_FRAME_COUNT - 1)
                     manual_image_index <= 4'd0;
@@ -1024,6 +1048,7 @@ always @(posedge clk_50m or negedge write_rst_n) begin
                     audio_track_index <= 2'd0;
                 else
                     audio_track_index <= audio_track_index + 1'b1;
+                audio_paused <= 1'b0;
             end else begin
                 case (brightness_level)
                     2'd0: brightness_level <= 2'd1;
@@ -1032,7 +1057,9 @@ always @(posedge clk_50m or negedge write_rst_n) begin
                 endcase
             end
         end else if (key_press_pulse[3]) begin
-            if (!sw[2]) begin
+            if (sw[2]) begin
+                audio_paused <= ~audio_paused;
+            end else begin
                 case (contrast_level)
                     2'd0: contrast_level <= 2'd1;
                     2'd1: contrast_level <= 2'd2;
@@ -1048,7 +1075,9 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         end else if (!auto_mode_d) begin
             auto_period_count <= 28'd0;
             auto_image_index  <= active_image_index;
-        end else if (auto_period_count == AUTO_PERIOD_CYCLES - 1) begin
+        end else if (key_press_pulse[1] && !sw[2]) begin
+            auto_period_count <= 28'd0;
+        end else if (auto_period_count == auto_period_limit - 1'b1) begin
             auto_period_count <= 28'd0;
             if (auto_image_index == VIDEO_FRAME_COUNT - 1)
                 auto_image_index <= 4'd0;
@@ -1489,6 +1518,7 @@ generate
                 .auto_mode(auto_mode_ff2), .brightness_level(brightness_level_ff2),
                 .contrast_level(contrast_level_ff2),
                 .audio_track_index(audio_track_ff2),
+                .auto_speed_level(auto_speed_ff2), .audio_paused(audio_paused_ff2),
                 .source_width_bcd(display_source_width_bcd),
                 .source_height_bcd(display_source_height_bcd),
                 .rgb_o(video_osd_1280_rgb)

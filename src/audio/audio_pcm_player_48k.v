@@ -14,6 +14,7 @@ module audio_pcm_player_48k #(
     input  wire                fifo_valid,
     input  wire                fifo_empty,
     input  wire [8:0]          fifo_used,
+    input  wire                paused,
     output reg                 fifo_rd_en,
     output reg                 sample_valid,
     output reg signed [15:0]   sample_left,
@@ -40,30 +41,35 @@ always @(posedge clk or posedge rst) begin
     end else begin
         fifo_rd_en   <= 1'b0;
         sample_valid <= 1'b0;
-        if (!active && fifo_used >= START_FRAMES)
+        if (!paused && !active && fifo_used >= START_FRAMES)
             active <= 1'b1;
 
-        if (sample_tick) begin
+        if (sample_tick)
             sample_acc <= sample_acc_next - PIXEL_CLK_HZ;
-            if (active) begin
-                if (!fifo_empty && fifo_valid) begin
-                    fifo_rd_en   <= 1'b1;
-                    sample_valid <= 1'b1;
-                    sample_left  <= fifo_data[15:0];
-                    sample_right <= fifo_data[31:16];
-                    underflow_ticks <= 7'd0;
-                    underflow <= 1'b0;
-                end else begin
-                    sample_left  <= 16'sd0;
-                    sample_right <= 16'sd0;
-                    if (underflow_ticks >= UNDERFLOW_TICKS - 1)
-                        underflow <= 1'b1;
-                    else
-                        underflow_ticks <= underflow_ticks + 1'b1;
-                end
-            end
-        end else begin
+        else
             sample_acc <= sample_acc_next[26:0];
+
+        if (paused) begin
+            sample_left  <= 16'sd0;
+            sample_right <= 16'sd0;
+            underflow_ticks <= 7'd0;
+            underflow <= 1'b0;
+        end else if (sample_tick && active) begin
+            if (!fifo_empty && fifo_valid) begin
+                fifo_rd_en   <= 1'b1;
+                sample_valid <= 1'b1;
+                sample_left  <= fifo_data[15:0];
+                sample_right <= fifo_data[31:16];
+                underflow_ticks <= 7'd0;
+                underflow <= 1'b0;
+            end else begin
+                sample_left  <= 16'sd0;
+                sample_right <= 16'sd0;
+                if (underflow_ticks >= UNDERFLOW_TICKS - 1)
+                    underflow <= 1'b1;
+                else
+                    underflow_ticks <= underflow_ticks + 1'b1;
+            end
         end
     end
 end

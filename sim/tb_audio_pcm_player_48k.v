@@ -6,6 +6,7 @@ reg clk = 0, rst = 1;
 reg [31:0] fifo_data = 32'h2222_1111;
 reg fifo_valid = 1, fifo_empty = 0;
 reg [8:0] fifo_used = 2;
+reg paused = 0;
 wire fifo_rd_en, sample_valid, active, underflow;
 wire signed [15:0] sample_left, sample_right;
 integer samples = 0;
@@ -13,6 +14,7 @@ integer samples = 0;
 audio_pcm_player_48k #(.PIXEL_CLK_HZ(100), .SAMPLE_RATE_HZ(10), .START_FRAMES(2), .UNDERFLOW_TICKS(2)) dut (
     .clk(clk), .rst(rst), .fifo_data(fifo_data), .fifo_valid(fifo_valid),
     .fifo_empty(fifo_empty), .fifo_used(fifo_used), .fifo_rd_en(fifo_rd_en),
+    .paused(paused),
     .sample_valid(sample_valid), .sample_left(sample_left), .sample_right(sample_right),
     .active(active), .underflow(underflow)
 );
@@ -27,6 +29,12 @@ always @(posedge clk) if (sample_valid) begin
 end
 initial begin
     repeat (3) @(posedge clk); rst = 0;
+    wait (active); paused = 1;
+    repeat (20) begin
+        @(posedge clk); #1;
+        if (fifo_rd_en || sample_valid || underflow) $fatal(1, "pause consumed or underflowed PCM");
+    end
+    paused = 0;
     repeat (45) @(posedge clk);
     if (samples != 2 || !underflow) $fatal(1, "48 kHz player sustained-underflow behavior");
     $display("PASS tb_audio_pcm_player_48k");
