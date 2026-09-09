@@ -8,6 +8,7 @@ module rgb888_adjust (
     input  wire [23:0] rgb_in,
     input  wire [1:0]  brightness_level,
     input  wire [1:0]  contrast_level,
+    input  wire [1:0]  picture_style,
     output reg  [23:0] rgb_out
 );
 
@@ -44,6 +45,18 @@ function [7:0] brighten_channel;
     end
 endfunction
 
+function [7:0] high_contrast_channel;
+    input [7:0] value;
+    begin
+        if (value < 8'd64)
+            high_contrast_channel = 8'd0;
+        else if (value > 8'd191)
+            high_contrast_channel = 8'd255;
+        else
+            high_contrast_channel = (value << 1) - 8'd128;
+    end
+endfunction
+
 reg [7:0] red;
 reg [7:0] green;
 reg [7:0] blue;
@@ -63,6 +76,25 @@ always @(*) begin
             red   = brighten_channel(red);
             green = brighten_channel(green);
             blue  = brighten_channel(blue);
+        end
+        default: begin end
+    endcase
+
+    case (picture_style)
+        2'd1: begin
+            red   = brighten_channel(contrast_channel(red, 2'd1));
+            green = brighten_channel(contrast_channel(green, 2'd1));
+            blue  = brighten_channel(contrast_channel(blue, 2'd1));
+        end
+        2'd2: begin
+            red   = contrast_channel(red, 2'd2);
+            green = contrast_channel(green, 2'd2);
+            blue  = contrast_channel(blue, 2'd2);
+        end
+        2'd3: begin
+            red   = high_contrast_channel(red);
+            green = high_contrast_channel(green);
+            blue  = high_contrast_channel(blue);
         end
         default: begin end
     endcase

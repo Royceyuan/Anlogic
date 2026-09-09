@@ -145,6 +145,8 @@ reg published_frame_index;
 reg [3:0] manual_image_index;
 reg [1:0] brightness_level;
 reg [1:0] contrast_level;
+reg zoom_2x;
+reg [1:0] picture_style;
 reg [1:0] auto_speed_level;
 reg auto_mode_d;
 reg [3:0] auto_image_index;
@@ -371,6 +373,12 @@ reg [1:0] brightness_level_ff1;
 reg [1:0] brightness_level_ff2;
 reg [1:0] contrast_level_ff1;
 reg [1:0] contrast_level_ff2;
+reg detail_zoom_2x_ff1;
+reg detail_zoom_2x_ff2;
+reg display_zoom_2x;
+reg pending_zoom_2x;
+reg [1:0] picture_style_ff1;
+reg [1:0] picture_style_ff2;
 reg diag_ready_seen;
 wire diag_start;
 wire diag_read_req;
@@ -386,6 +394,21 @@ wire [15:0] normal_seg_value;
 wire [15:0] diag_seg_value;
 
 wire [3:0] key_press_pulse;
+
+// PHASE 1 freezes SW1:SW2 as the user-facing mode selector. KEY1 is now
+// the panel key, so the existing reset synchronizers rely on FPGA power-up.
+localparam [1:0] MODE_PRODUCT_SHOW  = 2'b00;
+localparam [1:0] MODE_SLIDESHOW     = 2'b01;
+localparam [1:0] MODE_DETAIL_VIEW   = 2'b10;
+localparam [1:0] MODE_AUDIO_CONTROL = 2'b11;
+wire [1:0] ui_mode = sw[1:0];
+wire audio_control_mode = (ui_mode == MODE_AUDIO_CONTROL);
+wire detail_zoom_2x = (ui_mode == MODE_DETAIL_VIEW) && zoom_2x;
+wire [1:0] active_picture_style =
+    (ui_mode == MODE_DETAIL_VIEW) ? picture_style : 2'd0;
+reg osd_panel_enable;
+reg osd_panel_enable_ff1, osd_panel_enable_ff2;
+reg [1:0] ui_mode_ff1, ui_mode_ff2;
 
 localparam integer AUDIO_TRACK_COUNT = 4;
 localparam integer AUDIO_SWITCH_RESET_CYCLES = 50_000;
@@ -439,7 +462,8 @@ wire [10:0] linebuf_video_x =
             video_x_i) :
         video_x_i;
 
-assign auto_mode = sw[3];
+// Automatic slideshow and its speed control are introduced in Phase 4.
+assign auto_mode = 1'b0;
 assign desired_image_index = VIDEO_SEQUENCE ?
                              (auto_mode ? active_media_index : manual_image_index) :
                              (auto_mode ? auto_image_index : manual_image_index);
@@ -534,7 +558,7 @@ assign video_vblank_start = !video_de_i &&
 assign video_frame_start = (video_x_i == 0) && (video_y_i == 0);
 
 reset_sync u_mem_reset_sync (
-    .clk(mem_clk), .arst_n(key_n[0]), .srst_n(mem_rst_n)
+    .clk(mem_clk), .arst_n(1'b1), .srst_n(mem_rst_n)
 );
 
 key_debounce #(
@@ -549,13 +573,13 @@ key_debounce #(
 );
 
 reset_sync u_write_reset_sync (
-    .clk(clk_50m), .arst_n(key_n[0]), .srst_n(write_rst_n)
+    .clk(clk_50m), .arst_n(1'b1), .srst_n(write_rst_n)
 );
 
 reset_sync u_video_reset_sync (
-    // Keep the video/FIFO read side quiescent until the SDRAM controller has
-    // completed its own initialization after each board reset.
-    .clk(video_clk), .arst_n(key_n[0] && init_done), .srst_n(video_rst_n)
+    // Keep the video/FIFO read side quiescent until SDRAM initialization
+    // completes after FPGA power-up. KEY1 is reserved for the OSD panel.
+    .clk(video_clk), .arst_n(init_done), .srst_n(video_rst_n)
 );
 
 sys_pll u_sys_pll (
@@ -887,6 +911,7 @@ generate
         ) u_linebuf_scaler (
             .clk(video_clk), .rst_n(video_rst_n),
             .source_start(linebuf_start_pulse),
+            .zoom_2x(display_zoom_2x),
             .source_base_addr(ENABLE_MULTI_FRAME_PRELOAD ?
                               frame_base_for_index(display_media_index) :
                               (display_frame_index ? FRAME1_BASE : FRAME0_BASE)),
@@ -983,9 +1008,12 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         manual_image_index <= 4'd0;
         brightness_level <= 2'd0;
         contrast_level <= 2'd0;
+        zoom_2x <= 1'b0;
+        picture_style <= 2'd0;
         auto_speed_level <= 2'd0;
         audio_track_index <= 2'd0;
         audio_paused <= 1'b0;
+        osd_panel_enable <= 1'b1;
         audio_switch_reset_count <= 20'd0;
         frame_ready_toggle <= 1'b0;
         auto_mode_d       <= 1'b0;
@@ -1017,50 +1045,36 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         if (audio_track_switch_ack)
             audio_switch_reset_count <= AUDIO_SWITCH_RESET_CYCLES;
 
-        if (key_press_pulse[1]) begin
-            if (sw[2]) begin
+        if (key_press_pulse[0])
+            osd_panel_enable <= ~osd_panel_enable;
+
+        if (audio_control_mode) begin
+            if (key_press_pulse[1]) begin
+                audio_paused <= ~audio_paused;
+            end else if (key_press_pulse[2]) begin
                 if (audio_track_index == 0)
                     audio_track_index <= AUDIO_TRACK_COUNT - 1;
                 else
                     audio_track_index <= audio_track_index - 1'b1;
                 audio_paused <= 1'b0;
-            end else if (auto_mode) begin
-                if (auto_speed_level == 2)
-                    auto_speed_level <= 2'd0;
-                else
-                    auto_speed_level <= auto_speed_level + 1'b1;
-            end else if (!auto_mode) begin
-                if (manual_image_index == VIDEO_FRAME_COUNT - 1)
-                    manual_image_index <= 4'd0;
-                else
-                    manual_image_index <= manual_image_index + 1'b1;
-            end
-        end
-
-        if (key_press_pulse[2]) begin
-            if (sw[2]) begin
+            end else if (key_press_pulse[3]) begin
                 if (audio_track_index == AUDIO_TRACK_COUNT - 1)
                     audio_track_index <= 2'd0;
                 else
                     audio_track_index <= audio_track_index + 1'b1;
                 audio_paused <= 1'b0;
-            end else begin
-                case (brightness_level)
-                    2'd0: brightness_level <= 2'd1;
-                    2'd1: brightness_level <= 2'd2;
-                    default: brightness_level <= 2'd0;
-                endcase
             end
-        end else if (key_press_pulse[3]) begin
-            if (sw[2]) begin
-                audio_paused <= ~audio_paused;
-            end else begin
-                case (contrast_level)
-                    2'd0: contrast_level <= 2'd1;
-                    2'd1: contrast_level <= 2'd2;
-                    default: contrast_level <= 2'd0;
-                endcase
+        end else if (ui_mode == MODE_DETAIL_VIEW) begin
+            if (key_press_pulse[1]) begin
+                if (manual_image_index == VIDEO_FRAME_COUNT - 1)
+                    manual_image_index <= 4'd0;
+                else
+                    manual_image_index <= manual_image_index + 1'b1;
             end
+            if (key_press_pulse[2])
+                zoom_2x <= ~zoom_2x;
+            if (key_press_pulse[3])
+                picture_style <= picture_style + 1'b1;
         end
 
         auto_mode_d <= auto_mode;
@@ -1242,6 +1256,10 @@ always @(posedge video_clk or negedge video_rst_n) begin
         switch_pending     <= 1'b0;
         auto_mode_ff1      <= 1'b0;
         auto_mode_ff2      <= 1'b0;
+        osd_panel_enable_ff1 <= 1'b1;
+        osd_panel_enable_ff2 <= 1'b1;
+        ui_mode_ff1        <= MODE_PRODUCT_SHOW;
+        ui_mode_ff2        <= MODE_PRODUCT_SHOW;
         transition_mode_ff1 <= 3'b000;
         transition_mode_ff2 <= 3'b000;
         transition_mode    <= 3'b000;
@@ -1250,6 +1268,12 @@ always @(posedge video_clk or negedge video_rst_n) begin
         brightness_level_ff2 <= 2'd0;
         contrast_level_ff1   <= 2'd0;
         contrast_level_ff2   <= 2'd0;
+        detail_zoom_2x_ff1   <= 1'b0;
+        detail_zoom_2x_ff2   <= 1'b0;
+        display_zoom_2x      <= 1'b0;
+        pending_zoom_2x      <= 1'b0;
+        picture_style_ff1    <= 2'd0;
+        picture_style_ff2    <= 2'd0;
         fade_level         <= 5'd16;
         fade_out_active    <= 1'b0;
     end else begin
@@ -1278,17 +1302,20 @@ always @(posedge video_clk or negedge video_rst_n) begin
         preload_select_source_height_ff2 <= preload_select_source_height_ff1;
         auto_mode_ff1      <= auto_mode;
         auto_mode_ff2      <= auto_mode_ff1;
-        case (sw[1:0])
-            2'b00: transition_mode_ff1 <= 3'b000; // fade
-            2'b01: transition_mode_ff1 <= 3'b001; // left slide
-            2'b10: transition_mode_ff1 <= 3'b100; // checker blocks
-            default: transition_mode_ff1 <= 3'b101; // centre expand
-        endcase
+        osd_panel_enable_ff1 <= osd_panel_enable;
+        osd_panel_enable_ff2 <= osd_panel_enable_ff1;
+        ui_mode_ff1        <= ui_mode;
+        ui_mode_ff2        <= ui_mode_ff1;
+        transition_mode_ff1 <= 3'b000; // Phase 1 retains the existing fade.
         transition_mode_ff2 <= transition_mode_ff1;
         brightness_level_ff1 <= brightness_level;
         brightness_level_ff2 <= brightness_level_ff1;
         contrast_level_ff1   <= contrast_level;
         contrast_level_ff2   <= contrast_level_ff1;
+        detail_zoom_2x_ff1   <= detail_zoom_2x;
+        detail_zoom_2x_ff2   <= detail_zoom_2x_ff1;
+        picture_style_ff1    <= active_picture_style;
+        picture_style_ff2    <= picture_style_ff1;
         read_ack_ff1 <= video_read_req_ack;
         read_ack_ff2 <= read_ack_ff1;
         if (LINEBUF_SCALE && video_run && linebuf_underflow)
@@ -1297,11 +1324,13 @@ always @(posedge video_clk or negedge video_rst_n) begin
         // A new frame is remembered while the current frame continues to
         // display. The actual FIFO reset/request waits for frame_tick.
         if (ENABLE_MULTI_FRAME_PRELOAD && video_run &&
-            (preload_select_media_ff2 != display_media_index)) begin
+            ((preload_select_media_ff2 != display_media_index) ||
+             (detail_zoom_2x_ff2 != display_zoom_2x))) begin
             pending_media_index <= preload_select_media_ff2;
             pending_frame_index <= preload_select_media_ff2[0];
             pending_source_width_bcd <= preload_select_source_width_ff2;
             pending_source_height_bcd <= preload_select_source_height_ff2;
+            pending_zoom_2x <= detail_zoom_2x_ff2;
             switch_pending <= 1'b1;
             if (!switch_pending)
                 transition_mode <= transition_mode_ff2;
@@ -1315,6 +1344,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
             pending_media_index <= {3'd0, preload_select_ff2};
             pending_source_width_bcd <= preload_select_source_width_ff2;
             pending_source_height_bcd <= preload_select_source_height_ff2;
+            pending_zoom_2x <= detail_zoom_2x_ff2;
             switch_pending <= 1'b1;
             if (!switch_pending)
                 transition_mode <= transition_mode_ff2;
@@ -1323,7 +1353,8 @@ always @(posedge video_clk or negedge video_rst_n) begin
             if (ENABLE_FADE)
                 fade_out_active <= 1'b1;
         end else if (ENABLE_MULTI_FRAME_PRELOAD && video_run && switch_pending &&
-                     (preload_select_media_ff2 == display_media_index)) begin
+                     (preload_select_media_ff2 == display_media_index) &&
+                     (detail_zoom_2x_ff2 == display_zoom_2x)) begin
             switch_pending  <= 1'b0;
             fade_out_active <= 1'b0;
             fade_level      <= 5'd16;
@@ -1342,6 +1373,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
             pending_media_index <= published_media_ff2;
             pending_source_width_bcd <= published_source_width_ff2;
             pending_source_height_bcd <= published_source_height_ff2;
+            pending_zoom_2x <= detail_zoom_2x_ff2;
             switch_pending <= 1'b1;
             transition_mode <= transition_mode_ff2;
             transition_progress <= 6'd0;
@@ -1354,6 +1386,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
             display_media_index <= published_media_ff2;
             display_source_width_bcd <= published_source_width_ff2;
             display_source_height_bcd <= published_source_height_ff2;
+            display_zoom_2x <= detail_zoom_2x_ff2;
             read_req_r <= 1'b1;
             linebuf_start_pending <= LINEBUF_SCALE;
         end else if (read_req_r && read_ack_ff2) begin
@@ -1374,6 +1407,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
             display_media_index<= pending_media_index;
             display_source_width_bcd <= pending_source_width_bcd;
             display_source_height_bcd <= pending_source_height_bcd;
+            display_zoom_2x <= pending_zoom_2x;
             linebuf_start_pending <= LINEBUF_SCALE;
             switch_pending     <= 1'b0;
             pair_phase         <= 1'b0;
@@ -1473,6 +1507,7 @@ rgb888_adjust u_rgb888_adjust (
     .rgb_in           (video_rgb),
     .brightness_level (brightness_level_ff2),
     .contrast_level   (contrast_level_ff2),
+    .picture_style    (picture_style_ff2),
     .rgb_out          (video_adjusted_rgb)
 );
 
@@ -1513,6 +1548,8 @@ generate
                 .auto_mode(auto_mode_ff2), .brightness_level(brightness_level_ff2),
                 .contrast_level(contrast_level_ff2),
                 .audio_track_index(audio_track_ff2),
+                .mode(ui_mode_ff2), .panel_enable(osd_panel_enable_ff2),
+                .zoom_2x(display_zoom_2x), .picture_style(picture_style_ff2),
                 .source_width_bcd(display_source_width_bcd),
                 .source_height_bcd(display_source_height_bcd),
                 .rgb_o(video_osd_1280_rgb)

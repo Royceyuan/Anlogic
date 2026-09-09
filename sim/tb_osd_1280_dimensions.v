@@ -6,6 +6,8 @@ reg clk=0, rst_n=0, de_i=0;
 reg [10:0] x_i=0;
 reg [9:0] y_i=0;
 reg [23:0] rgb_i=24'h123456;
+reg [1:0] mode=2'b00;
+reg panel_enable=1'b1;
 wire [23:0] rgb_o;
 integer failures=0;
 integer x, y;
@@ -15,7 +17,9 @@ always #5 clk=~clk;
 osd_status_1280_pipe dut (
     .clk(clk), .rst_n(rst_n), .de_i(de_i), .x_i(x_i), .y_i(y_i), .rgb_i(rgb_i),
     .image_index(4'd4), .auto_mode(1'b0), .brightness_level(2'd0),
-    .contrast_level(2'd0), .source_width_bcd(16'h0717),
+    .contrast_level(2'd0), .audio_track_index(2'd0), .mode(mode),
+    .panel_enable(panel_enable), .zoom_2x(1'b0), .picture_style(2'd0),
+    .source_width_bcd(16'h0717),
     .source_height_bcd(16'h0527), .rgb_o(rgb_o)
 );
 
@@ -49,11 +53,12 @@ initial begin
     sample(11'd1042,10'd4,24'h222222);
     sample(11'd1000,10'd16,24'h123456);
     sample(11'd1279,10'd31,24'h123456);
-    // IMG text is vertically centered at y=4..10; known lit/dark pixels
-    // verify the glyph path without duplicating the font ROM in this test.
-    sample(11'd18,10'd4,24'hffffff);
+    // PRODUCT SHOW begins with P; AUDIO CONTROL begins with A.
+    sample(11'd16,10'd4,24'hffffff);
+    mode=2'b11;
     sample(11'd16,10'd4,24'h222222);
-    sample(11'd18,10'd10,24'hffffff);
+    panel_enable=1'b0;
+    sample(11'd18,10'd4,24'h123456);
     if (failures==0) $display("PASS osd_1280_full_width_slim_5x7");
     else $display("FAIL osd_1280_dimensions failures=%0d",failures);
     $finish;

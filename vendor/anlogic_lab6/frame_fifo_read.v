@@ -72,16 +72,23 @@ reg App_rd_en_d0;
 
 wire rd_vld;
 reg [BURST_BITS - 1:0] read_data_cnt;
+wire [ADDR_BITS - 1:0] read_remaining;
+wire [BURST_BITS - 1:0] active_burst_len;
 
 assign App_rd_addr = {App_rd_addr_r[ADDR_BITS - 1:0]};
-assign rd_vld = (state == S_READ_BURST && burst_cnt >= BURST_SIZE);
+assign read_remaining = read_len_latch - read_cnt;
+assign active_burst_len = (read_remaining < BURST_SIZE) ?
+                          read_remaining[BURST_BITS - 1:0] :
+                          BURST_SIZE[BURST_BITS - 1:0];
+assign rd_vld = (state == S_READ_BURST && burst_cnt >= active_burst_len);
 
 assign O_rd_busy = (state == S_READ_BURST);//读指令期间
 // A fixed post-command delay is unsafe: SDRAM return latency changes with
 // clocking and refresh. Wait for every returned word before the next burst.
 // Finish on the final returned word itself.  Waiting for a further valid
 // cycle works only when the SDRAM presents an uninterrupted data burst.
-assign rd_burst_finish = (rd_vld && (read_data_cnt == (BURST_SIZE - 1)));
+assign rd_burst_finish = (rd_vld &&
+                          (read_data_cnt == (active_burst_len - 1'b1)));
 assign read_finish = (state == S_END) ? 1'b1 : 1'b0;             //read finish at state 'S_END'
 assign App_rd_en = App_rd_en_d0;
 always@(posedge mem_clk or posedge rst)
@@ -151,7 +158,7 @@ begin
 		else
 			App_rd_addr_r <= App_rd_addr_r;
 		//
-		if(App_rd_en_r && burst_cnt + App_rd_en < BURST_SIZE)
+		if(App_rd_en_r && burst_cnt + App_rd_en < active_burst_len)
 			App_rd_en_d0 <= 1'b1;
 		else
 			App_rd_en_d0 <= 1'b0;
@@ -251,7 +258,7 @@ begin
 					App_rd_en_r <= 1'b0;
 					state <= S_READ_BURST_END;
 					//read counter + burst length
-					read_cnt <= read_cnt + BURST_SIZE[ADDR_BITS - 1:0];
+					read_cnt <= read_cnt + active_burst_len;
 					//the next burst read address is generated
 					//rd_burst_addr <= rd_burst_addr + BURST_SIZE[ADDR_BITS - 1:0];
 				end     

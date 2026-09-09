@@ -10,6 +10,8 @@ module osd_status_1280_pipe (
     input wire [3:0] image_index, input wire auto_mode,
     input wire [1:0] brightness_level, input wire [1:0] contrast_level,
     input wire [1:0] audio_track_index,
+    input wire [1:0] mode, input wire panel_enable,
+    input wire zoom_2x, input wire [1:0] picture_style,
     input wire [15:0] source_width_bcd, input wire [15:0] source_height_bcd,
     output wire [23:0] rgb_o
 );
@@ -17,7 +19,7 @@ module osd_status_1280_pipe (
 localparam [4:0] SP=0, I=1, M=2, G=3, A=4, U=5, T=6, O=7, N=8;
 localparam [4:0] B=9, R=10, C=11, PCT=12, D0=13, D1=14, D2=15;
 localparam [4:0] D3=16, D4=17, D5=18, D6=19, D7=20, D8=21, D9=22;
-localparam [4:0] D=23, X=24;
+localparam [4:0] D=23, X=24, H=25, E=26, L=27, S=28, V=29, W=30, P=31;
 
 reg [4:0] dim0, dim1, dim2, dim3, dim4, dim5, dim6, dim7, dim8;
 reg de_s0;
@@ -42,6 +44,36 @@ function [4:0] digit;
     end
 endfunction
 
+function [4:0] mode_glyph;
+    input [6:0] pos;
+    input [1:0] ui_mode;
+    begin
+        mode_glyph=SP;
+        case(ui_mode)
+            2'b00: case(pos) // PRODUCT SHOW
+                2:mode_glyph=P; 3:mode_glyph=R; 4:mode_glyph=O; 5:mode_glyph=D;
+                6:mode_glyph=U; 7:mode_glyph=C; 8:mode_glyph=T; 10:mode_glyph=S;
+                11:mode_glyph=H; 12:mode_glyph=O; 13:mode_glyph=W;
+            endcase
+            2'b01: case(pos) // SLIDESHOW
+                2:mode_glyph=S; 3:mode_glyph=L; 4:mode_glyph=I; 5:mode_glyph=D;
+                6:mode_glyph=E; 7:mode_glyph=S; 8:mode_glyph=H; 9:mode_glyph=O;
+                10:mode_glyph=W;
+            endcase
+            2'b10: case(pos) // DETAIL VIEW
+                2:mode_glyph=D; 3:mode_glyph=E; 4:mode_glyph=T; 5:mode_glyph=A;
+                6:mode_glyph=I; 7:mode_glyph=L; 9:mode_glyph=V; 10:mode_glyph=I;
+                11:mode_glyph=E; 12:mode_glyph=W;
+            endcase
+            default: case(pos) // AUDIO CONTROL
+                2:mode_glyph=A; 3:mode_glyph=U; 4:mode_glyph=D; 5:mode_glyph=I;
+                6:mode_glyph=O; 8:mode_glyph=C; 9:mode_glyph=O; 10:mode_glyph=N;
+                11:mode_glyph=T; 12:mode_glyph=R; 13:mode_glyph=O; 14:mode_glyph=L;
+            endcase
+        endcase
+    end
+endfunction
+
 function [4:0] cell_glyph;
     input [6:0] pos;
     input [3:0] img;
@@ -49,26 +81,34 @@ function [4:0] cell_glyph;
     input [1:0] br;
     input [1:0] ct;
     input [1:0] audio_track;
+    input [1:0] ui_mode;
+    input zoom;
+    input [1:0] style;
     begin
-        cell_glyph=SP;
-        case(pos)
-            2:cell_glyph=I; 3:cell_glyph=M; 4:cell_glyph=G; 5:cell_glyph=digit(img);
-            7:cell_glyph=mode?A:M; 8:cell_glyph=mode?U:A;
-            9:cell_glyph=mode?T:N; 10:cell_glyph=mode?O:SP;
-            12:cell_glyph=B; 13:cell_glyph=R;
-            15:cell_glyph=(br==2)?SP:D1; 16:cell_glyph=(br==0)?D0:D5;
-            17:cell_glyph=D0; 18:cell_glyph=PCT;
-            20:cell_glyph=C; 21:cell_glyph=T;
-            23:cell_glyph=(ct==2)?SP:D1; 24:cell_glyph=(ct==0)?D0:D5;
-            25:cell_glyph=D0; 26:cell_glyph=PCT;
-            28:cell_glyph=A; 29:cell_glyph=U; 30:cell_glyph=D;
-            31:cell_glyph=digit(audio_track);
-            36:cell_glyph=D; 37:cell_glyph=I; 38:cell_glyph=M;
-            40:cell_glyph=dim0; 41:cell_glyph=dim1; 42:cell_glyph=dim2;
-            43:cell_glyph=dim3; 44:cell_glyph=dim4; 45:cell_glyph=dim5;
-            46:cell_glyph=dim6; 47:cell_glyph=dim7; 48:cell_glyph=dim8;
-            default:cell_glyph=SP;
-        endcase
+        if (pos >= 2 && pos <= 14)
+            cell_glyph=mode_glyph(pos, ui_mode);
+        else begin
+            cell_glyph=SP;
+            case(pos)
+                17:cell_glyph=I; 18:cell_glyph=M; 19:cell_glyph=G; 20:cell_glyph=digit(img);
+                22:cell_glyph=(ui_mode==2'b10)?X:B;
+                23:cell_glyph=(ui_mode==2'b10)?digit(zoom?2:1):R;
+                25:cell_glyph=(ui_mode==2'b10)?S:((br==2)?SP:D1);
+                26:cell_glyph=(ui_mode==2'b10)?digit(style):((br==0)?D0:D5);
+                27:cell_glyph=(ui_mode==2'b10)?SP:D0; 28:cell_glyph=(ui_mode==2'b10)?SP:PCT;
+                30:cell_glyph=(ui_mode==2'b10)?SP:C; 31:cell_glyph=(ui_mode==2'b10)?SP:T;
+                33:cell_glyph=(ui_mode==2'b10)?SP:((ct==2)?SP:D1);
+                34:cell_glyph=(ui_mode==2'b10)?SP:((ct==0)?D0:D5);
+                35:cell_glyph=(ui_mode==2'b10)?SP:D0; 36:cell_glyph=(ui_mode==2'b10)?SP:PCT;
+                38:cell_glyph=A; 39:cell_glyph=U; 40:cell_glyph=D;
+                41:cell_glyph=digit(audio_track);
+                46:cell_glyph=D; 47:cell_glyph=I; 48:cell_glyph=M;
+                50:cell_glyph=dim0; 51:cell_glyph=dim1; 52:cell_glyph=dim2;
+                53:cell_glyph=dim3; 54:cell_glyph=dim4; 55:cell_glyph=dim5;
+                56:cell_glyph=dim6; 57:cell_glyph=dim7; 58:cell_glyph=dim8;
+                default:cell_glyph=SP;
+            endcase
+        end
     end
 endfunction
 
@@ -77,17 +117,24 @@ function [34:0] font_bitmap;
     begin
         case(glyph)
             I:   font_bitmap={5'b01110,5'b00100,5'b00100,5'b00100,5'b00100,5'b00100,5'b01110};
+            H:   font_bitmap={5'b10001,5'b10001,5'b10001,5'b11111,5'b10001,5'b10001,5'b10001};
             M:   font_bitmap={5'b10001,5'b11011,5'b10101,5'b10101,5'b10001,5'b10001,5'b10001};
             G:   font_bitmap={5'b01110,5'b10001,5'b10000,5'b10111,5'b10001,5'b10001,5'b01110};
             A:   font_bitmap={5'b01110,5'b10001,5'b10001,5'b11111,5'b10001,5'b10001,5'b10001};
             U:   font_bitmap={5'b10001,5'b10001,5'b10001,5'b10001,5'b10001,5'b10001,5'b01110};
             T:   font_bitmap={5'b11111,5'b00100,5'b00100,5'b00100,5'b00100,5'b00100,5'b00100};
             O:   font_bitmap={5'b01110,5'b10001,5'b10001,5'b10001,5'b10001,5'b10001,5'b01110};
+            P:   font_bitmap={5'b11110,5'b10001,5'b10001,5'b11110,5'b10000,5'b10000,5'b10000};
             N:   font_bitmap={5'b10001,5'b11001,5'b10101,5'b10011,5'b10001,5'b10001,5'b10001};
             B:   font_bitmap={5'b11110,5'b10001,5'b10001,5'b11110,5'b10001,5'b10001,5'b11110};
             R:   font_bitmap={5'b11110,5'b10001,5'b10001,5'b11110,5'b10100,5'b10010,5'b10001};
             C:   font_bitmap={5'b01110,5'b10001,5'b10000,5'b10000,5'b10000,5'b10001,5'b01110};
             D:   font_bitmap={5'b11110,5'b10001,5'b10001,5'b10001,5'b10001,5'b10001,5'b11110};
+            E:   font_bitmap={5'b11111,5'b10000,5'b10000,5'b11110,5'b10000,5'b10000,5'b11111};
+            L:   font_bitmap={5'b10000,5'b10000,5'b10000,5'b10000,5'b10000,5'b10000,5'b11111};
+            S:   font_bitmap={5'b01111,5'b10000,5'b10000,5'b01110,5'b00001,5'b00001,5'b11110};
+            V:   font_bitmap={5'b10001,5'b10001,5'b10001,5'b10001,5'b10001,5'b01010,5'b00100};
+            W:   font_bitmap={5'b10001,5'b10001,5'b10001,5'b10101,5'b10101,5'b10101,5'b01010};
             X:   font_bitmap={5'b10001,5'b01010,5'b00100,5'b00100,5'b00100,5'b01010,5'b10001};
             PCT: font_bitmap={5'b11001,5'b11010,5'b00100,5'b01000,5'b10110,5'b10011,5'b00000};
             D0:  font_bitmap={5'b01110,5'b10001,5'b10011,5'b10101,5'b11001,5'b10001,5'b01110};
@@ -187,17 +234,18 @@ always @(posedge clk or negedge rst_n) begin
         y_s0<=y_i;
         rgb_s0<=rgb_i;
         de_s1<=de_s0;
-        panel_s1<=(x_s0<11'd1280)&&(y_s0<10'd16);
+        panel_s1<=panel_enable&&(x_s0<11'd1280)&&(y_s0<10'd16);
         // x[9:3] deliberately remains a compact 7-bit glyph selector;
         // qualify x[10] so it cannot wrap and redraw the OSD at x=1024.
         glyph_active_s1<=!x_s0[10]&&(y_s0>=10'd4)&&(y_s0<10'd11)&&(x_s0[2:0]<3'd5)&&
                          (cell_glyph(x_s0[9:3],image_index,auto_mode,
                                      brightness_level,contrast_level,
-                                     audio_track_index)!=SP);
+                                     audio_track_index,mode,zoom_2x,picture_style)!=SP);
         row_s1<=y_s0-10'd4;
         col_s1<=x_s0[2:0];
         glyph_s1<=cell_glyph(x_s0[9:3],image_index,auto_mode,
-                             brightness_level,contrast_level,audio_track_index);
+                             brightness_level,contrast_level,audio_track_index,mode,
+                             zoom_2x,picture_style);
         rgb_s1<=rgb_s0;
 
         de_s2<=de_s1;

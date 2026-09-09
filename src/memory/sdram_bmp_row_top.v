@@ -659,6 +659,7 @@ generate
         ) u_linebuf_scaler (
             .clk(video_clk), .rst_n(video_rst_n),
             .source_start(linebuf_start_pulse),
+            .zoom_2x(1'b0),
             .source_base_addr(ENABLE_MULTI_FRAME_PRELOAD ?
                               frame_base_for_index(display_media_index) :
                               (display_frame_index ? FRAME1_BASE : FRAME0_BASE)),
@@ -1206,6 +1207,7 @@ rgb888_adjust u_rgb888_adjust (
     .rgb_in           (video_rgb),
     .brightness_level (brightness_level_ff2),
     .contrast_level   (contrast_level_ff2),
+    .picture_style    (2'd0),
     .rgb_out          (video_adjusted_rgb)
 );
 
@@ -1244,7 +1246,11 @@ generate
                 .x_i(video_x_delayed), .y_i(video_y_delayed),
                 .rgb_i(video_transition_rgb), .image_index(display_media_index),
                 .auto_mode(auto_mode_ff2), .brightness_level(brightness_level_ff2),
-                .contrast_level(contrast_level_ff2), .rgb_o(video_osd_1280_rgb)
+                .contrast_level(contrast_level_ff2), .audio_track_index(2'd0),
+                .mode(2'd0), .panel_enable(1'b1),
+                .zoom_2x(1'b0), .picture_style(2'd0),
+                .source_width_bcd(display_source_width_bcd),
+                .source_height_bcd(display_source_height_bcd), .rgb_o(video_osd_1280_rgb)
             );
             assign video_osd_rgb = video_osd_1280_rgb;
         end else begin : g_video_osd_standard

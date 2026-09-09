@@ -13,7 +13,9 @@ module tb_sdram_bmp_row_top_chain #(
     parameter integer RESET_STRESS = 0,
     parameter integer PRELOAD_TEST = 0,
     parameter integer MULTI5_TEST = 0,
-    parameter integer OUTPUT_ROUTE_TEST = 0
+    parameter integer OUTPUT_ROUTE_TEST = 0,
+    parameter integer PHASE1_TEST = 0,
+    parameter integer PHASE2_TEST = 0
 );
     reg clk_50m = 1'b0;
     reg [3:0] key_n = 4'b1111;
@@ -38,7 +40,7 @@ module tb_sdram_bmp_row_top_chain #(
     top #(
 `endif
         .VIDEO_W(TB_VIDEO_W), .VIDEO_H(TB_VIDEO_H), .VIDEO_BURST_WORDS(4),
-        .VIDEO_MODE_1280(1), .ENABLE_OSD(0), .ENABLE_FADE(0),
+        .VIDEO_MODE_1280(1), .ENABLE_OSD(PHASE1_TEST || PHASE2_TEST), .ENABLE_FADE(0),
         .VIDEO_SEQUENCE(0), .VIDEO_BIN(0), .ADAPTIVE_BMP(1),
         .PRELOAD_BOTH_IMAGES(PRELOAD_TEST || MULTI5_TEST),
         .MULTI_IMAGE_BMP(MULTI5_TEST), .MULTI_FRAME_PRELOAD(MULTI5_TEST),
@@ -349,6 +351,93 @@ module tb_sdram_bmp_row_top_chain #(
             $finish;
         end
 
+        if (PHASE1_TEST) begin
+            if (dut.osd_panel_enable !== 1'b1 || dut.auto_mode !== 1'b0) begin
+                $display("FAIL phase1 initial panel=%b auto=%b", dut.osd_panel_enable, dut.auto_mode);
+                $finish;
+            end
+            @(negedge clk_50m); force dut.key_press_pulse = 4'b0001;
+            @(posedge clk_50m); #1; release dut.key_press_pulse;
+            if (dut.osd_panel_enable !== 1'b0) begin
+                $display("FAIL phase1 KEY1 panel off=%b", dut.osd_panel_enable);
+                $finish;
+            end
+            @(negedge clk_50m); force dut.key_press_pulse = 4'b0001;
+            @(posedge clk_50m); #1; release dut.key_press_pulse;
+            if (dut.osd_panel_enable !== 1'b1) begin
+                $display("FAIL phase1 KEY1 panel on=%b", dut.osd_panel_enable);
+                $finish;
+            end
+            sw = 4'b0011;
+            @(negedge clk_50m); force dut.key_press_pulse = 4'b0010;
+            @(posedge clk_50m); #1; release dut.key_press_pulse;
+            if (dut.audio_paused !== 1'b1) begin
+                $display("FAIL phase1 audio KEY2 pause=%b", dut.audio_paused);
+                $finish;
+            end
+            @(negedge clk_50m); force dut.key_press_pulse = 4'b0100;
+            @(posedge clk_50m); #1; release dut.key_press_pulse;
+            if (dut.audio_track_index !== 2'd3 || dut.audio_paused !== 1'b0) begin
+                $display("FAIL phase1 audio KEY3 prev=%0d paused=%b", dut.audio_track_index, dut.audio_paused);
+                $finish;
+            end
+            @(negedge clk_50m); force dut.key_press_pulse = 4'b1000;
+            @(posedge clk_50m); #1; release dut.key_press_pulse;
+            if (dut.audio_track_index !== 2'd0) begin
+                $display("FAIL phase1 audio KEY4 next=%0d", dut.audio_track_index);
+                $finish;
+            end
+            sw = 4'b0000;
+            @(negedge clk_50m); force dut.key_press_pulse = 4'b0010;
+            @(posedge clk_50m); #1; release dut.key_press_pulse;
+            if (dut.audio_track_index !== 2'd0 || dut.audio_paused !== 1'b0) begin
+                $display("FAIL phase1 non-audio changed track=%0d paused=%b", dut.audio_track_index, dut.audio_paused);
+                $finish;
+            end
+            $display("PASS phase1 controls and audio isolation");
+            $finish;
+        end
+
+        if (PHASE2_TEST) begin
+            if (dut.manual_image_index !== 4'd0 || dut.zoom_2x !== 1'b0 ||
+                dut.picture_style !== 2'd0) begin
+                $display("FAIL phase2 initial img=%0d zoom=%b style=%0d",
+                         dut.manual_image_index, dut.zoom_2x, dut.picture_style);
+                $finish;
+            end
+            sw = 4'b0010;
+            @(negedge clk_50m); force dut.key_press_pulse = 4'b0010;
+            @(posedge clk_50m); #1; release dut.key_press_pulse;
+            if (dut.manual_image_index !== 4'd1) begin
+                $display("FAIL phase2 KEY2 image=%0d", dut.manual_image_index);
+                $finish;
+            end
+            @(negedge clk_50m); force dut.key_press_pulse = 4'b0100;
+            @(posedge clk_50m); #1; release dut.key_press_pulse;
+            if (dut.zoom_2x !== 1'b1) begin
+                $display("FAIL phase2 KEY3 zoom=%b", dut.zoom_2x);
+                $finish;
+            end
+            @(negedge clk_50m); force dut.key_press_pulse = 4'b1000;
+            @(posedge clk_50m); #1; release dut.key_press_pulse;
+            if (dut.picture_style !== 2'd1) begin
+                $display("FAIL phase2 KEY4 style=%0d", dut.picture_style);
+                $finish;
+            end
+            sw = 4'b0000;
+            @(negedge clk_50m); force dut.key_press_pulse = 4'b1110;
+            @(posedge clk_50m); #1; release dut.key_press_pulse;
+            if (dut.manual_image_index !== 4'd1 || dut.zoom_2x !== 1'b1 ||
+                dut.picture_style !== 2'd1 || dut.audio_paused !== 1'b0 ||
+                dut.audio_track_index !== 2'd0) begin
+                $display("FAIL phase2 non-detail changed state");
+                $finish;
+            end
+            $display("PASS phase2 detail controls and audio isolation");
+            $finish;
+        end
+
+
         if (PRELOAD_TEST) begin
             // The loader and writer stubs finish each transaction quickly,
             // but the RTL under test must still issue two independent loads,
@@ -657,6 +746,7 @@ module fat32_image_loader #(
     output wire [15:0] image_wr_data, output wire [10:0] image_wr_row,
     output wire [10:0] image_wr_col, output reg busy,
     output reg load_done, output reg load_error, output reg [3:0] status_code,
+    output wire [3:0] error_stage,
     output reg [15:0] bmp_source_width, output reg [15:0] bmp_source_height
 );
     reg [5:0] count;
@@ -667,6 +757,7 @@ module fat32_image_loader #(
     assign image_wr_data = 16'd0;
     assign image_wr_row = 11'd0;
     assign image_wr_col = 11'd0;
+    assign error_stage = 4'd0;
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             busy <= 1'b0;
@@ -907,6 +998,8 @@ module osd_status_1280_pipe (
     input wire [10:0] x_i, input wire [9:0] y_i, input wire [23:0] rgb_i,
     input wire [3:0] image_index, input wire auto_mode,
     input wire [1:0] brightness_level, input wire [1:0] contrast_level,
+    input wire [1:0] audio_track_index, input wire [1:0] mode,
+    input wire panel_enable, input wire zoom_2x, input wire [1:0] picture_style,
     input wire [15:0] source_width_bcd, input wire [15:0] source_height_bcd,
     output wire [23:0] rgb_o
 );

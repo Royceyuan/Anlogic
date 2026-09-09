@@ -317,6 +317,7 @@ linebuf_scaler_960x540_to_1280x720 #(
     .LINEBUF_NOREG_SYNC_READ(LINEBUF_NOREG_SYNC_READ)
 ) u_linebuf_scaler (
     .clk(video_clk), .rst_n(video_rst_n), .source_start(linebuf_start_pulse),
+    .zoom_2x(1'b0),
     .source_base_addr(21'd0), .source_read_req(source_read_req),
     .source_read_ack(source_read_ack), .source_read_base_addr(source_read_base_addr),
     .source_read_len(source_read_len), .source_fifo_empty(source_fifo_empty),
