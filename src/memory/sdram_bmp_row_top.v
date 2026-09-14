@@ -1233,6 +1233,7 @@ video_transition_mask #(
     .y             (video_y_delayed),
     .mode          (transition_mode),
     .progress      (transition_progress),
+    .closing       (fade_out_active),
     .enable        (ENABLE_FADE && !fade_out_active &&
                     (transition_progress < ((transition_mode == 3'b100) ? 6'd60 : 6'd36))),
     .rgb_out       (video_transition_rgb)

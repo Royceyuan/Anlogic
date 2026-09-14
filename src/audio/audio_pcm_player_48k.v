@@ -15,6 +15,7 @@ module audio_pcm_player_48k #(
     input  wire                fifo_empty,
     input  wire [8:0]          fifo_used,
     input  wire                paused,
+    input  wire                switch_mute,
     output reg                 fifo_rd_en,
     output reg                 sample_valid,
     output reg signed [15:0]   sample_left,
@@ -49,7 +50,15 @@ always @(posedge clk or posedge rst) begin
         else
             sample_acc <= sample_acc_next[26:0];
 
-        if (paused) begin
+        if (switch_mute) begin
+            sample_left  <= 16'sd0;
+            sample_right <= 16'sd0;
+            active       <= 1'b0;
+            underflow_ticks <= 7'd0;
+            underflow <= 1'b0;
+            if (sample_tick)
+                sample_valid <= 1'b1;
+        end else if (paused) begin
             sample_left  <= 16'sd0;
             sample_right <= 16'sd0;
             if (sample_tick)
@@ -65,6 +74,7 @@ always @(posedge clk or posedge rst) begin
                 underflow_ticks <= 7'd0;
                 underflow <= 1'b0;
             end else begin
+                sample_valid <= 1'b1;
                 sample_left  <= 16'sd0;
                 sample_right <= 16'sd0;
                 if (underflow_ticks >= UNDERFLOW_TICKS - 1)
@@ -72,6 +82,12 @@ always @(posedge clk or posedge rst) begin
                 else
                     underflow_ticks <= underflow_ticks + 1'b1;
             end
+        end else if (sample_tick) begin
+            // Keep HDMI audio packets continuous while the initial/new track
+            // is buffering; the payload becomes PCM once START_FRAMES exists.
+            sample_valid <= 1'b1;
+            sample_left  <= 16'sd0;
+            sample_right <= 16'sd0;
         end
     end
 end

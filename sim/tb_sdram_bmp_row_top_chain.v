@@ -15,7 +15,8 @@ module tb_sdram_bmp_row_top_chain #(
     parameter integer MULTI5_TEST = 0,
     parameter integer OUTPUT_ROUTE_TEST = 0,
     parameter integer PHASE1_TEST = 0,
-    parameter integer PHASE2_TEST = 0
+    parameter integer PHASE2_TEST = 0,
+    parameter integer PHASE3_TEST = 0
 );
     reg clk_50m = 1'b0;
     reg [3:0] key_n = 4'b1111;
@@ -40,11 +41,13 @@ module tb_sdram_bmp_row_top_chain #(
     top #(
 `endif
         .VIDEO_W(TB_VIDEO_W), .VIDEO_H(TB_VIDEO_H), .VIDEO_BURST_WORDS(4),
-        .VIDEO_MODE_1280(1), .ENABLE_OSD(PHASE1_TEST || PHASE2_TEST), .ENABLE_FADE(0),
+        .VIDEO_MODE_1280(1), .ENABLE_OSD(PHASE1_TEST || PHASE2_TEST || PHASE3_TEST),
+        .ENABLE_FADE(PHASE3_TEST),
         .VIDEO_SEQUENCE(0), .VIDEO_BIN(0), .ADAPTIVE_BMP(1),
-        .PRELOAD_BOTH_IMAGES(PRELOAD_TEST || MULTI5_TEST),
-        .MULTI_IMAGE_BMP(MULTI5_TEST), .MULTI_FRAME_PRELOAD(MULTI5_TEST),
-        .VIDEO_FRAME_COUNT(MULTI5_TEST ? 5 : 2),
+        .PRELOAD_BOTH_IMAGES(PRELOAD_TEST || MULTI5_TEST || PHASE3_TEST),
+        .MULTI_IMAGE_BMP(MULTI5_TEST || PHASE3_TEST),
+        .MULTI_FRAME_PRELOAD(MULTI5_TEST || PHASE3_TEST),
+        .VIDEO_FRAME_COUNT((MULTI5_TEST || PHASE3_TEST) ? 5 : 2),
         .SOURCE_W(TB_SOURCE_W), .SOURCE_H(TB_SOURCE_H),
         .LINEBUF_SCALE(1), .LINEBUF_REGISTER_READ(TEST_REGISTERED),
 `ifdef V66_TOP
@@ -56,7 +59,8 @@ module tb_sdram_bmp_row_top_chain #(
         // The production switch point is VIDEO_W+19, after video_delay has
         // drained.  The compact preload raster therefore needs at least 20
         // horizontal blanking clocks; legacy timing tests retain 2 clocks.
-        .H_FRONT((PRELOAD_TEST || MULTI5_TEST) ? 22 : 2), .H_SYNC(2), .H_BACK(2),
+        .H_FRONT((PRELOAD_TEST || MULTI5_TEST || PHASE3_TEST) ? 22 : 2),
+        .H_SYNC(2), .H_BACK(2),
         .V_FRONT(1), .V_SYNC(1), .V_BACK(1)
     ) dut (
         .clk_50m(clk_50m), .key_n(key_n), .sw(sw), .led(led),
@@ -84,6 +88,9 @@ module tb_sdram_bmp_row_top_chain #(
     integer long_mismatch_debug = 0;
     integer linebuf_debug_events = 0;
     integer target_index = 0;
+    integer primitive_id = 0;
+    integer step = 0;
+    reg [3:0] old_display_media;
     reg long_prev_de = 1'b0;
     reg long_armed = 1'b0;
     reg seen_run = 1'b0;
@@ -381,6 +388,8 @@ module tb_sdram_bmp_row_top_chain #(
                 $display("FAIL phase1 audio KEY3 prev=%0d paused=%b", dut.audio_track_index, dut.audio_paused);
                 $finish;
             end
+            if (dut.audio_switch_reset_count == 0)
+                $fatal(1, "phase1 track switch did not immediately mute/reset audio");
             @(negedge clk_50m); force dut.key_press_pulse = 4'b1000;
             @(posedge clk_50m); #1; release dut.key_press_pulse;
             if (dut.audio_track_index !== 2'd0) begin
@@ -434,6 +443,86 @@ module tb_sdram_bmp_row_top_chain #(
                 $finish;
             end
             $display("PASS phase2 detail controls and audio isolation");
+            $finish;
+        end
+
+        if (PHASE3_TEST) begin
+            timeout = 0;
+            while (timeout < 30000 && dut.frame_valid != 5'b11111) begin
+                @(posedge clk_50m);
+                timeout = timeout + 1;
+            end
+            if (dut.frame_valid != 5'b11111)
+                $fatal(1, "phase3 five-frame preload timeout");
+
+            for (primitive_id = 0; primitive_id < 4; primitive_id = primitive_id + 1) begin
+                sw = {primitive_id[1:0], 2'b10};
+                repeat (4) @(posedge clk_50m);
+                old_display_media = dut.display_media_index;
+
+                @(negedge clk_50m); force dut.key_press_pulse = 4'b0010;
+                @(posedge clk_50m); #1; release dut.key_press_pulse;
+                timeout = 0;
+                while (timeout < 20 && !dut.switch_pending) begin
+                    @(posedge clk_50m); timeout = timeout + 1;
+                end
+                if (!dut.switch_pending || !dut.transition_active ||
+                    dut.transition_mode != primitive_id[2:0])
+                    $fatal(1, "phase3 start failed primitive=%0d mode=%0d active=%b",
+                           primitive_id, dut.transition_mode, dut.transition_active);
+
+                force dut.video_vblank_start = 1'b0;
+                for (step = 0; step < 16; step = step + 1) begin
+                    @(negedge clk_50m); force dut.video_frame_tick = 1'b1;
+                    @(posedge clk_50m); #1; release dut.video_frame_tick;
+                end
+                if (!dut.transition_midpoint_ready || !dut.fade_out_active)
+                    $fatal(1, "phase3 midpoint failed primitive=%0d progress=%0d fade=%0d",
+                           primitive_id, dut.transition_progress, dut.fade_level);
+
+                @(negedge clk_50m); force dut.video_vblank_start = 1'b1;
+                @(posedge clk_50m); #1;
+                release dut.video_vblank_start;
+                if (dut.video_run || dut.display_media_index == old_display_media)
+                    $fatal(1, "phase3 unsafe source switch primitive=%0d old=%0d new=%0d run=%b",
+                           primitive_id, old_display_media, dut.display_media_index,
+                           dut.video_run);
+
+                @(negedge clk_50m);
+                force dut.linebuf_frame_ready = 1'b1;
+                force dut.video_frame_start = 1'b1;
+                @(posedge clk_50m); #1;
+                release dut.linebuf_frame_ready;
+                release dut.video_frame_start;
+                if (!dut.video_run)
+                    $fatal(1, "phase3 source resume failed primitive=%0d", primitive_id);
+
+                for (step = 0; step < 16; step = step + 1) begin
+                    @(negedge clk_50m); force dut.video_frame_tick = 1'b1;
+                    @(posedge clk_50m); #1; release dut.video_frame_tick;
+                end
+                if (dut.transition_active)
+                    $fatal(1, "phase3 done failed primitive=%0d progress=%0d fade=%0d",
+                           primitive_id, dut.transition_progress, dut.fade_level);
+            end
+
+            // Detail zoom restarts the source mapping at a frame boundary,
+            // but it is not a scene transition and must never animate.
+            @(negedge clk_50m); force dut.key_press_pulse = 4'b0100;
+            @(posedge clk_50m); #1; release dut.key_press_pulse;
+            timeout = 0;
+            while (timeout < 20 && !dut.switch_pending) begin
+                @(posedge clk_50m); timeout = timeout + 1;
+            end
+            if (!dut.direct_switch_pending || dut.transition_active ||
+                dut.fade_out_active)
+                $fatal(1, "phase3 zoom incorrectly entered transition");
+            @(negedge clk_50m); force dut.video_vblank_start = 1'b1;
+            @(posedge clk_50m); #1; release dut.video_vblank_start;
+            if (dut.video_run || !dut.display_zoom_2x)
+                $fatal(1, "phase3 direct zoom boundary switch failed");
+
+            $display("PASS phase3 four primitives and direct non-transition zoom");
             $finish;
         end
 

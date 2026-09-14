@@ -361,6 +361,7 @@ reg [3:0] display_media_index;
 reg [15:0] display_source_width_bcd;
 reg [15:0] display_source_height_bcd;
 reg switch_pending;
+reg direct_switch_pending;
 reg auto_mode_ff1;
 reg auto_mode_ff2;
 reg [2:0] transition_mode_ff1;
@@ -402,6 +403,7 @@ localparam [1:0] MODE_SLIDESHOW     = 2'b01;
 localparam [1:0] MODE_DETAIL_VIEW   = 2'b10;
 localparam [1:0] MODE_AUDIO_CONTROL = 2'b11;
 wire [1:0] ui_mode = sw[1:0];
+wire [2:0] selected_transition_mode = {1'b0, sw[3:2]};
 wire audio_control_mode = (ui_mode == MODE_AUDIO_CONTROL);
 wire detail_zoom_2x = (ui_mode == MODE_DETAIL_VIEW) && zoom_2x;
 wire [1:0] active_picture_style =
@@ -409,6 +411,13 @@ wire [1:0] active_picture_style =
 reg osd_panel_enable;
 reg osd_panel_enable_ff1, osd_panel_enable_ff2;
 reg [1:0] ui_mode_ff1, ui_mode_ff2;
+wire transition_midpoint_ready = (transition_mode == 3'b000) ?
+                                   (fade_level == 5'd0) :
+                                   (transition_progress >= 6'd16);
+wire transition_active = fade_out_active ||
+                         ((transition_mode == 3'b000) ?
+                          (fade_level < 5'd16) :
+                          (transition_progress < 6'd32));
 
 localparam integer AUDIO_TRACK_COUNT = 4;
 localparam integer AUDIO_SWITCH_RESET_CYCLES = 50_000;
@@ -433,6 +442,7 @@ wire audio_format_error_50m;
 wire audio_file_error_50m;
 reg audio_format_error_ff1, audio_format_error_ff2;
 reg audio_file_error_ff1, audio_file_error_ff2;
+reg audio_switch_reset_ff1, audio_switch_reset_ff2;
 wire audio_sample_valid;
 wire signed [15:0] audio_sample_left;
 wire signed [15:0] audio_sample_right;
@@ -752,11 +762,11 @@ generate
         audio_pcm_player_48k #(
             .PIXEL_CLK_HZ(75_000_000), .SAMPLE_RATE_HZ(48_000), .START_FRAMES(256)
         ) u_audio_player (
-            .clk(video_clk), .rst(~video_rst_n | audio_switch_reset),
+            .clk(video_clk), .rst(~video_rst_n),
             .fifo_data(audio_fifo_rd_data),
             .fifo_valid(audio_fifo_valid), .fifo_empty(audio_fifo_empty),
             .fifo_used(audio_fifo_rd_used), .fifo_rd_en(audio_fifo_rd_en),
-            .paused(audio_paused_ff2),
+            .paused(audio_paused_ff2), .switch_mute(audio_switch_reset_ff2),
             .sample_valid(audio_sample_valid), .sample_left(audio_sample_left),
             .sample_right(audio_sample_right), .active(audio_active), .underflow(audio_underflow)
         );
@@ -796,6 +806,8 @@ always @(posedge video_clk or negedge video_rst_n) begin
         audio_track_ff2        <= 2'd0;
         audio_paused_ff1       <= 1'b0;
         audio_paused_ff2       <= 1'b0;
+        audio_switch_reset_ff1 <= 1'b0;
+        audio_switch_reset_ff2 <= 1'b0;
     end else begin
         audio_format_error_ff1 <= audio_format_error_50m;
         audio_format_error_ff2 <= audio_format_error_ff1;
@@ -805,6 +817,8 @@ always @(posedge video_clk or negedge video_rst_n) begin
         audio_track_ff2        <= audio_track_ff1;
         audio_paused_ff1       <= audio_paused;
         audio_paused_ff2       <= audio_paused_ff1;
+        audio_switch_reset_ff1 <= audio_switch_reset;
+        audio_switch_reset_ff2 <= audio_switch_reset_ff1;
     end
 end
 
@@ -1042,7 +1056,8 @@ always @(posedge clk_50m or negedge write_rst_n) begin
     end else begin
         if (audio_switch_reset_count != 0)
             audio_switch_reset_count <= audio_switch_reset_count - 1'b1;
-        if (audio_track_switch_ack)
+        if (audio_track_switch_ack ||
+            (audio_control_mode && (key_press_pulse[2] || key_press_pulse[3])))
             audio_switch_reset_count <= AUDIO_SWITCH_RESET_CYCLES;
 
         if (key_press_pulse[0])
@@ -1254,6 +1269,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
         display_source_width_bcd <= 16'd0;
         display_source_height_bcd <= 16'd0;
         switch_pending     <= 1'b0;
+        direct_switch_pending <= 1'b0;
         auto_mode_ff1      <= 1'b0;
         auto_mode_ff2      <= 1'b0;
         osd_panel_enable_ff1 <= 1'b1;
@@ -1263,7 +1279,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
         transition_mode_ff1 <= 3'b000;
         transition_mode_ff2 <= 3'b000;
         transition_mode    <= 3'b000;
-        transition_progress <= 6'd36;
+        transition_progress <= 6'd32;
         brightness_level_ff1 <= 2'd0;
         brightness_level_ff2 <= 2'd0;
         contrast_level_ff1   <= 2'd0;
@@ -1306,7 +1322,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
         osd_panel_enable_ff2 <= osd_panel_enable_ff1;
         ui_mode_ff1        <= ui_mode;
         ui_mode_ff2        <= ui_mode_ff1;
-        transition_mode_ff1 <= 3'b000; // Phase 1 retains the existing fade.
+        transition_mode_ff1 <= selected_transition_mode;
         transition_mode_ff2 <= transition_mode_ff1;
         brightness_level_ff1 <= brightness_level;
         brightness_level_ff2 <= brightness_level_ff1;
@@ -1324,20 +1340,32 @@ always @(posedge video_clk or negedge video_rst_n) begin
         // A new frame is remembered while the current frame continues to
         // display. The actual FIFO reset/request waits for frame_tick.
         if (ENABLE_MULTI_FRAME_PRELOAD && video_run &&
-            ((preload_select_media_ff2 != display_media_index) ||
-             (detail_zoom_2x_ff2 != display_zoom_2x))) begin
+            (preload_select_media_ff2 != display_media_index)) begin
             pending_media_index <= preload_select_media_ff2;
             pending_frame_index <= preload_select_media_ff2[0];
             pending_source_width_bcd <= preload_select_source_width_ff2;
             pending_source_height_bcd <= preload_select_source_height_ff2;
             pending_zoom_2x <= detail_zoom_2x_ff2;
             switch_pending <= 1'b1;
+            direct_switch_pending <= 1'b0;
             if (!switch_pending)
                 transition_mode <= transition_mode_ff2;
             if (!switch_pending)
                 transition_progress <= 6'd0;
             if (ENABLE_FADE)
                 fade_out_active <= 1'b1;
+        end else if (ENABLE_MULTI_FRAME_PRELOAD && video_run &&
+                     (detail_zoom_2x_ff2 != display_zoom_2x)) begin
+            pending_media_index <= display_media_index;
+            pending_frame_index <= display_frame_index;
+            pending_source_width_bcd <= display_source_width_bcd;
+            pending_source_height_bcd <= display_source_height_bcd;
+            pending_zoom_2x <= detail_zoom_2x_ff2;
+            switch_pending <= 1'b1;
+            direct_switch_pending <= 1'b1;
+            fade_out_active <= 1'b0;
+            fade_level <= 5'd16;
+            transition_progress <= 6'd32;
         end else if (ENABLE_DUAL_FRAME_PRELOAD && video_run &&
             (preload_select_ff2 != display_frame_index)) begin
             pending_frame_index <= preload_select_ff2;
@@ -1346,6 +1374,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
             pending_source_height_bcd <= preload_select_source_height_ff2;
             pending_zoom_2x <= detail_zoom_2x_ff2;
             switch_pending <= 1'b1;
+            direct_switch_pending <= 1'b0;
             if (!switch_pending)
                 transition_mode <= transition_mode_ff2;
             if (!switch_pending)
@@ -1356,17 +1385,19 @@ always @(posedge video_clk or negedge video_rst_n) begin
                      (preload_select_media_ff2 == display_media_index) &&
                      (detail_zoom_2x_ff2 == display_zoom_2x)) begin
             switch_pending  <= 1'b0;
+            direct_switch_pending <= 1'b0;
             fade_out_active <= 1'b0;
             fade_level      <= 5'd16;
-            transition_progress <= 6'd36;
+            transition_progress <= 6'd32;
         end else if (ENABLE_DUAL_FRAME_PRELOAD && video_run && switch_pending &&
                      (preload_select_ff2 == display_frame_index)) begin
             // A second key press before the boundary cancels the obsolete
             // request instead of switching to a no-longer-selected frame.
             switch_pending  <= 1'b0;
+            direct_switch_pending <= 1'b0;
             fade_out_active <= 1'b0;
             fade_level      <= 5'd16;
-            transition_progress <= 6'd36;
+            transition_progress <= 6'd32;
         end else if (video_run && (ready_ff2 != ready_seen)) begin
             ready_seen <= ready_ff2;
             pending_frame_index <= published_frame_ff2;
@@ -1375,6 +1406,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
             pending_source_height_bcd <= published_source_height_ff2;
             pending_zoom_2x <= detail_zoom_2x_ff2;
             switch_pending <= 1'b1;
+            direct_switch_pending <= 1'b0;
             transition_mode <= transition_mode_ff2;
             transition_progress <= 6'd0;
             if (ENABLE_FADE)
@@ -1396,7 +1428,8 @@ always @(posedge video_clk or negedge video_rst_n) begin
         end
 
         if (video_run && switch_pending && video_vblank_start &&
-            (!ENABLE_FADE || (fade_out_active && fade_level == 5'd4))) begin
+            (direct_switch_pending || !ENABLE_FADE ||
+             (fade_out_active && transition_midpoint_ready))) begin
             // Stop consuming at the visible-frame boundary. The FIFO is
             // refilled during vertical blanking, outside the active picture.
             video_run          <= 1'b0;
@@ -1410,11 +1443,16 @@ always @(posedge video_clk or negedge video_rst_n) begin
             display_zoom_2x <= pending_zoom_2x;
             linebuf_start_pending <= LINEBUF_SCALE;
             switch_pending     <= 1'b0;
+            direct_switch_pending <= 1'b0;
             pair_phase         <= 1'b0;
             pair_word_valid    <= 1'b0;
-            fade_level         <= 5'd4;
+            fade_level         <= direct_switch_pending ? 5'd16 :
+                                  ((transition_mode == 3'b000) ? 5'd0 : 5'd16);
             fade_out_active    <= 1'b0;
-            transition_progress <= 6'd0;
+            if (direct_switch_pending)
+                transition_progress <= 6'd32;
+            else if (transition_mode == 3'b000)
+                transition_progress <= 6'd0;
         end
 
         if (!video_run && read_accepted && !read_ready) begin
@@ -1435,15 +1473,18 @@ always @(posedge video_clk or negedge video_rst_n) begin
             read_ready      <= 1'b0;
         end else if (video_run && video_frame_tick && ENABLE_FADE) begin
             if (fade_out_active) begin
-                if (fade_level > 5'd4)
-                    fade_level <= fade_level - 1'b1;
-            end else if (fade_level < 5'd16) begin
-                fade_level <= fade_level + 1'b1;
-            end
-            if (!fade_out_active && (transition_mode != 3'b000) &&
-                (transition_mode != 3'b111) &&
-                (transition_progress < ((transition_mode == 3'b100) ? 6'd60 : 6'd36)))
+                if (transition_mode == 3'b000) begin
+                    if (fade_level > 5'd0)
+                        fade_level <= fade_level - 1'b1;
+                end else if (transition_progress < 6'd16) begin
+                    transition_progress <= transition_progress + 1'b1;
+                end
+            end else if (transition_mode == 3'b000) begin
+                if (fade_level < 5'd16)
+                    fade_level <= fade_level + 1'b1;
+            end else if (transition_progress < 6'd32) begin
                 transition_progress <= transition_progress + 1'b1;
+            end
         end else if (video_run && video_read_en && !LINEBUF_SCALE) begin
             pair_phase <= ~pair_phase;
             if (!pair_phase) begin
@@ -1515,7 +1556,7 @@ generate
     if (ENABLE_FADE) begin : g_video_fade
         video_fade u_video_fade (
             .rgb_in  (video_adjusted_rgb),
-            .level   (((transition_mode == 3'b000) || (transition_mode == 3'b111)) ?
+            .level   ((transition_mode == 3'b000) ?
                       fade_level : 5'd16),
             .rgb_out (video_faded_rgb)
         );
@@ -1533,8 +1574,9 @@ video_transition_mask #(
     .y             (video_y_delayed),
     .mode          (transition_mode),
     .progress      (transition_progress),
-    .enable        (ENABLE_FADE && !fade_out_active &&
-                    (transition_progress < ((transition_mode == 3'b100) ? 6'd60 : 6'd36))),
+    .closing       (fade_out_active),
+    .enable        (ENABLE_FADE && transition_active &&
+                    (transition_mode != 3'b000)),
     .rgb_out       (video_transition_rgb)
 );
 
