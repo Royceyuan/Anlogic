@@ -31,8 +31,9 @@
 
 - 2026-09-19 已按用户要求删除历史 `_build_v73_*`、`work_*`、旧 TD 运行目录/日志、根目录报告、备份 patch、minidump 和 `.bid` 生成物；源码、仿真入口、现行脚本、发布 bit 和设计文档保留。
 - v73 的 `build_v73_audio_visualizer_bitgen.tcl` 与两个多音频 bitgen 脚本都依赖缺失的 `_build_v73_audio_visualizer/v73_audio_visualizer_pr.db`；不能直接运行它们生成可信 bit。
-- 当前 `release/` 中已能读取历史 v70/v71/v72/v73 bit；它们只作为可追溯发布物，不能替代本轮 P&R 证据。
+- 当前 `release/` 中保留历史 v70/v71/v72/v73 bit；本轮另生成了 `release/hx4s20_1280x720_v72_subtitle_continuous_scroll_v2.bit`，它来自本轮闭合 P&R 数据库，尚未完成板级验证。
 - ModelSim 安装在 `D:\Modelsim`，Tang Dynasty 安装在 `D:\TD_6.2.1`；后续仿真和 P&R 使用这两个明确路径，不依赖 PATH。
+- 本轮 v72 连续字幕包装已完成综合、布局布线、最终 STA、DRC 和 bitgen；未跟踪构建目录与报告按用户要求保留，不提交。
 
 ### MAIN-0 审计结论（2026-09-18）
 
@@ -40,8 +41,8 @@
 - **活动工程：通过。** `hx4s20_800x600_multimedia.al` 的活动顶层为 `top_1280x720_feature_v72_resource_optimized`；v73 顶层在工程中存在但为旁路候选。
 - **管脚映射：通过。** 当前 ADC 与 HX4S20C 资料中的 R7、A2/B2/B1/C1、C8/C7/C6/C5、A14/A13/B14/A12、K1/B3/E3/F5 等映射一致。
 - **当前功能接入：已确认源码事实。** 五图缓存、TF/SPI、SDRAM、1280×720 HDMI、OSD、UART 字幕和转场参数在 v72 包装中接入；最终文物素材尚未接入，符合用户当前状态。
-- **已有 bit：可追溯但非本轮生成。** `release/hx4s20_1280x720_v72_resource_optimized.bit` 为 629664 bytes，SHA256 为 `3226099D43AAE624BBAAB9AEA543901316902BC85701E0FD7CBBF1192D4DAA05`；当前 `.al` 运行目录也有 bit，但与发布 bit 的 SHA256 不同。
-- **STA/P&R 证据：不通过本阶段门禁。** 旧 `hx4s20_800x600_multimedia_Runs` 目录及混入 v71/v69 约束的报告已删除；当前尚无本轮 v72 的 STA/P&R/DRC 报告，需要后续从干净工程重新生成。
+- **已有 bit：历史与本轮分列。** 历史 `release/hx4s20_1280x720_v72_resource_optimized.bit` 为 629664 bytes，SHA256 为 `3226099D43AAE624BBAAB9AEA543901316902BC85701E0FD7CBBF1192D4DAA05`。本轮 bit 为 `release/hx4s20_1280x720_v72_subtitle_continuous_scroll_v2.bit`，629664 bytes，SHA256 为 `556465BF25C952391BDA74C7A3C817B17EF443914DE6FDC26E2CFC91137CAB9C`。
+- **STA/P&R 证据：本阶段门禁通过。** `_build_v72_subtitle_continuous_scroll/subtitle_continuous_scroll_pr.status` 报告最终 Setup WNS `+128 ps`、TNS `0 ps`，Hold WNS `+30 ps`、TNS `0 ps`；最终时序覆盖率 `99.89%`，慢/快角均通过，时序例外报告为空。路由 DRC 无多驱动、无异常时序路径；工具仍报告 SDRAM 25 MHz 相移时钟使用 1 段本地路由资源，该项不是时序违例，但板测时需重点观察 SDRAM/画面稳定性。
 - **仿真：工具已定位，尚未重新执行。** ModelSim 安装目录和仓库 `.do`/testbench 入口已确认，后续可直接用 `D:\Modelsim\win64` 工具执行回归。
 
 ## 3. 关键上下文
@@ -151,17 +152,19 @@ v73 候选顶层：top_1280x720_feature_v73_audio_visualizer
 活动 ADC：constraints/top_800x600_adaptive_v66_uart_subtitle.adc
 活动 SDC：constraints/top_1280x720_v72_resource_optimized.sdc
 保留最新候选 SDC：constraints/top_1280x720_v73_audio_visualizer.sdc
-当前 P&R 目录：无（历史产物已清理，待后续阶段重新生成）
+当前 P&R 目录：`_build_v72_subtitle_continuous_scroll`（本轮闭合证据，未跟踪）
+当前发布 bit：`release/hx4s20_1280x720_v72_subtitle_continuous_scroll_v2.bit`（本轮生成，未上板验证）
 当前商品展示文件：无（已回退）
-当前未提交改动：无（本清理提交后）
+当前未提交改动：本轮发布 bit 与 HANDOFF 待提交；未跟踪构建产物按用户要求保留且不提交
 ```
 
 ## 12. 下一步行动
 
-1. `MAIN-0` 审计已完成；本阶段只同步了本 HANDOFF，未修改 RTL。
-2. `MAIN-1` 开始前，使用 `D:\Modelsim` 和 `D:\TD_6.2.1`，重新建立仅使用活动 v72 顶层和活动约束的可复现仿真/P&R 证据；不得复用已删除报告或混入 v71/v69 约束的历史结果。
-3. 每个阶段的代码和阶段性 HANDOFF 更新只提交计划相关文件，提交后 push 到 `origin/Yan_Chen_Double`；不得把未跟踪构建产物纳入提交。
-4. 所有需要发布的 bit 都必须从本轮闭合 P&R DB 生成，并交付最终 STA、文件大小、SHA256 和“硬件是否已测试”的明确状态。
+1. `MAIN-0` 审计、v72 综合/P&R/STA/DRC 和 bitgen 已完成；当前只剩用户上板验证。
+2. 上板验证使用本轮 bit，记录 HDMI、TF 五图缓存、按键、SW4、SDRAM 稳定性和无花屏/撕裂现象；明确回复 `MAIN-0 BOARD PASS` 或附现象日志。
+3. `MAIN-1` 开始前，继续使用 `D:\Modelsim` 和 `D:\TD_6.2.1`，并保持活动 v72 顶层和活动约束可复现；不得复用混入 v71/v69 约束的历史结果。
+4. 每个阶段的代码和阶段性 HANDOFF 更新只提交计划相关文件，提交后 push 到 `origin/Yan_Chen_Double`；不得把未跟踪构建产物纳入提交。
+5. 所有需要发布的 bit 都必须从本轮闭合 P&R DB 生成，并交付最终 STA、文件大小、SHA256 和“硬件是否已测试”的明确状态。
 
 ## 13. 新 Agent 启动指令
 
