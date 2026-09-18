@@ -593,30 +593,12 @@
             </File>
         </ADC_FILE>
         <SDC_FILE>
-            <File Path="constraints/top_800x600_adaptive_v69_subtitle_bram_aligned.sdc">
-                <FileInfo>
-                    <Attr Name="AutoExcluded" Val="true"/>
-                    <Attr Name="UsedInSyn" Val="false"/>
-                    <Attr Name="UsedInP&R" Val="false"/>
-                    <Attr Name="BelongTo" Val="constraint_1"/>
-                    <Attr Name="CompileOrder" Val="2"/>
-                </FileInfo>
-            </File>
-            <File Path="constraints/top_1280x720_v71_full_features.sdc">
-                <FileInfo>
-                    <Attr Name="AutoExcluded" Val="true"/>
-                    <Attr Name="UsedInSyn" Val="false"/>
-                    <Attr Name="UsedInP&R" Val="false"/>
-                    <Attr Name="BelongTo" Val="constraint_1"/>
-                    <Attr Name="CompileOrder" Val="3"/>
-                </FileInfo>
-            </File>
             <File Path="constraints/top_1280x720_v72_resource_optimized.sdc">
                 <FileInfo>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="constraint_1"/>
-                    <Attr Name="CompileOrder" Val="4"/>
+                    <Attr Name="CompileOrder" Val="2"/>
                 </FileInfo>
             </File>
         </SDC_FILE>

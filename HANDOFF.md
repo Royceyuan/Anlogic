@@ -1,9 +1,9 @@
 # HX4S20 多媒体工程交接
 
-更新时间：2026-09-18
+更新时间：2026-09-19
 适用目录：`D:\VSCode\CodeFiles\Git_TD\Anlogic`
-当前分支/提交：`Yan_Chen_Double` / `cfd5b70a271fcb263abf4566951f4e493ae0ba85`
-远端：`origin/Yan_Chen_Double`，当前 `HEAD` 与远端同提交。
+当前分支：`Yan_Chen_Double`，跟踪 `origin/Yan_Chen_Double`。
+主板 RTL 基线提交：`cfd5b70a271fcb263abf4566951f4e493ae0ba85`；分支 HEAD 还包含后续审计和清理提交，以 `git status --short --branch` 为准。
 
 ## 1. 当前任务与最终目标
 
@@ -29,21 +29,20 @@
 
 ### 未完成 / 当前卡点
 
-- 当前工作区存在多个未跟踪的 `_build_*`、`work_*`、TD 运行目录和报告；按用户要求全部保留，不清理、不提交。
+- 2026-09-19 已按用户要求删除历史 `_build_v73_*`、`work_*`、旧 TD 运行目录/日志、根目录报告、备份 patch、minidump 和 `.bid` 生成物；源码、仿真入口、现行脚本、发布 bit 和设计文档保留。
 - v73 的 `build_v73_audio_visualizer_bitgen.tcl` 与两个多音频 bitgen 脚本都依赖缺失的 `_build_v73_audio_visualizer/v73_audio_visualizer_pr.db`；不能直接运行它们生成可信 bit。
 - 当前 `release/` 中已能读取历史 v70/v71/v72/v73 bit；它们只作为可追溯发布物，不能替代本轮 P&R 证据。
-- 当前没有可执行的 `iverilog`、`vvp` 或 `verilator` 在 PATH 中；仓库保留 ModelSim `.do` 脚本，仿真回归需在具备 ModelSim/Questa 的环境执行。
+- ModelSim 安装在 `D:\Modelsim`，Tang Dynasty 安装在 `D:\TD_6.2.1`；后续仿真和 P&R 使用这两个明确路径，不依赖 PATH。
 
 ### MAIN-0 审计结论（2026-09-18）
 
-- **基线身份：通过。** 分支 `Yan_Chen_Double`，HEAD/远端均为 `cfd5b70`；器件 `EG4S20BG256`。
+- **基线身份：通过。** 分支 `Yan_Chen_Double`，主板 RTL 基线为 `cfd5b70`；器件 `EG4S20BG256`。
 - **活动工程：通过。** `hx4s20_800x600_multimedia.al` 的活动顶层为 `top_1280x720_feature_v72_resource_optimized`；v73 顶层在工程中存在但为旁路候选。
 - **管脚映射：通过。** 当前 ADC 与 HX4S20C 资料中的 R7、A2/B2/B1/C1、C8/C7/C6/C5、A14/A13/B14/A12、K1/B3/E3/F5 等映射一致。
 - **当前功能接入：已确认源码事实。** 五图缓存、TF/SPI、SDRAM、1280×720 HDMI、OSD、UART 字幕和转场参数在 v72 包装中接入；最终文物素材尚未接入，符合用户当前状态。
 - **已有 bit：可追溯但非本轮生成。** `release/hx4s20_1280x720_v72_resource_optimized.bit` 为 629664 bytes，SHA256 为 `3226099D43AAE624BBAAB9AEA543901316902BC85701E0FD7CBBF1192D4DAA05`；当前 `.al` 运行目录也有 bit，但与发布 bit 的 SHA256 不同。
-- **STA/P&R 证据：不通过本阶段门禁。** `hx4s20_800x600_multimedia_Runs/phy_1/final_timing.rpt` 载入了 v71、v72 和 v69 三组 SDC，报告 `STA coverage 0.00%`，并出现重复时钟/空时钟组告警；不能据此宣称 v72 本轮时序闭合。
-- **DRC：部分可见但不能替代完整门禁。** 运行日志记录 `No multi-drive`、`No abnormal timing path`，同时存在重复约束和本地时钟资源告警；完整 MAIN-0 交付不把它标记为无条件 PASS。
-- **仿真：环境未具备。** 已列出仓库中的 ModelSim `.do` 和 testbench 回归入口，但当前机器 PATH 中未找到 `iverilog`/`vvp`/`verilator`，因此本轮未重新执行 RTL 仿真。
+- **STA/P&R 证据：不通过本阶段门禁。** 旧 `hx4s20_800x600_multimedia_Runs` 目录及混入 v71/v69 约束的报告已删除；当前尚无本轮 v72 的 STA/P&R/DRC 报告，需要后续从干净工程重新生成。
+- **仿真：工具已定位，尚未重新执行。** ModelSim 安装目录和仓库 `.do`/testbench 入口已确认，后续可直接用 `D:\Modelsim\win64` 工具执行回归。
 
 ## 3. 关键上下文
 
@@ -130,11 +129,11 @@
 
 ### 已确认
 
-- `HEAD`、`origin/Yan_Chen_Double` 当前都指向 `cfd5b70`；`Yan_Chen0909` 仍指向同一提交。
+- `Yan_Chen_Double` 以 `cfd5b70` 为主板 RTL 基线；审计和清理提交只更新文档、工程元数据并删除历史残留，不修改 RTL。
 - `.al` 文件活动模块为 v72；v73 的 P&R 脚本显式指定 v73 顶层，故可独立运行但不会因打开工程自动成为顶层。
 - 当前 `release/` 顶层中的历史 v70/v71/v72/v73 bit 均可读取；它们不是本轮 MAIN-0 生成物。
 - `release/_timing_failed/hx4s20_sdram_native_singleword_diag.bit` 也存在，但目录名已表明它不是发布候选。
-- 当前工作区存在未跟踪的构建目录、运行目录、报告和备份 patch；用户要求保留，不能清理或纳入提交。
+- 2026-09-19 清理后，工作区不再保留历史构建目录、运行目录、报告、备份 patch 或被忽略的 ModelSim/Python 缓存；后续阶段从干净目录生成新证据。
 
 ### 推测 / 暂定
 
@@ -145,21 +144,22 @@
 
 ```text
 分支：Yan_Chen_Double（跟踪 origin/Yan_Chen_Double）
-提交：cfd5b70
+主板 RTL 基线提交：cfd5b70
 工程：hx4s20_800x600_multimedia.al
 工程默认顶层：top_1280x720_feature_v72_resource_optimized
 v73 候选顶层：top_1280x720_feature_v73_audio_visualizer
 活动 ADC：constraints/top_800x600_adaptive_v66_uart_subtitle.adc
 活动 SDC：constraints/top_1280x720_v72_resource_optimized.sdc
-当前 P&R 目录：hx4s20_800x600_multimedia_Runs/（未跟踪，报告约束状态不合格）
+保留最新候选 SDC：constraints/top_1280x720_v73_audio_visualizer.sdc
+当前 P&R 目录：无（历史产物已清理，待后续阶段重新生成）
 当前商品展示文件：无（已回退）
-当前未提交改动：HANDOFF.md；以及用户要求保留的未跟踪构建/运行产物
+当前未提交改动：无（本清理提交后）
 ```
 
 ## 12. 下一步行动
 
 1. `MAIN-0` 审计已完成；本阶段只同步了本 HANDOFF，未修改 RTL。
-2. `MAIN-1` 开始前，重新建立仅使用活动 v72 顶层和活动约束的可复现仿真/P&R 证据；不得复用报告中混入的 v71/v69 约束。
+2. `MAIN-1` 开始前，使用 `D:\Modelsim` 和 `D:\TD_6.2.1`，重新建立仅使用活动 v72 顶层和活动约束的可复现仿真/P&R 证据；不得复用已删除报告或混入 v71/v69 约束的历史结果。
 3. 每个阶段的代码和阶段性 HANDOFF 更新只提交计划相关文件，提交后 push 到 `origin/Yan_Chen_Double`；不得把未跟踪构建产物纳入提交。
 4. 所有需要发布的 bit 都必须从本轮闭合 P&R DB 生成，并交付最终 STA、文件大小、SHA256 和“硬件是否已测试”的明确状态。
 
