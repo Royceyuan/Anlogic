@@ -25,6 +25,8 @@ module top_v66 #(
     parameter integer ENABLE_OSD = 0,
     parameter integer ENABLE_FADE = 0,
     parameter integer VIDEO_SEQUENCE = 0,
+    parameter integer FORCE_SEQUENCE_AUTO = 0,
+    parameter integer SEQUENCE_HOLD_CYCLES = 25_000_000,
     parameter integer VIDEO_BIN = 0,
     parameter integer ADAPTIVE_BMP = 0,
     // Input-image admission limit for adaptive BMP.  The v59-safe defaults
@@ -49,6 +51,7 @@ module top_v66 #(
     parameter integer MULTI_FRAME_PRELOAD = 0,
     parameter integer VIDEO_FRAME_COUNT = 10,
     parameter integer KEY_DEBOUNCE_BITS = 19,
+    parameter integer AUTO_PERIOD_CYCLES = 250_000_000,
     parameter integer SOURCE_W = VIDEO_W,
     parameter integer SOURCE_H = VIDEO_H,
     parameter integer LINEBUF_SCALE = 0,
@@ -150,7 +153,10 @@ reg [1:0] picture_style;
 reg [1:0] auto_speed_level;
 reg auto_mode_d;
 reg [3:0] auto_image_index;
-reg [27:0] auto_period_count;
+reg [28:0] auto_period_count;
+reg slideshow_paused;
+reg [1:0] transition_context;
+reg [1:0] demo_transition_step;
 reg [24:0] sequence_hold_count;
 reg sequence_hold_done;
 reg [4:0] frame_valid;
@@ -163,16 +169,12 @@ reg [15:0] published_source_height_bcd;
 reg [15:0] preload_select_source_width_bcd;
 reg [15:0] preload_select_source_height_bcd;
 
-// SW4 enables a slow carousel. A new image is requested only after the
-// previous frame has been published, so the active frame remains intact
-// while the next BMP is read from the card.
-localparam integer AUTO_PERIOD_CYCLES = 250_000_000;
-// The TF transfer itself takes most of a second. Add a short dwell so the
-// completed frame remains visible for about one second in total.
-localparam integer SEQUENCE_HOLD_CYCLES = 25_000_000;
-wire [27:0] auto_period_limit = (auto_speed_level == 0) ? AUTO_PERIOD_CYCLES :
-                                (auto_speed_level == 1) ? (AUTO_PERIOD_CYCLES / 2) :
-                                                          (AUTO_PERIOD_CYCLES / 3);
+// Slideshow speed factors are 0.5x, 1x, 2x and 4x around the default period.
+wire [28:0] auto_period_limit =
+    (auto_speed_level == 2'd0) ? (AUTO_PERIOD_CYCLES * 2) :
+    (auto_speed_level == 2'd1) ? AUTO_PERIOD_CYCLES :
+    (auto_speed_level == 2'd2) ? (AUTO_PERIOD_CYCLES / 2) :
+                                 (AUTO_PERIOD_CYCLES / 4);
 
 wire image_wr_en;
 wire [20:0] image_wr_addr;
@@ -186,7 +188,6 @@ wire [3:0] image_load_status;
 wire [3:0] image_load_error_stage;
 wire [15:0] image_source_width;
 wire [15:0] image_source_height;
-
 wire row_valid;
 wire [10:0] row_index;
 wire [15:0] row_pixel;
@@ -403,7 +404,10 @@ localparam [1:0] MODE_SLIDESHOW     = 2'b01;
 localparam [1:0] MODE_DETAIL_VIEW   = 2'b10;
 localparam [1:0] MODE_AUDIO_CONTROL = 2'b11;
 wire [1:0] ui_mode = sw[1:0];
-wire [2:0] selected_transition_mode = {1'b0, sw[3:2]};
+wire [2:0] product_theme_transition_mode;
+wire [2:0] selected_transition_mode =
+    (ui_mode == MODE_PRODUCT_SHOW) ? product_theme_transition_mode :
+                                     {1'b0, sw[3:2]};
 wire audio_control_mode = (ui_mode == MODE_AUDIO_CONTROL);
 wire detail_zoom_2x = (ui_mode == MODE_DETAIL_VIEW) && zoom_2x;
 wire [1:0] active_picture_style =
@@ -411,6 +415,10 @@ wire [1:0] active_picture_style =
 reg osd_panel_enable;
 reg osd_panel_enable_ff1, osd_panel_enable_ff2;
 reg [1:0] ui_mode_ff1, ui_mode_ff2;
+reg [1:0] auto_speed_level_ff1, auto_speed_level_ff2;
+reg slideshow_paused_ff1, slideshow_paused_ff2;
+reg [1:0] transition_theme_ff1, transition_theme_ff2;
+reg [1:0] transition_context_ff1, transition_context_ff2;
 wire transition_midpoint_ready = (transition_mode == 3'b000) ?
                                    (fade_level == 5'd0) :
                                    (transition_progress >= 6'd16);
@@ -424,8 +432,10 @@ localparam integer AUDIO_SWITCH_RESET_CYCLES = 50_000;
 
 // v73 audio path: TF-sector ownership changes only after every cached image
 // is valid, so image loading and continuous WAV playback never contend.
-wire audio_sd_owner = ENABLE_AUDIO_VISUALIZER && (frame_valid == 5'b11111) &&
-                      !load_active;
+wire audio_stream_enable = ENABLE_AUDIO_VISUALIZER &&
+                           (VIDEO_SEQUENCE ? initial_frame_published :
+                                             (frame_valid == 5'b11111));
+wire audio_sd_owner = audio_stream_enable && !load_active;
 wire audio_fifo_wr_en;
 wire [31:0] audio_fifo_wr_data;
 wire audio_fifo_full;
@@ -461,6 +471,7 @@ wire acr_valid;
 wire [19:0] acr_cts;
 wire [19:0] acr_n;
 wire [9:0] audio_tmds_ch0, audio_tmds_ch1, audio_tmds_ch2, audio_tmds_clk;
+wire subtitle_uart_txd;
 
 // Keep the last registered column addressed through horizontal blanking.  It
 // remains available for the one boundary cycle where the 20-clock DE path
@@ -472,8 +483,13 @@ wire [10:0] linebuf_video_x =
             video_x_i) :
         video_x_i;
 
-// Automatic slideshow and its speed control are introduced in Phase 4.
-assign auto_mode = 1'b0;
+assign auto_mode = FORCE_SEQUENCE_AUTO || (ui_mode == MODE_SLIDESHOW);
+transition_theme_controller u_transition_theme_controller (
+    .theme(sw[3:2]),
+    .context(transition_context),
+    .demo_step(demo_transition_step),
+    .primitive_mode(product_theme_transition_mode)
+);
 assign desired_image_index = VIDEO_SEQUENCE ?
                              (auto_mode ? active_media_index : manual_image_index) :
                              (auto_mode ? auto_image_index : manual_image_index);
@@ -665,7 +681,7 @@ generate
             .BITMAP_BYTES((SUBTITLE_WIDTH * 32 * SUBTITLE_BPP) / 8)
         ) u_uart_subtitle_overlay (
             .clk_50m(clk_50m), .rst_n_50m(write_rst_n),
-            .uart_rxd(uart_rxd), .uart_txd(uart_txd),
+            .uart_rxd(uart_rxd), .uart_txd(subtitle_uart_txd),
             .video_clk(video_clk), .video_rst_n(video_rst_n),
             .video_frame_tick(video_frame_tick),
             .hs_i(video_post_osd_hs), .vs_i(video_post_osd_vs), .de_i(video_post_osd_de),
@@ -674,13 +690,15 @@ generate
             .rgb_o(video_subtitle_rgb)
         );
     end else begin : g_no_uart_subtitle
-        assign uart_txd = 1'b1;
+        assign subtitle_uart_txd = 1'b1;
         assign video_subtitle_hs = video_post_osd_hs;
         assign video_subtitle_vs = video_post_osd_vs;
         assign video_subtitle_de = video_post_osd_de;
         assign video_subtitle_rgb = video_output_rgb;
     end
 endgenerate
+
+assign uart_txd = subtitle_uart_txd;
 
 sd_card_top u_sd_card_top (
     .clk(clk_50m), .rst(~write_rst_n),
@@ -734,12 +752,13 @@ fat32_image_loader #(
 generate
     if (ENABLE_AUDIO_VISUALIZER) begin : g_audio_wav
         fat32_wav_streamer u_wav_streamer (
-            .clk(clk_50m), .rst_n(write_rst_n), .start(audio_sd_owner),
+            .clk(clk_50m), .rst_n(write_rst_n), .start(audio_stream_enable),
             .track_index(audio_track_index),
             .sd_init_done(sd_init_done), .sd_sec_read(audio_sd_sec_read),
             .sd_sec_read_addr(audio_sd_sec_read_addr),
             .sd_sec_read_data(sd_sec_read_data),
-            .sd_sec_read_data_valid(sd_sec_read_data_valid), .sd_sec_read_end(sd_sec_read_end),
+            .sd_sec_read_data_valid(sd_sec_read_data_valid),
+            .sd_sec_read_end(sd_sec_read_end),
             .fifo_almost_full(audio_fifo_almost_full), .fifo_wr_en(audio_fifo_wr_en),
             .fifo_wr_data(audio_fifo_wr_data), .audio_ready(audio_wav_ready),
             .track_switch_ack(audio_track_switch_ack),
@@ -1024,7 +1043,10 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         contrast_level <= 2'd0;
         zoom_2x <= 1'b0;
         picture_style <= 2'd0;
-        auto_speed_level <= 2'd0;
+        auto_speed_level <= 2'd1;
+        slideshow_paused <= 1'b0;
+        transition_context <= 2'd0;
+        demo_transition_step <= 2'd0;
         audio_track_index <= 2'd0;
         audio_paused <= 1'b0;
         osd_panel_enable <= 1'b1;
@@ -1032,7 +1054,7 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         frame_ready_toggle <= 1'b0;
         auto_mode_d       <= 1'b0;
         auto_image_index  <= 4'd0;
-        auto_period_count <= 28'd0;
+        auto_period_count <= 29'd0;
         sequence_hold_count <= 25'd0;
         sequence_hold_done  <= 1'b0;
         frame_valid         <= 5'b00000;
@@ -1090,19 +1112,41 @@ always @(posedge clk_50m or negedge write_rst_n) begin
                 zoom_2x <= ~zoom_2x;
             if (key_press_pulse[3])
                 picture_style <= picture_style + 1'b1;
+        end else if (ui_mode == MODE_SLIDESHOW) begin
+            if (key_press_pulse[1])
+                auto_speed_level <= auto_speed_level + 1'b1;
+            if (key_press_pulse[2])
+                slideshow_paused <= ~slideshow_paused;
+        end else if (key_press_pulse[1]) begin
+            // Phase-4 Product Show test entry: advance one cached placeholder
+            // while cycling the three transition contexts.
+            if (manual_image_index == VIDEO_FRAME_COUNT - 1)
+                manual_image_index <= 4'd0;
+            else
+                manual_image_index <= manual_image_index + 1'b1;
+            if (transition_context == 2'd2)
+                transition_context <= 2'd0;
+            else
+                transition_context <= transition_context + 1'b1;
+            demo_transition_step <= demo_transition_step + 1'b1;
         end
+
+        if (!auto_mode)
+            slideshow_paused <= 1'b0;
 
         auto_mode_d <= auto_mode;
         if (!auto_mode) begin
-            auto_period_count <= 28'd0;
+            auto_period_count <= 29'd0;
             auto_image_index  <= manual_image_index;
         end else if (!auto_mode_d) begin
-            auto_period_count <= 28'd0;
+            auto_period_count <= 29'd0;
             auto_image_index  <= active_image_index;
-        end else if (key_press_pulse[1] && !sw[2]) begin
-            auto_period_count <= 28'd0;
+        end else if (key_press_pulse[1]) begin
+            auto_period_count <= 29'd0;
+        end else if (slideshow_paused) begin
+            auto_period_count <= auto_period_count;
         end else if (auto_period_count == auto_period_limit - 1'b1) begin
-            auto_period_count <= 28'd0;
+            auto_period_count <= 29'd0;
             if (auto_image_index == VIDEO_FRAME_COUNT - 1)
                 auto_image_index <= 4'd0;
             else
@@ -1272,6 +1316,14 @@ always @(posedge video_clk or negedge video_rst_n) begin
         direct_switch_pending <= 1'b0;
         auto_mode_ff1      <= 1'b0;
         auto_mode_ff2      <= 1'b0;
+        auto_speed_level_ff1 <= 2'd1;
+        auto_speed_level_ff2 <= 2'd1;
+        slideshow_paused_ff1 <= 1'b0;
+        slideshow_paused_ff2 <= 1'b0;
+        transition_theme_ff1 <= 2'd0;
+        transition_theme_ff2 <= 2'd0;
+        transition_context_ff1 <= 2'd0;
+        transition_context_ff2 <= 2'd0;
         osd_panel_enable_ff1 <= 1'b1;
         osd_panel_enable_ff2 <= 1'b1;
         ui_mode_ff1        <= MODE_PRODUCT_SHOW;
@@ -1318,6 +1370,14 @@ always @(posedge video_clk or negedge video_rst_n) begin
         preload_select_source_height_ff2 <= preload_select_source_height_ff1;
         auto_mode_ff1      <= auto_mode;
         auto_mode_ff2      <= auto_mode_ff1;
+        auto_speed_level_ff1 <= auto_speed_level;
+        auto_speed_level_ff2 <= auto_speed_level_ff1;
+        slideshow_paused_ff1 <= slideshow_paused;
+        slideshow_paused_ff2 <= slideshow_paused_ff1;
+        transition_theme_ff1 <= sw[3:2];
+        transition_theme_ff2 <= transition_theme_ff1;
+        transition_context_ff1 <= transition_context;
+        transition_context_ff2 <= transition_context_ff1;
         osd_panel_enable_ff1 <= osd_panel_enable;
         osd_panel_enable_ff2 <= osd_panel_enable_ff1;
         ui_mode_ff1        <= ui_mode;
@@ -1591,6 +1651,10 @@ generate
                 .contrast_level(contrast_level_ff2),
                 .audio_track_index(audio_track_ff2),
                 .mode(ui_mode_ff2), .panel_enable(osd_panel_enable_ff2),
+                .auto_speed_level(auto_speed_level_ff2),
+                .slideshow_paused(slideshow_paused_ff2),
+                .transition_theme(transition_theme_ff2),
+                .transition_context(transition_context_ff2),
                 .zoom_2x(display_zoom_2x), .picture_style(picture_style_ff2),
                 .source_width_bcd(display_source_width_bcd),
                 .source_height_bcd(display_source_height_bcd),
@@ -1697,10 +1761,15 @@ assign diag_seg_value = (row_overflow || writer_error || image_load_error || dia
                          16'hdead) :
                         ((!frame_done || image_load_busy || load_active) ? 16'hd000 :
                          (diag_done && diag_pass) ? 16'hd0a5 : 16'hd001);
+wire [15:0] raw_video_seg_value =
+    (row_overflow || writer_error || image_load_error) ? 16'h70ee :
+    underflow_seen ? 16'h70e1 :
+    !initial_frame_published ? 16'h7001 : 16'h70a5;
 
 seg_hex_display u_seg_hex_display (
     .clk(mem_clk), .rst_n(mem_rst_n),
-    .value(READBACK_DIAG ? diag_seg_value : normal_seg_value),
+    .value((VIDEO_SEQUENCE && VIDEO_BIN) ? raw_video_seg_value :
+           (READBACK_DIAG ? diag_seg_value : normal_seg_value)),
     .seg_data(seg_data), .seg_sel(seg_sel)
 );
 

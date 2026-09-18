@@ -1249,6 +1249,8 @@ generate
                 .auto_mode(auto_mode_ff2), .brightness_level(brightness_level_ff2),
                 .contrast_level(contrast_level_ff2), .audio_track_index(2'd0),
                 .mode(2'd0), .panel_enable(1'b1),
+                .auto_speed_level(2'd1), .slideshow_paused(1'b0),
+                .transition_theme(2'd0), .transition_context(2'd0),
                 .zoom_2x(1'b0), .picture_style(2'd0),
                 .source_width_bcd(display_source_width_bcd),
                 .source_height_bcd(display_source_height_bcd), .rgb_o(video_osd_1280_rgb)

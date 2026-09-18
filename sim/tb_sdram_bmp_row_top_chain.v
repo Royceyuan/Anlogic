@@ -16,7 +16,9 @@ module tb_sdram_bmp_row_top_chain #(
     parameter integer OUTPUT_ROUTE_TEST = 0,
     parameter integer PHASE1_TEST = 0,
     parameter integer PHASE2_TEST = 0,
-    parameter integer PHASE3_TEST = 0
+    parameter integer PHASE3_TEST = 0,
+    parameter integer PHASE4_TEST = 0,
+    parameter integer PHASE5_TEST = 0
 );
     reg clk_50m = 1'b0;
     reg [3:0] key_n = 4'b1111;
@@ -41,13 +43,15 @@ module tb_sdram_bmp_row_top_chain #(
     top #(
 `endif
         .VIDEO_W(TB_VIDEO_W), .VIDEO_H(TB_VIDEO_H), .VIDEO_BURST_WORDS(4),
-        .VIDEO_MODE_1280(1), .ENABLE_OSD(PHASE1_TEST || PHASE2_TEST || PHASE3_TEST),
-        .ENABLE_FADE(PHASE3_TEST),
+        .VIDEO_MODE_1280(1),
+        .ENABLE_OSD(PHASE1_TEST || PHASE2_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST),
+        .ENABLE_FADE(PHASE3_TEST || PHASE4_TEST || PHASE5_TEST),
         .VIDEO_SEQUENCE(0), .VIDEO_BIN(0), .ADAPTIVE_BMP(1),
-        .PRELOAD_BOTH_IMAGES(PRELOAD_TEST || MULTI5_TEST || PHASE3_TEST),
-        .MULTI_IMAGE_BMP(MULTI5_TEST || PHASE3_TEST),
-        .MULTI_FRAME_PRELOAD(MULTI5_TEST || PHASE3_TEST),
-        .VIDEO_FRAME_COUNT((MULTI5_TEST || PHASE3_TEST) ? 5 : 2),
+        .PRELOAD_BOTH_IMAGES(PRELOAD_TEST || MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST),
+        .MULTI_IMAGE_BMP(MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST),
+        .MULTI_FRAME_PRELOAD(MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST),
+        .VIDEO_FRAME_COUNT((MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST) ? 5 : 2),
+        .AUTO_PERIOD_CYCLES(PHASE4_TEST ? 32 : 250000000),
         .SOURCE_W(TB_SOURCE_W), .SOURCE_H(TB_SOURCE_H),
         .LINEBUF_SCALE(1), .LINEBUF_REGISTER_READ(TEST_REGISTERED),
 `ifdef V66_TOP
@@ -59,7 +63,7 @@ module tb_sdram_bmp_row_top_chain #(
         // The production switch point is VIDEO_W+19, after video_delay has
         // drained.  The compact preload raster therefore needs at least 20
         // horizontal blanking clocks; legacy timing tests retain 2 clocks.
-        .H_FRONT((PRELOAD_TEST || MULTI5_TEST || PHASE3_TEST) ? 22 : 2),
+        .H_FRONT((PRELOAD_TEST || MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST) ? 22 : 2),
         .H_SYNC(2), .H_BACK(2),
         .V_FRONT(1), .V_SYNC(1), .V_BACK(1)
     ) dut (
@@ -321,8 +325,20 @@ module tb_sdram_bmp_row_top_chain #(
     end
 
     initial begin
+        if (PHASE1_TEST || PHASE2_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST) begin
+            force dut.write_rst_n = 1'b0;
+            force dut.mem_rst_n = 1'b0;
+            force dut.video_rst_n = 1'b0;
+        end
+        if (PHASE5_TEST)
+            sw = 4'b0010;
         key_n[0] = 1'b0;
         #40;
+        if (PHASE1_TEST || PHASE2_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST) begin
+            force dut.write_rst_n = 1'b1;
+            force dut.mem_rst_n = 1'b1;
+            force dut.video_rst_n = 1'b1;
+        end
         key_n[0] = 1'b1;
         #20;
         while (timeout < 100000 && !seen_run) begin
@@ -436,10 +452,10 @@ module tb_sdram_bmp_row_top_chain #(
             sw = 4'b0000;
             @(negedge clk_50m); force dut.key_press_pulse = 4'b1110;
             @(posedge clk_50m); #1; release dut.key_press_pulse;
-            if (dut.manual_image_index !== 4'd1 || dut.zoom_2x !== 1'b1 ||
-                dut.picture_style !== 2'd1 || dut.audio_paused !== 1'b0 ||
+            if (dut.zoom_2x !== 1'b1 || dut.picture_style !== 2'd1 ||
+                dut.audio_paused !== 1'b0 ||
                 dut.audio_track_index !== 2'd0) begin
-                $display("FAIL phase2 non-detail changed state");
+                $display("FAIL phase2 non-detail changed detail/audio state");
                 $finish;
             end
             $display("PASS phase2 detail controls and audio isolation");
@@ -526,6 +542,77 @@ module tb_sdram_bmp_row_top_chain #(
             $finish;
         end
 
+        if (PHASE4_TEST) begin
+            timeout = 0;
+            while (timeout < 30000 && dut.frame_valid != 5'b11111) begin
+                @(posedge clk_50m);
+                timeout = timeout + 1;
+            end
+            if (dut.frame_valid != 5'b11111)
+                $fatal(1, "phase4 five-frame preload timeout");
+
+            // Slideshow uses the upper switches as the direct primitive
+            // selector. Start at 1x with Curtain selected.
+            sw = 4'b1001;
+            repeat (4) @(posedge clk_50m);
+            if (!dut.auto_mode || dut.auto_speed_level != 2'd1 ||
+                dut.slideshow_paused)
+                $fatal(1, "phase4 slideshow entry failed");
+
+            @(negedge clk_50m); force dut.key_press_pulse = 4'b0010;
+            @(posedge clk_50m); #1; release dut.key_press_pulse;
+            if (dut.auto_speed_level != 2'd2)
+                $fatal(1, "phase4 KEY2 did not select 2x speed");
+
+            old_display_media = dut.auto_image_index;
+            @(negedge clk_50m); force dut.key_press_pulse = 4'b1000;
+            @(posedge clk_50m); #1; release dut.key_press_pulse;
+            if (dut.auto_speed_level != 2'd2 || dut.slideshow_paused ||
+                dut.auto_image_index != old_display_media)
+                $fatal(1, "phase4 KEY4 was not a no-op");
+
+            @(negedge clk_50m); force dut.key_press_pulse = 4'b0100;
+            @(posedge clk_50m); #1; release dut.key_press_pulse;
+            if (!dut.slideshow_paused)
+                $fatal(1, "phase4 KEY3 did not pause");
+            repeat (40) @(posedge clk_50m);
+            if (dut.auto_image_index != old_display_media)
+                $fatal(1, "phase4 paused slideshow advanced");
+
+            @(negedge clk_50m); force dut.key_press_pulse = 4'b0100;
+            @(posedge clk_50m); #1; release dut.key_press_pulse;
+            timeout = 0;
+            while (timeout < 40 && dut.auto_image_index == old_display_media) begin
+                @(posedge clk_50m); timeout = timeout + 1;
+            end
+            if (dut.auto_image_index == old_display_media)
+                $fatal(1, "phase4 resumed slideshow did not advance");
+            repeat (6) @(posedge clk_50m);
+            if (dut.transition_mode != 3'd2)
+                $fatal(1, "phase4 slideshow did not use direct Curtain primitive");
+
+            // 2x -> 4x -> 0.5x -> 1x.
+            repeat (3) begin
+                @(negedge clk_50m); force dut.key_press_pulse = 4'b0010;
+                @(posedge clk_50m); #1; release dut.key_press_pulse;
+            end
+            if (dut.auto_speed_level != 2'd1)
+                $fatal(1, "phase4 four-speed cycle failed");
+
+            // Product Show remains a placeholder; KEY2 is its Phase-4 Theme
+            // test entry and must advance both image and context.
+            sw = 4'b1100;
+            repeat (4) @(posedge clk_50m);
+            old_display_media = dut.manual_image_index;
+            @(negedge clk_50m); force dut.key_press_pulse = 4'b0010;
+            @(posedge clk_50m); #1; release dut.key_press_pulse;
+            if (dut.manual_image_index == old_display_media ||
+                dut.transition_context != 2'd1 || dut.demo_transition_step != 2'd1)
+                $fatal(1, "phase4 Product Show Theme test entry failed");
+
+            $display("PASS phase4 slideshow controls and Theme test entry");
+            $finish;
+        end
 
         if (PRELOAD_TEST) begin
             // The loader and writer stubs finish each transaction quickly,
@@ -836,8 +923,12 @@ module fat32_image_loader #(
     output wire [10:0] image_wr_col, output reg busy,
     output reg load_done, output reg load_error, output reg [3:0] status_code,
     output wire [3:0] error_stage,
-    output reg [15:0] bmp_source_width, output reg [15:0] bmp_source_height
+    output reg [15:0] bmp_source_width, output reg [15:0] bmp_source_height,
+    output wire benchmark_file_phase, output wire benchmark_payload_sector
 );
+
+assign benchmark_file_phase = busy;
+assign benchmark_payload_sector = sd_sec_read;
     reg [5:0] count;
     assign sd_sec_read = 1'b0;
     assign sd_sec_read_addr = 32'd0;
@@ -1089,6 +1180,8 @@ module osd_status_1280_pipe (
     input wire [1:0] brightness_level, input wire [1:0] contrast_level,
     input wire [1:0] audio_track_index, input wire [1:0] mode,
     input wire panel_enable, input wire zoom_2x, input wire [1:0] picture_style,
+    input wire [1:0] auto_speed_level, input wire slideshow_paused,
+    input wire [1:0] transition_theme, input wire [1:0] transition_context,
     input wire [15:0] source_width_bcd, input wire [15:0] source_height_bcd,
     output wire [23:0] rgb_o
 );

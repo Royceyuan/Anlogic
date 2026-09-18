@@ -11,6 +11,8 @@ module osd_status_1280_pipe (
     input wire [1:0] brightness_level, input wire [1:0] contrast_level,
     input wire [1:0] audio_track_index,
     input wire [1:0] mode, input wire panel_enable,
+    input wire [1:0] auto_speed_level, input wire slideshow_paused,
+    input wire [1:0] transition_theme, input wire [1:0] transition_context,
     input wire zoom_2x, input wire [1:0] picture_style,
     input wire [15:0] source_width_bcd, input wire [15:0] source_height_bcd,
     output wire [23:0] rgb_o
@@ -84,6 +86,10 @@ function [4:0] cell_glyph;
     input [1:0] ui_mode;
     input zoom;
     input [1:0] style;
+    input [1:0] speed;
+    input paused;
+    input [1:0] theme;
+    input [1:0] context;
     begin
         if (pos >= 2 && pos <= 14)
             cell_glyph=mode_glyph(pos, ui_mode);
@@ -91,15 +97,6 @@ function [4:0] cell_glyph;
             cell_glyph=SP;
             case(pos)
                 17:cell_glyph=I; 18:cell_glyph=M; 19:cell_glyph=G; 20:cell_glyph=digit(img);
-                22:cell_glyph=(ui_mode==2'b10)?X:B;
-                23:cell_glyph=(ui_mode==2'b10)?digit(zoom?2:1):R;
-                25:cell_glyph=(ui_mode==2'b10)?S:((br==2)?SP:D1);
-                26:cell_glyph=(ui_mode==2'b10)?digit(style):((br==0)?D0:D5);
-                27:cell_glyph=(ui_mode==2'b10)?SP:D0; 28:cell_glyph=(ui_mode==2'b10)?SP:PCT;
-                30:cell_glyph=(ui_mode==2'b10)?SP:C; 31:cell_glyph=(ui_mode==2'b10)?SP:T;
-                33:cell_glyph=(ui_mode==2'b10)?SP:((ct==2)?SP:D1);
-                34:cell_glyph=(ui_mode==2'b10)?SP:((ct==0)?D0:D5);
-                35:cell_glyph=(ui_mode==2'b10)?SP:D0; 36:cell_glyph=(ui_mode==2'b10)?SP:PCT;
                 38:cell_glyph=A; 39:cell_glyph=U; 40:cell_glyph=D;
                 41:cell_glyph=digit(audio_track);
                 46:cell_glyph=D; 47:cell_glyph=I; 48:cell_glyph=M;
@@ -107,6 +104,34 @@ function [4:0] cell_glyph;
                 53:cell_glyph=dim3; 54:cell_glyph=dim4; 55:cell_glyph=dim5;
                 56:cell_glyph=dim6; 57:cell_glyph=dim7; 58:cell_glyph=dim8;
                 default:cell_glyph=SP;
+            endcase
+            case(ui_mode)
+                2'b00: case(pos)
+                    22:cell_glyph=T; 23:cell_glyph=H; 24:cell_glyph=M;
+                    25:cell_glyph=digit(theme);
+                    28:cell_glyph=C; 29:cell_glyph=T; 30:cell_glyph=X;
+                    31:cell_glyph=digit(context);
+                endcase
+                2'b01: case(pos)
+                    22:cell_glyph=S; 23:cell_glyph=P; 24:cell_glyph=D;
+                    25:cell_glyph=digit((speed==2'd3)?4:speed);
+                    26:cell_glyph=digit((speed==2'd0)?5:0); 27:cell_glyph=X;
+                    30:cell_glyph=paused?P:R;
+                    31:cell_glyph=paused?A:U;
+                    32:cell_glyph=paused?U:N;
+                endcase
+                2'b10: case(pos)
+                    22:cell_glyph=X; 23:cell_glyph=digit(zoom?2:1);
+                    25:cell_glyph=S; 26:cell_glyph=digit(style);
+                endcase
+                default: case(pos)
+                    22:cell_glyph=B; 23:cell_glyph=R;
+                    25:cell_glyph=(br==2)?SP:D1;
+                    26:cell_glyph=(br==0)?D0:D5; 27:cell_glyph=D0; 28:cell_glyph=PCT;
+                    30:cell_glyph=C; 31:cell_glyph=T;
+                    33:cell_glyph=(ct==2)?SP:D1;
+                    34:cell_glyph=(ct==0)?D0:D5; 35:cell_glyph=D0; 36:cell_glyph=PCT;
+                endcase
             endcase
         end
     end
@@ -239,13 +264,16 @@ always @(posedge clk or negedge rst_n) begin
         // qualify x[10] so it cannot wrap and redraw the OSD at x=1024.
         glyph_active_s1<=!x_s0[10]&&(y_s0>=10'd4)&&(y_s0<10'd11)&&(x_s0[2:0]<3'd5)&&
                          (cell_glyph(x_s0[9:3],image_index,auto_mode,
-                                     brightness_level,contrast_level,
-                                     audio_track_index,mode,zoom_2x,picture_style)!=SP);
+                                      brightness_level,contrast_level,
+                                      audio_track_index,mode,zoom_2x,picture_style,
+                                      auto_speed_level,slideshow_paused,
+                                      transition_theme,transition_context)!=SP);
         row_s1<=y_s0-10'd4;
         col_s1<=x_s0[2:0];
         glyph_s1<=cell_glyph(x_s0[9:3],image_index,auto_mode,
-                             brightness_level,contrast_level,audio_track_index,mode,
-                             zoom_2x,picture_style);
+                              brightness_level,contrast_level,audio_track_index,mode,
+                              zoom_2x,picture_style,auto_speed_level,slideshow_paused,
+                              transition_theme,transition_context);
         rgb_s1<=rgb_s0;
 
         de_s2<=de_s1;
