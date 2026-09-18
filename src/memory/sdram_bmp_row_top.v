@@ -1251,6 +1251,7 @@ generate
                 .mode(2'd0), .panel_enable(1'b1),
                 .auto_speed_level(2'd1), .slideshow_paused(1'b0),
                 .transition_theme(2'd0), .transition_context(2'd0),
+                .product_show_paused(1'b0),
                 .zoom_2x(1'b0), .picture_style(2'd0),
                 .source_width_bcd(display_source_width_bcd),
                 .source_height_bcd(display_source_height_bcd), .rgb_o(video_osd_1280_rgb)

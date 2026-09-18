@@ -52,6 +52,10 @@ module top_v66 #(
     parameter integer VIDEO_FRAME_COUNT = 10,
     parameter integer KEY_DEBOUNCE_BITS = 19,
     parameter integer AUTO_PERIOD_CYCLES = 250_000_000,
+    parameter integer ENABLE_PRODUCT_SHOW_FSM = 0,
+    parameter integer PRODUCT_VIDEO_HOLD_CYCLES = 150_000_000,
+    parameter integer PRODUCT_DETAIL_HOLD_CYCLES = 150_000_000,
+    parameter integer PRODUCT_TRANSITION_HOLD_CYCLES = 35_000_000,
     parameter integer SOURCE_W = VIDEO_W,
     parameter integer SOURCE_H = VIDEO_H,
     parameter integer LINEBUF_SCALE = 0,
@@ -405,6 +409,15 @@ localparam [1:0] MODE_DETAIL_VIEW   = 2'b10;
 localparam [1:0] MODE_AUDIO_CONTROL = 2'b11;
 wire [1:0] ui_mode = sw[1:0];
 wire [2:0] product_theme_transition_mode;
+wire product_show_enable = ENABLE_PRODUCT_SHOW_FSM &&
+                           (ui_mode == MODE_PRODUCT_SHOW) &&
+                           (frame_valid == 5'b11111);
+wire [3:0] product_show_image_index;
+wire [3:0] product_show_product_index;
+wire [2:0] product_show_state;
+wire product_show_paused;
+wire [1:0] product_show_transition_context;
+wire [1:0] product_show_demo_step;
 wire [2:0] selected_transition_mode =
     (ui_mode == MODE_PRODUCT_SHOW) ? product_theme_transition_mode :
                                      {1'b0, sw[3:2]};
@@ -419,6 +432,7 @@ reg [1:0] auto_speed_level_ff1, auto_speed_level_ff2;
 reg slideshow_paused_ff1, slideshow_paused_ff2;
 reg [1:0] transition_theme_ff1, transition_theme_ff2;
 reg [1:0] transition_context_ff1, transition_context_ff2;
+reg product_show_paused_ff1, product_show_paused_ff2;
 wire transition_midpoint_ready = (transition_mode == 3'b000) ?
                                    (fade_level == 5'd0) :
                                    (transition_progress >= 6'd16);
@@ -489,6 +503,20 @@ transition_theme_controller u_transition_theme_controller (
     .context(transition_context),
     .demo_step(demo_transition_step),
     .primitive_mode(product_theme_transition_mode)
+);
+product_show_controller #(
+    .VIDEO_HOLD_CYCLES(PRODUCT_VIDEO_HOLD_CYCLES),
+    .DETAIL_HOLD_CYCLES(PRODUCT_DETAIL_HOLD_CYCLES),
+    .TRANSITION_HOLD_CYCLES(PRODUCT_TRANSITION_HOLD_CYCLES),
+    .PRODUCT_COUNT(2)
+) u_product_show_controller (
+    .clk(clk_50m), .rst_n(write_rst_n), .enable(product_show_enable),
+    .key_pause(key_press_pulse[1]), .key_previous(key_press_pulse[2]),
+    .key_next(key_press_pulse[3]), .image_index(product_show_image_index),
+    .product_index(product_show_product_index), .state(product_show_state),
+    .pause_flag(product_show_paused),
+    .transition_context(product_show_transition_context),
+    .demo_step(product_show_demo_step)
 );
 assign desired_image_index = VIDEO_SEQUENCE ?
                              (auto_mode ? active_media_index : manual_image_index) :
@@ -1117,6 +1145,11 @@ always @(posedge clk_50m or negedge write_rst_n) begin
                 auto_speed_level <= auto_speed_level + 1'b1;
             if (key_press_pulse[2])
                 slideshow_paused <= ~slideshow_paused;
+        end else if (ENABLE_PRODUCT_SHOW_FSM &&
+                     (ui_mode == MODE_PRODUCT_SHOW)) begin
+            manual_image_index <= product_show_image_index;
+            transition_context <= product_show_transition_context;
+            demo_transition_step <= product_show_demo_step;
         end else if (key_press_pulse[1]) begin
             // Phase-4 Product Show test entry: advance one cached placeholder
             // while cycling the three transition contexts.
@@ -1378,6 +1411,8 @@ always @(posedge video_clk or negedge video_rst_n) begin
         transition_theme_ff2 <= transition_theme_ff1;
         transition_context_ff1 <= transition_context;
         transition_context_ff2 <= transition_context_ff1;
+        product_show_paused_ff1 <= product_show_paused;
+        product_show_paused_ff2 <= product_show_paused_ff1;
         osd_panel_enable_ff1 <= osd_panel_enable;
         osd_panel_enable_ff2 <= osd_panel_enable_ff1;
         ui_mode_ff1        <= ui_mode;
@@ -1655,6 +1690,7 @@ generate
                 .slideshow_paused(slideshow_paused_ff2),
                 .transition_theme(transition_theme_ff2),
                 .transition_context(transition_context_ff2),
+                .product_show_paused(product_show_paused_ff2),
                 .zoom_2x(display_zoom_2x), .picture_style(picture_style_ff2),
                 .source_width_bcd(display_source_width_bcd),
                 .source_height_bcd(display_source_height_bcd),

@@ -21,6 +21,7 @@ osd_status_1280_pipe dut (
     .panel_enable(panel_enable), .zoom_2x(1'b0), .picture_style(2'd0),
     .auto_speed_level(2'd1), .slideshow_paused(1'b0),
     .transition_theme(2'd0), .transition_context(2'd0),
+    .product_show_paused(1'b0),
     .source_width_bcd(16'h0717),
     .source_height_bcd(16'h0527), .rgb_o(rgb_o)
 );

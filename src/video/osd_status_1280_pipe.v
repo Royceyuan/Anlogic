@@ -13,6 +13,7 @@ module osd_status_1280_pipe (
     input wire [1:0] mode, input wire panel_enable,
     input wire [1:0] auto_speed_level, input wire slideshow_paused,
     input wire [1:0] transition_theme, input wire [1:0] transition_context,
+    input wire product_show_paused,
     input wire zoom_2x, input wire [1:0] picture_style,
     input wire [15:0] source_width_bcd, input wire [15:0] source_height_bcd,
     output wire [23:0] rgb_o
@@ -88,6 +89,7 @@ function [4:0] cell_glyph;
     input [1:0] style;
     input [1:0] speed;
     input paused;
+    input ps_paused;
     input [1:0] theme;
     input [1:0] context;
     begin
@@ -106,12 +108,15 @@ function [4:0] cell_glyph;
                 default:cell_glyph=SP;
             endcase
             case(ui_mode)
-                2'b00: case(pos)
-                    22:cell_glyph=T; 23:cell_glyph=H; 24:cell_glyph=M;
-                    25:cell_glyph=digit(theme);
-                    28:cell_glyph=C; 29:cell_glyph=T; 30:cell_glyph=X;
-                    31:cell_glyph=digit(context);
-                endcase
+               2'b00: case(pos)
+                   22:cell_glyph=T; 23:cell_glyph=H; 24:cell_glyph=M;
+                   25:cell_glyph=digit(theme);
+                   28:cell_glyph=C; 29:cell_glyph=T; 30:cell_glyph=X;
+                   31:cell_glyph=digit(context);
+                   34:cell_glyph=ps_paused?P:R;
+                   35:cell_glyph=ps_paused?A:U;
+                   36:cell_glyph=ps_paused?U:N;
+               endcase
                 2'b01: case(pos)
                     22:cell_glyph=S; 23:cell_glyph=P; 24:cell_glyph=D;
                     25:cell_glyph=digit((speed==2'd3)?4:speed);
@@ -263,17 +268,19 @@ always @(posedge clk or negedge rst_n) begin
         // x[9:3] deliberately remains a compact 7-bit glyph selector;
         // qualify x[10] so it cannot wrap and redraw the OSD at x=1024.
         glyph_active_s1<=!x_s0[10]&&(y_s0>=10'd4)&&(y_s0<10'd11)&&(x_s0[2:0]<3'd5)&&
-                         (cell_glyph(x_s0[9:3],image_index,auto_mode,
-                                      brightness_level,contrast_level,
-                                      audio_track_index,mode,zoom_2x,picture_style,
-                                      auto_speed_level,slideshow_paused,
-                                      transition_theme,transition_context)!=SP);
+                        (cell_glyph(x_s0[9:3],image_index,auto_mode,
+                                     brightness_level,contrast_level,
+                                     audio_track_index,mode,zoom_2x,picture_style,
+                                     auto_speed_level,slideshow_paused,
+                                     transition_theme,transition_context,
+                                     product_show_paused)!=SP);
         row_s1<=y_s0-10'd4;
         col_s1<=x_s0[2:0];
         glyph_s1<=cell_glyph(x_s0[9:3],image_index,auto_mode,
-                              brightness_level,contrast_level,audio_track_index,mode,
-                              zoom_2x,picture_style,auto_speed_level,slideshow_paused,
-                              transition_theme,transition_context);
+                             brightness_level,contrast_level,audio_track_index,mode,
+                             zoom_2x,picture_style,auto_speed_level,slideshow_paused,
+                             transition_theme,transition_context,
+                             product_show_paused);
         rgb_s1<=rgb_s0;
 
         de_s2<=de_s1;

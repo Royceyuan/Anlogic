@@ -522,13 +522,21 @@
                     <Attr Name="CompileOrder" Val="66"/>
                 </FileInfo>
             </File>
+            <File Path="src/video/product_show_controller.v">
+                <FileInfo>
+                    <Attr Name="UsedInSyn" Val="true"/>
+                    <Attr Name="UsedInP&R" Val="true"/>
+                    <Attr Name="BelongTo" Val="design_1"/>
+                    <Attr Name="CompileOrder" Val="67"/>
+                </FileInfo>
+            </File>
             <File Path="src/memory/top_1280x720_feature_v73_audio_visualizer.v">
                 <FileInfo>
                     <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="67"/>
+                    <Attr Name="CompileOrder" Val="68"/>
                 </FileInfo>
             </File>
         </Verilog>
