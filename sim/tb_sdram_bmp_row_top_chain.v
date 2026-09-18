@@ -1182,7 +1182,6 @@ module osd_status_1280_pipe (
     input wire panel_enable, input wire zoom_2x, input wire [1:0] picture_style,
     input wire [1:0] auto_speed_level, input wire slideshow_paused,
     input wire [1:0] transition_theme, input wire [1:0] transition_context,
-    input wire product_show_paused,
     input wire [15:0] source_width_bcd, input wire [15:0] source_height_bcd,
     output wire [23:0] rgb_o
 );

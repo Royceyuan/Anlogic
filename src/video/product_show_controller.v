@@ -127,7 +127,7 @@ always @(posedge clk or negedge rst_n) begin
                 end
             end
             PS_VIDEO_TO_DETAIL: begin
-                if (hold_count == TRANSITION_HOLD_CYCLES - 1) begin
+                if (!pause_flag && hold_count == TRANSITION_HOLD_CYCLES - 1) begin
                     state <= PS_DETAIL_HOLD;
                     hold_count <= 29'd0;
                 end else
@@ -149,27 +149,31 @@ always @(posedge clk or negedge rst_n) begin
                 end
             end
             PS_DETAIL_TRANSITION: begin
-                if (hold_count == TRANSITION_HOLD_CYCLES - 1) begin
+                if (!pause_flag && hold_count == TRANSITION_HOLD_CYCLES - 1) begin
                     state <= PS_DETAIL_HOLD;
                     hold_count <= 29'd0;
                 end else
                     hold_count <= hold_count + 1'b1;
             end
             PS_PRODUCT_END: begin
-                product_index <= next_product(product_index);
-                state <= PS_PRODUCT_TRANSITION;
-                hold_count <= 29'd0;
+                if (!pause_flag) begin
+                    product_index <= next_product(product_index);
+                    state <= PS_PRODUCT_TRANSITION;
+                    hold_count <= 29'd0;
+                end
             end
             PS_PRODUCT_TRANSITION: begin
-                if (hold_count == TRANSITION_HOLD_CYCLES - 1) begin
+                if (!pause_flag && hold_count == TRANSITION_HOLD_CYCLES - 1) begin
                     state <= PS_NEXT_PRODUCT;
                     hold_count <= 29'd0;
                 end else
                     hold_count <= hold_count + 1'b1;
             end
             default: begin
-                state <= PS_LOAD_PRODUCT;
-                hold_count <= 29'd0;
+                if (!pause_flag) begin
+                    state <= PS_LOAD_PRODUCT;
+                    hold_count <= 29'd0;
+                end
             end
         endcase
     end
