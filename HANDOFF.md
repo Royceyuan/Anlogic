@@ -1,13 +1,13 @@
 # HX4S20 多媒体工程交接
 
-更新时间：2026-09-09
+更新时间：2026-09-18
 适用目录：`D:\VSCode\CodeFiles\Git_TD\Anlogic`
-当前分支/提交：`Yan_Chen0907` / `a8b9495264fe654d4ef83bfe631bac3941fdff19`
-远端：`origin/Yan_Chen0907`，当前 `HEAD` 与远端同提交。
+当前分支/提交：`Yan_Chen_Double` / `cfd5b70a271fcb263abf4566951f4e493ae0ba85`
+远端：`origin/Yan_Chen_Double`，当前 `HEAD` 与远端同提交。
 
 ## 1. 当前任务与最终目标
 
-当前没有正在实施的新功能；刚按用户要求从已撤销的“商品展示/原生四线 SD”实验完整回退到 GitHub `Yan_Chen0907`。
+当前按双 FPGA 双屏博物馆终端计划推进主板 `MAIN-0`；主板基线已切换到 GitHub `Yan_Chen_Double`。
 
 本工程的稳定目标是 HX4S20 (`EG4S20BG256`) 上的 1280×720 HDMI 多媒体图片播放器：TF 卡读取 BMP，五图缓存和快速切换，转场、亮度/对比度、顶部 OSD、UART 中文字幕，以及 v73 候选中的 WAV 音频和音频波形可视化。
 
@@ -17,18 +17,33 @@
 
 ### 已确认
 
-- 当前分支最新提交 `a8b9495` 为 `fix: slim audio control display logic`。它移除了 OSD 中自动轮播速度和暂停文字的显示逻辑，保留音轨号显示，并新增 `release/hx4s20_1280x720_v73_multiaudio_controls_minimal.bit` 的 LFS 记录及 bitgen 脚本。
+- 当前分支最新提交 `cfd5b70` 为 `fix: make product show FSM authoritative so KEY2 only pauses`；本次 MAIN-0 不修改该提交中的 RTL。
 - 历史 v72 图片链和 v73 音频候选源均在当前 checkout 中；`src/memory/sdram_bmp_row_top_v66.v` 是共同的媒体核心。
 - 当前唯一 TD 工程为 `hx4s20_800x600_multimedia.al`。其工程配置的活动顶层仍是 `top_1280x720_feature_v72_resource_optimized`，并非 v73；这是当前文件的事实。
+- 工程目标器件为 `EG4S20BG256`；输入时钟为 50 MHz。
+- 活动 ADC 为 `constraints/top_800x600_adaptive_v66_uart_subtitle.adc`，活动 SDC 为 `constraints/top_1280x720_v72_resource_optimized.sdc`；ADC 中的 HDMI1、TF/SPI、按键、拨码、LED、数码管和 VGA 管脚与 `资料/HX4S20C_板级接口与管脚速查.md` 一致。
+- 当前工程包装顶层启用 1280×720、960×540 源帧、五图缓存、TF/SPI、SDRAM、OSD、UART 字幕、转场和音频参数接口；v72 包装未启用 v73 音频可视化。
 - v73 独立包装顶层 `src/memory/top_1280x720_feature_v73_audio_visualizer.v`、ADC/SDC 及完整 P&R 脚本存在。该包装以 `top_v66` 启用五图、1280×720、UART 字幕和音频可视化。
-- 本轮之前创建的商品展示顶层、原生四线 SD 状态机、诊断 bit、P&R 目录、ModelSim work、相关测试和脚本均已被用户明确要求回退并清除；当前仓库中不存在这些文件。除非用户再次明确提出，不要恢复或继续该实验。
+- 用户确认主板 HDMI、TF、SDRAM、按键、SW4、音频硬件和烧录/板测条件均可用；五件文物最终素材尚未准备，按阶段需要时再提供。
+- 本轮之前创建的商品展示顶层、原生四线 SD 状态机及相关实验仍不属于当前主线；除非用户再次明确提出，不要恢复或继续该实验。
 
 ### 未完成 / 当前卡点
 
-- 当前 checkout 没有 `_build_v73_audio_visualizer` 或 v72 的完整构建目录和当前轮报告。不能声称 `a8b9495` 已重新 P&R 或已板测。
+- 当前工作区存在多个未跟踪的 `_build_*`、`work_*`、TD 运行目录和报告；按用户要求全部保留，不清理、不提交。
 - v73 的 `build_v73_audio_visualizer_bitgen.tcl` 与两个多音频 bitgen 脚本都依赖缺失的 `_build_v73_audio_visualizer/v73_audio_visualizer_pr.db`；不能直接运行它们生成可信 bit。
-- 当前工作区有 10 个 Git LFS 跟踪的历史 release bit 缺失，`git status` 显示为删除；详见“项目状态快照”。不要在未说明目的的情况下清除该状态、提交删除或自动下载/恢复 LFS 对象。
-- 当前用户没有要求继续 v72/v73 或恢复缺失 release；下一步应等待明确任务。若用户要求继续，先确认目标是稳定 v72 还是 v73 音频候选。
+- 当前 `release/` 中已能读取历史 v70/v71/v72/v73 bit；它们只作为可追溯发布物，不能替代本轮 P&R 证据。
+- 当前没有可执行的 `iverilog`、`vvp` 或 `verilator` 在 PATH 中；仓库保留 ModelSim `.do` 脚本，仿真回归需在具备 ModelSim/Questa 的环境执行。
+
+### MAIN-0 审计结论（2026-09-18）
+
+- **基线身份：通过。** 分支 `Yan_Chen_Double`，HEAD/远端均为 `cfd5b70`；器件 `EG4S20BG256`。
+- **活动工程：通过。** `hx4s20_800x600_multimedia.al` 的活动顶层为 `top_1280x720_feature_v72_resource_optimized`；v73 顶层在工程中存在但为旁路候选。
+- **管脚映射：通过。** 当前 ADC 与 HX4S20C 资料中的 R7、A2/B2/B1/C1、C8/C7/C6/C5、A14/A13/B14/A12、K1/B3/E3/F5 等映射一致。
+- **当前功能接入：已确认源码事实。** 五图缓存、TF/SPI、SDRAM、1280×720 HDMI、OSD、UART 字幕和转场参数在 v72 包装中接入；最终文物素材尚未接入，符合用户当前状态。
+- **已有 bit：可追溯但非本轮生成。** `release/hx4s20_1280x720_v72_resource_optimized.bit` 为 629664 bytes，SHA256 为 `3226099D43AAE624BBAAB9AEA543901316902BC85701E0FD7CBBF1192D4DAA05`；当前 `.al` 运行目录也有 bit，但与发布 bit 的 SHA256 不同。
+- **STA/P&R 证据：不通过本阶段门禁。** `hx4s20_800x600_multimedia_Runs/phy_1/final_timing.rpt` 载入了 v71、v72 和 v69 三组 SDC，报告 `STA coverage 0.00%`，并出现重复时钟/空时钟组告警；不能据此宣称 v72 本轮时序闭合。
+- **DRC：部分可见但不能替代完整门禁。** 运行日志记录 `No multi-drive`、`No abnormal timing path`，同时存在重复约束和本地时钟资源告警；完整 MAIN-0 交付不把它标记为无条件 PASS。
+- **仿真：环境未具备。** 已列出仓库中的 ModelSim `.do` 和 testbench 回归入口，但当前机器 PATH 中未找到 `iverilog`/`vvp`/`verilator`，因此本轮未重新执行 RTL 仿真。
 
 ## 3. 关键上下文
 
@@ -115,56 +130,38 @@
 
 ### 已确认
 
-- `HEAD`、`origin/Yan_Chen0907` 和本地 `Yan_Chen0908` 当前都指向 `a8b9495`。
+- `HEAD`、`origin/Yan_Chen_Double` 当前都指向 `cfd5b70`；`Yan_Chen0909` 仍指向同一提交。
 - `.al` 文件活动模块为 v72；v73 的 P&R 脚本显式指定 v73 顶层，故可独立运行但不会因打开工程自动成为顶层。
-- 当前 `release/` 顶层中实际存在且 LFS 状态为本地可用的候选发布文件只有：
-  - `hx4s20_1280x720_v73_multiaudio.bit`，629,662 bytes，LFS OID 前缀 `eb6a0f0850`；
-  - `hx4s20_1280x720_v73_multiaudio_controls_minimal.bit`，629,662 bytes，LFS OID 前缀 `7b8dfbb898`。
+- 当前 `release/` 顶层中的历史 v70/v71/v72/v73 bit 均可读取；它们不是本轮 MAIN-0 生成物。
 - `release/_timing_failed/hx4s20_sdram_native_singleword_diag.bit` 也存在，但目录名已表明它不是发布候选。
-- 10 个历史 release bit 在 Git LFS 中有记录但在工作树缺失，`git status` 将它们显示为删除；当前原因未经独立验证。
-- 当前没有未跟踪的商品展示文件或 TD P&R 构建目录。
+- 当前工作区存在未跟踪的构建目录、运行目录、报告和备份 patch；用户要求保留，不能清理或纳入提交。
 
 ### 推测 / 暂定
 
-- `a8b9495` 的 v73 多音频 bit 是否已在用户板上按当前提交验证，暂无当前轮可核验 P&R/板测报告；不能视为已验收。
-- 缺失 LFS bit 是此前清理、LFS checkout 策略还是其他本地状态造成，暂无可靠根因；如需恢复应先保留现状并由用户决定是否运行 LFS 恢复。
+- 当前 `release` bit 的历史生成来源与本轮 `Yan_Chen_Double` 基线之间没有一一对应的本轮 STA/DRC/板测闭环；不能视为本计划任何阶段已通过。
 - 如果再次需要商品展示，既有原生 SD 路线并不具备可复用的板级成功证据，应从新的需求和独立验证计划开始。
 
 ## 11. 当前项目状态快照
 
 ```text
-分支：Yan_Chen0907（跟踪 origin/Yan_Chen0907）
-提交：a8b9495
+分支：Yan_Chen_Double（跟踪 origin/Yan_Chen_Double）
+提交：cfd5b70
 工程：hx4s20_800x600_multimedia.al
 工程默认顶层：top_1280x720_feature_v72_resource_optimized
 v73 候选顶层：top_1280x720_feature_v73_audio_visualizer
-当前 P&R 目录：无
+活动 ADC：constraints/top_800x600_adaptive_v66_uart_subtitle.adc
+活动 SDC：constraints/top_1280x720_v72_resource_optimized.sdc
+当前 P&R 目录：hx4s20_800x600_multimedia_Runs/（未跟踪，报告约束状态不合格）
 当前商品展示文件：无（已回退）
-当前未提交改动：HANDOFF.md（本次生成）+ 10 个缺失 LFS release bit
-```
-
-缺失的 LFS release 文件：
-
-```text
-release/hx4s20_1280x720_v70_official_hdmi_clean.bit
-release/hx4s20_1280x720_v70b_bandwidth_fix.bit
-release/hx4s20_1280x720_v70c_bram_restart_fix.bit
-release/hx4s20_1280x720_v71_full_features.bit
-release/hx4s20_1280x720_v72_resource_optimized.bit
-release/hx4s20_1280x720_v72_subtitle_continuous_scroll_v2.bit
-release/hx4s20_1280x720_v73_audio_visualizer_no_center_line.bit
-release/hx4s20_1280x720_v73_audio_visualizer_stable.bit
-release/hx4s20_800x600_adaptive_v69_subtitle_bram_aligned.bit
-release/hx4s20_800x600_feature_v57.bit
+当前未提交改动：HANDOFF.md；以及用户要求保留的未跟踪构建/运行产物
 ```
 
 ## 12. 下一步行动
 
-1. 先读取本文件，运行 `git status --short --branch`，确认用户希望继续 v72、v73 还是另起新功能；不要默认恢复商品展示。
-2. 若用户要使用/恢复历史 bit，先向用户说明上述 10 个 LFS 文件缺失；在用户同意后再通过 Git LFS 恢复，并核验文件大小与 SHA256。不要提交这些删除状态。
-3. 若用户选择 v73，先阅读 `top_1280x720_feature_v73_audio_visualizer.v`、`sdram_bmp_row_top_v66.v`、v73 ADC/SDC、P&R 脚本和历史文档；再跑 RTL/仿真与完整 P&R。不要使用缺失的旧 DB 直接 bitgen。
-4. 若用户选择 v72，先核实 `.al` 的活动顶层和 v72 约束/脚本，再针对目标问题作最小修改；保持 v73 候选隔离。
-5. 所有需要发布的 bit 都必须从本轮闭合 P&R DB 生成，并交付最终 STA、文件大小、SHA256 和“硬件是否已测试”的明确状态。
+1. `MAIN-0` 审计已完成；本阶段只同步了本 HANDOFF，未修改 RTL。
+2. `MAIN-1` 开始前，重新建立仅使用活动 v72 顶层和活动约束的可复现仿真/P&R 证据；不得复用报告中混入的 v71/v69 约束。
+3. 每个阶段的代码和阶段性 HANDOFF 更新只提交计划相关文件，提交后 push 到 `origin/Yan_Chen_Double`；不得把未跟踪构建产物纳入提交。
+4. 所有需要发布的 bit 都必须从本轮闭合 P&R DB 生成，并交付最终 STA、文件大小、SHA256 和“硬件是否已测试”的明确状态。
 
 ## 13. 新 Agent 启动指令
 
