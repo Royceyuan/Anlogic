@@ -3,7 +3,7 @@
 
 module tb_fat32_wav_streamer;
 reg clk = 0, rst_n = 0, start = 0, sd_init_done = 1;
-reg [1:0] track_index = 0;
+reg [2:0] track_index = 0;
 wire sd_read;
 wire [31:0] sd_addr;
 reg [7:0] sd_data = 0;

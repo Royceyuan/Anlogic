@@ -202,6 +202,7 @@ always @(posedge clk or negedge rst_n) begin
             S_STREAM: begin
                 if (normal_pixel_fire) begin
                     if (OVERVIEW_ENABLE &&
+                        active_overview_frame < OVERVIEW_FRAME_COUNT &&
                         row_pixel_index >= active_crop_x0 &&
                         row_pixel_index < active_crop_x0 + OVERVIEW_PANEL_WIDTH)
                         overview_line[row_pixel_index - active_crop_x0] <= row_pixel;
@@ -226,7 +227,8 @@ always @(posedge clk or negedge rst_n) begin
                     burst_words_sent <= {ADDR_BITS{1'b0}};
                     if (burst_index == phase_bursts_per_row - 1) begin
                         burst_index <= {BURST_INDEX_BITS{1'b0}};
-                        if (!overview_phase && OVERVIEW_ENABLE) begin
+                        if (!overview_phase && OVERVIEW_ENABLE &&
+                            active_overview_frame < OVERVIEW_FRAME_COUNT) begin
                             overview_phase <= 1'b1;
                             overview_pixel_index <= 11'd0;
                             state <= S_REQ;

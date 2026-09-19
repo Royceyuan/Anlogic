@@ -912,7 +912,9 @@ module fat32_image_loader #(
     parameter integer RESOURCE_OPT_CONSTANT_MULT = 0
 ) (
     input wire clk, input wire rst_n, input wire load_start,
-    input wire [3:0] image_file_index, input wire bmp_mode,
+    input wire [3:0] image_file_index,
+    input wire museum_detail_mode, input wire [2:0] museum_artifact_index,
+    input wire [1:0] museum_detail_index, input wire bmp_mode,
     input wire sequence_mode, input wire sd_init_done,
     output wire sd_sec_read, output wire [31:0] sd_sec_read_addr,
     input wire [7:0] sd_sec_read_data,

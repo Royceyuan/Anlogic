@@ -22,6 +22,9 @@ module tb_fat32_bmp_adaptive_loader #(
     parameter integer DISK_BYTES = 4194304,
     parameter integer IMAGE_INDEX = 0,
     parameter integer MULTI_IMAGE_BMP = 0,
+    parameter integer MUSEUM_DETAIL = 0,
+    parameter integer ARTIFACT_INDEX = 0,
+    parameter integer DETAIL_INDEX = 1,
     parameter integer RESOURCE_OPT_CONSTANT_MULT = 0
 );
 
@@ -115,6 +118,9 @@ fat32_image_loader #(
     .rst_n                  (rst_n),
     .load_start             (load_start),
     .image_file_index       (IMAGE_INDEX[3:0]),
+    .museum_detail_mode     (MUSEUM_DETAIL != 0),
+    .museum_artifact_index  (ARTIFACT_INDEX[2:0]),
+    .museum_detail_index    (DETAIL_INDEX[1:0]),
     .bmp_mode               (1'b1), .sequence_mode(1'b0),
     .sd_init_done           (sd_init_done),
     .sd_sec_read            (sd_sec_read),
@@ -360,13 +366,13 @@ initial begin
     put_le32(VOLUME_LBA, 36, 32'd1);
     put_le32(VOLUME_LBA, 44, 32'd2);
 
-    // Root entry: IMAGE0.BMP through IMAGE9.BMP, selected by IMAGE_INDEX.
-    put_byte(ROOT_LBA, 0, "I");
-    put_byte(ROOT_LBA, 1, "M");
-    put_byte(ROOT_LBA, 2, "A");
-    put_byte(ROOT_LBA, 3, "G");
-    put_byte(ROOT_LBA, 4, "E");
-    put_byte(ROOT_LBA, 5, "0" + IMAGE_INDEX[3:0]);
+    // Root entry: IMAGE#.BMP or the fixed MAIN-2 ART#D#.BMP slot.
+    put_byte(ROOT_LBA, 0, MUSEUM_DETAIL ? "A" : "I");
+    put_byte(ROOT_LBA, 1, MUSEUM_DETAIL ? "R" : "M");
+    put_byte(ROOT_LBA, 2, MUSEUM_DETAIL ? "T" : "A");
+    put_byte(ROOT_LBA, 3, MUSEUM_DETAIL ? ("0" + ARTIFACT_INDEX[2:0]) : "G");
+    put_byte(ROOT_LBA, 4, MUSEUM_DETAIL ? "D" : "E");
+    put_byte(ROOT_LBA, 5, "0" + (MUSEUM_DETAIL ? DETAIL_INDEX[1:0] : IMAGE_INDEX[3:0]));
     put_byte(ROOT_LBA, 6, " ");
     put_byte(ROOT_LBA, 7, " ");
     put_byte(ROOT_LBA, 8, "B");

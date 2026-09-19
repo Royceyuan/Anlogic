@@ -556,12 +556,28 @@
                     <Attr Name="CompileOrder" Val="70"/>
                 </FileInfo>
             </File>
-            <File Path="src/memory/top_1280x720_main1_overview.v">
+            <File Path="src/video/museum_lecture_controller.v">
                 <FileInfo>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
                     <Attr Name="CompileOrder" Val="71"/>
+                </FileInfo>
+            </File>
+            <File Path="src/memory/top_1280x720_main1_overview.v">
+                <FileInfo>
+                    <Attr Name="UsedInSyn" Val="true"/>
+                    <Attr Name="UsedInP&R" Val="true"/>
+                    <Attr Name="BelongTo" Val="design_1"/>
+                    <Attr Name="CompileOrder" Val="72"/>
+                </FileInfo>
+            </File>
+            <File Path="src/memory/top_1280x720_main2_lecture.v">
+                <FileInfo>
+                    <Attr Name="UsedInSyn" Val="true"/>
+                    <Attr Name="UsedInP&R" Val="true"/>
+                    <Attr Name="BelongTo" Val="design_1"/>
+                    <Attr Name="CompileOrder" Val="73"/>
                 </FileInfo>
             </File>
         </Verilog>
@@ -608,7 +624,7 @@
             </File>
         </VHDL>
         <ADC_FILE>
-            <File Path="constraints/top_800x600_adaptive_v66_uart_subtitle.adc">
+            <File Path="constraints/top_1280x720_v73_audio_visualizer.adc">
                 <FileInfo>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
@@ -618,7 +634,7 @@
             </File>
         </ADC_FILE>
         <SDC_FILE>
-            <File Path="constraints/top_1280x720_v72_resource_optimized.sdc">
+            <File Path="constraints/top_1280x720_main2_lecture.sdc">
                 <FileInfo>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
@@ -635,8 +651,8 @@
         </FileSet>
     </FileSets>
     <TOP_MODULE>
-        <LABEL>top_1280x720_main1_overview</LABEL>
-        <MODULE>top_1280x720_main1_overview</MODULE>
+        <LABEL>top_1280x720_main2_lecture</LABEL>
+        <MODULE>top_1280x720_main2_lecture</MODULE>
         <CREATEINDEX>user</CREATEINDEX>
     </TOP_MODULE>
     <Property>

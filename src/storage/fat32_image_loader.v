@@ -24,6 +24,9 @@ module fat32_image_loader #(
     input  wire        rst_n,
     input  wire        load_start,
     input  wire [3:0]  image_file_index,
+    input  wire        museum_detail_mode,
+    input  wire [2:0]  museum_artifact_index,
+    input  wire [1:0]  museum_detail_index,
     input  wire        bmp_mode,
     input  wire        sequence_mode,
 
@@ -319,8 +322,24 @@ function [7:0] expected_name_byte;
     input [3:0] file_index;
     input       select_bmp;
     input       select_sequence;
+    input       select_museum_detail;
+    input [2:0] artifact_index;
+    input [1:0] detail_index;
     begin
-        if (select_sequence) begin
+        if (select_museum_detail) begin
+            case (index)
+                4'd0: expected_name_byte = "A";
+                4'd1: expected_name_byte = "R";
+                4'd2: expected_name_byte = "T";
+                4'd3: expected_name_byte = "0" + artifact_index;
+                4'd4: expected_name_byte = "D";
+                4'd5: expected_name_byte = "0" + detail_index;
+                4'd6, 4'd7: expected_name_byte = " ";
+                4'd8: expected_name_byte = "B";
+                4'd9: expected_name_byte = "M";
+                default: expected_name_byte = "P";
+            endcase
+        end else if (select_sequence) begin
             case (index)
                 4'd0: expected_name_byte = "F";
                 4'd1: expected_name_byte = "R";
@@ -598,11 +617,18 @@ always @(posedge clk or negedge rst_n) begin
             S_WAIT_ROOT: begin
                 if (sd_sec_read_data_valid) begin
                     if (sector_byte_index[4:0] == 5'd0) begin
-                        entry_name_match <= (sd_sec_read_data == expected_name_byte(4'd0, image_file_index, active_bmp_mode, sequence_mode));
+                        entry_name_match <= (sd_sec_read_data == expected_name_byte(
+                                            4'd0, image_file_index, active_bmp_mode,
+                                            sequence_mode, museum_detail_mode,
+                                            museum_artifact_index, museum_detail_index));
                         entry_deleted <= (sd_sec_read_data == 8'h00 || sd_sec_read_data == 8'he5);
                     end else if (sector_byte_index[4:0] < 5'd11) begin
                         entry_name_match <= entry_name_match &&
-                                            (sd_sec_read_data == expected_name_byte(sector_byte_index[3:0], image_file_index, active_bmp_mode, sequence_mode));
+                                            (sd_sec_read_data == expected_name_byte(
+                                             sector_byte_index[3:0], image_file_index,
+                                             active_bmp_mode, sequence_mode,
+                                             museum_detail_mode, museum_artifact_index,
+                                             museum_detail_index));
                     end else if (sector_byte_index[4:0] == 5'd11) begin
                         entry_attr <= sd_sec_read_data;
                     end else if (sector_byte_index[4:0] == 5'd20) begin

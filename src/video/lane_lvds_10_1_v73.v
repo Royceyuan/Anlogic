@@ -42,7 +42,7 @@ module lane_lvds_10_1_v73 #(
         S_load_en_2d <= S_load_en_1d;
     end
 
-    always @(posedge I_serial_clk or posedge I_serial_rst) begin
+    always @(posedge I_serial_clk) begin
         if(I_serial_rst)
             S_shift_data <= 'd0;
         else

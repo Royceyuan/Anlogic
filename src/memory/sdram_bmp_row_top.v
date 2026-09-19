@@ -541,6 +541,9 @@ fat32_image_loader #(
                       (MULTI_IMAGE_BMP ?
                        (load_active ? load_image_index : load_start_image_index) :
                        {3'd0, (load_active ? load_image_index : load_start_image_index[0])})),
+    .museum_detail_mode(1'b0),
+    .museum_artifact_index(3'd0),
+    .museum_detail_index(2'd0),
     .bmp_mode(VIDEO_BIN ? 1'b0 : 1'b1),
     .sequence_mode(VIDEO_SEQUENCE != 0),
     .sd_init_done(sd_init_done), .sd_sec_read(sd_sec_read),

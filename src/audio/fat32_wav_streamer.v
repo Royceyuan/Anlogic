@@ -1,14 +1,14 @@
 `timescale 1ns / 1ps
 `default_nettype none
 
-// Read one fixed-format WAV from a FAT32 root directory.  The four fixed names
-// are AUDIO0.WAV through AUDIO3.WAV.  Canonical PCM16/48k/stereo remains
+// Read one fixed-format WAV from a FAT32 root directory.  The fixed names are
+// AUDIO0.WAV through AUDIO4.WAV.  Canonical PCM16/48k/stereo remains
 // mandatory so this small selector cannot destabilise the proven image path.
 module fat32_wav_streamer (
     input  wire        clk,
     input  wire        rst_n,
     input  wire        start,
-    input  wire [1:0]  track_index,
+    input  wire [2:0]  track_index,
     input  wire        sd_init_done,
     output reg         sd_sec_read,
     output reg [31:0]  sd_sec_read_addr,
@@ -81,7 +81,7 @@ reg [7:0] left_lo;
 reg [7:0] left_hi;
 reg [7:0] right_lo;
 reg [7:0] right_hi;
-reg [1:0] active_track;
+reg [2:0] active_track;
 
 function [31:0] cluster_lba;
     input [31:0] cluster;
@@ -161,7 +161,7 @@ function header_byte_ok;
 endfunction
 
 function root_name_byte_match;
-    input [1:0] track;
+    input [2:0] track;
     input [3:0] index;
     input [7:0] value;
     begin
@@ -228,7 +228,7 @@ always @(posedge clk or negedge rst_n) begin
         left_hi                <= 8'd0;
         right_lo               <= 8'd0;
         right_hi               <= 8'd0;
-        active_track           <= 2'd0;
+        active_track           <= 3'd0;
     end else begin
         fifo_wr_en <= 1'b0;
         track_switch_ack <= 1'b0;
@@ -386,7 +386,7 @@ always @(posedge clk or negedge rst_n) begin
                         root_sector_in_cluster <= root_sector_in_cluster + 1'b1;
                         state <= S_REQ_ROOT;
                     end else begin
-                        // The four fixed audio names are expected in the first
+                        // The five fixed audio names are expected in the first
                         // root cluster.  The media preparation rule keeps lookup
                         // bounded while still allowing normal FAT fragmentation.
                         state <= S_ERROR;
