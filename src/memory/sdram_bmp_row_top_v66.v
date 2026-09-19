@@ -83,6 +83,11 @@ module top_v66 #(
     ,parameter integer SUBTITLE_RESOURCE_OPT_ADDR = 0
     ,parameter integer ENABLE_AUDIO_VISUALIZER = 0
     ,parameter integer ENABLE_MUSEUM_OVERVIEW = 0
+    ,parameter integer OVERVIEW_CROP_X0_0 = 384
+    ,parameter integer OVERVIEW_CROP_X0_1 = 384
+    ,parameter integer OVERVIEW_CROP_X0_2 = 384
+    ,parameter integer OVERVIEW_CROP_X0_3 = 384
+    ,parameter integer OVERVIEW_CROP_X0_4 = 384
 ) (
     input  wire        clk_50m,
     input  wire [3:0]  key_n,
@@ -113,6 +118,7 @@ localparam integer LINEBUF_SYNC_READ =
 localparam [20:0] FRAME0_BASE  = 21'd0;
 localparam [20:0] FRAME1_BASE  = FRAME_WORDS;
 localparam [20:0] FRAME_LENGTH = FRAME_WORDS;
+localparam [20:0] OVERVIEW_FRAME_BASE = VIDEO_FRAME_COUNT * FRAME_WORDS;
 
 wire mem_clk;
 wire mem_clk_sft;
@@ -414,6 +420,9 @@ wire overview_confirm_pulse;
 wire overview_enable_video;
 wire overview_confirm_active_video;
 reg [4:0] frame_valid_ff1, frame_valid_ff2;
+wire [3:0] desired_display_media_index = overview_enable_video ?
+                                               VIDEO_FRAME_COUNT :
+                                               preload_select_media_ff2;
 
 // PHASE 1 freezes SW1:SW2 as the user-facing mode selector. KEY1 is now
 // the panel key, so the existing reset synchronizers rely on FPGA power-up.
@@ -942,13 +951,22 @@ generate
     if (ADAPTIVE_BMP && !ADAPTIVE_BLOCK_WRITER) begin : g_adaptive_row_writer
         bmp_sdram_row_writer #(
             .WIDTH(SOURCE_W), .HEIGHT(SOURCE_H), .ROW_BITS(11), .ADDR_BITS(21),
-            .WORDS_PER_ROW(SOURCE_W / 2), .BURST_WORDS(VIDEO_WRITE_BURST_WORDS)
+            .WORDS_PER_ROW(SOURCE_W / 2), .BURST_WORDS(VIDEO_WRITE_BURST_WORDS),
+            .OVERVIEW_ENABLE(ENABLE_MUSEUM_OVERVIEW),
+            .OVERVIEW_FRAME_COUNT(5), .OVERVIEW_PANEL_WIDTH(SOURCE_W / 5),
+            .OVERVIEW_CROP_X0_0(OVERVIEW_CROP_X0_0),
+            .OVERVIEW_CROP_X0_1(OVERVIEW_CROP_X0_1),
+            .OVERVIEW_CROP_X0_2(OVERVIEW_CROP_X0_2),
+            .OVERVIEW_CROP_X0_3(OVERVIEW_CROP_X0_3),
+            .OVERVIEW_CROP_X0_4(OVERVIEW_CROP_X0_4)
         ) u_bmp_sdram_row_writer (
             .clk(clk_50m), .rst_n(write_rst_n),
             .start(writer_start),
             .row_valid(row_valid), .row_index(row_index),
             .row_pixel(row_pixel), .row_last(row_last), .row_ready(row_ready),
             .frame_base_addr(write_frame_base_addr),
+            .overview_base_addr(OVERVIEW_FRAME_BASE),
+            .overview_frame_index(load_image_index),
             .write_req(write_req), .write_req_ack(write_req_ack),
             .write_en(write_en), .write_data(write_data),
             .write_base_addr(write_base_addr), .write_len(write_len),
@@ -1478,12 +1496,14 @@ always @(posedge video_clk or negedge video_rst_n) begin
         // A new frame is remembered while the current frame continues to
         // display. The actual FIFO reset/request waits for frame_tick.
         if (ENABLE_MULTI_FRAME_PRELOAD && video_run &&
-            (preload_select_media_ff2 != display_media_index)) begin
-            pending_media_index <= preload_select_media_ff2;
-            pending_frame_index <= preload_select_media_ff2[0];
-            pending_source_width_bcd <= preload_select_source_width_ff2;
-            pending_source_height_bcd <= preload_select_source_height_ff2;
-            pending_zoom_2x <= detail_zoom_2x_ff2;
+            (desired_display_media_index != display_media_index)) begin
+            pending_media_index <= desired_display_media_index;
+            pending_frame_index <= desired_display_media_index[0];
+            pending_source_width_bcd <= overview_enable_video ?
+                                        16'h0960 : preload_select_source_width_ff2;
+            pending_source_height_bcd <= overview_enable_video ?
+                                         16'h0540 : preload_select_source_height_ff2;
+            pending_zoom_2x <= overview_enable_video ? 1'b0 : detail_zoom_2x_ff2;
             switch_pending <= 1'b1;
             direct_switch_pending <= 1'b0;
             if (!switch_pending)
@@ -1493,6 +1513,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
             if (ENABLE_FADE)
                 fade_out_active <= 1'b1;
         end else if (ENABLE_MULTI_FRAME_PRELOAD && video_run &&
+                     !overview_enable_video &&
                      (detail_zoom_2x_ff2 != display_zoom_2x)) begin
             pending_media_index <= display_media_index;
             pending_frame_index <= display_frame_index;
@@ -1520,8 +1541,9 @@ always @(posedge video_clk or negedge video_rst_n) begin
             if (ENABLE_FADE)
                 fade_out_active <= 1'b1;
         end else if (ENABLE_MULTI_FRAME_PRELOAD && video_run && switch_pending &&
-                     (preload_select_media_ff2 == display_media_index) &&
-                     (detail_zoom_2x_ff2 == display_zoom_2x)) begin
+                     (desired_display_media_index == display_media_index) &&
+                     (overview_enable_video ||
+                      (detail_zoom_2x_ff2 == display_zoom_2x))) begin
             switch_pending  <= 1'b0;
             direct_switch_pending <= 1'b0;
             fade_out_active <= 1'b0;
@@ -1538,11 +1560,15 @@ always @(posedge video_clk or negedge video_rst_n) begin
             transition_progress <= 6'd32;
         end else if (video_run && (ready_ff2 != ready_seen)) begin
             ready_seen <= ready_ff2;
-            pending_frame_index <= published_frame_ff2;
-            pending_media_index <= published_media_ff2;
-            pending_source_width_bcd <= published_source_width_ff2;
-            pending_source_height_bcd <= published_source_height_ff2;
-            pending_zoom_2x <= detail_zoom_2x_ff2;
+            pending_frame_index <= overview_enable_video ?
+                                   desired_display_media_index[0] : published_frame_ff2;
+            pending_media_index <= overview_enable_video ?
+                                   VIDEO_FRAME_COUNT : published_media_ff2;
+            pending_source_width_bcd <= overview_enable_video ?
+                                        16'h0960 : published_source_width_ff2;
+            pending_source_height_bcd <= overview_enable_video ?
+                                         16'h0540 : published_source_height_ff2;
+            pending_zoom_2x <= overview_enable_video ? 1'b0 : detail_zoom_2x_ff2;
             switch_pending <= 1'b1;
             direct_switch_pending <= 1'b0;
             transition_mode <= transition_mode_ff2;
@@ -1553,10 +1579,13 @@ always @(posedge video_clk or negedge video_rst_n) begin
                      (ready_ff2 != ready_seen)) begin
             ready_seen <= ready_ff2;
             display_frame_index <= published_frame_ff2;
-            display_media_index <= published_media_ff2;
-            display_source_width_bcd <= published_source_width_ff2;
-            display_source_height_bcd <= published_source_height_ff2;
-            display_zoom_2x <= detail_zoom_2x_ff2;
+            display_media_index <= overview_enable_video ?
+                                   VIDEO_FRAME_COUNT : published_media_ff2;
+            display_source_width_bcd <= overview_enable_video ?
+                                        16'h0960 : published_source_width_ff2;
+            display_source_height_bcd <= overview_enable_video ?
+                                         16'h0540 : published_source_height_ff2;
+            display_zoom_2x <= overview_enable_video ? 1'b0 : detail_zoom_2x_ff2;
             read_req_r <= 1'b1;
             linebuf_start_pending <= LINEBUF_SCALE;
         end else if (read_req_r && read_ack_ff2) begin
@@ -1817,13 +1846,10 @@ assign video_post_osd_y  = (ENABLE_OSD && VIDEO_MODE_1280) ? osd1280_y_d3 : vide
 generate
     if (ENABLE_MUSEUM_OVERVIEW) begin : g_museum_overview_overlay
         museum_overview_overlay #(
-            .SOURCE_W(SOURCE_W), .SOURCE_H(SOURCE_H)
+            .VIDEO_W(VIDEO_W), .VIDEO_H(VIDEO_H)
         ) u_museum_overview_overlay (
-            .wr_clk(clk_50m), .wr_rst_n(write_rst_n),
-            .wr_start(image_load_start), .wr_frame_index(load_image_index),
-            .wr_valid(image_wr_en), .wr_row(image_wr_row), .wr_col(image_wr_col),
-            .wr_pixel(image_wr_data),
             .video_clk(video_clk), .video_rst_n(video_rst_n),
+            .video_frame_tick(video_frame_tick),
             .overview_enable(overview_enable_video),
             .selected_index(overview_selected_video),
             .confirm_active(overview_confirm_active_video),

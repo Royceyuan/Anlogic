@@ -131,6 +131,7 @@ fat32_image_loader #(
     .busy                   (busy),
     .load_done              (load_done),
     .load_error             (load_error),
+    .error_stage            (),
     .status_code            (status_code),
     .bmp_source_width       (image_source_width),
     .bmp_source_height      (image_source_height)
@@ -169,6 +170,7 @@ generate
             .clk(clk), .rst_n(rst_n), .start(load_start),
             .row_valid(row_valid), .row_index(row_index), .row_pixel(row_pixel),
             .row_last(row_last), .row_ready(row_ready), .frame_base_addr(21'd0),
+            .overview_base_addr(21'd0), .overview_frame_index(4'd0),
             .write_req(write_req), .write_req_ack(write_req_ack),
             .write_en(write_en), .write_data(write_data),
             .write_base_addr(write_base_addr), .write_len(write_len),

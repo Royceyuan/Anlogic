@@ -1,16 +1,9 @@
 `timescale 1ns / 1ps
 
 module tb_museum_overview_overlay;
-reg wr_clk = 1'b0;
 reg video_clk = 1'b0;
-reg wr_rst_n = 1'b0;
 reg video_rst_n = 1'b0;
-reg wr_start = 1'b0;
-reg [3:0] wr_frame_index = 4'd0;
-reg wr_valid = 1'b0;
-reg [10:0] wr_row = 11'd0;
-reg [10:0] wr_col = 11'd0;
-reg [15:0] wr_pixel = 16'd0;
+reg video_frame_tick = 1'b0;
 reg overview_enable = 1'b1;
 reg [2:0] selected_index = 3'd0;
 reg confirm_active = 1'b0;
@@ -24,16 +17,9 @@ wire [10:0] x_o;
 wire [9:0] y_o;
 wire [23:0] rgb_o;
 
-museum_overview_overlay #(
-    .SOURCE_W(4), .SOURCE_H(4), .THUMB_W(2), .THUMB_H(2),
-    .DISPLAY_SCALE(2), .PANEL_X0(4), .PANEL_PITCH(8),
-    .PANEL_Y0(20), .SECOND_ROW_X0(8), .SECOND_ROW_Y0(24),
-    .SAMPLE_W(2), .SAMPLE_H(2), .SAMPLE_X0(1), .SAMPLE_Y0(1), .BORDER(1)
-) dut (
-    .wr_clk(wr_clk), .wr_rst_n(wr_rst_n), .wr_start(wr_start),
-    .wr_frame_index(wr_frame_index), .wr_valid(wr_valid),
-    .wr_row(wr_row), .wr_col(wr_col), .wr_pixel(wr_pixel),
+museum_overview_overlay dut (
     .video_clk(video_clk), .video_rst_n(video_rst_n),
+    .video_frame_tick(video_frame_tick),
     .overview_enable(overview_enable), .selected_index(selected_index),
     .confirm_active(confirm_active), .frame_valid(frame_valid),
     .hs_i(hs_i), .vs_i(vs_i), .de_i(de_i), .x_i(x_i), .y_i(y_i),
@@ -41,20 +27,7 @@ museum_overview_overlay #(
     .x_o(x_o), .y_o(y_o), .rgb_o(rgb_o)
 );
 
-always #10 wr_clk = ~wr_clk;
 always #7 video_clk = ~video_clk;
-
-task write_sample;
-    input [10:0] row_value;
-    input [10:0] col_value;
-    input [15:0] pixel_value;
-    begin
-        @(negedge wr_clk);
-        wr_row = row_value; wr_col = col_value;
-        wr_pixel = pixel_value; wr_valid = 1'b1;
-        @(negedge wr_clk); wr_valid = 1'b0;
-    end
-endtask
 
 task check_pixel;
     input [10:0] x_value;
@@ -70,44 +43,32 @@ task check_pixel;
 endtask
 
 initial begin
-    repeat (3) @(posedge wr_clk);
-    wr_rst_n = 1'b1;
+    repeat (3) @(posedge video_clk);
     video_rst_n = 1'b1;
 
-    @(negedge wr_clk); wr_start = 1'b1; wr_frame_index = 0;
-    @(negedge wr_clk); wr_start = 1'b0;
-    // Model a normal bottom-up BMP: destination rows arrive 3, 2, 1, 0.
-    // The thumbnail samples only the central 2x2 crop at rows 2/1 and cols 1/2.
-    write_sample(3, 0, 16'h0000);
-    write_sample(3, 1, 16'h0000);
-    write_sample(3, 2, 16'h0000);
-    write_sample(3, 3, 16'h0000);
-    write_sample(2, 0, 16'h0000);
-    write_sample(2, 1, 16'h001f);
-    write_sample(2, 2, 16'hffe0);
-    write_sample(2, 3, 16'h0000);
-    write_sample(1, 0, 16'h0000);
-    write_sample(1, 1, 16'hf800);
-    write_sample(1, 2, 16'h07e0);
-    write_sample(1, 3, 16'h0000);
-    write_sample(0, 0, 16'h0000);
-    write_sample(0, 1, 16'h0000);
-    write_sample(0, 2, 16'h0000);
-    write_sample(0, 3, 16'h0000);
-    check_pixel(4, 20, 24'hff0000);
-    check_pixel(6, 20, 24'h00ff00);
-    check_pixel(4, 22, 24'h0000ff);
-    check_pixel(6, 22, 24'hffff00);
-    check_pixel(3, 20, 24'hf2c14e);
+    @(negedge video_clk); video_frame_tick = 1'b1;
+    @(negedge video_clk); video_frame_tick = 1'b0;
+    repeat (2) @(posedge video_clk);
+
+    check_pixel(10, 20, 24'h123456);
+    check_pixel(0, 20, 24'hf2c14e);
+    check_pixel(254, 20, 24'h123456);
+    check_pixel(255, 20, 24'hf2c14e);
+    check_pixel(256, 20, 24'hf2c14e);
+    check_pixel(257, 20, 24'h4b2532);
     confirm_active = 1'b1;
-    check_pixel(3, 20, 24'h41d17d);
+    check_pixel(255, 8, 24'h41d17d);
     confirm_active = 1'b0;
-    check_pixel(12, 20, 24'h4b2532);
+    check_pixel(260, 20, 24'h4b2532);
+    check_pixel(512, 8, 24'h68727d);
+
+    // The top OSD strip passes through except at the continuous separator.
+    check_pixel(260, 8, 24'h123456);
 
     overview_enable = 1'b0;
-    check_pixel(10, 30, 24'h123456);
+    check_pixel(260, 20, 24'h123456);
 
-    $display("PASS museum_overview_overlay cache, border, invalid placeholder, bypass");
+    $display("PASS museum_overview_overlay borders, frame-boundary validity, bypass");
     $finish;
 end
 

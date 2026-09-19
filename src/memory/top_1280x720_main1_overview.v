@@ -38,6 +38,11 @@ top_v66 #(
     .SUBTITLE_FULL_WIDTH_SCROLL(1),
     .RESOURCE_OPT_CONSTANT_MULT(1), .SUBTITLE_RESOURCE_OPT_ADDR(1),
     .ENABLE_MUSEUM_OVERVIEW(1),
+    // Centered defaults until the five final artifact images are available.
+    // Each source crop stays 192x540, so no vertical pixels are discarded.
+    .OVERVIEW_CROP_X0_0(384), .OVERVIEW_CROP_X0_1(384),
+    .OVERVIEW_CROP_X0_2(384), .OVERVIEW_CROP_X0_3(384),
+    .OVERVIEW_CROP_X0_4(384),
     .H_FRONT(110), .H_SYNC(40), .H_BACK(220),
     .V_FRONT(5), .V_SYNC(5), .V_BACK(20)
 ) u_top_1280x720_v72 (

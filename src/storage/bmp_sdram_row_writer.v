@@ -10,7 +10,15 @@ module bmp_sdram_row_writer #(
     parameter integer ROW_BITS    = (HEIGHT <= 1) ? 1 : $clog2(HEIGHT),
     parameter integer ADDR_BITS   = 21,
     parameter integer WORDS_PER_ROW = WIDTH / 2,
-    parameter integer BURST_WORDS  = WORDS_PER_ROW
+    parameter integer BURST_WORDS  = WORDS_PER_ROW,
+    parameter integer OVERVIEW_ENABLE = 0,
+    parameter integer OVERVIEW_FRAME_COUNT = 5,
+    parameter integer OVERVIEW_PANEL_WIDTH = WIDTH / OVERVIEW_FRAME_COUNT,
+    parameter integer OVERVIEW_CROP_X0_0 = (WIDTH - OVERVIEW_PANEL_WIDTH) / 2,
+    parameter integer OVERVIEW_CROP_X0_1 = (WIDTH - OVERVIEW_PANEL_WIDTH) / 2,
+    parameter integer OVERVIEW_CROP_X0_2 = (WIDTH - OVERVIEW_PANEL_WIDTH) / 2,
+    parameter integer OVERVIEW_CROP_X0_3 = (WIDTH - OVERVIEW_PANEL_WIDTH) / 2,
+    parameter integer OVERVIEW_CROP_X0_4 = (WIDTH - OVERVIEW_PANEL_WIDTH) / 2
 )(
     input  wire                    clk,
     input  wire                    rst_n,
@@ -23,6 +31,8 @@ module bmp_sdram_row_writer #(
     output wire                    row_ready,
 
     input  wire [ADDR_BITS-1:0]    frame_base_addr,
+    input  wire [ADDR_BITS-1:0]    overview_base_addr,
+    input  wire [3:0]              overview_frame_index,
 
     output wire                    write_req,
     input  wire                    write_req_ack,
@@ -53,35 +63,79 @@ localparam integer BURST_INDEX_BITS = (BURSTS_PER_ROW <= 1) ? 1 : $clog2(BURSTS_
 reg [BURST_INDEX_BITS-1:0] burst_index;
 reg [ADDR_BITS-1:0] burst_words_sent;
 reg [5:0] settle_count;
+reg overview_phase;
+reg [3:0] active_overview_frame;
+reg [10:0] active_crop_x0;
+reg [10:0] row_pixel_index;
+reg [10:0] overview_pixel_index;
+reg [15:0] overview_line [0:OVERVIEW_PANEL_WIDTH-1];
+
+localparam integer OVERVIEW_WORDS_PER_ROW = OVERVIEW_PANEL_WIDTH / 2;
+localparam integer OVERVIEW_BURSTS_PER_ROW =
+    (OVERVIEW_WORDS_PER_ROW + BURST_WORDS - 1) / BURST_WORDS;
+
+function [10:0] crop_x0_for_frame;
+    input [3:0] index;
+    begin
+        case (index)
+            4'd0: crop_x0_for_frame = OVERVIEW_CROP_X0_0;
+            4'd1: crop_x0_for_frame = OVERVIEW_CROP_X0_1;
+            4'd2: crop_x0_for_frame = OVERVIEW_CROP_X0_2;
+            4'd3: crop_x0_for_frame = OVERVIEW_CROP_X0_3;
+            default: crop_x0_for_frame = OVERVIEW_CROP_X0_4;
+        endcase
+    end
+endfunction
 
 wire pack_in_ready;
 wire pack_out_valid;
 wire [31:0] pack_out_data;
 wire pack_out_ready;
 wire pack_in_valid;
+wire normal_pixel_fire;
+wire overview_pixel_fire;
+wire [ADDR_BITS-1:0] phase_words_per_row = overview_phase ?
+                                                    OVERVIEW_WORDS_PER_ROW :
+                                                    WORDS_PER_ROW;
+wire [BURST_INDEX_BITS:0] phase_bursts_per_row = overview_phase ?
+                                                    OVERVIEW_BURSTS_PER_ROW :
+                                                    BURSTS_PER_ROW;
 
 assign write_req      = (state == S_REQ);
-assign write_base_addr = frame_base_addr + active_row * WORDS_PER_ROW +
-                         burst_index * BURST_WORDS;
+assign write_base_addr = overview_phase ?
+                         (overview_base_addr + active_row * WORDS_PER_ROW +
+                          active_overview_frame * OVERVIEW_WORDS_PER_ROW +
+                          burst_index * BURST_WORDS) :
+                         (frame_base_addr + active_row * WORDS_PER_ROW +
+                          burst_index * BURST_WORDS);
 // The final burst can be shorter than BURST_WORDS (e.g. 480 words per
 // 960-pixel row with 64-word bursts).  Request only the remaining words;
 // otherwise the packer waits for pixels that do not exist and the frame
 // can never complete.
-assign write_len      = ((burst_index + 1) * BURST_WORDS <= WORDS_PER_ROW) ?
-                        BURST_WORDS : (WORDS_PER_ROW - burst_index * BURST_WORDS);
+assign write_len      = ((burst_index + 1) * BURST_WORDS <= phase_words_per_row) ?
+                         BURST_WORDS :
+                         (phase_words_per_row - burst_index * BURST_WORDS);
 
 assign pack_out_ready = (state == S_STREAM) && !write_fifo_full;
-assign pack_in_valid  = row_valid && row_ready;
-assign row_ready      = (state == S_STREAM) && !write_fifo_full && pack_in_ready;
+assign pack_in_valid  = overview_phase ?
+                        ((state == S_STREAM) &&
+                         (overview_pixel_index < OVERVIEW_PANEL_WIDTH)) :
+                        (row_valid && row_ready);
+assign row_ready      = !overview_phase && (state == S_STREAM) &&
+                        !write_fifo_full && pack_in_ready;
 assign write_en       = (state == S_STREAM) && pack_out_valid && !write_fifo_full;
 assign write_data     = pack_out_data;
+assign normal_pixel_fire = !overview_phase && pack_in_valid && pack_in_ready;
+assign overview_pixel_fire = overview_phase && pack_in_valid && pack_in_ready;
 
 rgb565_stream_packer_ready u_packer (
     .clk       (clk),
     .rst_n     (rst_n),
     .in_valid  (pack_in_valid),
     .in_ready  (pack_in_ready),
-    .in_pixel  (row_pixel),
+    .in_pixel  (overview_phase ?
+                ((overview_pixel_index < OVERVIEW_PANEL_WIDTH) ?
+                 overview_line[overview_pixel_index] : 16'd0) : row_pixel),
     .out_valid (pack_out_valid),
     .out_data  (pack_out_data),
     .out_ready (pack_out_ready)
@@ -95,6 +149,11 @@ always @(posedge clk or negedge rst_n) begin
         burst_index <= {BURST_INDEX_BITS{1'b0}};
         burst_words_sent <= {ADDR_BITS{1'b0}};
         settle_count <= 6'd0;
+        overview_phase <= 1'b0;
+        active_overview_frame <= 4'd0;
+        active_crop_x0 <= 11'd0;
+        row_pixel_index <= 11'd0;
+        overview_pixel_index <= 11'd0;
         frame_done  <= 1'b0;
         error       <= 1'b0;
     end else if (start) begin
@@ -104,6 +163,11 @@ always @(posedge clk or negedge rst_n) begin
         burst_index <= {BURST_INDEX_BITS{1'b0}};
         burst_words_sent <= {ADDR_BITS{1'b0}};
         settle_count <= 6'd0;
+        overview_phase <= 1'b0;
+        active_overview_frame <= overview_frame_index;
+        active_crop_x0 <= crop_x0_for_frame(overview_frame_index);
+        row_pixel_index <= 11'd0;
+        overview_pixel_index <= 11'd0;
         frame_done   <= 1'b0;
         error        <= 1'b0;
     end else begin
@@ -113,6 +177,9 @@ always @(posedge clk or negedge rst_n) begin
                     active_row <= row_index;
                     burst_index <= {BURST_INDEX_BITS{1'b0}};
                     burst_words_sent <= {ADDR_BITS{1'b0}};
+                    overview_phase <= 1'b0;
+                    row_pixel_index <= 11'd0;
+                    overview_pixel_index <= 11'd0;
                     state      <= S_REQ;
                 end
             end
@@ -133,6 +200,15 @@ always @(posedge clk or negedge rst_n) begin
             end
 
             S_STREAM: begin
+                if (normal_pixel_fire) begin
+                    if (OVERVIEW_ENABLE &&
+                        row_pixel_index >= active_crop_x0 &&
+                        row_pixel_index < active_crop_x0 + OVERVIEW_PANEL_WIDTH)
+                        overview_line[row_pixel_index - active_crop_x0] <= row_pixel;
+                    row_pixel_index <= row_pixel_index + 1'b1;
+                end
+                if (overview_pixel_fire)
+                    overview_pixel_index <= overview_pixel_index + 1'b1;
                 if (write_en) begin
                     if (burst_words_sent == write_len - 1) begin
                         state <= S_DRAIN;
@@ -148,14 +224,21 @@ always @(posedge clk or negedge rst_n) begin
             S_DRAIN: begin
                 if (write_finish) begin
                     burst_words_sent <= {ADDR_BITS{1'b0}};
-                    if (burst_index == BURSTS_PER_ROW - 1) begin
+                    if (burst_index == phase_bursts_per_row - 1) begin
                         burst_index <= {BURST_INDEX_BITS{1'b0}};
-                        if (rows_done == HEIGHT - 1) begin
-                            frame_done <= 1'b1;
-                            state      <= S_DONE;
+                        if (!overview_phase && OVERVIEW_ENABLE) begin
+                            overview_phase <= 1'b1;
+                            overview_pixel_index <= 11'd0;
+                            state <= S_REQ;
                         end else begin
-                            rows_done <= rows_done + 1'b1;
-                            state     <= S_IDLE;
+                            overview_phase <= 1'b0;
+                            if (rows_done == HEIGHT - 1) begin
+                                frame_done <= 1'b1;
+                                state      <= S_DONE;
+                            end else begin
+                                rows_done <= rows_done + 1'b1;
+                                state     <= S_IDLE;
+                            end
                         end
                     end else begin
                         burst_index <= burst_index + 1'b1;

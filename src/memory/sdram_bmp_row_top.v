@@ -595,6 +595,7 @@ generate
             .row_valid(row_valid), .row_index(row_index),
             .row_pixel(row_pixel), .row_last(row_last), .row_ready(row_ready),
             .frame_base_addr(write_frame_base_addr),
+            .overview_base_addr(21'd0), .overview_frame_index(4'd0),
             .write_req(write_req), .write_req_ack(write_req_ack),
             .write_en(write_en), .write_data(write_data),
             .write_base_addr(write_base_addr), .write_len(write_len),

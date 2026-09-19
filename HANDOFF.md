@@ -37,12 +37,12 @@
 
 ### MAIN-1 总览选择（2026-09-19，待板测）
 
-- **行为实现：完成，已修正板测暴露的问题。** `SW1:SW2=00` 显示五件文物缩略图，布局为上三下二并尽量铺满 1280x720；默认高亮 0，KEY3 下一件、KEY4 上一件，KEY2 仅在五张图均有效后确认。选择索引在视频帧边界发布，确认后边框由黄色短暂变为绿色。
-- **采样修复：完成。** 自适应 BMP 写入器支持底部向上和顶部向下目标行序，按完整源行边界抽样，不再只捕获最后一条采样行；当前从 `640x480` 中央窗口（`x=160,y=30`）裁剪主体，避免两侧黑边导致文物过小。
-- **带宽边界：保持。** 五张 BMP 写入 SDRAM 时同步抽样为 `64x48 RGB565`，显示时放大为 `384x288`；总览只读取片上双时钟 BRAM，不新增 TF 或 SDRAM 读取。MAIN-2 讲解流程未提前实现。
-- **仿真：通过。** `sim/run_museum_overview_main1.do` 覆盖选择回绕、媒体就绪门控、帧边界 CDC、底部向上 BMP 行序、缩略图缓存、边框、无效占位和旁路；ModelSim 10.6e 报告 `Errors: 0, Warnings: 0`。
-- **综合/P&R/STA：通过。** `_build_main1_overview/main1_overview_pr.status` 报告 Setup WNS `+268 ps`、TNS `0 ps`，Hold WNS `+30 ps`、TNS `0 ps`；STA 覆盖率 `99.91%`，时序例外为空，DRC 无多驱动、异常路径或拥塞溢出。资源为 LUT 13446/19600（68.60%）、寄存器 5585/19600（28.49%）、BRAM9K 52/64（81.25%）、BRAM32K 4/16（25.00%）、DSP 6/29（20.69%）。
-- **位流：已生成、待板测。** `release/hx4s20_main1_overview.bit`，664568 bytes，SHA256 `DFAAB6617EB30C5E6FCA8F5C70E9FD2AA37FBDD57326E4EA20390465CA5D5456`。工具仍报告与 MAIN-0 相同的 SDRAM 25 MHz 相移时钟本地路由警告；最终时序已通过，但必须由板测确认 SDRAM、缩略图和画面稳定性。
+- **行为实现：完成。** `SW1:SW2=00` 显示五件文物横向五栏总览；每栏源区域为 `192x540`，经既有 960x540→1280x720 缩放后占 `256x720`，五栏从左到右相邻铺满画面且不裁纵向。2026-09-19 首次板测确认画面内容正确，随后按照片反馈把左右双画边框改为全局单条 1 像素接缝，并让竖线覆盖顶部 OSD 区，消除顶部断线和相邻栏灰黄双线耦合。选中框为 2 像素：1 像素直接替换公共灰线，另 1 像素只向选中图片内部扩展。默认高亮 0，KEY3 下一件、KEY4 上一件，KEY2 仅在五张图均有效后确认；选择索引在视频帧边界发布，确认后边框由黄色短暂变为绿色。
+- **合成策略：完成。** 加载五张完整 960x540 RGB565 帧时，行写入器同步截取各图可配置的 192 像素宽 ROI，写入第六个 960x540 SDRAM 合成帧。当前五个裁剪起点暂为居中 `x=384`；最终文物素材到位后只需调整 `top_1280x720_main1_overview.v` 中五个 `OVERVIEW_CROP_X0_*` 参数。
+- **容量/带宽：通过预算。** 六帧共 `6,220,800` bytes，占 8 MiB SDRAM 的 `74.16%`；总览显示仍只读取一路 960x540 帧，不增加显示侧持续 SDRAM 吞吐。旧 `64x48` 缩略图 BRAM 已移除，MAIN-2 讲解流程未提前实现。
+- **仿真：通过。** `sim/run_museum_overview_main1.do` 覆盖选择回绕、媒体就绪门控、帧边界 CDC、完整帧与横裁合成帧地址、单像素公共接缝、顶部连续性、边框、无效占位和旁路；既有 1920x1080→960x540 自适应 BMP 回归也通过。各仿真实例 ModelSim 10.6e 均为 `Errors: 0, Warnings: 0`。
+- **综合/P&R/STA：通过。** `_build_main1_overview/main1_overview_pr.status` 报告最终 Setup WNS `+114 ps`、TNS `0 ps`，Hold WNS `+23 ps`、TNS `0 ps`；STA 覆盖率 `99.91%`，时序例外为空，DRC 无多驱动、异常路径或拥塞溢出。放置后资源为 LUT 13636/19600（69.57%）、寄存器 5602/19600（28.58%）、BRAM9K 22/64（34.38%）、BRAM32K 4/16（25.00%）、DSP 6/29（20.69%）；最终 7451 slices（76.03%）。
+- **位流：已生成、待高亮复测。** `release/hx4s20_main1_overview.bit`，629648 bytes，SHA256 `034632F43E5ACF86E094D1E3D85A0A0F2E99FA4C2D592232D3D4D7FD1D0130D6`。工具仍报告与 MAIN-0 相同的 SDRAM 25 MHz 相移时钟本地路由警告；最终时序已通过，但必须由板测确认 2 像素选中框、单像素普通接缝、顶部连续性和画面稳定性。
 
 ### MAIN-0 审计结论（2026-09-18）
 
@@ -63,7 +63,8 @@
 | `hx4s20_800x600_multimedia.al` | 唯一 TD 工程；当前活动顶层为 MAIN-1 `top_1280x720_main1_overview`。 |
 | `src/memory/top_1280x720_main1_overview.v` | MAIN-1 包装顶层，沿用 v72 约束层级并启用文物总览。 |
 | `src/video/museum_overview_controller.v` | MAIN-1 按键选择、就绪门控和帧边界跨时钟域发布。 |
-| `src/video/museum_overview_overlay.v` | 五图缩略图抽样 BRAM、固定布局、高亮和确认反馈。 |
+| `src/storage/bmp_sdram_row_writer.v` | 正常帧写入，并在 MAIN-1 中逐行横裁到第六个 SDRAM 合成帧。 |
+| `src/video/museum_overview_overlay.v` | 五栏边框、未就绪占位、高亮和确认反馈；不再缓存缩略图。 |
 | `src/memory/top_1280x720_feature_v72_resource_optimized.v` | MAIN-0 已板测通过的 1280×720 图片播放器回退顶层。 |
 | `src/memory/top_1280x720_feature_v73_audio_visualizer.v` | v73 音频可视化候选包装顶层；不能因文件存在就假定已成为工程默认顶层。 |
 | `src/memory/sdram_bmp_row_top_v66.v` | 图片缓存、SDRAM、SPI TF、按键、OSD、音频和字幕的主媒体链。 |
@@ -176,7 +177,7 @@ MAIN-0 回退 bit：`release/hx4s20_1280x720_v72_subtitle_continuous_scroll_v2.b
 
 1. `MAIN-0` 审计、v72 综合/P&R/STA/DRC、bitgen 和板测已完成；用户已确认 `MAIN-0 BOARD PASS`。
 2. MAIN-0 板测基于 `release/hx4s20_1280x720_v72_subtitle_continuous_scroll_v2.bit`；用户确认当前基线的 HDMI、TF、SDRAM、按键、SW4 和画面稳定性满足验收要求。
-3. MAIN-1 RTL、仿真、P&R、STA/DRC 和 bitgen 已完成；下一步由用户烧录 `release/hx4s20_main1_overview.bit` 并验证五图总览、按键回绕、KEY2 就绪门控及画面稳定性。
+3. MAIN-1 RTL、仿真、P&R、STA/DRC 和 bitgen 已完成；下一步由用户烧录最新 `release/hx4s20_main1_overview.bit`，重点复测普通接缝为 1 像素、选中框为覆盖接缝并向内扩展的 2 像素、边框从屏幕顶端连续到底端且无灰黄双线，再验证按键回绕、KEY2 就绪门控及画面稳定性。当前 ROI 均为居中裁剪，最终素材到位后再按特征部位微调五个横向起点。
 4. 只有用户明确回复 `MAIN-1 BOARD PASS` 后才进入 MAIN-2；不得用仿真或时序通过代替板级结论。
 5. 每个阶段的代码和阶段性 HANDOFF 更新只提交计划相关文件，提交后 push 到 `origin/Yan_Chen_Double`；不得把未跟踪构建产物纳入提交。
 

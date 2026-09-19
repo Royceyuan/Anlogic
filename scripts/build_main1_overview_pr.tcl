@@ -1,5 +1,5 @@
-# MAIN-1 build: five cached thumbnails with frame-boundary selection.
-set build_project_root [file normalize [file join [file dirname [info script]] ..]]
+# MAIN-1 build: SDRAM-backed five-column crop overview with frame-boundary selection.
+set build_project_root [file normalize [pwd]]
 set build_root [file join $build_project_root _build_main1_overview]
 set build_project_file [file join $build_project_root hx4s20_800x600_multimedia.al]
 set build_sdc_file [file join $build_project_root constraints top_1280x720_v72_resource_optimized.sdc]
