@@ -4,7 +4,9 @@
 // Two-cycle 5x7 status OSD for the 75 MHz 1280x720 path.
 // Dimension digits are pre-encoded outside the pixel decision path; stage 1
 // selects one glyph and stage 2 performs the small font-ROM lookup.
-module osd_status_1280_pipe (
+module osd_status_1280_pipe #(
+    parameter integer MODE0_OVERVIEW = 0
+) (
     input wire clk, input wire rst_n, input wire de_i,
     input wire [10:0] x_i, input wire [9:0] y_i, input wire [23:0] rgb_i,
     input wire [3:0] image_index, input wire auto_mode,
@@ -52,11 +54,22 @@ function [4:0] mode_glyph;
     begin
         mode_glyph=SP;
         case(ui_mode)
-            2'b00: case(pos) // PRODUCT SHOW
-                2:mode_glyph=P; 3:mode_glyph=R; 4:mode_glyph=O; 5:mode_glyph=D;
-                6:mode_glyph=U; 7:mode_glyph=C; 8:mode_glyph=T; 10:mode_glyph=S;
-                11:mode_glyph=H; 12:mode_glyph=O; 13:mode_glyph=W;
-            endcase
+            2'b00: begin
+                if (MODE0_OVERVIEW) begin // OVERVIEW
+                    case(pos)
+                        2:mode_glyph=O; 3:mode_glyph=V; 4:mode_glyph=E;
+                        5:mode_glyph=R; 6:mode_glyph=V; 7:mode_glyph=I;
+                        8:mode_glyph=E; 9:mode_glyph=W;
+                    endcase
+                end else begin // PRODUCT SHOW
+                    case(pos)
+                        2:mode_glyph=P; 3:mode_glyph=R; 4:mode_glyph=O;
+                        5:mode_glyph=D; 6:mode_glyph=U; 7:mode_glyph=C;
+                        8:mode_glyph=T; 10:mode_glyph=S; 11:mode_glyph=H;
+                        12:mode_glyph=O; 13:mode_glyph=W;
+                    endcase
+                end
+            end
             2'b01: case(pos) // SLIDESHOW
                 2:mode_glyph=S; 3:mode_glyph=L; 4:mode_glyph=I; 5:mode_glyph=D;
                 6:mode_glyph=E; 7:mode_glyph=S; 8:mode_glyph=H; 9:mode_glyph=O;

@@ -409,6 +409,7 @@
             </File>
             <File Path="src/memory/top_1280x720_feature_v72_resource_optimized.v">
                 <FileInfo>
+                    <Attr Name="AutoExcluded" Val="true"/>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
@@ -539,6 +540,30 @@
                     <Attr Name="CompileOrder" Val="68"/>
                 </FileInfo>
             </File>
+            <File Path="src/video/museum_overview_controller.v">
+                <FileInfo>
+                    <Attr Name="UsedInSyn" Val="true"/>
+                    <Attr Name="UsedInP&R" Val="true"/>
+                    <Attr Name="BelongTo" Val="design_1"/>
+                    <Attr Name="CompileOrder" Val="69"/>
+                </FileInfo>
+            </File>
+            <File Path="src/video/museum_overview_overlay.v">
+                <FileInfo>
+                    <Attr Name="UsedInSyn" Val="true"/>
+                    <Attr Name="UsedInP&R" Val="true"/>
+                    <Attr Name="BelongTo" Val="design_1"/>
+                    <Attr Name="CompileOrder" Val="70"/>
+                </FileInfo>
+            </File>
+            <File Path="src/memory/top_1280x720_main1_overview.v">
+                <FileInfo>
+                    <Attr Name="UsedInSyn" Val="true"/>
+                    <Attr Name="UsedInP&R" Val="true"/>
+                    <Attr Name="BelongTo" Val="design_1"/>
+                    <Attr Name="CompileOrder" Val="71"/>
+                </FileInfo>
+            </File>
         </Verilog>
         <VHDL>
             <File Path="vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/hdmi_tx.vhd">
@@ -610,8 +635,8 @@
         </FileSet>
     </FileSets>
     <TOP_MODULE>
-        <LABEL>top_1280x720_feature_v72_resource_optimized</LABEL>
-        <MODULE>top_1280x720_feature_v72_resource_optimized</MODULE>
+        <LABEL>top_1280x720_main1_overview</LABEL>
+        <MODULE>top_1280x720_main1_overview</MODULE>
         <CREATEINDEX>user</CREATEINDEX>
     </TOP_MODULE>
     <Property>

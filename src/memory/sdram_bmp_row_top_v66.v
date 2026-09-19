@@ -82,6 +82,7 @@ module top_v66 #(
     ,parameter integer RESOURCE_OPT_CONSTANT_MULT = 0
     ,parameter integer SUBTITLE_RESOURCE_OPT_ADDR = 0
     ,parameter integer ENABLE_AUDIO_VISUALIZER = 0
+    ,parameter integer ENABLE_MUSEUM_OVERVIEW = 0
 ) (
     input  wire        clk_50m,
     input  wire [3:0]  key_n,
@@ -240,6 +241,12 @@ wire [23:0] video_faded_rgb;
 wire [23:0] video_transition_rgb;
 wire [23:0] video_osd_1280_rgb;
 wire [23:0] video_output_rgb;
+wire [23:0] video_overview_rgb;
+wire        video_overview_hs;
+wire        video_overview_vs;
+wire        video_overview_de;
+wire [10:0] video_overview_x;
+wire [9:0]  video_overview_y;
 wire [23:0] video_post_audio_rgb;
 wire        video_post_audio_hs;
 wire        video_post_audio_vs;
@@ -400,6 +407,13 @@ wire [15:0] normal_seg_value;
 wire [15:0] diag_seg_value;
 
 wire [3:0] key_press_pulse;
+wire overview_mode;
+wire [2:0] overview_selected_ctrl;
+wire [2:0] overview_selected_video;
+wire overview_confirm_pulse;
+wire overview_enable_video;
+wire overview_confirm_active_video;
+reg [4:0] frame_valid_ff1, frame_valid_ff2;
 
 // PHASE 1 freezes SW1:SW2 as the user-facing mode selector. KEY1 is now
 // the panel key, so the existing reset synchronizers rely on FPGA power-up.
@@ -409,7 +423,10 @@ localparam [1:0] MODE_DETAIL_VIEW   = 2'b10;
 localparam [1:0] MODE_AUDIO_CONTROL = 2'b11;
 wire [1:0] ui_mode = sw[1:0];
 wire [2:0] product_theme_transition_mode;
-wire product_show_mode = (ui_mode == MODE_PRODUCT_SHOW);
+assign overview_mode = ENABLE_MUSEUM_OVERVIEW &&
+                       (ui_mode == MODE_PRODUCT_SHOW);
+wire product_show_mode = !ENABLE_MUSEUM_OVERVIEW &&
+                         (ui_mode == MODE_PRODUCT_SHOW);
 // Product Show is driven purely by the director FSM once every cached frame
 // is valid.  It intentionally does not depend on ENABLE_PRODUCT_SHOW_FSM so
 // that the mode can never silently fall back to the manual KEY2 test entry.
@@ -499,6 +516,30 @@ wire [10:0] linebuf_video_x =
         video_x_i;
 
 assign auto_mode = FORCE_SEQUENCE_AUTO || (ui_mode == MODE_SLIDESHOW);
+generate
+    if (ENABLE_MUSEUM_OVERVIEW) begin : g_museum_overview_controller
+        museum_overview_controller u_museum_overview_controller (
+            .ctrl_clk(clk_50m), .ctrl_rst_n(write_rst_n),
+            .enable(overview_mode), .media_ready(frame_valid == 5'b11111),
+            .key_confirm(key_press_pulse[1]),
+            .key_previous(key_press_pulse[2]), .key_next(key_press_pulse[3]),
+            .selected_index_ctrl(overview_selected_ctrl),
+            .confirm_pulse(overview_confirm_pulse),
+            .video_clk(video_clk), .video_rst_n(video_rst_n),
+            .video_frame_tick(video_frame_tick),
+            .enable_video(overview_enable_video),
+            .selected_index_video(overview_selected_video),
+            .confirm_active_video(overview_confirm_active_video)
+        );
+    end else begin : g_no_museum_overview_controller
+        assign overview_selected_ctrl = 3'd0;
+        assign overview_confirm_pulse = 1'b0;
+        assign overview_enable_video = 1'b0;
+        assign overview_selected_video = 3'd0;
+        assign overview_confirm_active_video = 1'b0;
+    end
+endgenerate
+
 transition_theme_controller u_transition_theme_controller (
     .theme(sw[3:2]),
     .context(transition_context),
@@ -681,8 +722,8 @@ generate
             .clk(video_clk), .rst_n(video_rst_n), .sample_valid(audio_sample_valid),
             .sample_left(audio_sample_left), .sample_right(audio_sample_right),
             .frame_tick(video_frame_tick), .hs_i(video_subtitle_hs),
-            .vs_i(video_subtitle_vs), .de_i(video_subtitle_de), .x_i(video_post_osd_x),
-            .y_i(video_post_osd_y), .rgb_i(video_subtitle_rgb), .hs_o(video_post_audio_hs),
+            .vs_i(video_subtitle_vs), .de_i(video_subtitle_de), .x_i(video_overview_x),
+            .y_i(video_overview_y), .rgb_i(video_subtitle_rgb), .hs_o(video_post_audio_hs),
             .vs_o(video_post_audio_vs), .de_o(video_post_audio_de), .x_o(video_post_audio_x),
             .y_o(video_post_audio_y), .rgb_o(video_post_audio_rgb)
         );
@@ -690,8 +731,8 @@ generate
         assign video_post_audio_hs  = video_subtitle_hs;
         assign video_post_audio_vs  = video_subtitle_vs;
         assign video_post_audio_de  = video_subtitle_de;
-        assign video_post_audio_x   = video_post_osd_x;
-        assign video_post_audio_y   = video_post_osd_y;
+        assign video_post_audio_x   = video_overview_x;
+        assign video_post_audio_y   = video_overview_y;
         assign video_post_audio_rgb = video_subtitle_rgb;
     end
 endgenerate
@@ -713,17 +754,17 @@ generate
             .uart_rxd(uart_rxd), .uart_txd(subtitle_uart_txd),
             .video_clk(video_clk), .video_rst_n(video_rst_n),
             .video_frame_tick(video_frame_tick),
-            .hs_i(video_post_osd_hs), .vs_i(video_post_osd_vs), .de_i(video_post_osd_de),
-            .x_i(video_post_osd_x), .y_i(video_post_osd_y), .rgb_i(video_output_rgb),
+            .hs_i(video_overview_hs), .vs_i(video_overview_vs), .de_i(video_overview_de),
+            .x_i(video_overview_x), .y_i(video_overview_y), .rgb_i(video_overview_rgb),
             .hs_o(video_subtitle_hs), .vs_o(video_subtitle_vs), .de_o(video_subtitle_de),
             .rgb_o(video_subtitle_rgb)
         );
     end else begin : g_no_uart_subtitle
         assign subtitle_uart_txd = 1'b1;
-        assign video_subtitle_hs = video_post_osd_hs;
-        assign video_subtitle_vs = video_post_osd_vs;
-        assign video_subtitle_de = video_post_osd_de;
-        assign video_subtitle_rgb = video_output_rgb;
+        assign video_subtitle_hs = video_overview_hs;
+        assign video_subtitle_vs = video_overview_vs;
+        assign video_subtitle_de = video_overview_de;
+        assign video_subtitle_rgb = video_overview_rgb;
     end
 endgenerate
 
@@ -1150,7 +1191,7 @@ always @(posedge clk_50m or negedge write_rst_n) begin
             manual_image_index <= product_show_image_index;
             transition_context <= product_show_transition_context;
             demo_transition_step <= product_show_demo_step;
-        end else if (!product_show_mode && key_press_pulse[1]) begin
+        end else if (!product_show_mode && !overview_mode && key_press_pulse[1]) begin
             // Phase-4 Product Show test entry: advance one cached placeholder
             // while cycling the three transition contexts.
             if (manual_image_index == VIDEO_FRAME_COUNT - 1)
@@ -1375,6 +1416,8 @@ always @(posedge video_clk or negedge video_rst_n) begin
         pending_zoom_2x      <= 1'b0;
         picture_style_ff1    <= 2'd0;
         picture_style_ff2    <= 2'd0;
+        frame_valid_ff1      <= 5'd0;
+        frame_valid_ff2      <= 5'd0;
         fade_level         <= 5'd16;
         fade_out_active    <= 1'b0;
     end else begin
@@ -1425,6 +1468,8 @@ always @(posedge video_clk or negedge video_rst_n) begin
         detail_zoom_2x_ff2   <= detail_zoom_2x_ff1;
         picture_style_ff1    <= active_picture_style;
         picture_style_ff2    <= picture_style_ff1;
+        frame_valid_ff1      <= frame_valid;
+        frame_valid_ff2      <= frame_valid_ff1;
         read_ack_ff1 <= video_read_req_ack;
         read_ack_ff2 <= read_ack_ff1;
         if (LINEBUF_SCALE && video_run && linebuf_underflow)
@@ -1676,10 +1721,14 @@ video_transition_mask #(
 generate
     if (ENABLE_OSD) begin : g_video_osd
         if (VIDEO_MODE_1280) begin : g_video_osd_1280
-            osd_status_1280_pipe u_osd_status (
+            osd_status_1280_pipe #(
+                .MODE0_OVERVIEW(ENABLE_MUSEUM_OVERVIEW)
+            ) u_osd_status (
                 .clk(video_clk), .rst_n(video_rst_n), .de_i(video_de),
                 .x_i(video_x_delayed), .y_i(video_y_delayed),
-                .rgb_i(video_transition_rgb), .image_index(display_media_index),
+                .rgb_i(video_transition_rgb),
+                .image_index(overview_enable_video ?
+                             {1'b0, overview_selected_video} : display_media_index),
                 .auto_mode(auto_mode_ff2), .brightness_level(brightness_level_ff2),
                 .contrast_level(contrast_level_ff2),
                 .audio_track_index(audio_track_ff2),
@@ -1764,6 +1813,37 @@ assign video_post_osd_vs = (ENABLE_OSD && VIDEO_MODE_1280) ? osd1280_vs_d3 : vid
 assign video_post_osd_de = (ENABLE_OSD && VIDEO_MODE_1280) ? osd1280_de_d3 : video_de;
 assign video_post_osd_x  = (ENABLE_OSD && VIDEO_MODE_1280) ? osd1280_x_d3 : video_x_delayed;
 assign video_post_osd_y  = (ENABLE_OSD && VIDEO_MODE_1280) ? osd1280_y_d3 : video_y_delayed;
+
+generate
+    if (ENABLE_MUSEUM_OVERVIEW) begin : g_museum_overview_overlay
+        museum_overview_overlay #(
+            .SOURCE_W(SOURCE_W), .SOURCE_H(SOURCE_H)
+        ) u_museum_overview_overlay (
+            .wr_clk(clk_50m), .wr_rst_n(write_rst_n),
+            .wr_start(image_load_start), .wr_frame_index(load_image_index),
+            .wr_valid(image_wr_en), .wr_row(image_wr_row), .wr_col(image_wr_col),
+            .wr_pixel(image_wr_data),
+            .video_clk(video_clk), .video_rst_n(video_rst_n),
+            .overview_enable(overview_enable_video),
+            .selected_index(overview_selected_video),
+            .confirm_active(overview_confirm_active_video),
+            .frame_valid(frame_valid_ff2),
+            .hs_i(video_post_osd_hs), .vs_i(video_post_osd_vs),
+            .de_i(video_post_osd_de), .x_i(video_post_osd_x),
+            .y_i(video_post_osd_y), .rgb_i(video_output_rgb),
+            .hs_o(video_overview_hs), .vs_o(video_overview_vs),
+            .de_o(video_overview_de), .x_o(video_overview_x),
+            .y_o(video_overview_y), .rgb_o(video_overview_rgb)
+        );
+    end else begin : g_no_museum_overview_overlay
+        assign video_overview_hs  = video_post_osd_hs;
+        assign video_overview_vs  = video_post_osd_vs;
+        assign video_overview_de  = video_post_osd_de;
+        assign video_overview_x   = video_post_osd_x;
+        assign video_overview_y   = video_post_osd_y;
+        assign video_overview_rgb = video_output_rgb;
+    end
+endgenerate
 
 always @(posedge mem_clk or negedge mem_rst_n) begin
     if (!mem_rst_n)

@@ -7,7 +7,7 @@
 
 ## 1. 当前任务与最终目标
 
-当前按双 FPGA 双屏博物馆终端计划推进主板 `MAIN-0`；主板基线已切换到 GitHub `Yan_Chen_Double`。
+当前按双 FPGA 双屏博物馆终端计划推进主板 `MAIN-1`；`MAIN-0` 已由用户确认 `MAIN-0 BOARD PASS`，主板基线位于 GitHub `Yan_Chen_Double`。
 
 本工程的稳定目标是 HX4S20 (`EG4S20BG256`) 上的 1280×720 HDMI 多媒体图片播放器：TF 卡读取 BMP，五图缓存和快速切换，转场、亮度/对比度、顶部 OSD、UART 中文字幕，以及 v73 候选中的 WAV 音频和音频波形可视化。
 
@@ -17,9 +17,9 @@
 
 ### 已确认
 
-- 当前分支最新提交 `cfd5b70` 为 `fix: make product show FSM authoritative so KEY2 only pauses`；本次 MAIN-0 不修改该提交中的 RTL。
+- 主板 RTL 基线提交 `cfd5b70` 为 `fix: make product show FSM authoritative so KEY2 only pauses`；其后的 MAIN-0 审计、清理和板测记录提交不改变该 RTL 基线。
 - 历史 v72 图片链和 v73 音频候选源均在当前 checkout 中；`src/memory/sdram_bmp_row_top_v66.v` 是共同的媒体核心。
-- 当前唯一 TD 工程为 `hx4s20_800x600_multimedia.al`。其工程配置的活动顶层仍是 `top_1280x720_feature_v72_resource_optimized`，并非 v73；这是当前文件的事实。
+- 当前唯一 TD 工程为 `hx4s20_800x600_multimedia.al`。MAIN-1 已将工程活动顶层切换为 `top_1280x720_main1_overview`；原 v72 顶层和 MAIN-0 bit 均保留作为回退。
 - 工程目标器件为 `EG4S20BG256`；输入时钟为 50 MHz。
 - 活动 ADC 为 `constraints/top_800x600_adaptive_v66_uart_subtitle.adc`，活动 SDC 为 `constraints/top_1280x720_v72_resource_optimized.sdc`；ADC 中的 HDMI1、TF/SPI、按键、拨码、LED、数码管和 VGA 管脚与 `资料/HX4S20C_板级接口与管脚速查.md` 一致。
 - 当前工程包装顶层启用 1280×720、960×540 源帧、五图缓存、TF/SPI、SDRAM、OSD、UART 字幕、转场和音频参数接口；v72 包装未启用 v73 音频可视化。
@@ -31,9 +31,17 @@
 
 - 2026-09-19 已按用户要求删除历史 `_build_v73_*`、`work_*`、旧 TD 运行目录/日志、根目录报告、备份 patch、minidump 和 `.bid` 生成物；源码、仿真入口、现行脚本、发布 bit 和设计文档保留。
 - v73 的 `build_v73_audio_visualizer_bitgen.tcl` 与两个多音频 bitgen 脚本都依赖缺失的 `_build_v73_audio_visualizer/v73_audio_visualizer_pr.db`；不能直接运行它们生成可信 bit。
-- 当前 `release/` 中保留历史 v70/v71/v72/v73 bit；本轮另生成了 `release/hx4s20_1280x720_v72_subtitle_continuous_scroll_v2.bit`，它来自本轮闭合 P&R 数据库，尚未完成板级验证。
+- 当前 `release/` 中保留历史 v70/v71/v72/v73 bit；`release/hx4s20_1280x720_v72_subtitle_continuous_scroll_v2.bit` 已完成 MAIN-0 板测，MAIN-1 新位流 `release/hx4s20_main1_overview.bit` 尚待板测。
 - ModelSim 安装在 `D:\Modelsim`，Tang Dynasty 安装在 `D:\TD_6.2.1`；后续仿真和 P&R 使用这两个明确路径，不依赖 PATH。
 - 本轮 v72 连续字幕包装已完成综合、布局布线、最终 STA、DRC 和 bitgen；未跟踪构建目录与报告按用户要求保留，不提交。
+
+### MAIN-1 总览选择（2026-09-19，待板测）
+
+- **行为实现：完成。** `SW1:SW2=00` 显示五件文物固定缩略图；默认高亮 0，KEY3/KEY4 分别循环选择上一件/下一件，KEY2 仅在五张图均有效后确认。选择索引在视频帧边界发布，确认后边框由黄色短暂变为绿色。
+- **带宽边界：保持。** 五张 BMP 写入 SDRAM 时同步抽样为 `48x27 RGB565`，显示时放大为 `192x108`；总览只读取片上双时钟 BRAM，不新增 TF 或 SDRAM 读取。MAIN-2 讲解流程未提前实现。
+- **仿真：通过。** `sim/run_museum_overview_main1.do` 覆盖选择回绕、媒体就绪门控、帧边界 CDC、缩略图缓存、边框、无效占位和旁路；ModelSim 10.6e 报告 `Errors: 0, Warnings: 0`。
+- **综合/P&R/STA：通过。** `_build_main1_overview/main1_overview_pr.status` 报告 Setup WNS `+148 ps`、TNS `0 ps`，Hold WNS `+24 ps`、TNS `0 ps`；STA 覆盖率 `99.91%`，慢/快角均检查，时序例外为空，DRC 无多驱动、异常路径或拥塞溢出。资源为 LUT 13299/19600（67.85%）、寄存器 5576/19600（28.45%）、RAM 41、DSP 6；缩略图缓存推断为双时钟 `8192x16` BRAM。
+- **位流：已生成、待板测。** `release/hx4s20_main1_overview.bit`，647108 bytes，SHA256 `7E6189F80ADB7C0A8A3FEE72C8EC088C24E2CA49DB8945D2321D5BA6CF9BC324`。工具仍报告与 MAIN-0 相同的 SDRAM 25 MHz 相移时钟本地路由警告；最终时序已通过，但必须由板测确认 SDRAM 和画面稳定性。
 
 ### MAIN-0 审计结论（2026-09-18）
 
@@ -51,8 +59,11 @@
 
 | 文件 | 作用 |
 |---|---|
-| `hx4s20_800x600_multimedia.al` | 唯一 TD 工程；当前工程标签/模块配置仍为 v72。 |
-| `src/memory/top_1280x720_feature_v72_resource_optimized.v` | 工程当前配置使用的 1280×720 图片播放器包装顶层。 |
+| `hx4s20_800x600_multimedia.al` | 唯一 TD 工程；当前活动顶层为 MAIN-1 `top_1280x720_main1_overview`。 |
+| `src/memory/top_1280x720_main1_overview.v` | MAIN-1 包装顶层，沿用 v72 约束层级并启用文物总览。 |
+| `src/video/museum_overview_controller.v` | MAIN-1 按键选择、就绪门控和帧边界跨时钟域发布。 |
+| `src/video/museum_overview_overlay.v` | 五图缩略图抽样 BRAM、固定布局、高亮和确认反馈。 |
+| `src/memory/top_1280x720_feature_v72_resource_optimized.v` | MAIN-0 已板测通过的 1280×720 图片播放器回退顶层。 |
 | `src/memory/top_1280x720_feature_v73_audio_visualizer.v` | v73 音频可视化候选包装顶层；不能因文件存在就假定已成为工程默认顶层。 |
 | `src/memory/sdram_bmp_row_top_v66.v` | 图片缓存、SDRAM、SPI TF、按键、OSD、音频和字幕的主媒体链。 |
 | `src/audio/fat32_wav_streamer.v`、`audio_pcm_player_48k.v`、`audio_goertzel8.v` | v73 WAV 读取、PCM 播放与可视化相关模块。 |
@@ -131,10 +142,10 @@
 ### 已确认
 
 - `Yan_Chen_Double` 以 `cfd5b70` 为主板 RTL 基线；审计和清理提交只更新文档、工程元数据并删除历史残留，不修改 RTL。
-- `.al` 文件活动模块为 v72；v73 的 P&R 脚本显式指定 v73 顶层，故可独立运行但不会因打开工程自动成为顶层。
+- `.al` 文件活动模块为 MAIN-1 `top_1280x720_main1_overview`；v72 和 v73 包装源文件仍保留，其中 v73 的 P&R 脚本可显式指定 v73 顶层独立运行。
 - 当前 `release/` 顶层中的历史 v70/v71/v72/v73 bit 均可读取；它们不是本轮 MAIN-0 生成物。
 - `release/_timing_failed/hx4s20_sdram_native_singleword_diag.bit` 也存在，但目录名已表明它不是发布候选。
-- 2026-09-19 清理后，工作区不再保留历史构建目录、运行目录、报告、备份 patch 或被忽略的 ModelSim/Python 缓存；后续阶段从干净目录生成新证据。
+- 2026-09-19 清理后已从干净目录生成 MAIN-0/MAIN-1 新证据；当前 `_build_v72_subtitle_continuous_scroll`、`_build_main1_overview`、根目录报告和 `.bid` 均按用户要求保留为未跟踪构建产物，不提交。
 
 ### 推测 / 暂定
 
@@ -147,24 +158,26 @@
 分支：Yan_Chen_Double（跟踪 origin/Yan_Chen_Double）
 主板 RTL 基线提交：cfd5b70
 工程：hx4s20_800x600_multimedia.al
-工程默认顶层：top_1280x720_feature_v72_resource_optimized
+工程默认顶层：top_1280x720_main1_overview
+MAIN-0 回退顶层：top_1280x720_feature_v72_resource_optimized
 v73 候选顶层：top_1280x720_feature_v73_audio_visualizer
 活动 ADC：constraints/top_800x600_adaptive_v66_uart_subtitle.adc
 活动 SDC：constraints/top_1280x720_v72_resource_optimized.sdc
 保留最新候选 SDC：constraints/top_1280x720_v73_audio_visualizer.sdc
-当前 P&R 目录：`_build_v72_subtitle_continuous_scroll`（本轮闭合证据，未跟踪）
-当前发布 bit：`release/hx4s20_1280x720_v72_subtitle_continuous_scroll_v2.bit`（MAIN-0 板测通过）
+当前 P&R 目录：`_build_main1_overview`（MAIN-1 闭合证据，未跟踪）
+当前发布 bit：`release/hx4s20_main1_overview.bit`（MAIN-1 待板测）
+MAIN-0 回退 bit：`release/hx4s20_1280x720_v72_subtitle_continuous_scroll_v2.bit`（已板测通过）
 当前商品展示文件：无（已回退）
-当前未提交改动：仅保留未跟踪构建产物和报告，按用户要求不提交
+当前阶段状态：MAIN-1 源码、测试、脚本和 bit 待提交；构建产物和报告保持未跟踪且不提交
 ```
 
 ## 12. 下一步行动
 
 1. `MAIN-0` 审计、v72 综合/P&R/STA/DRC、bitgen 和板测已完成；用户已确认 `MAIN-0 BOARD PASS`。
 2. MAIN-0 板测基于 `release/hx4s20_1280x720_v72_subtitle_continuous_scroll_v2.bit`；用户确认当前基线的 HDMI、TF、SDRAM、按键、SW4 和画面稳定性满足验收要求。
-3. 下一阶段进入 `MAIN-1` 前，继续使用 `D:\Modelsim` 和 `D:\TD_6.2.1`，并保持活动 v72 顶层和活动约束可复现；不得复用混入 v71/v69 约束的历史结果。
-4. 每个阶段的代码和阶段性 HANDOFF 更新只提交计划相关文件，提交后 push 到 `origin/Yan_Chen_Double`；不得把未跟踪构建产物纳入提交。
-5. 所有需要发布的 bit 都必须从本轮闭合 P&R DB 生成，并交付最终 STA、文件大小、SHA256 和“硬件是否已测试”的明确状态。
+3. MAIN-1 RTL、仿真、P&R、STA/DRC 和 bitgen 已完成；下一步由用户烧录 `release/hx4s20_main1_overview.bit` 并验证五图总览、按键回绕、KEY2 就绪门控及画面稳定性。
+4. 只有用户明确回复 `MAIN-1 BOARD PASS` 后才进入 MAIN-2；不得用仿真或时序通过代替板级结论。
+5. 每个阶段的代码和阶段性 HANDOFF 更新只提交计划相关文件，提交后 push 到 `origin/Yan_Chen_Double`；不得把未跟踪构建产物纳入提交。
 
 ## 13. 新 Agent 启动指令
 
