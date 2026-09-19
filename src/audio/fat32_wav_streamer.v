@@ -8,6 +8,7 @@ module fat32_wav_streamer (
     input  wire        clk,
     input  wire        rst_n,
     input  wire        start,
+    input  wire        restart,
     input  wire [2:0]  track_index,
     input  wire        sd_init_done,
     output reg         sd_sec_read,
@@ -22,6 +23,8 @@ module fat32_wav_streamer (
 
     output reg         audio_ready,
     output reg         track_switch_ack,
+    output reg [31:0]  total_pcm_frames,
+    output reg         stream_done,
     output reg         format_error,
     output reg         file_error
 );
@@ -39,7 +42,8 @@ localparam [4:0]
     S_REQ_FAT    = 5'd9,
     S_WAIT_FAT   = 5'd10,
     S_FAT_NEXT   = 5'd11,
-    S_ERROR      = 5'd12;
+    S_ERROR      = 5'd12,
+    S_COMPLETE   = 5'd13;
 
 reg [4:0] state;
 reg [8:0] byte_index;
@@ -189,6 +193,8 @@ always @(posedge clk or negedge rst_n) begin
         fifo_wr_data           <= 32'd0;
         audio_ready            <= 1'b0;
         track_switch_ack       <= 1'b0;
+        total_pcm_frames       <= 32'd0;
+        stream_done            <= 1'b0;
         format_error           <= 1'b0;
         file_error             <= 1'b0;
         byte_index             <= 9'd0;
@@ -232,7 +238,16 @@ always @(posedge clk or negedge rst_n) begin
     end else begin
         fifo_wr_en <= 1'b0;
         track_switch_ack <= 1'b0;
-        case (state)
+        if (restart || !start) begin
+            state            <= S_WAIT_CARD;
+            sd_sec_read      <= 1'b0;
+            audio_ready      <= 1'b0;
+            total_pcm_frames <= 32'd0;
+            stream_done      <= 1'b0;
+            format_error     <= 1'b0;
+            file_error       <= 1'b0;
+            pcm_byte_phase   <= 2'd0;
+        end else case (state)
             S_WAIT_CARD: begin
                 sd_sec_read <= 1'b0;
                 if (start && sd_init_done) begin
@@ -366,6 +381,8 @@ always @(posedge clk or negedge rst_n) begin
                     if (track_index != active_track) begin
                         active_track <= track_index;
                         audio_ready <= 1'b0;
+                        total_pcm_frames <= 32'd0;
+                        stream_done <= 1'b0;
                         format_error <= 1'b0;
                         file_error <= 1'b0;
                         root_cluster_scan <= root_cluster;
@@ -416,6 +433,8 @@ always @(posedge clk or negedge rst_n) begin
                                 32'd42: wav_data_bytes[23:16] <= sd_sec_read_data;
                                 32'd43: begin
                                     wav_data_bytes[31:24] <= sd_sec_read_data;
+                                    total_pcm_frames <= {2'b00, sd_sec_read_data,
+                                                         wav_data_bytes[23:2]};
                                     header_complete <= 1'b1;
                                     if (!header_ok ||
                                         ({sd_sec_read_data,wav_data_bytes[23:0]} != file_size - 32'd44) ||
@@ -447,6 +466,8 @@ always @(posedge clk or negedge rst_n) begin
                     if (track_index != active_track) begin
                         active_track <= track_index;
                         audio_ready <= 1'b0;
+                        total_pcm_frames <= 32'd0;
+                        stream_done <= 1'b0;
                         format_error <= 1'b0;
                         file_error <= 1'b0;
                         root_cluster_scan <= root_cluster;
@@ -457,17 +478,8 @@ always @(posedge clk or negedge rst_n) begin
                         state <= S_ERROR;
                     end else if (file_bytes_seen >= file_size ||
                                  (sd_sec_read_data_valid && file_bytes_seen + 1'b1 >= file_size)) begin
-                        // Re-read the physical WAV header but retain audio_ready.
-                        // The FIFO already covers these 44 bytes; treating them as
-                        // PCM would corrupt the first frames of every loop.
-                        current_cluster   <= first_cluster;
-                        sector_in_cluster <= 8'd0;
-                        file_bytes_seen   <= 32'd0;
-                        header_ok         <= 1'b1;
-                        header_complete   <= 1'b0;
-                        audio_ready       <= 1'b1;
-                        pcm_byte_phase    <= 2'd0;
-                        state             <= S_REQ_DATA;
+                        stream_done <= 1'b1;
+                        state       <= S_COMPLETE;
                     end else if (sector_in_cluster + 1'b1 < sectors_per_cluster) begin
                         sector_in_cluster <= sector_in_cluster + 1'b1;
                         state <= S_REQ_DATA;
@@ -503,6 +515,8 @@ always @(posedge clk or negedge rst_n) begin
                     if (track_index != active_track) begin
                         active_track <= track_index;
                         audio_ready <= 1'b0;
+                        total_pcm_frames <= 32'd0;
+                        stream_done <= 1'b0;
                         format_error <= 1'b0;
                         file_error <= 1'b0;
                         root_cluster_scan <= root_cluster;
@@ -525,11 +539,27 @@ always @(posedge clk or negedge rst_n) begin
                 end
             end
 
+            S_COMPLETE: begin
+                sd_sec_read <= 1'b0;
+                if (track_index != active_track) begin
+                    active_track <= track_index;
+                    audio_ready <= 1'b0;
+                    total_pcm_frames <= 32'd0;
+                    stream_done <= 1'b0;
+                    root_cluster_scan <= root_cluster;
+                    root_sector_in_cluster <= 8'd0;
+                    track_switch_ack <= 1'b1;
+                    state <= S_REQ_ROOT;
+                end
+            end
+
             default: begin
                 sd_sec_read <= 1'b0;
                 if (track_index != active_track && start && sd_init_done) begin
                     active_track <= track_index;
                     audio_ready <= 1'b0;
+                    total_pcm_frames <= 32'd0;
+                    stream_done <= 1'b0;
                     format_error <= 1'b0;
                     file_error <= 1'b0;
                     root_cluster_scan <= root_cluster;

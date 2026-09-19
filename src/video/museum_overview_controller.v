@@ -36,17 +36,17 @@ always @(posedge ctrl_clk or negedge ctrl_rst_n) begin
         confirm_toggle_ctrl <= 1'b0;
     end else begin
         confirm_pulse <= 1'b0;
-        if (!enable) begin
-            selected_index_ctrl <= 3'd0;
-        end else if (key_previous) begin
-            selected_index_ctrl <= (selected_index_ctrl == 0) ?
-                                   ITEM_COUNT - 1 : selected_index_ctrl - 1'b1;
-        end else if (key_next) begin
-            selected_index_ctrl <= (selected_index_ctrl == ITEM_COUNT - 1) ?
-                                   3'd0 : selected_index_ctrl + 1'b1;
-        end else if (key_confirm && media_ready) begin
-            confirm_pulse       <= 1'b1;
-            confirm_toggle_ctrl <= ~confirm_toggle_ctrl;
+        if (enable) begin
+            if (key_previous) begin
+                selected_index_ctrl <= (selected_index_ctrl == 0) ?
+                                       ITEM_COUNT - 1 : selected_index_ctrl - 1'b1;
+            end else if (key_next) begin
+                selected_index_ctrl <= (selected_index_ctrl == ITEM_COUNT - 1) ?
+                                       3'd0 : selected_index_ctrl + 1'b1;
+            end else if (key_confirm && media_ready) begin
+                confirm_pulse       <= 1'b1;
+                confirm_toggle_ctrl <= ~confirm_toggle_ctrl;
+            end
         end
     end
 end

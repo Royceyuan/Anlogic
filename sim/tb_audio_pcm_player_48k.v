@@ -10,6 +10,7 @@ reg paused = 0;
 reg switch_mute = 0;
 wire fifo_rd_en, sample_valid, active, underflow;
 wire signed [15:0] sample_left, sample_right;
+wire frame_consumed_toggle;
 integer samples = 0;
 integer startup_silence = 0;
 
@@ -18,6 +19,7 @@ audio_pcm_player_48k #(.PIXEL_CLK_HZ(100), .SAMPLE_RATE_HZ(10), .START_FRAMES(2)
     .fifo_empty(fifo_empty), .fifo_used(fifo_used), .fifo_rd_en(fifo_rd_en),
     .paused(paused), .switch_mute(switch_mute),
     .sample_valid(sample_valid), .sample_left(sample_left), .sample_right(sample_right),
+    .frame_consumed_toggle(frame_consumed_toggle),
     .active(active), .underflow(underflow)
 );
 always #5 clk = ~clk;

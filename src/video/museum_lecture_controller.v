@@ -3,68 +3,84 @@
 
 module museum_lecture_controller #(
     parameter integer CLOCK_HZ = 50_000_000,
-    parameter integer ART0_PHASE_SECONDS = 15,
-    parameter integer ART1_PHASE_SECONDS = 8,
-    parameter integer ART2_PHASE_SECONDS = 14,
-    parameter integer ART3_PHASE_SECONDS = 14,
-    parameter integer ART4_PHASE_SECONDS = 16
+    parameter integer END_HOLD_SECONDS = 5
 )(
-    input  wire       clk,
-    input  wire       rst_n,
-    input  wire       enable,
-    input  wire       confirm_pulse,
-    input  wire [2:0] selected_index,
-    output reg        load_request,
-    input  wire       load_accept,
-    input  wire       load_complete,
-    input  wire       load_error,
-    output reg  [1:0] load_slot,
-    output wire       load_detail,
-    output wire [1:0] detail_index,
-    output reg  [2:0] artifact_index,
-    output reg        preloading,
-    output reg        lecture_active,
-    output reg        lecture_finished,
-    output reg  [1:0] display_slot,
-    output reg        media_error
+    input  wire        clk,
+    input  wire        rst_n,
+    input  wire        enable,
+    input  wire        overview_ready,
+    input  wire        confirm_pulse,
+    input  wire        key_pause,
+    input  wire        key_return,
+    input  wire [2:0]  selected_index,
+    input  wire        preload_valid,
+    input  wire [2:0]  preload_index,
+    input  wire        audio_prepared,
+    input  wire        audio_frame_pulse,
+    input  wire [31:0] audio_total_frames,
+    input  wire        audio_stream_done,
+    output reg         load_request,
+    input  wire        load_accept,
+    input  wire        load_complete,
+    input  wire        load_error,
+    output reg  [1:0]  load_slot,
+    output wire        load_detail,
+    output wire [1:0]  detail_index,
+    output reg  [2:0]  artifact_index,
+    output reg         preloading,
+    output reg         cache_ready,
+    output reg         lecture_active,
+    output reg         lecture_paused,
+    output reg         lecture_finished,
+    output reg         audio_restart,
+    output reg  [1:0]  display_slot,
+    output reg         media_error
 );
 
-reg waiting_for_load;
-reg [31:0] phase_count;
+localparam [31:0] END_HOLD_CYCLES = CLOCK_HZ * END_HOLD_SECONDS;
 
-wire [31:0] phase_cycles =
-    (artifact_index == 3'd0) ? CLOCK_HZ * ART0_PHASE_SECONDS :
-    (artifact_index == 3'd1) ? CLOCK_HZ * ART1_PHASE_SECONDS :
-    (artifact_index == 3'd2) ? CLOCK_HZ * ART2_PHASE_SECONDS :
-    (artifact_index == 3'd3) ? CLOCK_HZ * ART3_PHASE_SECONDS :
-                               CLOCK_HZ * ART4_PHASE_SECONDS;
+reg waiting_for_load;
+reg [31:0] audio_frames_played;
+reg [31:0] end_hold_count;
+
+wire [31:0] audio_quarter = audio_total_frames >> 2;
+wire [31:0] audio_half = audio_total_frames >> 1;
+wire [31:0] audio_three_quarters = audio_half + audio_quarter;
+wire [31:0] next_audio_frame = audio_frames_played + 1'b1;
 
 assign load_detail = (load_slot != 2'd0);
 assign detail_index = load_slot;
 
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-        load_request    <= 1'b0;
-        waiting_for_load<= 1'b0;
-        load_slot       <= 2'd0;
-        artifact_index  <= 3'd0;
-        preloading      <= 1'b0;
-        lecture_active  <= 1'b0;
-        lecture_finished<= 1'b0;
-        display_slot    <= 2'd0;
-        media_error     <= 1'b0;
-        phase_count     <= 32'd0;
+        load_request        <= 1'b0;
+        waiting_for_load    <= 1'b0;
+        load_slot           <= 2'd0;
+        artifact_index      <= 3'd0;
+        preloading          <= 1'b0;
+        cache_ready         <= 1'b0;
+        lecture_active      <= 1'b0;
+        lecture_paused      <= 1'b0;
+        lecture_finished    <= 1'b0;
+        audio_restart       <= 1'b0;
+        display_slot        <= 2'd0;
+        media_error         <= 1'b0;
+        audio_frames_played <= 32'd0;
+        end_hold_count      <= 32'd0;
     end else begin
-        if (enable && confirm_pulse && !preloading && !lecture_active) begin
-            artifact_index   <= selected_index;
+        audio_restart <= 1'b0;
+        // Load the switch-selected artifact while the stable composite overview
+        // remains visible. Confirmation only starts already-prepared media.
+        if (enable && overview_ready && preload_valid && !lecture_active && !preloading &&
+            ((!cache_ready || artifact_index != preload_index) &&
+             (!media_error || artifact_index != preload_index))) begin
+            artifact_index   <= preload_index;
             load_slot        <= 2'd0;
             load_request     <= 1'b1;
             waiting_for_load <= 1'b0;
             preloading       <= 1'b1;
-            lecture_finished <= 1'b0;
-            display_slot     <= 2'd0;
+            cache_ready      <= 1'b0;
             media_error      <= 1'b0;
-            phase_count      <= 32'd0;
         end
 
         if (preloading && load_request && load_accept) begin
@@ -75,30 +91,79 @@ always @(posedge clk or negedge rst_n) begin
         if (preloading && waiting_for_load && load_error) begin
             waiting_for_load <= 1'b0;
             preloading       <= 1'b0;
+            cache_ready      <= 1'b0;
             media_error      <= 1'b1;
         end else if (preloading && waiting_for_load && load_complete) begin
             waiting_for_load <= 1'b0;
             if (load_slot == 2'd3) begin
-                preloading      <= 1'b0;
-                lecture_active  <= 1'b1;
-                lecture_finished<= 1'b0;
-                display_slot    <= 2'd0;
-                phase_count     <= 32'd0;
+                if (preload_valid && preload_index == artifact_index) begin
+                    preloading  <= 1'b0;
+                    cache_ready <= 1'b1;
+                end else if (preload_valid) begin
+                    artifact_index <= preload_index;
+                    load_slot      <= 2'd0;
+                    load_request   <= 1'b1;
+                    cache_ready    <= 1'b0;
+                end else begin
+                    preloading  <= 1'b0;
+                    cache_ready <= 1'b0;
+                end
             end else begin
                 load_slot    <= load_slot + 1'b1;
                 load_request <= 1'b1;
             end
         end
 
-        if (lecture_active && !lecture_finished) begin
-            if (phase_count == phase_cycles - 1'b1) begin
-                phase_count <= 32'd0;
-                if (display_slot == 2'd3)
-                    lecture_finished <= 1'b1;
-                else
-                    display_slot <= display_slot + 1'b1;
+        if (!lecture_active && enable && preload_valid && cache_ready &&
+            artifact_index == selected_index && audio_prepared && confirm_pulse) begin
+            lecture_active      <= 1'b1;
+            lecture_paused      <= 1'b0;
+            lecture_finished    <= 1'b0;
+            display_slot        <= 2'd0;
+            audio_frames_played <= 32'd0;
+            end_hold_count      <= 32'd0;
+        end
+
+        if (lecture_active) begin
+            if (key_return) begin
+                audio_restart       <= 1'b1;
+                lecture_active      <= 1'b0;
+                lecture_paused      <= 1'b0;
+                lecture_finished    <= 1'b0;
+                display_slot        <= 2'd0;
+                audio_frames_played <= 32'd0;
+                end_hold_count      <= 32'd0;
+            end else if (!lecture_finished) begin
+                if (key_pause)
+                    lecture_paused <= ~lecture_paused;
+
+                if (audio_frame_pulse && !lecture_paused) begin
+                    audio_frames_played <= next_audio_frame;
+                    if (next_audio_frame >= audio_three_quarters)
+                        display_slot <= 2'd3;
+                    else if (next_audio_frame >= audio_half)
+                        display_slot <= 2'd2;
+                    else if (next_audio_frame >= audio_quarter)
+                        display_slot <= 2'd1;
+
+                    if (audio_stream_done && audio_total_frames != 0 &&
+                        next_audio_frame >= audio_total_frames) begin
+                        lecture_finished <= 1'b1;
+                        lecture_paused   <= 1'b0;
+                        display_slot     <= 2'd3;
+                        end_hold_count   <= 32'd0;
+                    end
+                end
+            end else if (END_HOLD_CYCLES <= 1 ||
+                         end_hold_count == END_HOLD_CYCLES - 1'b1) begin
+                audio_restart       <= 1'b1;
+                lecture_active      <= 1'b0;
+                lecture_finished    <= 1'b0;
+                display_slot        <= 2'd0;
+                audio_frames_played <= 32'd0;
+                end_hold_count      <= 32'd0;
             end else begin
-                phase_count <= phase_count + 1'b1;
+                end_hold_count <= end_hold_count + 1'b1;
             end
         end
     end

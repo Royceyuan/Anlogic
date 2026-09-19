@@ -20,6 +20,7 @@ module audio_pcm_player_48k #(
     output reg                 sample_valid,
     output reg signed [15:0]   sample_left,
     output reg signed [15:0]   sample_right,
+    output reg                 frame_consumed_toggle,
     output reg                 active,
     output reg                 underflow
 );
@@ -36,6 +37,7 @@ always @(posedge clk or posedge rst) begin
         sample_valid <= 1'b0;
         sample_left  <= 16'sd0;
         sample_right <= 16'sd0;
+        frame_consumed_toggle <= 1'b0;
         active       <= 1'b0;
         underflow    <= 1'b0;
         underflow_ticks <= 7'd0;
@@ -68,6 +70,7 @@ always @(posedge clk or posedge rst) begin
         end else if (sample_tick && active) begin
             if (!fifo_empty && fifo_valid) begin
                 fifo_rd_en   <= 1'b1;
+                frame_consumed_toggle <= ~frame_consumed_toggle;
                 sample_valid <= 1'b1;
                 sample_left  <= fifo_data[15:0];
                 sample_right <= fifo_data[31:16];

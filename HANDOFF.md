@@ -47,12 +47,12 @@
 
 ### MAIN-2 主屏讲解（2026-09-19，等待板测）
 
-- **媒体映射：完成。** KEY2 确认后锁存文物索引，保持总览画面期间依次把 `IMAGE#.BMP`、`ART#D1.BMP`、`ART#D2.BMP`、`ART#D3.BMP` 装入四个固定 SDRAM 槽位；任一文件缺失即置媒体错误并停止进入讲解，不能复用上一件内容。装载完成后按全貌、三张细节依次播放；五件文物共用同一状态机。
-- **音频/时序：完成。** `AUDIO0.WAV`～`AUDIO4.WAV` 已转为标准 44-byte WAV、PCM16、48 kHz、双声道并写入 TF；原文件备份在 `E:\BACKUP_MAIN2_AUDIO_ORIGINAL_20260919`。四个画面阶段分别平分每件文物的讲解时长：15/8/14/14/16 秒，对应总时长 60/32/56/56/64 秒，与实测 WAV 60.78/32.24/57.28/56.00/65.30 秒近似匹配。当前 MAIN-2 播放结束停留在细节 3；暂停、返回和自动回总览属于 MAIN-3。
-- **转场/字幕：完成。** 总览到全貌为中心展开，全貌到细节 1 为幕帘，后两次为淡入淡出。UART 字幕双缓冲保留，MAIN-2 关闭非必要调试 OSD 和全屏跑马灯以闭合时序；`tools/play_museum_srt.py` 读取五份现有 SRT，并按 TF 上实际 WAV 时长缩放后逐条发送。五份 SRT 离线光栅化检查均通过。
-- **仿真：通过。** `run_museum_lecture_main2.do`、`run_fat32_museum_detail_main2.do`、`run_museum_overview_main1.do` 和 WAV streamer 回归均 PASS，ModelSim Errors 0、Warnings 0；覆盖四槽加载、缺媒体错误、讲解阶段推进、`ART#D#.BMP` 短文件名匹配、MAIN-1 总览回归和第五路 WAV 文件名。
-- **P&R/STA/DRC：通过。** `_build_main2_lecture/main2_lecture_pr.status`：Setup WNS `+759 ps`、TNS `0`，Hold WNS `+27 ps`、TNS `0`，0 违例；无多驱动、无异常时序路径。放置后 LUT 15701/19600（80.11%）、寄存器 7164/19600（36.55%）、BRAM9K 38/64（59.38%）、BRAM32K 4/16（25.00%）、DSP 5/29（17.24%）；最终 8811 slices（89.91%）。保留与既有版本相同的 SDRAM 相移时钟本地路由警告，须以板测画面稳定性确认。
-- **待板测 bit：** `release/hx4s20_main2_lecture.bit`，629647 bytes，SHA256 `20EB706E576517856631EEEBF2A59A941090953A37F3F8D70AE6D49A4B1BF533`。只有用户明确回复 `MAIN-2 BOARD PASS` 后才可进入 MAIN-3。
+- **拨码预载与进入门控：完成。** MAIN-2 不再用高亮变化触发预载；`SW3:SW2:SW1=000/001/010/011/100` 分别选择文物 0～4，`101`～`111` 无效，SW4 保留。总览稳定显示期间，后台依次把拨码文物的 `IMAGE#.BMP`、`ART#D1.BMP`、`ART#D2.BMP`、`ART#D3.BMP` 装入四个固定 SDRAM 槽位，并预缓冲对应 WAV。KEY3/KEY4 仍移动高亮；只有高亮与拨码选择一致、四张图和音频均就绪时，KEY2 才进入讲解。任一图片缺失会置错误并阻止进入，不复用上一件内容。
+- **无缝进入、音画同步与控制：完成。** KEY2 接受后直接从总览转到已缓存全貌，不再边显示边装图。WAV 按实际被播放器消耗的 PCM 帧计数，1/4、1/2、3/4 时刻分别切到三张细节图；文件播放结束后停留细节 3 五秒并自动回总览。讲解中 KEY2 暂停/继续音频、画面阶段和可视化，KEY3 立即返回；自然返回和按键返回都会复位音频流，允许同一文物再次讲解。
+- **转场/可视化/OSD：完成。** 总览到全貌和返回总览使用中心展开/收拢，全貌到细节 1 为幕帘，后两次为淡入淡出；音频柱状可视化已在 MAIN-2 打开。非必要调试 OSD 仍关闭，这是主屏资源取舍，不依赖副屏。UART 字幕双缓冲保留；PC 端字幕脚本仍独立按时间发送，硬件暂停不会反向暂停 PC 脚本，这是当前已知边界。
+- **仿真：通过。** `tb_museum_lecture_controller`、`tb_fat32_wav_streamer`、`tb_audio_pcm_player_48k`、`tb_audio_visualizer_overlay` 均 PASS，ModelSim Errors 0、Warnings 0；覆盖拨码预载、错配确认门控、缓存后即时进入、PCM 四分段同步、暂停/继续、按键返回、自然结束后自动返回与音频复位、WAV 不循环和可视化暂停冻结。图片细节加载、MAIN-1 总览和自适应 BMP 既有回归亦通过。
+- **P&R/STA/DRC：通过。** `_build_main2_lecture/main2_lecture_pr.status`：Setup WNS `+226 ps`、TNS `0`，Hold WNS `+30 ps`、TNS `0`，0 违例；无多驱动、无异常时序路径。放置后 LUT 16045/19600（81.86%）、寄存器 7329/19600（37.39%）、BRAM9K 39/64（60.94%）、BRAM32K 4/16（25.00%）、DSP 5/29（17.24%）；最终 8920 slices（91.02%）。保留与既有版本相同的 SDRAM 相移时钟本地路由警告，须以板测画面稳定性确认。
+- **待板测 bit：** `release/hx4s20_main2_lecture.bit`，629647 bytes，SHA256 `14BA8A56DE1B47083CBF30BFCEF2FEDABCB28A39F6B73DA364D870752C933275`。
 
 ### MAIN-0 审计结论（2026-09-18）
 
@@ -96,7 +96,7 @@
 - TF 使用既有 SPI 驱动，而非已经撤销的原生四线 SD 实验。当前可用物理映射为 A14/A13/B14/A12。
 - BMP：TF 根目录的 MAIN-1 全貌槽位为 `IMAGE0.BMP` 至 `IMAGE4.BMP`；MAIN-2 细节槽位为 `ART0D1.BMP` 至 `ART4D3.BMP`。均使用 24-bit、未压缩 BI_RGB；活动图片链支持最大 1920×1080，FPGA 按比例缩放、居中、黑边补齐。
 - 字幕：主机端光栅化；包格式为 `55 AA | version | mode | width=800 | height=32 | payload_length=6400 | bitmap | CRC16`，完整 6411 字节。`mode bit7=1` 用于清除，帧边界生效。
-- 音频（MAIN-2）：`AUDIO0.WAV` 至 `AUDIO4.WAV`，44-byte 标准头、PCM16、48 kHz、双声道；讲解态按已确认文物索引自动选择，不再使用 v73 候选的手动曲目控制。
+- 音频（MAIN-2）：`AUDIO0.WAV` 至 `AUDIO4.WAV`，44-byte 标准头、PCM16、48 kHz、双声道；总览态按 SW1～SW3 预选文物并预缓冲，讲解图片阶段由实际 PCM 消耗进度驱动。
 
 ## 4. 已做出的关键决策
 
@@ -107,6 +107,7 @@
 5. **中文字幕由主机转位图、FPGA 双缓冲提交。** 不在 FPGA 中加入中文字库，避免半包和撕裂。
 6. **不以约束豁免伪造时序通过。** 禁止为真实视频/SDRAM/音频路径添加 false path 或 multicycle 来掩盖违例。
 7. **商品展示/原生四线 SD 已撤销。** 该方向曾板测出现 `1001`、`D1D1`、`D1D2`、`60B6`，用户决定停止试错并要求回退；没有新的用户授权不要恢复。
+8. **MAIN-2 使用拨码预载。** SW1～SW3 负责选择后台预载文物，高亮只负责交互选择；两者匹配且图片/音频均就绪后才接受 KEY2，SW4 保留给后续应急模式。
 
 ## 5. 已尝试但失败的方法
 
@@ -124,7 +125,7 @@
 - 偏好外科式最小修改；不要顺手重构稳定图片、字幕、OSD、转场或 bit。
 - 必须区分源码检查、仿真、P&R、bit 和板测；不能把某一级的成功说成已上板成功。
 - 用户明确认为近期 TF 问题应优先从软件排查；但所有解释、假设和附件中的结论仍需用代码、日志或测试验证。
-- 未明确授权时不要 commit、push、烧录、删除或批量清理。最近一次完整回退/清理是用户明确授权的例外。
+- 用户最新要求：后续每轮完成后自动 commit，但不 push；烧录、删除或批量清理仍需明确授权。
 
 ## 7. 隐性行为习惯与协作规则
 
@@ -141,7 +142,7 @@
 - 不要在未闭合 Setup/Hold 的设计上生成待烧录 bit。
 - 不要把 v72 工程配置、v73 源文件、历史 release bit 和当前 P&R 结果混成同一个“当前版本”。
 - 不要在未获授权时重启已撤销的商品展示/原生 SD 工作，或恢复其源码/bit。
-- 不要自动提交、push，或把用户已有的脏工作区修改误纳入提交。
+- 按用户最新要求每轮完成后自动提交但不 push；不要把用户已有的无关脏工作区修改误纳入提交。
 - 不要删除源级 testbench、当前脚本、回退产物或验证文档，除非用户明确要求；删除后必须说明范围和可恢复性。
 
 ## 9. 隐含约束
@@ -192,8 +193,9 @@ MAIN-0 回退 bit：`release/hx4s20_1280x720_v72_subtitle_continuous_scroll_v2.b
 1. `MAIN-0` 审计、v72 综合/P&R/STA/DRC、bitgen 和板测已完成；用户已确认 `MAIN-0 BOARD PASS`。
 2. MAIN-0 板测基于 `release/hx4s20_1280x720_v72_subtitle_continuous_scroll_v2.bit`；用户确认当前基线的 HDMI、TF、SDRAM、按键、SW4 和画面稳定性满足验收要求。
 3. MAIN-1 RTL、仿真、P&R、STA/DRC、bitgen 和板测已完成；用户已明确回复 `MAIN-1 BOARD PASS`。
-4. 烧录 `release/hx4s20_main2_lecture.bit`，逐件验证 KEY2 后全貌→三张细节、固定转场、对应音频、缺媒体报错和画面稳定性；字幕联测运行 `py tools\play_museum_srt.py --artifact <0..4> --port <COM口>`，在听到讲解开始时按 Enter。
-5. 用户明确回复 `MAIN-2 BOARD PASS` 后，按计划进入 MAIN-3 的暂停/返回/自动回总览；提交时只纳入计划相关源码、脚本、文档和发布 bit，不纳入 `_build_*`、根目录报告或 `.bid`。
+4. 烧录 `release/hx4s20_main2_lecture.bit`；按 `SW3:SW2:SW1=000..100` 选择待预载文物，等待后台准备后用 KEY3/KEY4 把高亮移到同一文物，再按 KEY2 验证即时转场、全貌→三张细节、对应音频/可视化、KEY2 暂停继续、KEY3 返回、结束五秒自动回总览及同文物二次进入。
+5. 字幕联测运行 `py tools\play_museum_srt.py --artifact <0..4> --port <COM口>`，在讲解开始时按 Enter；当前 PC 脚本不会随板上 KEY2 暂停。
+6. 用户明确回复 `MAIN-2 BOARD PASS` 后再推进副屏/后续阶段；提交时只纳入计划相关源码、测试、文档和发布 bit，不纳入 `_build_*`、根目录报告或 `.bid`。
 
 ## 13. 新 Agent 启动指令
 

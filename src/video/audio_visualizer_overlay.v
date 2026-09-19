@@ -4,6 +4,7 @@
 module audio_visualizer_overlay (
     input wire clk, input wire rst_n, input wire sample_valid,
     input wire signed [15:0] sample_left, input wire signed [15:0] sample_right,
+    input wire pause,
     input wire frame_tick, input wire hs_i, input wire vs_i, input wire de_i,
     input wire [10:0] x_i, input wire [9:0] y_i, input wire [23:0] rgb_i,
     output wire hs_o, output wire vs_o, output wire de_o,
@@ -28,7 +29,7 @@ wire [7:0] sample_height = (scaled_height > MAX_HEIGHT) ? MAX_HEIGHT : scaled_he
 wire [7:0] peak_next = (sample_height_q > peak_height) ? sample_height_q : peak_height;
 // Alternating 12 and 13 samples makes 64 bars cover exactly 800 samples.
 wire [3:0] final_sample_count = bar_index[0] ? 4'd12 : 4'd11;
-wire bar_write_en = sample_valid_q && samples_in_bar == final_sample_count;
+wire bar_write_en = !pause && sample_valid_q && samples_in_bar == final_sample_count;
 wire [7:0] bar_write_data = (peak_next < 8'd2) ? 8'd2 : peak_next;
 wire [8:0] bar_write_addr = {2'b00, ~display_bank, bar_index};
 wire [5:0] bar_read_index = (x_i >= BAR_X0 && x_i < BAR_X0 + 11'd1024) ?
@@ -80,9 +81,10 @@ always @(posedge clk or negedge rst_n) begin
         x_s1 <= 0; y_s1 <= 0; rgb_s1 <= 0; x_s2 <= 0; y_s2 <= 0; rgb_s2 <= 0;
         bar_height_s2 <= 8'd2;
     end else begin
-        sample_valid_q <= sample_valid;
-        sample_height_q <= sample_height;
-        if (sample_valid_q) begin
+        sample_valid_q <= pause ? 1'b0 : sample_valid;
+        if (!pause)
+            sample_height_q <= sample_height;
+        if (!pause && sample_valid_q) begin
             if (bar_write_en) begin
                 samples_in_bar <= 0; peak_height <= 0;
                 if (bar_index == 6'd63) begin
@@ -95,7 +97,7 @@ always @(posedge clk or negedge rst_n) begin
                 peak_height <= peak_next;
             end
         end
-        if (frame_tick && frame_pending) begin
+        if (!pause && frame_tick && frame_pending) begin
             display_bank <= ~display_bank;
             frame_pending <= 0;
         end

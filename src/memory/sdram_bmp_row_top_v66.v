@@ -181,6 +181,7 @@ reg [1:0] demo_transition_step;
 reg [24:0] sequence_hold_count;
 reg sequence_hold_done;
 reg [4:0] frame_valid;
+reg overview_cache_ready;
 reg initial_frame_published;
 reg preload_select_frame_index;
 reg [15:0] frame_source_width_bcd [0:4];
@@ -315,8 +316,11 @@ wire lecture_load_detail;
 wire [1:0] lecture_detail_index;
 wire [2:0] lecture_artifact_index;
 wire lecture_preloading;
+wire lecture_cache_ready;
 wire lecture_active;
+wire lecture_paused;
 wire lecture_finished;
+wire lecture_audio_restart;
 wire [1:0] lecture_display_slot;
 wire lecture_media_error;
 localparam integer ENABLE_DUAL_FRAME_PRELOAD =
@@ -455,7 +459,10 @@ wire [2:0] overview_selected_video;
 wire overview_confirm_pulse;
 wire overview_enable_video;
 wire overview_confirm_active_video;
+wire museum_preload_valid = sw[2:0] < 3'd5;
+wire [2:0] museum_preload_index = sw[2:0];
 reg [4:0] frame_valid_ff1, frame_valid_ff2;
+reg overview_cache_ready_ff1, overview_cache_ready_ff2;
 wire [3:0] desired_display_media_index = overview_enable_video ?
                                                VIDEO_FRAME_COUNT :
                                                preload_select_media_ff2;
@@ -468,8 +475,8 @@ localparam [1:0] MODE_DETAIL_VIEW   = 2'b10;
 localparam [1:0] MODE_AUDIO_CONTROL = 2'b11;
 wire [1:0] ui_mode = sw[1:0];
 wire [2:0] product_theme_transition_mode;
-assign overview_mode = ENABLE_MUSEUM_OVERVIEW &&
-                       (ui_mode == MODE_PRODUCT_SHOW) && !lecture_active;
+assign overview_mode = ENABLE_MUSEUM_OVERVIEW && !lecture_active &&
+                       (ENABLE_MUSEUM_LECTURE || (ui_mode == MODE_PRODUCT_SHOW));
 wire product_show_mode = !ENABLE_MUSEUM_OVERVIEW &&
                          (ui_mode == MODE_PRODUCT_SHOW);
 // Product Show is driven purely by the director FSM once every cached frame
@@ -488,6 +495,15 @@ wire [2:0] selected_transition_mode =
     (ENABLE_MUSEUM_LECTURE && lecture_active) ? lecture_transition_mode :
     (ui_mode == MODE_PRODUCT_SHOW) ? product_theme_transition_mode :
                                      {1'b0, sw[3:2]};
+wire [2:0] museum_switch_transition_mode =
+    (ENABLE_MUSEUM_LECTURE && display_media_index == VIDEO_FRAME_COUNT &&
+     desired_display_media_index < VIDEO_FRAME_COUNT) ? 3'd3 :
+    (ENABLE_MUSEUM_LECTURE && display_media_index < VIDEO_FRAME_COUNT &&
+     desired_display_media_index == VIDEO_FRAME_COUNT) ? 3'd3 :
+    (ENABLE_MUSEUM_LECTURE && display_media_index < VIDEO_FRAME_COUNT &&
+     desired_display_media_index == 4'd1) ? 3'd2 :
+    (ENABLE_MUSEUM_LECTURE && display_media_index < VIDEO_FRAME_COUNT) ? 3'd0 :
+                                                        transition_mode_ff2;
 wire audio_control_mode = (ui_mode == MODE_AUDIO_CONTROL);
 wire detail_zoom_2x = (ui_mode == MODE_DETAIL_VIEW) && zoom_2x;
 wire [1:0] active_picture_style =
@@ -513,7 +529,8 @@ localparam integer AUDIO_SWITCH_RESET_CYCLES = 50_000;
 // is valid, so image loading and continuous WAV playback never contend.
 wire audio_stream_enable = ENABLE_AUDIO_VISUALIZER &&
                            (ENABLE_MUSEUM_LECTURE ?
-                            (lecture_active && !lecture_finished) :
+                            ((lecture_cache_ready && overview_mode) ||
+                             (lecture_active && !lecture_finished)) :
                             (VIDEO_SEQUENCE ? initial_frame_published :
                                               (frame_valid == 5'b11111)));
 wire audio_sd_owner = audio_stream_enable && !load_active;
@@ -529,6 +546,8 @@ wire [31:0] audio_fifo_rd_data;
 wire audio_fifo_rd_en;
 wire audio_wav_ready;
 wire audio_track_switch_ack;
+wire [31:0] audio_total_frames;
+wire audio_stream_done;
 wire audio_format_error_50m;
 wire audio_file_error_50m;
 reg audio_format_error_ff1, audio_format_error_ff2;
@@ -537,11 +556,17 @@ reg audio_switch_reset_ff1, audio_switch_reset_ff2;
 wire audio_sample_valid;
 wire signed [15:0] audio_sample_left;
 wire signed [15:0] audio_sample_right;
+wire audio_frame_consumed_toggle;
+reg audio_frame_toggle_ff1, audio_frame_toggle_ff2, audio_frame_toggle_seen;
+wire audio_frame_pulse_50m = audio_frame_toggle_ff2 != audio_frame_toggle_seen;
+wire audio_prepared = audio_wav_ready && (audio_fifo_wr_used >= 9'd256) &&
+                      (audio_total_frames != 0);
 wire audio_active;
 wire audio_underflow;
 reg [2:0] audio_track_index;
 reg audio_paused;
 reg [19:0] audio_switch_reset_count;
+reg audio_stream_enable_d;
 wire audio_switch_reset = (audio_switch_reset_count != 0);
 reg [2:0] audio_track_ff1, audio_track_ff2;
 reg audio_paused_ff1, audio_paused_ff2;
@@ -569,10 +594,13 @@ generate
     if (ENABLE_MUSEUM_OVERVIEW) begin : g_museum_overview_controller
         museum_overview_controller u_museum_overview_controller (
             .ctrl_clk(clk_50m), .ctrl_rst_n(write_rst_n),
-            .enable(overview_mode), .media_ready(frame_valid == 5'b11111),
-            .key_confirm(key_press_pulse[1] && !lecture_preloading),
-            .key_previous(key_press_pulse[3] && !lecture_preloading),
-            .key_next(key_press_pulse[2] && !lecture_preloading),
+            .enable(overview_mode),
+            .media_ready(overview_cache_ready && museum_preload_valid &&
+                         lecture_cache_ready && audio_prepared &&
+                         (lecture_artifact_index == overview_selected_ctrl)),
+            .key_confirm(key_press_pulse[1]),
+            .key_previous(key_press_pulse[3]),
+            .key_next(key_press_pulse[2]),
             .selected_index_ctrl(overview_selected_ctrl),
             .confirm_pulse(overview_confirm_pulse),
             .video_clk(video_clk), .video_rst_n(video_rst_n),
@@ -590,22 +618,34 @@ generate
     end
 endgenerate
 
-assign lecture_load_accept = lecture_load_request && load_reported && !load_active;
+assign lecture_load_accept = lecture_load_request && load_reported && !load_active &&
+                             !audio_stream_enable && !audio_stream_enable_d &&
+                             (audio_switch_reset_count == 0);
 generate
     if (ENABLE_MUSEUM_LECTURE) begin : g_museum_lecture_controller
         museum_lecture_controller #(.CLOCK_HZ(LECTURE_CLOCK_HZ))
         u_museum_lecture_controller (
             .clk(clk_50m), .rst_n(write_rst_n), .enable(overview_mode),
+            .overview_ready(overview_cache_ready),
             .confirm_pulse(overview_confirm_pulse),
+            .key_pause(key_press_pulse[1]),
+            .key_return(key_press_pulse[2]),
             .selected_index(overview_selected_ctrl),
+            .preload_valid(museum_preload_valid),
+            .preload_index(museum_preload_index),
+            .audio_prepared(audio_prepared),
+            .audio_frame_pulse(audio_frame_pulse_50m),
+            .audio_total_frames(audio_total_frames),
+            .audio_stream_done(audio_stream_done),
             .load_request(lecture_load_request),
             .load_accept(lecture_load_accept),
             .load_complete(load_complete_event), .load_error(load_error_event),
             .load_slot(lecture_load_slot), .load_detail(lecture_load_detail),
             .detail_index(lecture_detail_index),
             .artifact_index(lecture_artifact_index),
-            .preloading(lecture_preloading), .lecture_active(lecture_active),
-            .lecture_finished(lecture_finished),
+            .preloading(lecture_preloading), .cache_ready(lecture_cache_ready),
+            .lecture_active(lecture_active), .lecture_paused(lecture_paused),
+            .lecture_finished(lecture_finished), .audio_restart(lecture_audio_restart),
             .display_slot(lecture_display_slot), .media_error(lecture_media_error)
         );
     end else begin : g_no_museum_lecture_controller
@@ -615,8 +655,11 @@ generate
         assign lecture_detail_index = 2'd0;
         assign lecture_artifact_index = 3'd0;
         assign lecture_preloading = 1'b0;
+        assign lecture_cache_ready = 1'b0;
         assign lecture_active = 1'b0;
+        assign lecture_paused = 1'b0;
         assign lecture_finished = 1'b0;
+        assign lecture_audio_restart = 1'b0;
         assign lecture_display_slot = 2'd0;
         assign lecture_media_error = 1'b0;
     end
@@ -651,8 +694,8 @@ assign desired_media_index = VIDEO_SEQUENCE ? desired_image_index :
                              {3'd0, desired_image_index};
 assign manual_image_pending = !auto_mode &&
                               (desired_media_index != published_media_index);
-assign load_request_pending = lecture_load_request ||
-                             (ENABLE_MULTI_FRAME_PRELOAD ?
+assign load_request_pending = lecture_load_request ? lecture_load_accept :
+                              (ENABLE_MULTI_FRAME_PRELOAD ?
                               (frame_valid != 5'b11111) :
                              (ENABLE_DUAL_FRAME_PRELOAD ?
                               (frame_valid != 2'b11) :
@@ -806,6 +849,7 @@ generate
         audio_visualizer_overlay u_audio_visualizer_overlay (
             .clk(video_clk), .rst_n(video_rst_n), .sample_valid(audio_sample_valid),
             .sample_left(audio_sample_left), .sample_right(audio_sample_right),
+            .pause(audio_paused_ff2),
             .frame_tick(video_frame_tick), .hs_i(video_subtitle_hs),
             .vs_i(video_subtitle_vs), .de_i(video_subtitle_de), .x_i(video_overview_x),
             .y_i(video_overview_y), .rgb_i(video_subtitle_rgb), .hs_o(video_post_audio_hs),
@@ -908,6 +952,7 @@ generate
     if (ENABLE_AUDIO_VISUALIZER) begin : g_audio_wav
         fat32_wav_streamer u_wav_streamer (
             .clk(clk_50m), .rst_n(write_rst_n), .start(audio_stream_enable),
+            .restart(lecture_audio_restart),
             .track_index(audio_track_index),
             .sd_init_done(sd_init_done), .sd_sec_read(audio_sd_sec_read),
             .sd_sec_read_addr(audio_sd_sec_read_addr),
@@ -917,6 +962,7 @@ generate
             .fifo_almost_full(audio_fifo_almost_full), .fifo_wr_en(audio_fifo_wr_en),
             .fifo_wr_data(audio_fifo_wr_data), .audio_ready(audio_wav_ready),
             .track_switch_ack(audio_track_switch_ack),
+            .total_pcm_frames(audio_total_frames), .stream_done(audio_stream_done),
             .format_error(audio_format_error_50m), .file_error(audio_file_error_50m)
         );
 
@@ -942,7 +988,9 @@ generate
             .fifo_used(audio_fifo_rd_used), .fifo_rd_en(audio_fifo_rd_en),
             .paused(audio_paused_ff2), .switch_mute(audio_switch_reset_ff2),
             .sample_valid(audio_sample_valid), .sample_left(audio_sample_left),
-            .sample_right(audio_sample_right), .active(audio_active), .underflow(audio_underflow)
+            .sample_right(audio_sample_right),
+            .frame_consumed_toggle(audio_frame_consumed_toggle),
+            .active(audio_active), .underflow(audio_underflow)
         );
 
     end else begin : g_no_audio_wav
@@ -960,15 +1008,31 @@ generate
         assign audio_fifo_rd_en       = 1'b0;
         assign audio_wav_ready        = 1'b0;
         assign audio_track_switch_ack = 1'b0;
+        assign audio_total_frames     = 32'd0;
+        assign audio_stream_done      = 1'b0;
         assign audio_format_error_50m = 1'b0;
         assign audio_file_error_50m   = 1'b0;
         assign audio_sample_valid     = 1'b0;
         assign audio_sample_left      = 16'sd0;
         assign audio_sample_right     = 16'sd0;
+        assign audio_frame_consumed_toggle = 1'b0;
         assign audio_active           = 1'b0;
         assign audio_underflow        = 1'b0;
     end
 endgenerate
+
+always @(posedge clk_50m or negedge write_rst_n) begin
+    if (!write_rst_n) begin
+        audio_frame_toggle_ff1  <= 1'b0;
+        audio_frame_toggle_ff2  <= 1'b0;
+        audio_frame_toggle_seen <= 1'b0;
+    end else begin
+        audio_frame_toggle_ff1 <= audio_frame_consumed_toggle;
+        audio_frame_toggle_ff2 <= audio_frame_toggle_ff1;
+        if (audio_frame_pulse_50m)
+            audio_frame_toggle_seen <= audio_frame_toggle_ff2;
+    end
+end
 
 always @(posedge video_clk or negedge video_rst_n) begin
     if (!video_rst_n) begin
@@ -1219,6 +1283,7 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         demo_transition_step <= 2'd0;
         audio_track_index <= 3'd0;
         audio_paused <= 1'b0;
+        audio_stream_enable_d <= 1'b0;
         osd_panel_enable <= 1'b1;
         audio_switch_reset_count <= 20'd0;
         frame_ready_toggle <= 1'b0;
@@ -1228,6 +1293,7 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         sequence_hold_count <= 25'd0;
         sequence_hold_done  <= 1'b0;
         frame_valid         <= 5'b00000;
+        overview_cache_ready<= 1'b0;
         initial_frame_published <= 1'b0;
         preload_select_frame_index <= 1'b0;
         preload_select_media_index <= 4'd0;
@@ -1248,9 +1314,14 @@ always @(posedge clk_50m or negedge write_rst_n) begin
     end else begin
         load_complete_event <= 1'b0;
         load_error_event <= 1'b0;
+        audio_stream_enable_d <= audio_stream_enable;
+        if (frame_valid == 5'b11111)
+            overview_cache_ready <= 1'b1;
         if (audio_switch_reset_count != 0)
             audio_switch_reset_count <= audio_switch_reset_count - 1'b1;
         if (audio_track_switch_ack ||
+            lecture_audio_restart ||
+            (audio_stream_enable_d && !audio_stream_enable) ||
             (audio_control_mode && (key_press_pulse[2] || key_press_pulse[3])))
             audio_switch_reset_count <= AUDIO_SWITCH_RESET_CYCLES;
 
@@ -1308,13 +1379,8 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         end
 
         if (ENABLE_MUSEUM_LECTURE) begin
-            if (lecture_preloading) begin
-                audio_track_index <= lecture_artifact_index;
-                audio_paused <= 1'b1;
-            end else if (lecture_active) begin
-                audio_track_index <= lecture_artifact_index;
-                audio_paused <= lecture_finished;
-            end
+            audio_track_index <= lecture_artifact_index;
+            audio_paused <= !lecture_active || lecture_paused || lecture_finished;
         end
 
         if (!auto_mode)
@@ -1545,6 +1611,8 @@ always @(posedge video_clk or negedge video_rst_n) begin
         picture_style_ff2    <= 2'd0;
         frame_valid_ff1      <= 5'd0;
         frame_valid_ff2      <= 5'd0;
+        overview_cache_ready_ff1 <= 1'b0;
+        overview_cache_ready_ff2 <= 1'b0;
         fade_level         <= 5'd16;
         fade_out_active    <= 1'b0;
     end else begin
@@ -1597,6 +1665,8 @@ always @(posedge video_clk or negedge video_rst_n) begin
         picture_style_ff2    <= picture_style_ff1;
         frame_valid_ff1      <= frame_valid;
         frame_valid_ff2      <= frame_valid_ff1;
+        overview_cache_ready_ff1 <= overview_cache_ready;
+        overview_cache_ready_ff2 <= overview_cache_ready_ff1;
         read_ack_ff1 <= video_read_req_ack;
         read_ack_ff2 <= read_ack_ff1;
         if (LINEBUF_SCALE && video_run && linebuf_underflow)
@@ -1616,7 +1686,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
             switch_pending <= 1'b1;
             direct_switch_pending <= 1'b0;
             if (!switch_pending)
-                transition_mode <= transition_mode_ff2;
+                transition_mode <= museum_switch_transition_mode;
             if (!switch_pending)
                 transition_progress <= 6'd0;
             if (ENABLE_FADE)
@@ -1680,7 +1750,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
             pending_zoom_2x <= overview_enable_video ? 1'b0 : detail_zoom_2x_ff2;
             switch_pending <= 1'b1;
             direct_switch_pending <= 1'b0;
-            transition_mode <= transition_mode_ff2;
+            transition_mode <= museum_switch_transition_mode;
             transition_progress <= 6'd0;
             if (ENABLE_FADE)
                 fade_out_active <= 1'b1;
@@ -1962,7 +2032,7 @@ generate
             .overview_enable(overview_enable_video),
             .selected_index(overview_selected_video),
             .confirm_active(overview_confirm_active_video),
-            .frame_valid(frame_valid_ff2),
+            .frame_valid(frame_valid_ff2 | {5{overview_cache_ready_ff2}}),
             .hs_i(video_post_osd_hs), .vs_i(video_post_osd_vs),
             .de_i(video_post_osd_de), .x_i(video_post_osd_x),
             .y_i(video_post_osd_y), .rgb_i(video_output_rgb),

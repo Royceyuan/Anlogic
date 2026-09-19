@@ -11,16 +11,20 @@ reg sd_valid = 0, sd_end = 0;
 wire fifo_wr;
 wire [31:0] fifo_data;
 wire ready, track_switch_ack, format_error, file_error;
+wire [31:0] total_pcm_frames;
+wire stream_done;
 reg [7:0] sector [0:6][0:511];
 reg serving = 0;
 integer byte_no = 0, lba = 0, writes = 0, seen_lba6 = 0;
 reg ready_seen = 0, ready_dropped = 0, track_switch_seen = 0;
 
-fat32_wav_streamer dut (.clk(clk), .rst_n(rst_n), .start(start), .track_index(track_index), .sd_init_done(sd_init_done),
+fat32_wav_streamer dut (.clk(clk), .rst_n(rst_n), .start(start), .restart(1'b0),
+    .track_index(track_index), .sd_init_done(sd_init_done),
     .sd_sec_read(sd_read), .sd_sec_read_addr(sd_addr), .sd_sec_read_data(sd_data),
     .sd_sec_read_data_valid(sd_valid), .sd_sec_read_end(sd_end), .fifo_almost_full(1'b0),
     .fifo_wr_en(fifo_wr), .fifo_wr_data(fifo_data), .audio_ready(ready),
-    .track_switch_ack(track_switch_ack), .format_error(format_error), .file_error(file_error));
+    .track_switch_ack(track_switch_ack), .total_pcm_frames(total_pcm_frames),
+    .stream_done(stream_done), .format_error(format_error), .file_error(file_error));
 always #5 clk = ~clk;
 always @(negedge clk) begin
     sd_valid = 0; sd_end = 0;
@@ -77,8 +81,9 @@ initial begin
     sector[6][0]=8'h99; sector[6][1]=8'haa; sector[6][2]=8'hbb; sector[6][3]=8'hcc;
     repeat (3) @(posedge clk); rst_n = 1; start = 1;
     repeat (4000) @(posedge clk);
-    if (!ready || ready_dropped || format_error || file_error || writes < 128 || !seen_lba6)
-        $fatal(1, "fragmented WAV parse or loop failed");
+    if (!ready || ready_dropped || format_error || file_error || writes != 128 ||
+        !seen_lba6 || !stream_done || total_pcm_frames != 128)
+        $fatal(1, "fragmented WAV parse or completion failed");
     // The active sector completes before the selector restarts at AUDIO1.WAV.
     @(negedge clk); track_index = 1; sector[3][5] = "1";
     repeat (4000) @(posedge clk);
