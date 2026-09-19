@@ -27,7 +27,8 @@ wire [23:0] rgb_o;
 museum_overview_overlay #(
     .SOURCE_W(4), .SOURCE_H(4), .THUMB_W(2), .THUMB_H(2),
     .DISPLAY_SCALE(2), .PANEL_X0(4), .PANEL_PITCH(8),
-    .PANEL_Y0(20), .BORDER(1)
+    .PANEL_Y0(20), .SECOND_ROW_X0(8), .SECOND_ROW_Y0(24),
+    .SAMPLE_W(2), .SAMPLE_H(2), .SAMPLE_X0(1), .SAMPLE_Y0(1), .BORDER(1)
 ) dut (
     .wr_clk(wr_clk), .wr_rst_n(wr_rst_n), .wr_start(wr_start),
     .wr_frame_index(wr_frame_index), .wr_valid(wr_valid),
@@ -76,15 +77,23 @@ initial begin
     @(negedge wr_clk); wr_start = 1'b1; wr_frame_index = 0;
     @(negedge wr_clk); wr_start = 1'b0;
     // Model a normal bottom-up BMP: destination rows arrive 3, 2, 1, 0.
-    // Only rows 3 and 1 are thumbnail sample rows for this 4x4 test image.
-    write_sample(3, 0, 16'h001f);
+    // The thumbnail samples only the central 2x2 crop at rows 2/1 and cols 1/2.
+    write_sample(3, 0, 16'h0000);
     write_sample(3, 1, 16'h0000);
-    write_sample(3, 2, 16'hffe0);
+    write_sample(3, 2, 16'h0000);
     write_sample(3, 3, 16'h0000);
-    write_sample(1, 0, 16'hf800);
-    write_sample(1, 1, 16'h0000);
+    write_sample(2, 0, 16'h0000);
+    write_sample(2, 1, 16'h001f);
+    write_sample(2, 2, 16'hffe0);
+    write_sample(2, 3, 16'h0000);
+    write_sample(1, 0, 16'h0000);
+    write_sample(1, 1, 16'hf800);
     write_sample(1, 2, 16'h07e0);
     write_sample(1, 3, 16'h0000);
+    write_sample(0, 0, 16'h0000);
+    write_sample(0, 1, 16'h0000);
+    write_sample(0, 2, 16'h0000);
+    write_sample(0, 3, 16'h0000);
     check_pixel(4, 20, 24'hff0000);
     check_pixel(6, 20, 24'h00ff00);
     check_pixel(4, 22, 24'h0000ff);

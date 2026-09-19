@@ -4,14 +4,18 @@
 module museum_overview_overlay #(
     parameter integer SOURCE_W = 960,
     parameter integer SOURCE_H = 540,
-    parameter integer THUMB_W = 48,
-    parameter integer THUMB_H = 27,
-    parameter integer DISPLAY_SCALE = 8,
+    parameter integer THUMB_W = 64,
+    parameter integer THUMB_H = 48,
+    parameter integer DISPLAY_SCALE = 6,
     parameter integer PANEL_X0 = 32,
     parameter integer PANEL_PITCH = 416,
-    parameter integer PANEL_Y0 = 24,
+    parameter integer PANEL_Y0 = 8,
     parameter integer SECOND_ROW_X0 = 240,
-    parameter integer SECOND_ROW_Y0 = 480,
+    parameter integer SECOND_ROW_Y0 = 412,
+    parameter integer SAMPLE_W = 640,
+    parameter integer SAMPLE_H = 480,
+    parameter integer SAMPLE_X0 = 160,
+    parameter integer SAMPLE_Y0 = 30,
     parameter integer BORDER = 4
 ) (
     input  wire        wr_clk,
@@ -47,14 +51,14 @@ localparam integer FRAME_COUNT = 5;
 localparam integer THUMB_PIXELS = THUMB_W * THUMB_H;
 localparam integer MEM_DEPTH = FRAME_COUNT * THUMB_PIXELS;
 localparam integer MEM_ADDR_BITS = (MEM_DEPTH <= 2) ? 1 : $clog2(MEM_DEPTH);
-localparam integer ROW_STEP = SOURCE_H / THUMB_H;
-localparam integer COL_STEP = SOURCE_W / THUMB_W;
+localparam integer ROW_STEP = SAMPLE_H / THUMB_H;
+localparam integer COL_STEP = SAMPLE_W / THUMB_W;
 localparam integer DISPLAY_W = THUMB_W * DISPLAY_SCALE;
 localparam integer DISPLAY_H = THUMB_H * DISPLAY_SCALE;
 
 reg [15:0] thumbnail_mem [0:MEM_DEPTH-1];
 reg [10:0] wr_target_row, wr_target_col;
-reg [5:0] wr_thumb_col;
+reg [6:0] wr_thumb_col;
 reg [4:0] wr_thumb_row;
 reg [2:0] wr_active_frame;
 reg       wr_row_seen;
@@ -72,7 +76,7 @@ always @(posedge wr_clk or negedge wr_rst_n) begin
     if (!wr_rst_n) begin
         wr_target_row   <= 11'd0;
         wr_target_col   <= 11'd0;
-        wr_thumb_col    <= 6'd0;
+        wr_thumb_col    <= 7'd0;
         wr_thumb_row    <= 5'd0;
         wr_active_frame <= 3'd0;
         wr_row_seen     <= 1'b0;
@@ -82,7 +86,7 @@ always @(posedge wr_clk or negedge wr_rst_n) begin
         wr_active_frame <= wr_frame_index[2:0];
         wr_target_row   <= 11'd0;
         wr_target_col   <= 11'd0;
-        wr_thumb_col    <= 6'd0;
+        wr_thumb_col    <= 7'd0;
         wr_thumb_row    <= 5'd0;
         wr_row_seen     <= 1'b0;
         wr_row_ascending<= 1'b1;
@@ -96,27 +100,38 @@ always @(posedge wr_clk or negedge wr_rst_n) begin
             if (!wr_row_seen) begin
                 wr_row_seen      <= 1'b1;
                 wr_row_ascending <= (wr_row < SOURCE_H / 2);
-                wr_target_row    <= wr_row;
-                wr_sample_row    <= 1'b1;
-                wr_target_col    <= COL_STEP;
-                wr_thumb_col     <= 6'd1;
+                wr_target_row    <= (wr_row < SOURCE_H / 2) ? SAMPLE_Y0 :
+                                    SAMPLE_Y0 + SAMPLE_H - 1;
+                wr_sample_row    <= (wr_row == ((wr_row < SOURCE_H / 2) ?
+                                    SAMPLE_Y0 : SAMPLE_Y0 + SAMPLE_H - 1));
+                wr_target_col    <= SAMPLE_X0;
+                wr_thumb_col     <= 7'd0;
                 wr_thumb_row     <= (wr_row < SOURCE_H / 2) ? 5'd0 : THUMB_H - 1;
-                thumbnail_mem[frame_base(wr_active_frame) +
-                              (((wr_row < SOURCE_H / 2) ? 0 : THUMB_H - 1) * THUMB_W)] <= wr_pixel;
+                if ((wr_row == ((wr_row < SOURCE_H / 2) ?
+                                SAMPLE_Y0 : SAMPLE_Y0 + SAMPLE_H - 1)) &&
+                    SAMPLE_X0 == 0) begin
+                    thumbnail_mem[frame_base(wr_active_frame) +
+                                  (((wr_row < SOURCE_H / 2) ? 0 : THUMB_H - 1) * THUMB_W)] <= wr_pixel;
+                    wr_thumb_col  <= 7'd1;
+                    wr_target_col <= COL_STEP;
+                end
             end else begin
                 wr_sample_row <= (wr_row == wr_target_row);
-                wr_target_col <= (wr_row == wr_target_row) ? COL_STEP : 11'd0;
-                wr_thumb_col  <= (wr_row == wr_target_row) ? 6'd1 : 6'd0;
-                if (wr_row == wr_target_row)
+                wr_target_col <= SAMPLE_X0;
+                wr_thumb_col  <= 7'd0;
+                if ((wr_row == wr_target_row) && SAMPLE_X0 == 0) begin
                     thumbnail_mem[frame_base(wr_active_frame) +
                                   (wr_thumb_row * THUMB_W)] <= wr_pixel;
+                    wr_thumb_col  <= 7'd1;
+                    wr_target_col <= COL_STEP;
+                end
             end
         end else if (wr_sample_row && wr_col == wr_target_col &&
                      wr_thumb_col < THUMB_W) begin
             thumbnail_mem[frame_base(wr_active_frame) +
                           (wr_thumb_row * THUMB_W) + wr_thumb_col] <= wr_pixel;
             if (wr_thumb_col == THUMB_W - 1) begin
-                wr_thumb_col  <= 6'd0;
+                wr_thumb_col  <= 7'd0;
                 wr_target_col <= SOURCE_W;
             end else begin
                 wr_thumb_col  <= wr_thumb_col + 1'b1;
