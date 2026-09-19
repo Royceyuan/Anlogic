@@ -75,13 +75,20 @@ initial begin
 
     @(negedge wr_clk); wr_start = 1'b1; wr_frame_index = 0;
     @(negedge wr_clk); wr_start = 1'b0;
-    write_sample(0, 0, 16'hf800);
-    write_sample(0, 2, 16'h07e0);
-    write_sample(2, 0, 16'h001f);
-    write_sample(2, 2, 16'hffff);
-
+    // Model a normal bottom-up BMP: destination rows arrive 3, 2, 1, 0.
+    // Only rows 3 and 1 are thumbnail sample rows for this 4x4 test image.
+    write_sample(3, 0, 16'h001f);
+    write_sample(3, 1, 16'h0000);
+    write_sample(3, 2, 16'hffe0);
+    write_sample(3, 3, 16'h0000);
+    write_sample(1, 0, 16'hf800);
+    write_sample(1, 1, 16'h0000);
+    write_sample(1, 2, 16'h07e0);
+    write_sample(1, 3, 16'h0000);
     check_pixel(4, 20, 24'hff0000);
     check_pixel(6, 20, 24'h00ff00);
+    check_pixel(4, 22, 24'h0000ff);
+    check_pixel(6, 22, 24'hffff00);
     check_pixel(3, 20, 24'hf2c14e);
     confirm_active = 1'b1;
     check_pixel(3, 20, 24'h41d17d);

@@ -37,11 +37,12 @@
 
 ### MAIN-1 总览选择（2026-09-19，待板测）
 
-- **行为实现：完成。** `SW1:SW2=00` 显示五件文物固定缩略图；默认高亮 0，KEY3/KEY4 分别循环选择上一件/下一件，KEY2 仅在五张图均有效后确认。选择索引在视频帧边界发布，确认后边框由黄色短暂变为绿色。
+- **行为实现：完成，已修正板测暴露的问题。** `SW1:SW2=00` 显示五件文物缩略图，布局为上三下二并尽量铺满 1280x720；默认高亮 0，KEY3 下一件、KEY4 上一件，KEY2 仅在五张图均有效后确认。选择索引在视频帧边界发布，确认后边框由黄色短暂变为绿色。
+- **采样修复：完成。** 自适应 BMP 写入器支持底部向上和顶部向下目标行序，按完整源行边界抽样，不再只捕获最后一条采样行。
 - **带宽边界：保持。** 五张 BMP 写入 SDRAM 时同步抽样为 `48x27 RGB565`，显示时放大为 `192x108`；总览只读取片上双时钟 BRAM，不新增 TF 或 SDRAM 读取。MAIN-2 讲解流程未提前实现。
-- **仿真：通过。** `sim/run_museum_overview_main1.do` 覆盖选择回绕、媒体就绪门控、帧边界 CDC、缩略图缓存、边框、无效占位和旁路；ModelSim 10.6e 报告 `Errors: 0, Warnings: 0`。
-- **综合/P&R/STA：通过。** `_build_main1_overview/main1_overview_pr.status` 报告 Setup WNS `+148 ps`、TNS `0 ps`，Hold WNS `+24 ps`、TNS `0 ps`；STA 覆盖率 `99.91%`，慢/快角均检查，时序例外为空，DRC 无多驱动、异常路径或拥塞溢出。资源为 LUT 13299/19600（67.85%）、寄存器 5576/19600（28.45%）、RAM 41、DSP 6；缩略图缓存推断为双时钟 `8192x16` BRAM。
-- **位流：已生成、待板测。** `release/hx4s20_main1_overview.bit`，647108 bytes，SHA256 `7E6189F80ADB7C0A8A3FEE72C8EC088C24E2CA49DB8945D2321D5BA6CF9BC324`。工具仍报告与 MAIN-0 相同的 SDRAM 25 MHz 相移时钟本地路由警告；最终时序已通过，但必须由板测确认 SDRAM 和画面稳定性。
+- **仿真：通过。** `sim/run_museum_overview_main1.do` 覆盖选择回绕、媒体就绪门控、帧边界 CDC、底部向上 BMP 行序、缩略图缓存、边框、无效占位和旁路；ModelSim 10.6e 报告 `Errors: 0, Warnings: 0`。
+- **综合/P&R/STA：通过。** `_build_main1_overview/main1_overview_pr.status` 报告 Setup WNS `+246 ps`、TNS `0 ps`，Hold WNS `+30 ps`、TNS `0 ps`；STA 覆盖率 `99.92%`，慢/快角均检查，时序例外为空，DRC 无多驱动、异常路径或拥塞溢出。资源为 LUT 13528/19600（69.02%）、寄存器 5544/19600（28.29%）、RAM 41、DSP 8；缩略图缓存推断为双时钟 `8192x16` BRAM。
+- **位流：已生成、待板测。** `release/hx4s20_main1_overview.bit`，647108 bytes，SHA256 `FBDDD6C2C5D6A031D20A5521587DDE546BDA0200AD57BCDC4C8E0545DB972DAE`。工具仍报告与 MAIN-0 相同的 SDRAM 25 MHz 相移时钟本地路由警告；最终时序已通过，但必须由板测确认 SDRAM、缩略图和画面稳定性。
 
 ### MAIN-0 审计结论（2026-09-18）
 
@@ -168,7 +169,7 @@ v73 候选顶层：top_1280x720_feature_v73_audio_visualizer
 当前发布 bit：`release/hx4s20_main1_overview.bit`（MAIN-1 待板测）
 MAIN-0 回退 bit：`release/hx4s20_1280x720_v72_subtitle_continuous_scroll_v2.bit`（已板测通过）
 当前商品展示文件：无（已回退）
-当前阶段状态：MAIN-1 源码、测试、脚本和 bit 待提交；构建产物和报告保持未跟踪且不提交
+当前阶段状态：MAIN-1 修正版源码、测试和 bit 待提交；构建产物和报告保持未跟踪且不提交
 ```
 
 ## 12. 下一步行动

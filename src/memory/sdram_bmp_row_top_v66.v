@@ -522,7 +522,7 @@ generate
             .ctrl_clk(clk_50m), .ctrl_rst_n(write_rst_n),
             .enable(overview_mode), .media_ready(frame_valid == 5'b11111),
             .key_confirm(key_press_pulse[1]),
-            .key_previous(key_press_pulse[2]), .key_next(key_press_pulse[3]),
+            .key_previous(key_press_pulse[3]), .key_next(key_press_pulse[2]),
             .selected_index_ctrl(overview_selected_ctrl),
             .confirm_pulse(overview_confirm_pulse),
             .video_clk(video_clk), .video_rst_n(video_rst_n),
