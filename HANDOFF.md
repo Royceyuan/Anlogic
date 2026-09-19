@@ -153,16 +153,16 @@ v73 候选顶层：top_1280x720_feature_v73_audio_visualizer
 活动 SDC：constraints/top_1280x720_v72_resource_optimized.sdc
 保留最新候选 SDC：constraints/top_1280x720_v73_audio_visualizer.sdc
 当前 P&R 目录：`_build_v72_subtitle_continuous_scroll`（本轮闭合证据，未跟踪）
-当前发布 bit：`release/hx4s20_1280x720_v72_subtitle_continuous_scroll_v2.bit`（本轮生成，未上板验证）
+当前发布 bit：`release/hx4s20_1280x720_v72_subtitle_continuous_scroll_v2.bit`（MAIN-0 板测通过）
 当前商品展示文件：无（已回退）
-当前未提交改动：本轮发布 bit 与 HANDOFF 待提交；未跟踪构建产物按用户要求保留且不提交
+当前未提交改动：仅保留未跟踪构建产物和报告，按用户要求不提交
 ```
 
 ## 12. 下一步行动
 
-1. `MAIN-0` 审计、v72 综合/P&R/STA/DRC 和 bitgen 已完成；当前只剩用户上板验证。
-2. 上板验证使用本轮 bit，记录 HDMI、TF 五图缓存、按键、SW4、SDRAM 稳定性和无花屏/撕裂现象；明确回复 `MAIN-0 BOARD PASS` 或附现象日志。
-3. `MAIN-1` 开始前，继续使用 `D:\Modelsim` 和 `D:\TD_6.2.1`，并保持活动 v72 顶层和活动约束可复现；不得复用混入 v71/v69 约束的历史结果。
+1. `MAIN-0` 审计、v72 综合/P&R/STA/DRC、bitgen 和板测已完成；用户已确认 `MAIN-0 BOARD PASS`。
+2. MAIN-0 板测基于 `release/hx4s20_1280x720_v72_subtitle_continuous_scroll_v2.bit`；用户确认当前基线的 HDMI、TF、SDRAM、按键、SW4 和画面稳定性满足验收要求。
+3. 下一阶段进入 `MAIN-1` 前，继续使用 `D:\Modelsim` 和 `D:\TD_6.2.1`，并保持活动 v72 顶层和活动约束可复现；不得复用混入 v71/v69 约束的历史结果。
 4. 每个阶段的代码和阶段性 HANDOFF 更新只提交计划相关文件，提交后 push 到 `origin/Yan_Chen_Double`；不得把未跟踪构建产物纳入提交。
 5. 所有需要发布的 bit 都必须从本轮闭合 P&R DB 生成，并交付最终 STA、文件大小、SHA256 和“硬件是否已测试”的明确状态。
 
