@@ -318,6 +318,8 @@ linebuf_scaler_960x540_to_1280x720 #(
 ) u_linebuf_scaler (
     .clk(video_clk), .rst_n(video_rst_n), .source_start(linebuf_start_pulse),
     .zoom_2x(1'b0),
+    .museum_recenter_active(1'b0), .museum_recenter_closing(1'b0),
+    .museum_recenter_progress(8'd0), .museum_recenter_origin(3'd0),
     .source_base_addr(21'd0), .source_read_req(source_read_req),
     .source_read_ack(source_read_ack), .source_read_base_addr(source_read_base_addr),
     .source_read_len(source_read_len), .source_fifo_empty(source_fifo_empty),

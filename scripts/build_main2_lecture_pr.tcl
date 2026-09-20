@@ -1,4 +1,5 @@
 # MAIN-2: five-artifact overview, fixed four-image lecture cache and WAV audio.
+import_device eagle_s20.db -package EG4S20BG256
 set build_project_root [file normalize [pwd]]
 set build_root [file join $build_project_root _build_main2_lecture]
 set build_project_file [file join $build_project_root hx4s20_800x600_multimedia.al]
@@ -8,7 +9,6 @@ set build_top_module top_1280x720_main2_lecture
 
 file mkdir $build_root
 cd $build_project_root
-import_device eagle_s20.db -package EG4S20BG256
 open_project $build_project_file -single_run
 load_run_param -run syn_1
 elaborate -top $build_top_module

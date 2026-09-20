@@ -1,24 +1,31 @@
 `timescale 1ns / 1ps
 
 module tb_video_transition_mask;
+    reg clk = 1'b0;
+    reg rst_n = 1'b0;
     reg [23:0] rgb_in;
     reg de;
     reg [10:0] x;
     reg [9:0] y;
     reg [2:0] mode;
     reg [2:0] origin_index;
-    reg [5:0] progress;
+    reg [7:0] progress;
     reg closing;
+    reg overview_source;
     reg enable;
     wire [23:0] rgb_out;
     reg [4:0] fade_level;
     wire [23:0] fade_rgb;
     integer m;
 
+    always #5 clk = ~clk;
+
     video_transition_mask #(.VIDEO_W(1280), .VIDEO_H(720)) u_dut (
-        .rgb_in(rgb_in), .de(de), .x(x), .y(y), .mode(mode),
+        .clk(clk), .rst_n(rst_n),
+        .rgb_in(rgb_in),
+        .de(de), .x(x), .y(y), .mode(mode),
         .origin_index(origin_index),
-        .progress(progress), .closing(closing),
+        .progress(progress), .closing(closing), .overview_source(overview_source),
         .enable(enable), .rgb_out(rgb_out)
     );
     video_fade u_fade (
@@ -30,10 +37,19 @@ module tb_video_transition_mask;
         begin
             #1;
             if (rgb_out !== expected) begin
-                $display("FAIL mode=%0d p=%0d x=%0d y=%0d got=%h exp=%h",
-                         mode, progress, x, y, rgb_out, expected);
+                $display("FAIL mode=%0d p=%0d x=%0d y=%0d got=%h exp=%h left=%0d right=%0d step=%0d reveal=%0d closing=%0d overview=%0d dut_p=%0d",
+                         mode, progress, x, y, rgb_out, expected,
+                         u_dut.panel_left, u_dut.panel_right,
+                         u_dut.museum_step, u_dut.reveal, u_dut.closing,
+                         u_dut.overview_source, u_dut.progress);
                 $fatal;
             end
+        end
+    endtask
+
+    task latch_museum;
+        begin
+            @(posedge clk); #1;
         end
     endtask
 
@@ -43,7 +59,12 @@ module tb_video_transition_mask;
         enable = 1'b1;
         origin_index = 3'd3;
         closing = 1'b0;
+        overview_source = 1'b0;
         fade_level = 5'd0;
+
+        repeat (2) @(posedge clk);
+        rst_n = 1'b1;
+        latch_museum();
 
         #1;
         if (fade_rgb !== 24'h000000)
@@ -77,15 +98,30 @@ module tb_video_transition_mask;
         mode = 3'b011; x = 11'd640; y = 10'd360; expect_rgb(rgb_in);
         x = 11'd100; y = 10'd100; expect_rgb(24'h0);
 
-        // Museum expansion keeps the selected column at the midpoint, then
-        // grows it horizontally to the full 1280-pixel frame.
-        mode = 3'b101; closing = 1'b1; progress = 6'd16;
-        x = 11'd900; y = 10'd100; expect_rgb(rgb_in);
-        x = 11'd700; expect_rgb(24'h0);
-        closing = 1'b0; progress = 6'd24;
-        x = 11'd500; expect_rgb(rgb_in);
+        // Enter: selected overview panel 3 moves from x=768 to center while
+        // other panels fade, then the matching full-image crop expands.
+        mode = 3'b101; overview_source = 1'b1; closing = 1'b1;
+        progress = 8'd0; latch_museum(); x = 11'd800; expect_rgb(rgb_in);
+        x = 11'd700; expect_rgb(rgb_in);
+        progress = 8'd64; latch_museum(); x = 11'd600; expect_rgb(rgb_in);
+        x = 11'd800; expect_rgb(24'h0);
+        overview_source = 1'b0; closing = 1'b0;
+        progress = 8'd64; latch_museum(); x = 11'd600; expect_rgb(rgb_in);
+        x = 11'd400; expect_rgb(24'h0);
+        progress = 8'd96; latch_museum(); x = 11'd300; expect_rgb(rgb_in);
         x = 11'd200; expect_rgb(24'h0);
-        progress = 6'd32; x = 11'd0; expect_rgb(rgb_in);
+        progress = 8'd128; latch_museum(); x = 11'd0; expect_rgb(rgb_in);
+
+        // Return is the exact reverse: full image contracts to its center
+        // crop, then that crop moves back to panel 3.
+        closing = 1'b1; overview_source = 1'b0;
+        progress = 8'd0; latch_museum(); x = 11'd0; expect_rgb(rgb_in);
+        progress = 8'd64; latch_museum(); x = 11'd400; expect_rgb(24'h0);
+        x = 11'd600; expect_rgb(rgb_in);
+        closing = 1'b0; overview_source = 1'b1;
+        progress = 8'd64; latch_museum(); x = 11'd600; expect_rgb(rgb_in);
+        progress = 8'd128; latch_museum(); x = 11'd800; expect_rgb(rgb_in);
+        x = 11'd700; expect_rgb(rgb_in);
 
         // Every legal selector must produce a known RGB value.
         for (m = 0; m < 4; m = m + 1) begin

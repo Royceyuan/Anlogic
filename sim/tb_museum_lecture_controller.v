@@ -69,6 +69,20 @@ initial begin
  release dut.display_slot;
  key_return=1;@(negedge clk);key_return=0;
  if(active||!audio_restart)$fatal(1,"key return failed");
+
+ // Returning after only the spare-slot preload must continue with the three
+ // missing pictures instead of discarding progress and restarting at D3.
+ selected=2;confirm=1;@(negedge clk);confirm=0;
+ if(!active)$fatal(1,"second lecture start failed");
+ preload_index=1;@(negedge clk);check_load(3,3,1);
+ key_return=1;@(negedge clk);key_return=0;
+ if(active||!preloading||!dut.queued_valid)
+  $fatal(1,"partial preload was discarded on return");
+ repeat(2)@(negedge clk);check_load(0,0,1);
+ repeat(2)@(negedge clk);check_load(1,1,1);
+ repeat(2)@(negedge clk);check_load(2,2,1);
+ if(preloading||!cache_ready||artifact!=1)
+  $fatal(1,"partial preload did not finish and promote in overview");
  $display("PASS tb_museum_lecture_controller");$finish;
 end
 endmodule

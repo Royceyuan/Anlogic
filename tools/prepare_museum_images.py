@@ -1,38 +1,38 @@
 from pathlib import Path
 import shutil
 
-from PIL import Image, ImageEnhance, ImageFilter
+from PIL import Image, ImageOps
 
 
 ROOT = Path(__file__).resolve().parents[2] / "素材"
 DEST = Path("E:/")
-BACKUP = DEST / "BACKUP_MAIN2_20260920"
+BACKUP = DEST / "BACKUP_MAIN2_BEFORE_FULLSCREEN_20260920"
 SIZE = (1920, 1080)
+FOREGROUND_SIZE = 1080
+SIDE_WIDTH = (SIZE[0] - FOREGROUND_SIZE) // 2
+EDGE_SOURCE_WIDTH = 16
 
 
 def render(source: Path, target: Path) -> None:
     with Image.open(source) as opened:
         image = opened.convert("RGB")
-    scale = max(SIZE[0] / image.width, SIZE[1] / image.height)
-    background = image.resize(
-        (round(image.width * scale), round(image.height * scale)), Image.Resampling.LANCZOS
+    foreground = image.resize(
+        (FOREGROUND_SIZE, FOREGROUND_SIZE), Image.Resampling.LANCZOS
     )
-    left = (background.width - SIZE[0]) // 2
-    top = (background.height - SIZE[1]) // 2
-    background = background.crop((left, top, left + SIZE[0], top + SIZE[1]))
-    background = ImageEnhance.Brightness(
-        background.filter(ImageFilter.GaussianBlur(36))
-    ).enhance(0.45)
-
-    foreground = image.resize((1080, 1080), Image.Resampling.LANCZOS)
-    mask = Image.new("L", foreground.size, 255)
-    for x in range(32):
-        alpha = round(255 * x / 31)
-        for y in range(1080):
-            mask.putpixel((x, y), alpha)
-            mask.putpixel((1079 - x, y), alpha)
-    background.paste(foreground, (420, 0), mask)
-    background.save(target, "BMP")
+    fullscreen = Image.new("RGB", SIZE)
+    left_edge = ImageOps.mirror(
+        foreground.crop((0, 0, EDGE_SOURCE_WIDTH, FOREGROUND_SIZE))
+    ).resize((SIDE_WIDTH, FOREGROUND_SIZE), Image.Resampling.LANCZOS)
+    right_edge = ImageOps.mirror(
+        foreground.crop(
+            (FOREGROUND_SIZE - EDGE_SOURCE_WIDTH, 0,
+             FOREGROUND_SIZE, FOREGROUND_SIZE)
+        )
+    ).resize((SIDE_WIDTH, FOREGROUND_SIZE), Image.Resampling.LANCZOS)
+    fullscreen.paste(left_edge, (0, 0))
+    fullscreen.paste(foreground, (SIDE_WIDTH, 0))
+    fullscreen.paste(right_edge, (SIDE_WIDTH + FOREGROUND_SIZE, 0))
+    fullscreen.save(target, "BMP")
 
 
 def main() -> None:

@@ -3,6 +3,9 @@
 
 module tb_linebuf_scaler_zoom;
 reg clk=0, rst_n=0, source_start=0, zoom_2x=0;
+reg museum_active=0, museum_closing=0;
+reg [7:0] museum_progress=0;
+reg [2:0] museum_origin=0;
 reg [10:0] video_x=0;
 reg [9:0] video_y=0;
 wire [20:0] source_read_base_addr, source_read_len;
@@ -13,6 +16,8 @@ always #5 clk=~clk;
 
 linebuf_scaler_960x540_to_1280x720 dut (
     .clk(clk), .rst_n(rst_n), .source_start(source_start), .zoom_2x(zoom_2x),
+    .museum_recenter_active(museum_active), .museum_recenter_closing(museum_closing),
+    .museum_recenter_progress(museum_progress), .museum_recenter_origin(museum_origin),
     .source_base_addr(21'd1000), .source_read_req(), .source_read_ack(1'b0),
     .source_read_base_addr(source_read_base_addr), .source_read_len(source_read_len),
     .source_fifo_empty(1'b1), .source_fifo_valid(1'b0), .source_read_en(),
@@ -54,7 +59,20 @@ initial begin
     end
     check_map(0,0,0,0);
     check_map(1279,719,959,539);
-    $display("PASS linebuf fixed-center 1x/2x mapping");
+    museum_active=1; museum_closing=1; museum_origin=3;
+    museum_progress=0;
+    @(posedge clk); #1;
+    check_map(768,0,576,0);
+    check_map(1023,0,767,0);
+    museum_progress=64;
+    @(posedge clk); #1;
+    check_map(512,0,576,0);
+    check_map(767,0,767,0);
+    check_map(0,0,0,0);
+    museum_closing=0; museum_progress=128;
+    @(posedge clk); #1;
+    check_map(768,0,576,0);
+    $display("PASS linebuf fixed-center 1x/2x and museum recenter mapping");
     $finish;
 end
 endmodule

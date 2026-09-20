@@ -664,6 +664,10 @@ generate
             .clk(video_clk), .rst_n(video_rst_n),
             .source_start(linebuf_start_pulse),
             .zoom_2x(1'b0),
+            .museum_recenter_active(1'b0),
+            .museum_recenter_closing(1'b0),
+            .museum_recenter_progress(8'd0),
+            .museum_recenter_origin(3'd0),
             .source_base_addr(ENABLE_MULTI_FRAME_PRELOAD ?
                               frame_base_for_index(display_media_index) :
                               (display_frame_index ? FRAME1_BASE : FRAME0_BASE)),
@@ -1231,14 +1235,17 @@ endgenerate
 video_transition_mask #(
     .VIDEO_W(VIDEO_W), .VIDEO_H(VIDEO_H)
 ) u_video_transition_mask (
+    .clk           (video_clk),
+    .rst_n         (video_rst_n),
     .rgb_in        (video_faded_rgb),
     .de            (video_de),
     .x             (video_x_delayed),
     .y             (video_y_delayed),
     .mode          (transition_mode),
     .origin_index  (3'd2),
-    .progress      (transition_progress),
+    .progress      ({2'b0, transition_progress}),
     .closing       (fade_out_active),
+    .overview_source(1'b0),
     .enable        (ENABLE_FADE && !fade_out_active &&
                     (transition_progress < ((transition_mode == 3'b100) ? 6'd60 : 6'd36))),
     .rgb_out       (video_transition_rgb)

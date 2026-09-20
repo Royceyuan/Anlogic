@@ -72,11 +72,12 @@ always @(posedge clk or negedge rst_n) begin
         end
 
         if (preloading && loading_next && !load_request && !waiting_for_load) begin
-            if (next_load_step==1 && displayed_frame_slot==1) begin
+            if (next_load_step==1 && (!lecture_active || displayed_frame_slot==1)) begin
                 load_slot<=0; load_frame_slot<=0; load_request<=1;
-            end else if (next_load_step==2 && displayed_frame_slot==2) begin
+            end else if (next_load_step==2 && (!lecture_active || displayed_frame_slot==2)) begin
                 load_slot<=1; load_frame_slot<=1; load_request<=1;
-            end else if (next_load_step==3 && displayed_frame_slot==current_d3_slot) begin
+            end else if (next_load_step==3 &&
+                         (!lecture_active || displayed_frame_slot==current_d3_slot)) begin
                 load_slot<=2; load_frame_slot<=2; load_request<=1;
             end
         end
@@ -102,7 +103,15 @@ always @(posedge clk or negedge rst_n) begin
                     next_load_step<=0; load_slot<=3; load_frame_slot<=next_d3_slot;
                     load_request<=1; queued_ready<=0;
                 end else if (next_load_step==3) begin
-                    preloading<=0; loading_next<=0; queued_ready<=1;
+                    preloading<=0; loading_next<=0;
+                    if (lecture_active) begin
+                        queued_ready<=1;
+                    end else begin
+                        artifact_index<=queued_artifact;
+                        current_d3_slot<=next_d3_slot;
+                        cache_ready<=1; current_cache_intact<=1;
+                        queued_valid<=0; queued_ready<=0;
+                    end
                 end else next_load_step<=next_load_step+1'b1;
             end else if (load_slot==3) begin
                 if (preload_valid && preload_index==artifact_index) begin
@@ -131,11 +140,20 @@ always @(posedge clk or negedge rst_n) begin
                 if (queued_ready && preload_valid && preload_index==queued_artifact) begin
                     artifact_index<=queued_artifact; current_d3_slot<=next_d3_slot;
                     cache_ready<=1; current_cache_intact<=1;
-                end else if (!current_cache_intact ||
-                             (preload_valid && preload_index!=artifact_index))
+                    queued_valid<=0; queued_ready<=0;
+                    preloading<=0; loading_next<=0;
+                    load_request<=0; waiting_for_load<=0;
+                end else if (queued_valid && preload_valid &&
+                             preload_index==queued_artifact) begin
                     cache_ready<=0;
-                preloading<=0; loading_next<=0; load_request<=0; waiting_for_load<=0;
-                queued_valid<=0; queued_ready<=0;
+                end else begin
+                    if (!current_cache_intact ||
+                        (preload_valid && preload_index!=artifact_index))
+                    cache_ready<=0;
+                    preloading<=0; loading_next<=0;
+                    load_request<=0; waiting_for_load<=0;
+                    queued_valid<=0; queued_ready<=0;
+                end
             end else if (!lecture_finished) begin
                 if (key_pause) lecture_paused<=~lecture_paused;
                 if (audio_frame_pulse && !lecture_paused) begin
@@ -154,11 +172,20 @@ always @(posedge clk or negedge rst_n) begin
                 if (queued_ready && preload_valid && preload_index==queued_artifact) begin
                     artifact_index<=queued_artifact; current_d3_slot<=next_d3_slot;
                     cache_ready<=1; current_cache_intact<=1;
-                end else if (!current_cache_intact ||
-                             (preload_valid && preload_index!=artifact_index))
+                    queued_valid<=0; queued_ready<=0;
+                    preloading<=0; loading_next<=0;
+                    load_request<=0; waiting_for_load<=0;
+                end else if (queued_valid && preload_valid &&
+                             preload_index==queued_artifact) begin
                     cache_ready<=0;
-                preloading<=0; loading_next<=0; load_request<=0; waiting_for_load<=0;
-                queued_valid<=0; queued_ready<=0;
+                end else begin
+                    if (!current_cache_intact ||
+                        (preload_valid && preload_index!=artifact_index))
+                    cache_ready<=0;
+                    preloading<=0; loading_next<=0;
+                    load_request<=0; waiting_for_load<=0;
+                    queued_valid<=0; queued_ready<=0;
+                end
             end else end_hold_count<=end_hold_count+1'b1;
         end
     end

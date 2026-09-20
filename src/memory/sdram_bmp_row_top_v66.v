@@ -438,7 +438,7 @@ reg auto_mode_ff2;
 reg [2:0] transition_mode_ff1;
 reg [2:0] transition_mode_ff2;
 reg [2:0] transition_mode;
-reg [5:0] transition_progress;
+reg [7:0] transition_progress;
 reg [4:0] fade_level;
 reg fade_out_active;
 reg [1:0] brightness_level_ff1;
@@ -526,14 +526,17 @@ reg [1:0] auto_speed_level_ff1, auto_speed_level_ff2;
 reg slideshow_paused_ff1, slideshow_paused_ff2;
 reg [1:0] transition_theme_ff1, transition_theme_ff2;
 reg [1:0] transition_context_ff1, transition_context_ff2;
+wire [7:0] transition_midpoint =
+    (ENABLE_MUSEUM_LECTURE && transition_mode == 3'b101) ? 8'd64 : 8'd16;
+wire [7:0] transition_end =
+    (ENABLE_MUSEUM_LECTURE && transition_mode == 3'b101) ? 8'd128 : 8'd32;
 wire transition_midpoint_ready = (transition_mode == 3'b000) ?
                                    (fade_level == 5'd0) :
-                                   (transition_progress >= 6'd16);
+                                   (transition_progress >= transition_midpoint);
 wire transition_active = fade_out_active ||
                          ((transition_mode == 3'b000) ?
                           (fade_level < 5'd16) :
-                          (transition_progress < 6'd32));
-
+                          (transition_progress < transition_end));
 localparam integer AUDIO_SWITCH_RESET_CYCLES = 50_000;
 
 wire audio_stream_enable = ENABLE_AUDIO_VISUALIZER &&
@@ -1227,6 +1230,12 @@ generate
             .clk(video_clk), .rst_n(video_rst_n),
             .source_start(linebuf_start_pulse),
             .zoom_2x(display_zoom_2x),
+            .museum_recenter_active(ENABLE_MUSEUM_LECTURE && transition_active &&
+                                    transition_mode == 3'b101 &&
+                                    display_media_index == VIDEO_FRAME_COUNT),
+            .museum_recenter_closing(fade_out_active),
+            .museum_recenter_progress(transition_progress),
+            .museum_recenter_origin(overview_selected_video),
             .source_base_addr(ENABLE_MULTI_FRAME_PRELOAD ?
                               frame_base_for_index(display_media_index) :
                               (display_frame_index ? FRAME1_BASE : FRAME0_BASE)),
@@ -1652,7 +1661,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
         transition_mode_ff1 <= 3'b000;
         transition_mode_ff2 <= 3'b000;
         transition_mode    <= 3'b000;
-        transition_progress <= 6'd32;
+        transition_progress <= 8'd32;
         brightness_level_ff1 <= 2'd0;
         brightness_level_ff2 <= 2'd0;
         contrast_level_ff1   <= 2'd0;
@@ -1742,7 +1751,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
             if (!switch_pending)
                 transition_mode <= museum_switch_transition_mode;
             if (!switch_pending)
-                transition_progress <= 6'd0;
+                transition_progress <= 8'd0;
             if (ENABLE_FADE)
                 fade_out_active <= 1'b1;
         end else if (ENABLE_MULTI_FRAME_PRELOAD && video_run &&
@@ -1757,7 +1766,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
             direct_switch_pending <= 1'b1;
             fade_out_active <= 1'b0;
             fade_level <= 5'd16;
-            transition_progress <= 6'd32;
+            transition_progress <= 8'd32;
         end else if (ENABLE_DUAL_FRAME_PRELOAD && video_run &&
             (preload_select_ff2 != display_frame_index)) begin
             pending_frame_index <= preload_select_ff2;
@@ -1770,7 +1779,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
             if (!switch_pending)
                 transition_mode <= transition_mode_ff2;
             if (!switch_pending)
-                transition_progress <= 6'd0;
+                transition_progress <= 8'd0;
             if (ENABLE_FADE)
                 fade_out_active <= 1'b1;
         end else if (ENABLE_MULTI_FRAME_PRELOAD && video_run && switch_pending &&
@@ -1781,7 +1790,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
             direct_switch_pending <= 1'b0;
             fade_out_active <= 1'b0;
             fade_level      <= 5'd16;
-            transition_progress <= 6'd32;
+            transition_progress <= 8'd32;
         end else if (ENABLE_DUAL_FRAME_PRELOAD && video_run && switch_pending &&
                      (preload_select_ff2 == display_frame_index)) begin
             // A second key press before the boundary cancels the obsolete
@@ -1790,7 +1799,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
             direct_switch_pending <= 1'b0;
             fade_out_active <= 1'b0;
             fade_level      <= 5'd16;
-            transition_progress <= 6'd32;
+            transition_progress <= 8'd32;
         end else if (video_run && (ready_ff2 != ready_seen)) begin
             ready_seen <= ready_ff2;
             pending_frame_index <= overview_enable_video ?
@@ -1805,7 +1814,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
             switch_pending <= 1'b1;
             direct_switch_pending <= 1'b0;
             transition_mode <= museum_switch_transition_mode;
-            transition_progress <= 6'd0;
+            transition_progress <= 8'd0;
             if (ENABLE_FADE)
                 fade_out_active <= 1'b1;
         end else if (!video_run && !read_accepted && !read_ready &&
@@ -1850,9 +1859,9 @@ always @(posedge video_clk or negedge video_rst_n) begin
                                   ((transition_mode == 3'b000) ? 5'd0 : 5'd16);
             fade_out_active    <= 1'b0;
             if (direct_switch_pending)
-                transition_progress <= 6'd32;
+                transition_progress <= 8'd32;
             else if (transition_mode == 3'b000)
-                transition_progress <= 6'd0;
+                transition_progress <= 8'd0;
         end
 
         if (!video_run && read_accepted && !read_ready) begin
@@ -1876,13 +1885,13 @@ always @(posedge video_clk or negedge video_rst_n) begin
                 if (transition_mode == 3'b000) begin
                     if (fade_level > 5'd0)
                         fade_level <= fade_level - 1'b1;
-                end else if (transition_progress < 6'd16) begin
+                end else if (transition_progress < transition_midpoint) begin
                     transition_progress <= transition_progress + 1'b1;
                 end
             end else if (transition_mode == 3'b000) begin
                 if (fade_level < 5'd16)
                     fade_level <= fade_level + 1'b1;
-            end else if (transition_progress < 6'd32) begin
+            end else if (transition_progress < transition_end) begin
                 transition_progress <= transition_progress + 1'b1;
             end
         end else if (video_run && video_read_en && !LINEBUF_SCALE) begin
@@ -1968,6 +1977,8 @@ endgenerate
 video_transition_mask #(
     .VIDEO_W(VIDEO_W), .VIDEO_H(VIDEO_H)
 ) u_video_transition_mask (
+    .clk           (video_clk),
+    .rst_n         (video_rst_n),
     .rgb_in        (video_faded_rgb),
     .de            (video_de),
     .x             (video_x_delayed),
@@ -1976,6 +1987,7 @@ video_transition_mask #(
     .origin_index  (overview_selected_video),
     .progress      (transition_progress),
     .closing       (fade_out_active),
+    .overview_source(display_media_index == VIDEO_FRAME_COUNT),
     .enable        (ENABLE_FADE && transition_active &&
                     (transition_mode != 3'b000)),
     .rgb_out       (video_transition_rgb)

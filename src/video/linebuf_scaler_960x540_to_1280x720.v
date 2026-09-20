@@ -19,6 +19,10 @@ module linebuf_scaler_960x540_to_1280x720 #(
     // Start one sequential source-frame transaction during video blanking.
     input  wire        source_start,
     input  wire        zoom_2x,
+    input  wire        museum_recenter_active,
+    input  wire        museum_recenter_closing,
+    input  wire [7:0]  museum_recenter_progress,
+    input  wire [2:0]  museum_recenter_origin,
     input  wire [20:0] source_base_addr,
     output reg         source_read_req,
     input  wire        source_read_ack,
@@ -78,6 +82,7 @@ wire [31:0] line0_word;
 wire [31:0] line1_word;
 wire [31:0] line2_word;
 wire [10:0] source_x;
+wire [10:0] normal_source_x;
 wire [9:0]  source_y;
 wire [12:0] source_x_times3;
 wire [11:0] source_y_times3;
@@ -95,6 +100,16 @@ wire        free_slot2;
 wire        display_epoch;
 wire        preload_epoch;
 wire        pixel_row_hit = LINEBUF_SYNC_READ ? source_row_hit_d : source_row_hit;
+reg  [6:0]  museum_move_step;
+reg  [10:0] museum_panel_left;
+reg  [10:0] museum_panel_left_next;
+reg  signed [11:0] museum_source_offset;
+reg  signed [11:0] museum_source_offset_next;
+wire signed [11:0] museum_source_x =
+    $signed({1'b0, normal_source_x}) + museum_source_offset;
+wire museum_panel_hit = museum_recenter_active &&
+                        video_x >= museum_panel_left &&
+                        video_x < museum_panel_left + 11'd256;
 
 assign source_read_base_addr = source_base_addr +
                                (zoom_2x ? WORDS_PER_ROW * ZOOM_ROW_START : 0);
@@ -116,13 +131,13 @@ generate
         // wraps at x=683, so the second half of a scan line addresses the
         // wrong source pixels.
         assign source_x_times3 = {2'b00, video_x} + ({2'b00, video_x} << 1);
-        assign source_x = active_zoom_2x ?
-                          (SRC_W / 4) + (source_x_times3 >> 3) :
-                          (source_x_times3 >> 2);
+        assign normal_source_x = active_zoom_2x ?
+                                 (SRC_W / 4) + (source_x_times3 >> 3) :
+                                 (source_x_times3 >> 2);
     end else begin : g_x_generic
-        assign source_x = active_zoom_2x ?
-                          (SRC_W / 4) + ((video_x * SRC_W) / (DST_W * 2)) :
-                          ((video_x * SRC_W) / DST_W);
+        assign normal_source_x = active_zoom_2x ?
+                                 (SRC_W / 4) + ((video_x * SRC_W) / (DST_W * 2)) :
+                                 ((video_x * SRC_W) / DST_W);
     end
     if ((SRC_H == 540) && (DST_H == 720)) begin : g_y_3_over_4
         // Likewise, 3*y needs 12 bits.  Without widening it wraps at y=342
@@ -137,6 +152,63 @@ generate
                           ((video_y * SRC_H) / DST_H);
     end
 endgenerate
+
+// During the museum overview half of mode 5, copy the selected 192-pixel
+// source ROI into a 256-pixel destination panel which moves to/from center.
+// The 3/4 source mapping stays unchanged, so the pixels are translated rather
+// than stretched.  Powers-of-two make all five 64-frame paths exact.
+always @(*) begin
+    museum_move_step = museum_recenter_closing ?
+                       museum_recenter_progress[6:0] :
+                       8'd128 - museum_recenter_progress;
+    if (museum_move_step > 7'd64)
+        museum_move_step = 7'd64;
+    museum_panel_left_next = 11'd512;
+    museum_source_offset_next = 12'sd0;
+    case (museum_recenter_origin)
+        3'd0: begin
+            museum_panel_left_next = {museum_move_step, 3'b000};
+            museum_source_offset_next =
+                -$signed({3'b000, museum_move_step, 2'b00} +
+                         {4'b0000, museum_move_step, 1'b0});
+        end
+        3'd1: begin
+            museum_panel_left_next = 11'd256 + {museum_move_step, 2'b00};
+            museum_source_offset_next =
+                -$signed({4'b0000, museum_move_step, 1'b0} +
+                         {5'b00000, museum_move_step});
+        end
+        3'd2: begin
+            museum_panel_left_next = 11'd512;
+            museum_source_offset_next = 12'sd0;
+        end
+        3'd3: begin
+            museum_panel_left_next = 11'd768 - {museum_move_step, 2'b00};
+            museum_source_offset_next =
+                $signed({4'b0000, museum_move_step, 1'b0} +
+                        {5'b00000, museum_move_step});
+        end
+        default: begin
+            museum_panel_left_next = 11'd1024 - {museum_move_step, 3'b000};
+            museum_source_offset_next =
+                $signed({3'b000, museum_move_step, 2'b00} +
+                        {4'b0000, museum_move_step, 1'b0});
+        end
+    endcase
+end
+
+always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+        museum_panel_left <= 11'd0;
+        museum_source_offset <= 12'sd0;
+    end else begin
+        museum_panel_left <= museum_panel_left_next;
+        museum_source_offset <= museum_source_offset_next;
+    end
+end
+
+assign source_x = museum_panel_hit ?
+                  museum_source_x[10:0] : normal_source_x;
 
 assign source_word_addr = source_x[WORD_BITS:1];
 assign display_epoch = video_epoch ^

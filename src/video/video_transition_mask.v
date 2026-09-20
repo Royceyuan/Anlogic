@@ -7,14 +7,17 @@ module video_transition_mask #(
     parameter integer VIDEO_W = 800,
     parameter integer VIDEO_H = 600
 ) (
+    input  wire        clk,
+    input  wire        rst_n,
     input  wire [23:0] rgb_in,
     input  wire        de,
     input  wire [10:0] x,
     input  wire [9:0]  y,
     input  wire [2:0]  mode,
     input  wire [2:0]  origin_index,
-    input  wire [5:0]  progress,
+    input  wire [7:0]  progress,
     input  wire        closing,
+    input  wire        overview_source,
     input  wire        enable,
     output reg  [23:0] rgb_out
 );
@@ -30,6 +33,12 @@ reg [10:0] dx;
 reg [9:0] dy;
 reg [10:0] panel_left;
 reg [10:0] panel_right;
+reg [6:0] museum_step;
+reg [6:0] museum_fade_level;
+reg [10:0] panel_left_next;
+reg [10:0] panel_right_next;
+reg [6:0] museum_fade_level_next;
+reg [5:0] museum_fade_threshold;
 
 always @(*) begin
     phase_step = closing ? progress[4:0] :
@@ -62,26 +71,43 @@ always @(*) begin
     else
         dy = (VIDEO_H / 2) - y;
 
-    // Museum mode 5 grows/shrinks from the selected 256-pixel overview
-    // column.  All coefficients are powers-of-two sums to protect 75 MHz.
-    case (origin_index)
-        3'd0: begin panel_left = 11'd0;
-                    panel_right = 11'd256 + {shape_step, 6'b0}; end
-        3'd1: begin panel_left = 11'd256 - {2'b0, shape_step, 4'b0};
-                    panel_right = 11'd512 + {1'b0, shape_step, 5'b0} +
-                                  {2'b0, shape_step, 4'b0}; end
-        3'd2: begin panel_left = 11'd512 - {1'b0, shape_step, 5'b0};
-                    panel_right = 11'd768 + {1'b0, shape_step, 5'b0}; end
-        3'd3: begin panel_left = 11'd768 - {1'b0, shape_step, 5'b0} -
-                                 {2'b0, shape_step, 4'b0};
-                    panel_right = 11'd1024 + {2'b0, shape_step, 4'b0}; end
-        default: begin panel_left = 11'd1024 - {shape_step, 6'b0};
-                       panel_right = 11'd1280; end
-    endcase
+    // Museum mode 5 uses 128 frame steps.  With the overview source, the
+    // selected panel moves to/from x=512 while the other panels fade.  With
+    // the full-image source, the unchanged center crop reveals/contracts by
+    // eight pixels per side per frame.
+    museum_step = 7'd0;
+    panel_left_next = 11'd512;
+    panel_right_next = 11'd768;
+    museum_fade_level_next = 7'd64;
+    // Interleaved coordinate bits distribute each new brightness step over
+    // an 8x8 cell instead of introducing a visible vertical wipe.
+    museum_fade_threshold = {x[0], y[0], x[1], y[1], x[2], y[2]};
+    if (overview_source) begin
+        museum_step = closing ? progress[6:0] : 8'd128 - progress;
+        if (museum_step > 7'd64)
+            museum_step = 7'd64;
+        museum_fade_level_next = 7'd64 - museum_step;
+        case (origin_index)
+            3'd0: panel_left_next = {museum_step, 3'b000};
+            3'd1: panel_left_next = 11'd256 + {museum_step, 2'b00};
+            3'd2: panel_left_next = 11'd512;
+            3'd3: panel_left_next = 11'd768 - {museum_step, 2'b00};
+            default: panel_left_next = 11'd1024 - {museum_step, 3'b000};
+        endcase
+        panel_right_next = panel_left_next + 11'd256;
+    end else begin
+        museum_step = closing ? 7'd64 - progress[6:0] :
+                                progress[6:0] - 7'd64;
+        if (museum_step > 7'd64)
+            museum_step = closing ? 7'd64 : 7'd0;
+        panel_left_next = 11'd512 - {museum_step, 3'b000};
+        panel_right_next = 11'd768 + {museum_step, 3'b000};
+    end
 
-    if (shape_step == 0)
-        reveal = (mode == 3'b101) &&
-                 (x >= panel_left) && (x < panel_right);
+    if (mode == 3'b101)
+        reveal = (x >= panel_left) && (x < panel_right);
+    else if (shape_step == 0)
+        reveal = 1'b0;
     else if (shape_step >= 16)
         reveal = 1'b1;
     else begin
@@ -101,8 +127,23 @@ always @(*) begin
         rgb_out = rgb_in;
     else if (!enable || reveal)
         rgb_out = rgb_in;
+    else if (mode == 3'b101 && overview_source &&
+             ({1'b0, museum_fade_threshold} < museum_fade_level))
+        rgb_out = rgb_in;
     else
         rgb_out = 24'h000000;
+end
+
+always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+        panel_left <= 11'd512;
+        panel_right <= 11'd768;
+        museum_fade_level <= 7'd64;
+    end else begin
+        panel_left <= panel_left_next;
+        panel_right <= panel_right_next;
+        museum_fade_level <= museum_fade_level_next;
+    end
 end
 
 endmodule

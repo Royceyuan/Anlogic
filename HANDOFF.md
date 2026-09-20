@@ -43,16 +43,16 @@
 - **仿真：通过。** `sim/run_museum_overview_main1.do` 覆盖选择回绕、媒体就绪门控、帧边界 CDC、完整帧与横裁合成帧地址、单像素公共接缝、顶部连续性、边框、无效占位和旁路；既有 1920x1080→960x540 自适应 BMP 回归也通过。各仿真实例 ModelSim 10.6e 均为 `Errors: 0, Warnings: 0`。
 - **综合/P&R/STA：通过。** `_build_main1_overview/main1_overview_pr.status` 报告最终 Setup WNS `+114 ps`、TNS `0 ps`，Hold WNS `+23 ps`、TNS `0 ps`；STA 覆盖率 `99.91%`，时序例外为空，DRC 无多驱动、异常路径或拥塞溢出。放置后资源为 LUT 13636/19600（69.57%）、寄存器 5602/19600（28.58%）、BRAM9K 22/64（34.38%）、BRAM32K 4/16（25.00%）、DSP 6/29（20.69%）；最终 7451 slices（76.03%）。
 - **位流：板测通过。** `release/hx4s20_main1_overview.bit`，629648 bytes，SHA256 `034632F43E5ACF86E094D1E3D85A0A0F2E99FA4C2D592232D3D4D7FD1D0130D6`。2026-09-19 用户明确回复 `MAIN-1 BOARD PASS`；2 像素选中框、单像素普通接缝、顶部连续性和画面稳定性通过验收。工具仍报告与 MAIN-0 相同的 SDRAM 25 MHz 相移时钟本地路由警告，但最终时序和板测均已通过。
-- **MAIN-2 图片素材：已写入 TF 并校验。** 文物索引 0～4 依次为越王勾践剑、四羊方尊、金缕玉衣、马踏飞燕、长信宫灯；全貌图为 `IMAGE0.BMP`～`IMAGE4.BMP`，三张细节图为 `ART0D1.BMP`～`ART4D3.BMP`。2026-09-20 重新生成全部 20 张 1920×1080、24-bit、未压缩 BI_RGB：中央完整保留 2048×2048 原图，左右用同图柔化延展，消除黑边且不裁文物主体。旧版 20 张图已备份到 `E:\BACKUP_MAIN2_20260920`，生成脚本为 `tools/prepare_museum_images.py`。
+- **MAIN-2 图片素材：已写入 TF 并校验。** 文物索引 0～4 依次为越王勾践剑、四羊方尊、金缕玉衣、马踏飞燕、长信宫灯；全貌图为 `IMAGE0.BMP`～`IMAGE4.BMP`，三张细节图为 `ART0D1.BMP`～`ART4D3.BMP`。2026-09-20 重新生成全部 20 张 1920×1080、24-bit、未压缩 BI_RGB：原方图完整缩放到中央 1080×1080，左右各用 16 像素边缘镜像延展到 420 像素，不裁文物主体。旧版 20 张图已备份到 `E:\BACKUP_MAIN2_BEFORE_FULLSCREEN_20260920`，生成脚本为 `tools/prepare_museum_images.py`。
 
-### MAIN-2 主屏讲解（2026-09-19，等待板测）
+### MAIN-2 主屏讲解（2026-09-20，等待板测）
 
 - **拨码预载与进入门控：完成。** MAIN-2 不再用高亮变化触发预载；`SW3:SW2:SW1=000/001/010/011/100` 分别选择文物 0～4，`101`～`111` 无效，SW4 保留。总览态先缓存当前文物四张图和对应 WAV；讲解期间若拨码改为另一件文物，则在音频扇区优先的共享 TF 仲裁下滚动预载下一件：先写空闲的第五图片槽，再在画面离开全貌/细节 1/细节 2 后依次复用对应槽位。KEY3/KEY4 仍移动高亮；只有高亮与拨码选择一致、四张图和音频均就绪时，KEY2 才进入讲解。
-- **无缝进入、音画同步与控制：待板测。** KEY2 接受后直接从总览转到已缓存全貌。WAV 按播放器实际消耗的 PCM 帧计数，在 1/4、1/2、3/4 时刻切到三张细节图；结束后停留细节 3 五秒并自动回总览；KEY2 暂停/继续，KEY3 立即返回，下一件已完整预载时直接提升为当前缓存。板测仍发现四羊方尊在细节图 3 阶段音频提前结束；本轮按用户要求仅记录，未修改音频逻辑，后续需结合 `stream_done`、FAT 链、FIFO 排空和 HDMI 实际消耗计数定位。
-- **转场/可视化/OSD：待板测。** MAIN-2 按文档恢复分阶段转场：总览到全貌从所选 256 像素栏横向展开，全貌到细节 1 使用帷幕，细节 1→2、2→3 使用淡入淡出，讲解结束或 KEY3 返回使用向原总览栏内缩。总览边框只在返回转场完成后启用，避免边框先于概览画面闪现。音频柱状可视化保持开启。调试 OSD 面板仍关闭，这是主屏资源取舍，不依赖副屏。UART 字幕双缓冲保留；PC 字幕脚本不会随板上 KEY2 暂停。
-- **仿真：通过。** `tb_museum_lecture_controller` 覆盖初始四图缓存、讲解中第五槽滚动预载、实际显示槽释放、备用细节 3 槽切换、音频 FIFO 排空后结束、缓存提升、暂停/继续和 KEY3 返回；`tb_fat32_wav_streamer`、`tb_audio_pcm_player_48k`、`tb_audio_visualizer_overlay`、`tb_video_transition_mask`、图片细节加载及 MAIN-1 总览回归均 PASS。
-- **P&R/STA/DRC：通过。** 布局种子固定为 17；`_build_main2_lecture/main2_lecture_pr.status`：Setup WNS `+143 ps`、TNS `0`，Hold WNS `+27 ps`、TNS `0`，0 违例；无多驱动、无异常时序路径。放置后 LUT 16176/19600（82.53%）、寄存器 7344/19600（37.47%）、BRAM9K 39/64（60.94%）、BRAM32K 4/16（25.00%）、DSP 7/29（24.14%）；最终 8864 slices（90.45%）。保留既有 SDRAM 相移时钟本地路由警告，须以板测确认。
-- **待板测 bit：** `release/hx4s20_main2_lecture.bit`，629647 bytes，SHA256 `A788546CB46B6A7B97CCC4D2FA1F94D4C5AAEB8315EEB18F165E8BD8FCB60225`。
+- **无缝进入、音画同步与控制：待板测。** KEY2 接受后直接从总览转到已缓存全貌。WAV 按播放器实际消耗的 PCM 帧计数，在 1/4、1/2、3/4 时刻切到三张细节图；结束后停留细节 3 五秒并自动回总览；KEY2 暂停/继续，KEY3 立即返回。讲解中拨码预载若只完成一部分，KEY3/自动返回不再丢弃已读图片，而是在总览继续补齐剩余槽位并自动提升缓存。板测仍发现四羊方尊在细节图 3 阶段音频提前结束；本轮按用户要求仅记录，未修改音频逻辑，后续需结合 `stream_done`、FAT 链、FIFO 排空和 HDMI 实际消耗计数定位。
+- **转场/可视化/OSD：待板测。** MAIN-2 总览→全貌使用 128 帧、约 2.13 秒的两段连续转场：前 64 帧未选文物淡出且所选 256 像素裁剪栏平移到屏幕中央，后 64 帧从该中央裁剪区逐像素向左右恢复全貌；讲解结束或 KEY3 返回严格反向执行。全貌→细节 1 保留帷幕，细节 1→2、2→3 保留淡入淡出；总览边框只在返回完成后启用。音频柱状可视化保持开启。调试 OSD 面板仍关闭，这是主屏资源取舍，不依赖副屏。UART 字幕双缓冲保留；PC 字幕脚本不会随板上 KEY2 暂停。
+- **仿真：通过。** `tb_museum_lecture_controller` 新增覆盖部分预载后 KEY3 返回、继续补齐而不重复读取；`tb_video_transition_mask` 覆盖正反 128 帧端点与中点；`tb_linebuf_scaler_zoom` 覆盖所选裁剪栏平移映射；`tb_linebuf_scaler_zoom_stream` 验证无行缓存欠载，均为 `Errors: 0, Warnings: 0`。既有图片、WAV、音频可视化和 MAIN-1 回归保持通过。
+- **P&R/STA/DRC：通过。** 布局种子固定为 17；`_build_main2_lecture/main2_lecture_pr.status`：Setup WNS `+163 ps`、TNS `0`，Hold WNS `+24 ps`、TNS `0`，0 违例；无多驱动、无异常时序路径。放置后 LUT 15907/19600（81.16%）、寄存器 7095/19600（36.20%）、BRAM9K 39/64（60.94%）、BRAM32K 4/16（25.00%）、DSP 7/29（24.14%）；最终 8924 slices（91.06%）。保留既有 SDRAM 相移时钟本地路由警告，须以板测确认。
+- **待板测 bit：** `release/hx4s20_main2_lecture.bit`，629647 bytes，SHA256 `E796252E1C8F8BDCE67A08A153D1098B60BC075269C4671EADE4C66731EE66DD`。
 
 ### MAIN-0 审计结论（2026-09-18）
 
@@ -193,7 +193,7 @@ MAIN-0 回退 bit：`release/hx4s20_1280x720_v72_subtitle_continuous_scroll_v2.b
 1. `MAIN-0` 审计、v72 综合/P&R/STA/DRC、bitgen 和板测已完成；用户已确认 `MAIN-0 BOARD PASS`。
 2. MAIN-0 板测基于 `release/hx4s20_1280x720_v72_subtitle_continuous_scroll_v2.bit`；用户确认当前基线的 HDMI、TF、SDRAM、按键、SW4 和画面稳定性满足验收要求。
 3. MAIN-1 RTL、仿真、P&R、STA/DRC、bitgen 和板测已完成；用户已明确回复 `MAIN-1 BOARD PASS`。
-4. 烧录 `release/hx4s20_main2_lecture.bit`；按 `SW3:SW2:SW1=000..100` 选择当前文物，待缓存就绪且高亮一致后按 KEY2。验证淡出/淡入、完整全貌→三张细节、音频完整播放和可视化；讲解中把拨码切到下一文物，结束/KEY3 返回后把高亮移到该文物并按 KEY2，确认无需重新等待四图加载。
+4. 烧录 `release/hx4s20_main2_lecture.bit`；按 `SW3:SW2:SW1=000..100` 选择当前文物，待缓存就绪且高亮一致后按 KEY2。验证未选栏淡出、选中栏平移到中央、从中央裁剪区向左右恢复全貌的约 2.13 秒连续效果，以及 KEY3 的严格反向效果；讲解中把拨码切到下一文物并提前返回，确认只补读未完成图片而不是从头重载。
 5. 字幕联测运行 `py tools\play_museum_srt.py --artifact <0..4> --port <COM口>`，在讲解开始时按 Enter；当前 PC 脚本不会随板上 KEY2 暂停。
 6. 用户明确回复 `MAIN-2 BOARD PASS` 后再推进副屏/后续阶段；提交时只纳入计划相关源码、测试、文档和发布 bit，不纳入 `_build_*`、根目录报告或 `.bid`。
 
