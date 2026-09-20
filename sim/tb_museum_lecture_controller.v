@@ -12,7 +12,7 @@ wire audio_restart,media_error;
 wire [1:0] load_slot,detail_index,display_slot;
 wire [2:0] load_frame_slot,load_artifact,artifact,display_frame_slot;
 always #5 clk=~clk;
-museum_lecture_controller #(.CLOCK_HZ(2),.END_HOLD_SECONDS(1)) dut(
+museum_lecture_controller #(.CLOCK_HZ(2),.END_HOLD_SECONDS(3)) dut(
  .clk(clk),.rst_n(rst_n),.enable(enable),.overview_ready(overview_ready),
  .confirm_pulse(confirm),.key_pause(key_pause),.key_return(key_return),
  .selected_index(selected),.preload_valid(preload_valid),.preload_index(preload_index),
@@ -60,15 +60,18 @@ initial begin
  pulse_audio;pulse_audio;displayed_frame_slot=2;repeat(2)@(negedge clk);check_load(1,1,2);
  pulse_audio;pulse_audio;displayed_frame_slot=3;repeat(2)@(negedge clk);check_load(2,2,2);
  if(!preloading)$fatal(1,"detail 3 preload started before returning to full");
- audio_stream_done=1;audio_drained=0;pulse_audio;pulse_audio;
- if(finished)$fatal(1,"finished before drain");
- audio_drained=1;@(negedge clk);if(!finished)$fatal(1,"drain finish missing");
+ audio_stream_done=0;audio_drained=0;pulse_audio;
+ if(finished)$fatal(1,"finished before final PCM frame");
+ pulse_audio;
+ if(!finished||display_frame_slot!=0)$fatal(1,"final PCM did not return to full view");
  repeat(2)@(negedge clk);
  if(!active||display_frame_slot!=0)$fatal(1,"full-view return was skipped");
  display_transition_busy=1;displayed_frame_slot=0;
  repeat(2)@(negedge clk);check_load(3,3,2);
  if(!active)$fatal(1,"overview started before full-view transition completed");
  display_transition_busy=0;@(negedge clk);
+ repeat(5)@(negedge clk);if(!active)$fatal(1,"final full-view hold was short");
+ @(negedge clk);
  if(active||artifact!=2||display_frame_slot!=4||!audio_restart)
   $fatal(1,"auto return/promotion failed");
  audio_stream_done=0;audio_drained=0;selected=2;confirm=1;@(negedge clk);confirm=0;

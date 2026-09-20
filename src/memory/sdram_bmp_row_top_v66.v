@@ -1392,13 +1392,14 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         if (audio_track_switch_ack ||
             lecture_audio_restart ||
             (audio_stream_enable_d && !audio_stream_enable) ||
-            (audio_control_mode && (key_press_pulse[2] || key_press_pulse[3])))
+            (!ENABLE_MUSEUM_LECTURE && audio_control_mode &&
+             (key_press_pulse[2] || key_press_pulse[3])))
             audio_switch_reset_count <= AUDIO_SWITCH_RESET_CYCLES;
 
         if (key_press_pulse[0])
             osd_panel_enable <= ~osd_panel_enable;
 
-        if (audio_control_mode) begin
+        if (!ENABLE_MUSEUM_LECTURE && audio_control_mode) begin
             if (key_press_pulse[1]) begin
                 audio_paused <= ~audio_paused;
             end else if (key_press_pulse[2]) begin
@@ -1414,7 +1415,7 @@ always @(posedge clk_50m or negedge write_rst_n) begin
                     audio_track_index <= audio_track_index + 1'b1;
                 audio_paused <= 1'b0;
             end
-        end else if (ui_mode == MODE_DETAIL_VIEW) begin
+        end else if (!ENABLE_MUSEUM_LECTURE && ui_mode == MODE_DETAIL_VIEW) begin
             if (key_press_pulse[1]) begin
                 if (manual_image_index == VIDEO_FRAME_COUNT - 1)
                     manual_image_index <= 4'd0;
@@ -1425,7 +1426,7 @@ always @(posedge clk_50m or negedge write_rst_n) begin
                 zoom_2x <= ~zoom_2x;
             if (key_press_pulse[3])
                 picture_style <= picture_style + 1'b1;
-        end else if (ui_mode == MODE_SLIDESHOW) begin
+        end else if (!ENABLE_MUSEUM_LECTURE && ui_mode == MODE_SLIDESHOW) begin
             if (key_press_pulse[1])
                 auto_speed_level <= auto_speed_level + 1'b1;
             if (key_press_pulse[2])
@@ -1434,7 +1435,8 @@ always @(posedge clk_50m or negedge write_rst_n) begin
             manual_image_index <= product_show_image_index;
             transition_context <= product_show_transition_context;
             demo_transition_step <= product_show_demo_step;
-        end else if (!product_show_mode && !overview_mode && key_press_pulse[1]) begin
+        end else if (!ENABLE_MUSEUM_LECTURE && !product_show_mode &&
+                     !overview_mode && key_press_pulse[1]) begin
             // Phase-4 Product Show test entry: advance one cached placeholder
             // while cycling the three transition contexts.
             if (manual_image_index == VIDEO_FRAME_COUNT - 1)

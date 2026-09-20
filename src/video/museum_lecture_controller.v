@@ -3,7 +3,7 @@
 
 module museum_lecture_controller #(
     parameter integer CLOCK_HZ = 50_000_000,
-    parameter integer END_HOLD_SECONDS = 5
+    parameter integer END_HOLD_SECONDS = 3
 )(
     input  wire clk, input wire rst_n, input wire enable, input wire overview_ready,
     input  wire confirm_pulse, input wire key_pause, input wire key_return,
@@ -28,7 +28,7 @@ reg waiting_for_load, loading_next, queued_valid, queued_ready;
 reg [1:0] next_load_step;
 reg [2:0] queued_artifact, current_full_slot, next_full_slot;
 reg current_cache_intact;
-reg return_full_pending;
+reg return_full_pending, final_full_hold;
 reg [31:0] audio_frames_played, end_hold_count;
 wire [31:0] audio_quarter = audio_total_frames >> 2;
 wire [31:0] audio_half = audio_total_frames >> 1;
@@ -48,7 +48,7 @@ always @(posedge clk or negedge rst_n) begin
         display_slot<=0; media_error<=0; loading_next<=0; next_load_step<=0;
         queued_artifact<=0; queued_valid<=0; queued_ready<=0;
         current_full_slot<=0; next_full_slot<=4; current_cache_intact<=1;
-        return_full_pending<=0;
+        return_full_pending<=0; final_full_hold<=0;
         audio_frames_played<=0; end_hold_count<=0;
     end else begin
         audio_restart <= 1'b0;
@@ -133,36 +133,43 @@ always @(posedge clk or negedge rst_n) begin
             artifact_index==selected_index && audio_prepared && confirm_pulse) begin
             lecture_active<=1; lecture_paused<=0; lecture_finished<=0; display_slot<=0;
             audio_frames_played<=0; end_hold_count<=0; queued_valid<=0; queued_ready<=0;
-            return_full_pending<=0;
+            return_full_pending<=0; final_full_hold<=0;
         end
 
         if (lecture_active) begin
             if (key_return) begin
                 audio_restart<=1; lecture_paused<=0; lecture_finished<=1;
                 display_slot<=0; audio_frames_played<=0; end_hold_count<=0;
-                return_full_pending<=1;
+                return_full_pending<=1; final_full_hold<=0;
             end else if (!lecture_finished) begin
                 if (key_pause) lecture_paused<=~lecture_paused;
                 if (audio_frame_pulse && !lecture_paused) begin
                     audio_frames_played<=next_audio_frame;
-                    if (next_audio_frame>=audio_three_quarters) display_slot<=3;
-                    else if (next_audio_frame>=audio_half) display_slot<=2;
-                    else if (next_audio_frame>=audio_quarter) display_slot<=1;
+                    if (audio_total_frames!=0 &&
+                        next_audio_frame>=audio_total_frames) begin
+                        lecture_finished<=1; lecture_paused<=0; display_slot<=0;
+                        end_hold_count<=0; return_full_pending<=1;
+                        final_full_hold<=1;
+                    end else if (next_audio_frame>=audio_three_quarters)
+                        display_slot<=3;
+                    else if (next_audio_frame>=audio_half)
+                        display_slot<=2;
+                    else if (next_audio_frame>=audio_quarter)
+                        display_slot<=1;
                 end
-                if (audio_stream_done && audio_drained) begin
-                    lecture_finished<=1; lecture_paused<=0; display_slot<=3;
-                    end_hold_count<=0; return_full_pending<=0;
-                end
-            end else if (!return_full_pending &&
-                         (END_HOLD_CYCLES<=1 ||
-                          end_hold_count==END_HOLD_CYCLES-1'b1)) begin
-                display_slot<=0; return_full_pending<=1;
             end else if (return_full_pending &&
                          displayed_frame_slot==current_full_slot &&
-                         !display_transition_busy) begin
+                         !display_transition_busy && final_full_hold) begin
+                return_full_pending<=0; end_hold_count<=0;
+            end else if ((!return_full_pending && final_full_hold &&
+                          (END_HOLD_CYCLES<=1 ||
+                           end_hold_count==END_HOLD_CYCLES-1'b1)) ||
+                         (return_full_pending &&
+                          displayed_frame_slot==current_full_slot &&
+                          !display_transition_busy && !final_full_hold)) begin
                 audio_restart<=1; lecture_active<=0; lecture_finished<=0;
                 display_slot<=0; audio_frames_played<=0; end_hold_count<=0;
-                return_full_pending<=0;
+                return_full_pending<=0; final_full_hold<=0;
                 if (queued_ready && preload_valid && preload_index==queued_artifact) begin
                     artifact_index<=queued_artifact; current_full_slot<=next_full_slot;
                     cache_ready<=1; current_cache_intact<=1;
@@ -180,7 +187,7 @@ always @(posedge clk or negedge rst_n) begin
                     load_request<=0; waiting_for_load<=0;
                     queued_valid<=0; queued_ready<=0;
                 end
-            end else if (!return_full_pending)
+            end else if (!return_full_pending && final_full_hold)
                 end_hold_count<=end_hold_count+1'b1;
         end
     end
