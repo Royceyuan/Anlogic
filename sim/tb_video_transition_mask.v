@@ -6,6 +6,7 @@ module tb_video_transition_mask;
     reg [10:0] x;
     reg [9:0] y;
     reg [2:0] mode;
+    reg [2:0] origin_index;
     reg [5:0] progress;
     reg closing;
     reg enable;
@@ -16,6 +17,7 @@ module tb_video_transition_mask;
 
     video_transition_mask #(.VIDEO_W(1280), .VIDEO_H(720)) u_dut (
         .rgb_in(rgb_in), .de(de), .x(x), .y(y), .mode(mode),
+        .origin_index(origin_index),
         .progress(progress), .closing(closing),
         .enable(enable), .rgb_out(rgb_out)
     );
@@ -39,6 +41,7 @@ module tb_video_transition_mask;
         rgb_in = 24'h123456;
         de = 1'b1;
         enable = 1'b1;
+        origin_index = 3'd3;
         closing = 1'b0;
         fade_level = 5'd0;
 
@@ -73,6 +76,16 @@ module tb_video_transition_mask;
         x = 11'd100; expect_rgb(24'h0);
         mode = 3'b011; x = 11'd640; y = 10'd360; expect_rgb(rgb_in);
         x = 11'd100; y = 10'd100; expect_rgb(24'h0);
+
+        // Museum expansion keeps the selected column at the midpoint, then
+        // grows it horizontally to the full 1280-pixel frame.
+        mode = 3'b101; closing = 1'b1; progress = 6'd16;
+        x = 11'd900; y = 10'd100; expect_rgb(rgb_in);
+        x = 11'd700; expect_rgb(24'h0);
+        closing = 1'b0; progress = 6'd24;
+        x = 11'd500; expect_rgb(rgb_in);
+        x = 11'd200; expect_rgb(24'h0);
+        progress = 6'd32; x = 11'd0; expect_rgb(rgb_in);
 
         // Every legal selector must produce a known RGB value.
         for (m = 0; m < 4; m = m + 1) begin

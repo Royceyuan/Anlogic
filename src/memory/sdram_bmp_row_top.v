@@ -1236,6 +1236,7 @@ video_transition_mask #(
     .x             (video_x_delayed),
     .y             (video_y_delayed),
     .mode          (transition_mode),
+    .origin_index  (3'd2),
     .progress      (transition_progress),
     .closing       (fade_out_active),
     .enable        (ENABLE_FADE && !fade_out_active &&

@@ -502,12 +502,19 @@ wire [2:0] product_show_state;
 wire product_show_paused;
 wire [1:0] product_show_transition_context;
 wire [1:0] product_show_demo_step;
+wire [2:0] lecture_transition_mode =
+    (lecture_display_slot == 2'd0) ? 3'd5 :
+    (lecture_display_slot == 2'd1) ? 3'd2 : 3'd0;
 wire [2:0] selected_transition_mode =
-    ENABLE_MUSEUM_LECTURE ? 3'd0 :
+    ENABLE_MUSEUM_LECTURE ? lecture_transition_mode :
     (ui_mode == MODE_PRODUCT_SHOW) ? product_theme_transition_mode :
                                      {1'b0, sw[3:2]};
 wire [2:0] museum_switch_transition_mode =
-    ENABLE_MUSEUM_LECTURE ? 3'd0 : transition_mode_ff2;
+    ENABLE_MUSEUM_LECTURE ?
+        ((overview_enable_video ||
+          (display_media_index == VIDEO_FRAME_COUNT)) ? 3'd5 :
+                                                        lecture_transition_mode) :
+        transition_mode_ff2;
 wire audio_control_mode = (ui_mode == MODE_AUDIO_CONTROL);
 wire detail_zoom_2x = (ui_mode == MODE_DETAIL_VIEW) && zoom_2x;
 wire [1:0] active_picture_style =
@@ -1966,6 +1973,7 @@ video_transition_mask #(
     .x             (video_x_delayed),
     .y             (video_y_delayed),
     .mode          (transition_mode),
+    .origin_index  (overview_selected_video),
     .progress      (transition_progress),
     .closing       (fade_out_active),
     .enable        (ENABLE_FADE && transition_active &&
@@ -2076,7 +2084,9 @@ generate
         ) u_museum_overview_overlay (
             .video_clk(video_clk), .video_rst_n(video_rst_n),
             .video_frame_tick(video_frame_tick),
-            .overview_enable(overview_enable_video),
+            .overview_enable(overview_enable_video &&
+                             (display_media_index == VIDEO_FRAME_COUNT) &&
+                             !transition_active),
             .selected_index(overview_selected_video),
             .confirm_active(overview_confirm_active_video),
             .frame_valid(frame_valid_ff2 | {5{overview_cache_ready_ff2}}),
