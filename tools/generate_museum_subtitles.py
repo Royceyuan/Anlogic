@@ -1,14 +1,19 @@
 from pathlib import Path
+import argparse
 import re
+import struct
 import wave
 
 from PIL import Image, ImageDraw, ImageFont
 
 
 ROOT = Path(__file__).resolve().parents[2] / "素材"
-OUT = Path(__file__).resolve().parents[1] / "src" / "video"
 FONT = Path(r"C:\Windows\Fonts\msyh.ttc")
-GLYPH_SIZE = 16
+WIDTH = 800
+HEIGHT = 32
+BITMAP_BYTES = WIDTH * HEIGHT // 8
+RECORD_BYTES = 7 * 512
+PAYLOAD_OFFSET = 16
 
 
 def timestamp_frames(value: str, total_frames: int, srt_end_ms: int) -> int:
@@ -26,8 +31,9 @@ def parse_srt(path: Path, total_frames: int):
         if len(lines) < 3:
             continue
         start, end = lines[1].split(" --> ")
-        text = "".join(lines[2:]).replace(" ", "")
-        raw.append((start, end, text))
+        raw.append((start, end, "".join(lines[2:]).strip()))
+    if not raw or len(raw) > 32:
+        raise ValueError(f"{path}: cue count must be 1..32")
     last = raw[-1][1]
     h, m, rest = last.split(":")
     s, ms = rest.split(",")
@@ -39,88 +45,83 @@ def parse_srt(path: Path, total_frames: int):
     ]
 
 
-def glyph_rows(character: str, font: ImageFont.FreeTypeFont):
-    image = Image.new("1", (GLYPH_SIZE, GLYPH_SIZE))
+def render_bitmap(text: str):
+    font_size = 28
+    while True:
+        font = ImageFont.truetype(str(FONT), font_size)
+        box = font.getbbox(text)
+        text_width = box[2] - box[0]
+        if text_width <= WIDTH or font_size == 16:
+            break
+        font_size -= 1
+    if text_width > WIDTH:
+        raise ValueError(f"subtitle is too wide even at 16px: {text}")
+    rendered_width = max(1, text_width)
+    image = Image.new("L", (WIDTH, HEIGHT))
     draw = ImageDraw.Draw(image)
-    box = draw.textbbox((0, 0), character, font=font)
-    x = (GLYPH_SIZE - (box[2] - box[0])) // 2 - box[0]
-    y = (GLYPH_SIZE - (box[3] - box[1])) // 2 - box[1]
-    draw.text((x, y), character, fill=1, font=font)
-    return [
-        sum((1 << (GLYPH_SIZE - 1 - col)) for col in range(GLYPH_SIZE)
-            if image.getpixel((col, row)))
-        for row in range(GLYPH_SIZE)
-    ]
+    text_height = box[3] - box[1]
+    draw.text((-box[0], (HEIGHT - text_height) // 2 - box[1]), text, font=font, fill=255)
+    payload = bytearray()
+    for y in range(HEIGHT):
+        for byte_x in range(WIDTH // 8):
+            value = 0
+            for bit in range(8):
+                if image.getpixel((byte_x * 8 + bit, y)) >= 96:
+                    value |= 1 << (7 - bit)
+            payload.append(value)
+    return rendered_width, bytes(payload)
 
 
-def emit_function(name: str, width: int, values, default: int = 0):
-    lines = [f"function [{width - 1}:0] {name};", "    input [7:0] key;", "    begin", "        case (key)"]
-    for key, value in values:
-        lines.append(f"            8'h{key:02X}: {name} = {width}'d{value};")
-    lines += [f"            default: {name} = {width}'d{default};", "        endcase", "    end", "endfunction", ""]
-    return "\n".join(lines)
+def build_track(track: int, folder: Path, audio_dir: Path, destination: Path) -> Path:
+    audio = audio_dir / f"AUDIO{track}.WAV"
+    with wave.open(str(audio), "rb") as wav:
+        if (wav.getnchannels(), wav.getsampwidth(), wav.getframerate()) != (2, 2, 48_000):
+            raise ValueError(f"{audio}: expected PCM16 stereo 48kHz")
+        total_frames = wav.getnframes()
+    cues = parse_srt(folder / "字幕.srt", total_frames)
+
+    header = bytearray(512)
+    header[0:4] = b"MSUB"
+    header[4] = 1
+    struct.pack_into("<H", header, 5, WIDTH)
+    header[7] = HEIGHT
+    header[8] = 1
+    header[9] = len(cues)
+    struct.pack_into("<H", header, 10, BITMAP_BYTES)
+    header[12] = RECORD_BYTES // 512
+    struct.pack_into("<I", header, 16, total_frames)
+
+    output = bytearray(header)
+    for start, end, text in cues:
+        rendered_width, bitmap = render_bitmap(text)
+        record = bytearray(RECORD_BYTES)
+        struct.pack_into("<IIH", record, 0, start, end, rendered_width)
+        record[10] = 1  # slide in from the right
+        record[PAYLOAD_OFFSET:PAYLOAD_OFFSET + BITMAP_BYTES] = bitmap
+        output.extend(record)
+
+    destination.mkdir(parents=True, exist_ok=True)
+    target = destination / f"SUB{track}.BIN"
+    target.write_bytes(output)
+    if target.stat().st_size != 512 + len(cues) * RECORD_BYTES:
+        raise RuntimeError(f"failed to verify {target}")
+    return target
 
 
-def main():
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Build FPGA TF subtitle packages from five SRT files")
+    parser.add_argument("--dest", type=Path, default=Path("E:/"))
+    parser.add_argument("--audio-dir", type=Path)
+    args = parser.parse_args()
+    audio_dir = args.audio_dir or args.dest
     folders = sorted(path for path in ROOT.iterdir() if path.is_dir())
-    tracks = []
-    for track, folder in enumerate(folders):
-        audio = Path(f"E:/AUDIO{track}.WAV")
-        with wave.open(str(audio), "rb") as wav:
-            assert wav.getnchannels() == 2 and wav.getsampwidth() == 2
-            assert wav.getframerate() == 48_000
-            total_frames = wav.getnframes()
-        tracks.append(parse_srt(folder / "字幕.srt", total_frames))
-
-    characters = sorted({char for cues in tracks for _, _, text in cues for char in text})
-    glyph_index = {char: index + 1 for index, char in enumerate(characters)}
-    font = ImageFont.truetype(str(FONT), 15)
-    glyphs = [[0] * GLYPH_SIZE]
-    glyphs.extend(glyph_rows(char, font) for char in characters)
-    (OUT / "museum_subtitle_glyphs.mem").write_text(
-        "\n".join(f"{row:04X}" for glyph in glyphs for row in glyph) + "\n",
-        encoding="ascii",
-    )
-
-    text_rom = []
-    starts = []
-    ends = []
-    offsets = []
-    lengths = []
-    counts = []
-    for track, cues in enumerate(tracks):
-        counts.append(len(cues))
-        assert len(cues) <= 32
-        for cue, (start, end, text) in enumerate(cues):
-            assert len(text) <= 32
-            key = (track << 5) | cue
-            starts.append((key, start))
-            ends.append((key, end))
-            offsets.append((key, len(text_rom)))
-            lengths.append((key, len(text)))
-            text_rom.extend(glyph_index[char] for char in text)
-    (OUT / "museum_subtitle_text.mem").write_text(
-        "\n".join(f"{value:03X}" for value in text_rom) + "\n", encoding="ascii"
-    )
-
-    header = [
-        "// Generated by tools/generate_museum_subtitles.py; do not hand-edit.",
-        f"localparam integer MUSEUM_GLYPH_ROWS = {len(glyphs) * GLYPH_SIZE};",
-        f"localparam integer MUSEUM_TEXT_COUNT = {len(text_rom)};",
-        "",
-        "function [5:0] museum_cue_count;",
-        "    input [2:0] track;",
-        "    begin",
-        "        case (track)",
+    if len(folders) != 5:
+        raise ValueError(f"expected five artifact folders, found {len(folders)}")
+    outputs = [
+        build_track(track, folder, audio_dir, args.dest)
+        for track, folder in enumerate(folders)
     ]
-    header.extend(f"            3'd{i}: museum_cue_count = 6'd{count};" for i, count in enumerate(counts))
-    header += ["            default: museum_cue_count = 6'd0;", "        endcase", "    end", "endfunction", ""]
-    header.append(emit_function("museum_cue_start", 32, starts))
-    header.append(emit_function("museum_cue_end", 32, ends))
-    header.append(emit_function("museum_cue_offset", 12, offsets))
-    header.append(emit_function("museum_cue_length", 6, lengths))
-    (OUT / "museum_subtitle_data.vh").write_text("\n".join(header), encoding="ascii")
-    print(f"generated {len(tracks)} tracks, {sum(counts)} cues, {len(characters)} glyphs, {len(text_rom)} characters")
+    print("generated " + ", ".join(f"{path.name}={path.stat().st_size}" for path in outputs))
 
 
 if __name__ == "__main__":

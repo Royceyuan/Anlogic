@@ -146,16 +146,25 @@ wire image_sd_sec_read;
 wire [31:0] image_sd_sec_read_addr;
 wire audio_sd_sec_read;
 wire [31:0] audio_sd_sec_read_addr;
+wire subtitle_sd_sec_read;
+wire [31:0] subtitle_sd_sec_read_addr;
 reg sd_read_active;
 reg sd_read_audio_owner;
+reg sd_read_subtitle_owner;
 wire image_sd_sec_read_data_valid = sd_sec_read_data_valid &&
-                                    sd_read_active && !sd_read_audio_owner;
+                                    sd_read_active && !sd_read_audio_owner &&
+                                    !sd_read_subtitle_owner;
 wire image_sd_sec_read_end = sd_sec_read_end &&
-                             sd_read_active && !sd_read_audio_owner;
+                             sd_read_active && !sd_read_audio_owner &&
+                             !sd_read_subtitle_owner;
 wire audio_sd_sec_read_data_valid = sd_sec_read_data_valid &&
                                     sd_read_active && sd_read_audio_owner;
 wire audio_sd_sec_read_end = sd_sec_read_end &&
                              sd_read_active && sd_read_audio_owner;
+wire subtitle_sd_sec_read_data_valid = sd_sec_read_data_valid &&
+                                       sd_read_active && sd_read_subtitle_owner;
+wire subtitle_sd_sec_read_end = sd_sec_read_end &&
+                                sd_read_active && sd_read_subtitle_owner;
 reg image_load_start;
 reg writer_start;
 reg load_active;
@@ -275,6 +284,11 @@ wire        video_overview_vs;
 wire        video_overview_de;
 wire [10:0] video_overview_x;
 wire [9:0]  video_overview_y;
+reg         overview_input_frame_tick;
+reg         overview_input_hs, overview_input_vs, overview_input_de;
+reg [10:0]  overview_input_x;
+reg [9:0]   overview_input_y;
+reg [23:0]  overview_input_rgb;
 wire [23:0] video_post_audio_rgb;
 wire        video_post_audio_hs;
 wire        video_post_audio_vs;
@@ -567,6 +581,13 @@ wire [31:0] audio_total_frames;
 wire audio_stream_done;
 wire audio_format_error_50m;
 wire audio_file_error_50m;
+wire audio_fs_geometry_ready;
+wire [7:0] audio_fs_sectors_per_cluster;
+wire [31:0] audio_fs_fat_start, audio_fs_data_start, audio_fs_root_cluster;
+wire subtitle_ready_50m;
+wire [31:0] subtitle_total_frames;
+wire subtitle_format_error_50m;
+wire subtitle_file_error_50m;
 reg audio_format_error_ff1, audio_format_error_ff2;
 reg audio_file_error_ff1, audio_file_error_ff2;
 reg audio_fifo_empty_ff1, audio_fifo_empty_ff2;
@@ -580,7 +601,10 @@ wire audio_frame_consumed_toggle;
 reg audio_frame_toggle_ff1, audio_frame_toggle_ff2, audio_frame_toggle_seen;
 wire audio_frame_pulse_50m = audio_frame_toggle_ff2 != audio_frame_toggle_seen;
 wire audio_prepared = audio_wav_ready && (audio_fifo_wr_used >= 9'd256) &&
-                      (audio_total_frames != 0);
+                      (audio_total_frames != 0) &&
+                      (!ENABLE_MUSEUM_LECTURE ||
+                       (subtitle_ready_50m &&
+                        subtitle_total_frames == audio_total_frames));
 wire audio_active;
 wire audio_underflow;
 reg [2:0] audio_track_index;
@@ -922,9 +946,24 @@ generate
         museum_subtitle_overlay #(.VIDEO_W(VIDEO_W), .VIDEO_H(VIDEO_H))
         u_museum_subtitle_overlay (
             .clk_50m(clk_50m), .rst_n_50m(write_rst_n),
+            .start(audio_stream_enable), .restart(lecture_audio_restart),
             .lecture_active(lecture_active), .lecture_finished(lecture_finished),
             .track_index(lecture_artifact_index),
             .audio_frame_index(lecture_audio_frame_index),
+            .sd_init_done(sd_init_done),
+            .fs_geometry_ready(audio_fs_geometry_ready),
+            .fs_sectors_per_cluster(audio_fs_sectors_per_cluster),
+            .fs_fat_start(audio_fs_fat_start), .fs_data_start(audio_fs_data_start),
+            .fs_root_cluster(audio_fs_root_cluster),
+            .sd_sec_read(subtitle_sd_sec_read),
+            .sd_sec_read_addr(subtitle_sd_sec_read_addr),
+            .sd_sec_read_data(sd_sec_read_data),
+            .sd_sec_read_data_valid(subtitle_sd_sec_read_data_valid),
+            .sd_sec_read_end(subtitle_sd_sec_read_end),
+            .subtitle_ready(subtitle_ready_50m),
+            .subtitle_total_frames(subtitle_total_frames),
+            .format_error(subtitle_format_error_50m),
+            .file_error(subtitle_file_error_50m),
             .video_clk(video_clk), .video_rst_n(video_rst_n),
             .video_frame_tick(video_frame_tick),
             .hs_i(video_overview_hs), .vs_i(video_overview_vs),
@@ -958,6 +997,12 @@ generate
         );
         assign video_subtitle_x = video_overview_x;
         assign video_subtitle_y = video_overview_y;
+        assign subtitle_sd_sec_read = 1'b0;
+        assign subtitle_sd_sec_read_addr = 32'd0;
+        assign subtitle_ready_50m = 1'b1;
+        assign subtitle_total_frames = audio_total_frames;
+        assign subtitle_format_error_50m = 1'b0;
+        assign subtitle_file_error_50m = 1'b0;
     end else begin : g_no_uart_subtitle
         assign subtitle_uart_txd = 1'b1;
         assign video_subtitle_hs = video_overview_hs;
@@ -966,6 +1011,12 @@ generate
         assign video_subtitle_rgb = video_overview_rgb;
         assign video_subtitle_x = video_overview_x;
         assign video_subtitle_y = video_overview_y;
+        assign subtitle_sd_sec_read = 1'b0;
+        assign subtitle_sd_sec_read_addr = 32'd0;
+        assign subtitle_ready_50m = 1'b1;
+        assign subtitle_total_frames = audio_total_frames;
+        assign subtitle_format_error_50m = 1'b0;
+        assign subtitle_file_error_50m = 1'b0;
     end
 endgenerate
 
@@ -982,29 +1033,39 @@ sd_card_top u_sd_card_top (
     .sd_sec_write_data(8'd0), .sd_sec_write_data_req(), .sd_sec_write_end()
 );
 
-// Both clients hold their request until the sector end pulse.  Latch one
-// owner per sector; audio wins a simultaneous request, then the image loader
-// gets the next idle sector while the audio FIFO is above its threshold.
+// All clients hold their request until the sector end pulse.  Latch one owner
+// per sector.  Audio remains highest priority; a subtitle cue is only seven
+// sectors and is fetched before the lower-priority image loader.
 always @(posedge clk_50m or negedge write_rst_n) begin
     if (!write_rst_n) begin
         sd_read_active <= 1'b0;
         sd_read_audio_owner <= 1'b0;
+        sd_read_subtitle_owner <= 1'b0;
     end else if (sd_read_active) begin
         if (sd_sec_read_end)
             sd_read_active <= 1'b0;
     end else if (audio_sd_sec_read) begin
         sd_read_active <= 1'b1;
         sd_read_audio_owner <= 1'b1;
+        sd_read_subtitle_owner <= 1'b0;
+    end else if (subtitle_sd_sec_read) begin
+        sd_read_active <= 1'b1;
+        sd_read_audio_owner <= 1'b0;
+        sd_read_subtitle_owner <= 1'b1;
     end else if (image_sd_sec_read) begin
         sd_read_active <= 1'b1;
         sd_read_audio_owner <= 1'b0;
+        sd_read_subtitle_owner <= 1'b0;
     end
 end
 
 assign sd_sec_read = sd_read_active &&
-                     (sd_read_audio_owner ? audio_sd_sec_read : image_sd_sec_read);
+                     (sd_read_audio_owner ? audio_sd_sec_read :
+                      (sd_read_subtitle_owner ? subtitle_sd_sec_read :
+                                                image_sd_sec_read));
 assign sd_sec_read_addr = sd_read_audio_owner ? audio_sd_sec_read_addr :
-                                                  image_sd_sec_read_addr;
+                          (sd_read_subtitle_owner ? subtitle_sd_sec_read_addr :
+                                                    image_sd_sec_read_addr);
 
 fat32_image_loader #(
     .IMAGE_WIDTH(SOURCE_W), .IMAGE_HEIGHT(SOURCE_H), .IMAGE_ADDR_BITS(21),
@@ -1058,7 +1119,11 @@ generate
             .fifo_wr_data(audio_fifo_wr_data), .audio_ready(audio_wav_ready),
             .track_switch_ack(audio_track_switch_ack),
             .total_pcm_frames(audio_total_frames), .stream_done(audio_stream_done),
-            .format_error(audio_format_error_50m), .file_error(audio_file_error_50m)
+            .format_error(audio_format_error_50m), .file_error(audio_file_error_50m),
+            .fs_geometry_ready(audio_fs_geometry_ready),
+            .fs_sectors_per_cluster(audio_fs_sectors_per_cluster),
+            .fs_fat_start(audio_fs_fat_start), .fs_data_start(audio_fs_data_start),
+            .fs_root_cluster(audio_fs_root_cluster)
         );
 
         // One sector holds 128 stereo frames.  The almost-full threshold
@@ -1104,6 +1169,11 @@ generate
         assign audio_wav_ready        = 1'b0;
         assign audio_track_switch_ack = 1'b0;
         assign audio_total_frames     = 32'd0;
+        assign audio_fs_geometry_ready = 1'b0;
+        assign audio_fs_sectors_per_cluster = 8'd0;
+        assign audio_fs_fat_start = 32'd0;
+        assign audio_fs_data_start = 32'd0;
+        assign audio_fs_root_cluster = 32'd0;
         assign audio_stream_done      = 1'b0;
         assign audio_format_error_50m = 1'b0;
         assign audio_file_error_50m   = 1'b0;
@@ -2138,22 +2208,45 @@ assign video_post_osd_de = (ENABLE_OSD && VIDEO_MODE_1280) ? osd1280_de_d3 : vid
 assign video_post_osd_x  = (ENABLE_OSD && VIDEO_MODE_1280) ? osd1280_x_d3 : video_x_delayed;
 assign video_post_osd_y  = (ENABLE_OSD && VIDEO_MODE_1280) ? osd1280_y_d3 : video_y_delayed;
 
+// Isolate the arithmetic image-adjust/transition path from the overview
+// overlay.  At 720p this register also keeps the path routable near full
+// device utilization; all raster metadata advances with the same pixel.
+always @(posedge video_clk or negedge video_rst_n) begin
+    if (!video_rst_n) begin
+        overview_input_frame_tick <= 1'b0;
+        overview_input_hs <= 1'b1;
+        overview_input_vs <= 1'b1;
+        overview_input_de <= 1'b0;
+        overview_input_x <= 11'd0;
+        overview_input_y <= 10'd0;
+        overview_input_rgb <= 24'd0;
+    end else begin
+        overview_input_frame_tick <= video_frame_tick;
+        overview_input_hs <= video_post_osd_hs;
+        overview_input_vs <= video_post_osd_vs;
+        overview_input_de <= video_post_osd_de;
+        overview_input_x <= video_post_osd_x;
+        overview_input_y <= video_post_osd_y;
+        overview_input_rgb <= video_output_rgb;
+    end
+end
+
 generate
     if (ENABLE_MUSEUM_OVERVIEW) begin : g_museum_overview_overlay
         museum_overview_overlay #(
             .VIDEO_W(VIDEO_W), .VIDEO_H(VIDEO_H)
         ) u_museum_overview_overlay (
             .video_clk(video_clk), .video_rst_n(video_rst_n),
-            .video_frame_tick(video_frame_tick),
+            .video_frame_tick(overview_input_frame_tick),
             .overview_enable(overview_enable_video &&
                              (display_media_index == VIDEO_FRAME_COUNT) &&
                              !transition_active),
             .selected_index(overview_selected_video),
             .confirm_active(overview_confirm_active_video),
             .frame_valid(frame_valid_ff2 | {5{overview_cache_ready_ff2}}),
-            .hs_i(video_post_osd_hs), .vs_i(video_post_osd_vs),
-            .de_i(video_post_osd_de), .x_i(video_post_osd_x),
-            .y_i(video_post_osd_y), .rgb_i(video_output_rgb),
+            .hs_i(overview_input_hs), .vs_i(overview_input_vs),
+            .de_i(overview_input_de), .x_i(overview_input_x),
+            .y_i(overview_input_y), .rgb_i(overview_input_rgb),
             .hs_o(video_overview_hs), .vs_o(video_overview_vs),
             .de_o(video_overview_de), .x_o(video_overview_x),
             .y_o(video_overview_y), .rgb_o(video_overview_rgb)

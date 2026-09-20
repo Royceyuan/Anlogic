@@ -47,14 +47,14 @@
 
 ### MAIN-2 主屏讲解（2026-09-20，等待板测）
 
-- **拨码预载与进入门控：完成。** MAIN-2 不再用高亮变化触发预载；`SW3:SW2:SW1=000/001/010/011/100` 分别选择文物 0～4，`101`～`111` 无效，SW4 保留。总览态先缓存当前文物四张图和对应 WAV；五个物理图片槽中，槽 0/4 轮换保存当前与下一文物全貌，槽 1/2/3 在画面离开对应细节后复用。这样讲解期间仍可滚动预载下一件，同时当前全貌保留到返回转场完成。KEY3/KEY4 仍移动高亮；只有高亮与拨码选择一致、四张图和音频均就绪时，KEY2 才进入讲解。
+- **拨码预载与进入门控：完成。** MAIN-2 不再用高亮变化触发预载；`SW3:SW2:SW1=000/001/010/011/100` 分别选择文物 0～4，`101`～`111` 无效，SW4 保留。总览态先缓存当前文物四张图、对应 WAV 和 TF 字幕包；五个物理图片槽中，槽 0/4 轮换保存当前与下一文物全貌，槽 1/2/3 在画面离开对应细节后复用。这样讲解期间仍可滚动预载下一件，同时当前全貌保留到返回转场完成。KEY3/KEY4 仍移动高亮；只有高亮与拨码选择一致、四张图、音频和首条字幕均就绪且字幕包记录的 PCM 总帧数与 WAV 相等时，KEY2 才进入讲解。
 - **无缝进入、音画同步与控制：待板测。** KEY2 接受后直接从总览转到已缓存全貌。WAV 以播放器实际消耗的 PCM 帧为唯一时间基准，在总帧数约 1/5、2/5、3/5、4/5 处依次切换“全貌→细节 1→细节 2→细节 3→最终全貌”；最后全貌显示期间音频继续播放，最后一个 PCM 帧送出后再稳定等待 1.5 秒并收拢回概览。KEY2 暂停/继续；KEY3 立即停止音频并经全貌回概览，不等待自然结束的 1.5 秒。1/5 阈值采用已寄存的移位加减近似，避免通用除法器破坏 50 MHz 时序，误差小于 0.4%。
 - **四羊方尊音频：已修复素材根因，待板测。** 原 `素材\02_四羊方尊\讲解音频.wav` 和 TF `AUDIO1.WAV` 都只有约 32.24 秒，而对应 SRT 到 76.1 秒，且文件尾仍有明显非零波形，确认是源音频被截断而不是 TF 吞吐或 RTL 提前结束。已用完整讲解文稿生成并写入新的 48 kHz、PCM16、双声道 `E:\AUDIO1.WAV`，时长 74.2955 秒，SHA256 `D4F732200267A7AE4D2801CEB6928B5A23139AFA7545A682344D0770DA0A6042`；旧文件备份于 `E:\BACKUP_AUDIO_BEFORE_REPAIR_20260920\AUDIO1.WAV`。
-- **板载字幕：完成，待板测。** 不再依赖电脑/UART 实时发送；`tools/generate_museum_subtitles.py` 分别读取五件文物各自目录中的 `字幕.srt`，并严格绑定同编号 `E:\AUDIO0.WAV`～`AUDIO4.WAV` 的实际 PCM 总帧数，生成 145 条时码、432 个 16×16 精简中文字形和 1179 个字符的 FPGA ROM。`museum_subtitle_overlay` 使用当前文物索引和实际音频帧计数选取对应字幕，底部深色栏暖白字从右向中间平滑进入；暂停时字幕时间也暂停，返回概览后隐藏，因此五件文物不会串字幕或串时间轴。
+- **TF 字幕：完成，待板测。** 不再依赖电脑/UART 实时发送，也不把具体文物文字固化进 FPGA。`tools/generate_museum_subtitles.py` 读取五件文物各自目录中的 `字幕.srt`，严格绑定同编号 `AUDIO0.WAV`～`AUDIO4.WAV` 的实际 PCM 总帧数，并在 TF 根目录生成 `SUB0.BIN`～`SUB4.BIN`。每条记录保存起止 PCM 帧和预渲染的 800×32 单色位图；FPGA 运行时从 FAT32 读取、双缓冲当前/下一条字幕。底部深色栏暖白字从右向中间平滑进入；暂停时字幕时间也暂停，返回概览后隐藏。更换文物时只需替换 SRT/WAV/BMP 并重新生成 `SUB*.BIN`，无需重新综合 RTL。
 - **转场/画面参数/OSD：待板测。** MAIN-2 总览→全貌仍使用约 2.13 秒的“未选栏淡出、选中栏移到中央、再从裁剪区向左右恢复全貌”；返回时严格反向收拢。全貌→细节 1 保留帷幕，细节 1→2、2→3 保留淡入淡出；细节 3→最终全貌改为中心向外扩张的菱形爆发遮罩，不再复用帷幕或普通淡入淡出。KEY4 在讲解期间不会改变画面；KEY1 循环切换中性、提亮、高对比、偏暗柔和四组真实亮度/对比度参数。音频柱状可视化保持开启；调试 OSD 面板仍关闭。
-- **仿真：通过。** `tb_museum_lecture_controller` 覆盖五阶段 PCM 驱动、最终全貌与 1.5 秒结束停留；`tb_video_transition_mask` 覆盖菱形爆发的起点/中点/终点；`tb_museum_subtitle_overlay` 覆盖字幕显示和退出旁路；1920×1080→960×540 自适应 BMP 回归也通过。ModelSim 10.6e 各项均为 `Errors: 0, Warnings: 0`。
-- **P&R/STA/DRC：通过。** 布局种子固定为 17；`_build_main2_lecture/main2_lecture_pr.status`：Setup WNS `+136 ps`、TNS `0`，Hold WNS `+24 ps`、TNS `0`，0 违例；无多驱动、无异常时序路径。放置后 LUT 16511/19600（84.24%）、寄存器 7388/19600（37.69%）、BRAM9K 57/64（89.06%）、DSP 7/29（24.14%）；最终 9150 slices（93.37%）。TD 已读取两份字幕 `.mem` 并推断 44 个 ROM 实例；保留既有 SDRAM 相移时钟本地路由警告，须以板测确认。
-- **待板测 bit：** `release/hx4s20_main2_lecture.bit`，650599 bytes，SHA256 `113259235091E3175EB763251CC26CF92EB7F3E788143FD7E526F06E76ECBF87`。
+- **仿真：通过。** `tb_museum_lecture_controller` 覆盖五阶段 PCM 驱动、最终全貌与 1.5 秒结束停留；`tb_video_transition_mask` 覆盖菱形爆发的起点/中点/终点；`tb_museum_subtitle_overlay` 以合成 FAT32 根目录、字幕包头和字幕记录覆盖文件发现、首条预载、PCM 帧选句、滑入和到期隐藏；1920×1080→960×540 自适应 BMP 回归也通过。ModelSim 10.6e 各项均为 `Errors: 0, Warnings: 0`。
+- **P&R/STA/DRC：通过。** 布局种子固定为 17；`_build_main2_lecture/main2_lecture_pr.status`：Setup WNS `+4 ps`、TNS `0`，Hold WNS `+30 ps`、TNS `0`，0 违例；无多驱动、无异常时序路径。放置后 LUT 17347/19600（88.51%）、寄存器 7837/19600（39.98%）、BRAM9K 39/64（60.94%）、BRAM32K 2/16（12.50%）、DSP 7/29（24.14%）；最终 9559 slices（97.54%）。字幕改为 TF 流式读取后不再占用固化中文字库 ROM；保留既有 SDRAM 相移时钟本地路由警告，且建立裕量仅 4 ps，须以板测确认。
+- **待板测 bit：** `release/hx4s20_main2_lecture.bit`，629647 bytes，SHA256 `FCA70D9A00815AC02BAB44D463822CB66283F4FEFAA16EE115EAEC7331951510`。
 
 ### MAIN-0 审计结论（2026-09-18）
 
@@ -73,7 +73,7 @@
 | 文件 | 作用 |
 |---|---|
 | `hx4s20_800x600_multimedia.al` | 唯一 TD 工程；当前活动顶层为 MAIN-2 `top_1280x720_main2_lecture`。 |
-| `src/memory/top_1280x720_main2_lecture.v` | MAIN-2 包装顶层，启用总览、五槽讲解缓存、五路 WAV、UART 字幕和 HDMI 音频。 |
+| `src/memory/top_1280x720_main2_lecture.v` | MAIN-2 包装顶层，启用总览、五槽讲解缓存、五路 WAV、TF 字幕和 HDMI 音频。 |
 | `src/video/museum_lecture_controller.v` | MAIN-2 初始缓存、讲解中滚动预载、错误门控和四阶段音画状态机。 |
 | `src/memory/top_1280x720_main1_overview.v` | MAIN-1 包装顶层，沿用 v72 约束层级并启用文物总览。 |
 | `src/video/museum_overview_controller.v` | MAIN-1 按键选择、就绪门控和帧边界跨时钟域发布。 |
@@ -84,8 +84,8 @@
 | `src/memory/sdram_bmp_row_top_v66.v` | 图片缓存、SDRAM、SPI TF、按键、OSD、音频和字幕的主媒体链。 |
 | `src/audio/fat32_wav_streamer.v`、`audio_pcm_player_48k.v`、`audio_goertzel8.v` | v73 WAV 读取、PCM 播放与可视化相关模块。 |
 | `src/video/audio_visualizer_overlay.v` | 64 根蓝/青交替柱状音频波形可视化。 |
-| `src/video/museum_subtitle_overlay.v` | MAIN-2 板载时码字幕叠加；按文物索引和实际 PCM 帧选择对应字幕。 |
-| `tools/generate_museum_subtitles.py` | 将五件文物各自的 SRT 与同编号 WAV 绑定，生成精简字库、文本和时码 ROM。 |
+| `src/video/museum_subtitle_overlay.v` | MAIN-2 FAT32 字幕包读取与叠加；双缓冲当前/下一条位图，并按实际 PCM 帧切换。 |
+| `tools/generate_museum_subtitles.py` | 将五件文物各自的 SRT 与同编号 WAV 绑定，生成 TF 根目录的 `SUB0.BIN`～`SUB4.BIN`。 |
 | `src/video/uart_subtitle_overlay.v` | 800×32、2-bit、双缓冲、帧边界提交的中文位图字幕。 |
 | `tools/play_museum_srt.py` | 按实际 WAV 时长缩放五份 SRT 并通过既有 UART 协议逐条发送。 |
 | `constraints/top_1280x720_v73_audio_visualizer.{adc,sdc}` | v73 独立约束；SPI：CLK A14、MOSI A13、MISO B14、CS A12；UART：F12/D12。 |
@@ -99,7 +99,7 @@
 - 器件：`EG4S20BG256`；输入时钟 50 MHz；1280×720 视频时钟约 75 MHz。
 - TF 使用既有 SPI 驱动，而非已经撤销的原生四线 SD 实验。当前可用物理映射为 A14/A13/B14/A12。
 - BMP：TF 根目录的 MAIN-1 全貌槽位为 `IMAGE0.BMP` 至 `IMAGE4.BMP`；MAIN-2 细节槽位为 `ART0D1.BMP` 至 `ART4D3.BMP`。均使用 24-bit、未压缩 BI_RGB；活动图片链支持最大 1920×1080，FPGA 按比例缩放、居中、黑边补齐。
-- 字幕：MAIN-2 使用 FPGA 内置的五轨时码、文本和精简字库 ROM，不需要电脑；各轨分别与同编号 WAV 的实际 PCM 帧同步。历史 v72/v73 回退顶层仍保留 UART 位图字幕协议 `55 AA | version | mode | width=800 | height=32 | payload_length=6400 | bitmap | CRC16`。
+- 字幕：MAIN-2 从 FAT32 TF 根目录读取 `SUB0.BIN` 至 `SUB4.BIN`，各包分别与同编号 WAV 的实际 PCM 帧同步；由 `py tools\generate_museum_subtitles.py --dest E:\ --audio-dir E:\` 从五份 SRT/WAV 生成，不需要电脑实时发送。历史 v72/v73 回退顶层仍保留 UART 位图字幕协议 `55 AA | version | mode | width=800 | height=32 | payload_length=6400 | bitmap | CRC16`。
 - 音频（MAIN-2）：`AUDIO0.WAV` 至 `AUDIO4.WAV`，44-byte 标准头、PCM16、48 kHz、双声道；总览态按 SW1～SW3 预选文物并预缓冲，讲解图片阶段由实际 PCM 消耗进度驱动。
 
 ## 4. 已做出的关键决策
@@ -108,7 +108,7 @@
 2. **图片由 FPGA 自适应处理。** 用户明确不接受 PC 端强制统一拉伸；源 BMP 保留尺寸，由 FPGA 在加载期缩放。
 3. **多图使用缓存而非切图时整图重读。** 五图预加载保证按键切换快；不要回退到读取时才加载整图。
 4. **转场采用输出遮罩。** 不额外读取旧帧或增加 TF/SDRAM 带宽；OSD 保持可见。
-5. **MAIN-2 中文字幕改为板载精简字库。** 五件文物各自的 SRT 在构建前生成时码、文本和 16×16 字形 ROM，运行时只按文物索引和 PCM 帧查询；历史回退顶层继续保留 UART 双缓冲字幕，不影响稳定回退路径。
+5. **MAIN-2 中文字幕改为 TF 字幕包。** PC 端把每件文物的 SRT 按同编号 WAV 的真实 PCM 总帧数转换为 `SUB*.BIN`；FPGA 运行时仅缓存当前和下一条 800×32 位图，避免固化特定文物文字和完整中文字库。历史回退顶层继续保留 UART 双缓冲字幕，不影响稳定回退路径。
 6. **不以约束豁免伪造时序通过。** 禁止为真实视频/SDRAM/音频路径添加 false path 或 multicycle 来掩盖违例。
 7. **商品展示/原生四线 SD 已撤销。** 该方向曾板测出现 `1001`、`D1D1`、`D1D2`、`60B6`，用户决定停止试错并要求回退；没有新的用户授权不要恢复。
 8. **MAIN-2 使用拨码预载。** SW1～SW3 负责选择后台预载文物，高亮只负责交互选择；两者匹配且图片/音频均就绪后才接受 KEY2，SW4 保留给后续应急模式。
@@ -197,8 +197,8 @@ MAIN-0 回退 bit：`release/hx4s20_1280x720_v72_subtitle_continuous_scroll_v2.b
 1. `MAIN-0` 审计、v72 综合/P&R/STA/DRC、bitgen 和板测已完成；用户已确认 `MAIN-0 BOARD PASS`。
 2. MAIN-0 板测基于 `release/hx4s20_1280x720_v72_subtitle_continuous_scroll_v2.bit`；用户确认当前基线的 HDMI、TF、SDRAM、按键、SW4 和画面稳定性满足验收要求。
 3. MAIN-1 RTL、仿真、P&R、STA/DRC、bitgen 和板测已完成；用户已明确回复 `MAIN-1 BOARD PASS`。
-4. 烧录 `release/hx4s20_main2_lecture.bit`；逐件验证完整流程为“全貌→细节 1→细节 2→细节 3→最终全貌→等待 1.5 秒→概览”，其中细节 3→全貌应为中心向外的菱形爆发，音频应在最终全貌末端结束。讲解中把拨码切到下一文物并提前按 KEY3，确认仍先回全貌再收拢，且后台只补读未完成图片而不是从头重载。
-5. 逐一选择文物 0～4，确认屏幕字幕内容分别对应越王勾践剑、四羊方尊、金缕玉衣、马踏飞燕、长信宫灯的讲解音频；按 KEY2 暂停时字幕应同步停住，继续后恢复。MAIN-2 不需要运行 `play_museum_srt.py`。
+4. 确认 TF 根目录同时存在 `AUDIO0.WAV`～`AUDIO4.WAV` 和本轮生成的 `SUB0.BIN`～`SUB4.BIN`，再烧录 `release/hx4s20_main2_lecture.bit`；逐件验证完整流程为“全貌→细节 1→细节 2→细节 3→最终全貌→等待 1.5 秒→概览”，其中细节 3→全貌应为中心向外的菱形爆发，音频应在最终全貌末端结束。讲解中把拨码切到下一文物并提前按 KEY3，确认仍先回全貌再收拢，且后台只补读未完成图片而不是从头重载。
+5. 逐一选择文物 0～4，确认屏幕字幕内容分别对应越王勾践剑、四羊方尊、金缕玉衣、马踏飞燕、长信宫灯的讲解音频；按 KEY2 暂停时字幕应同步停住，继续后恢复。字幕包不存在、损坏或其 PCM 总帧数与 WAV 不一致时，KEY2 应保持门控而不能进入讲解；MAIN-2 不需要运行 `play_museum_srt.py`。
 6. 用户明确回复 `MAIN-2 BOARD PASS` 后再推进副屏/后续阶段；提交时只纳入计划相关源码、测试、文档和发布 bit，不纳入 `_build_*`、根目录报告或 `.bid`。
 
 ## 13. 新 Agent 启动指令

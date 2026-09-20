@@ -26,7 +26,12 @@ module fat32_wav_streamer (
     output reg [31:0]  total_pcm_frames,
     output reg         stream_done,
     output reg         format_error,
-    output reg         file_error
+    output reg         file_error,
+    output wire        fs_geometry_ready,
+    output wire [7:0]  fs_sectors_per_cluster,
+    output wire [31:0] fs_fat_start,
+    output wire [31:0] fs_data_start,
+    output wire [31:0] fs_root_cluster
 );
 
 localparam [4:0]
@@ -86,6 +91,13 @@ reg [7:0] left_hi;
 reg [7:0] right_lo;
 reg [7:0] right_hi;
 reg [2:0] active_track;
+
+assign fs_geometry_ready       = (fat_start != 0) && (data_start != 0) &&
+                                 (root_cluster >= 2);
+assign fs_sectors_per_cluster  = sectors_per_cluster;
+assign fs_fat_start            = fat_start;
+assign fs_data_start           = data_start;
+assign fs_root_cluster         = root_cluster;
 
 function [31:0] cluster_lba;
     input [31:0] cluster;
