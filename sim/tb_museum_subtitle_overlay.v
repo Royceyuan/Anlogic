@@ -2,7 +2,7 @@
 module tb_museum_subtitle_overlay;
 reg clk50=0,vclk=0,rst50=0,vrst=0,start=0,restart=0,active=0,finished=0;
 reg frame_tick=0,hs=1,vs=1,de=1,sd_init=1;
-reg [2:0] track=0;
+reg [2:0] track=1;
 reg [31:0] audio_frame=0;
 reg [10:0] x=636;
 reg [9:0] y=676;
@@ -37,19 +37,29 @@ function [7:0] disk_byte;
  begin
   disk_byte=0;
   case(sector)
-   35: case(index)
-       0:disk_byte="S";1:disk_byte="U";2:disk_byte="B";3:disk_byte="0";
-       4,5,6,7:disk_byte=" ";8:disk_byte="B";9:disk_byte="I";10:disk_byte="N";
-       11:disk_byte=8'h20;26:disk_byte=3;29:disk_byte=8'h10;
+   // Root cluster 2 is deliberately empty.  Its FAT entry points at cluster 3,
+   // where SUB1.BIN lives; this catches the board failure caused by scanning
+   // only the first root-directory cluster.
+   33: case(index)
+       8:disk_byte=3;16:disk_byte=5;
       endcase
    43: case(index)
+       0:disk_byte="S";1:disk_byte="U";2:disk_byte="B";3:disk_byte="1";
+       4,5,6,7:disk_byte=" ";8:disk_byte="B";9:disk_byte="I";10:disk_byte="N";
+       11:disk_byte=8'h20;26:disk_byte=4;29:disk_byte=8'h1e;
+      endcase
+   51: case(index)
        0:disk_byte="M";1:disk_byte="S";2:disk_byte="U";3:disk_byte="B";
        4:disk_byte=1;5:disk_byte=8'h20;6:disk_byte=8'h03;7:disk_byte=32;
-       8:disk_byte=1;9:disk_byte=1;10:disk_byte=8'h80;11:disk_byte=8'h0c;
+       8:disk_byte=1;9:disk_byte=2;10:disk_byte=8'h80;11:disk_byte=8'h0c;
        12:disk_byte=7;16:disk_byte=100;
       endcase
-   44: case(index)
+   52: case(index)
        4:disk_byte=100;8:disk_byte=8;
+       16:disk_byte=8'h80;
+      endcase
+   59: case(index)
+       0:disk_byte=100;4:disk_byte=200;8:disk_byte=8;
        16:disk_byte=8'h80;
       endcase
   endcase
@@ -86,7 +96,30 @@ initial begin
  end
  repeat(5)@(negedge vclk);
  if(rgb_o!==24'hFFF1C7)$fatal(1,"TF subtitle pixel missing: %h",rgb_o);
+ i=0;
+ while((dut.cue_index!=1 || !dut.cue_ready) && i<100000) begin
+  @(negedge clk50);i=i+1;
+ end
+ if(!dut.cue_ready)$fatal(1,"second cue was not prefetched");
  audio_frame=100;repeat(8)@(negedge vclk);
+ @(negedge vclk);frame_tick=1;@(negedge vclk);frame_tick=0;
+ @(negedge vclk);frame_tick=1;@(negedge vclk);frame_tick=0;
+ x=620;repeat(4)@(negedge vclk);
+ if(rgb_o!==24'hFFF1C7)$fatal(1,"outgoing cue did not slide left: %h",rgb_o);
+ i=0;
+ while(dut.slide_phase!=2 && i<60) begin
+  @(negedge vclk);frame_tick=1;@(negedge vclk);frame_tick=0;i=i+1;
+ end
+ if(dut.slide_phase!=2)$fatal(1,"incoming phase did not start");
+ @(negedge vclk);frame_tick=1;@(negedge vclk);frame_tick=0;
+ x=1264;repeat(4)@(negedge vclk);
+ if(rgb_o!==24'hFFF1C7)$fatal(1,"incoming cue did not slide in: %h",rgb_o);
+ for(i=0;i<45;i=i+1) begin
+  @(negedge vclk);frame_tick=1;@(negedge vclk);frame_tick=0;
+ end
+ x=636;repeat(5)@(negedge vclk);
+ if(rgb_o!==24'hFFF1C7)$fatal(1,"second cue did not settle: %h",rgb_o);
+ audio_frame=200;repeat(8)@(negedge vclk);
  if(rgb_o!==rgb)$fatal(1,"expired subtitle changed image: %h",rgb_o);
  $display("PASS tb_museum_subtitle_overlay");$finish;
 end

@@ -62,7 +62,6 @@ reg [31:0] root_cluster;
 reg [31:0] fat_start;
 reg [31:0] data_start;
 reg [31:0] root_sector;
-reg [31:0] root_cluster_scan;
 reg [7:0] root_sector_in_cluster;
 
 reg entry_match;
@@ -81,6 +80,7 @@ reg [7:0] sector_in_cluster;
 reg [31:0] file_bytes_seen;
 reg [31:0] fat_next_cluster;
 reg [8:0] fat_byte_offset;
+reg fat_for_root;
 
 reg header_ok;
 reg header_complete;
@@ -220,7 +220,6 @@ always @(posedge clk or negedge rst_n) begin
         fat_start              <= 32'd0;
         data_start             <= 32'd0;
         root_sector            <= 32'd0;
-        root_cluster_scan      <= 32'd0;
         root_sector_in_cluster <= 8'd0;
         entry_match            <= 1'b0;
         entry_deleted          <= 1'b0;
@@ -238,6 +237,7 @@ always @(posedge clk or negedge rst_n) begin
         file_bytes_seen        <= 32'd0;
         fat_next_cluster       <= 32'd0;
         fat_byte_offset        <= 9'd0;
+        fat_for_root           <= 1'b0;
         header_ok              <= 1'b1;
         header_complete        <= 1'b0;
         wav_data_bytes         <= 32'd0;
@@ -333,7 +333,7 @@ always @(posedge clk or negedge rst_n) begin
                         fat_start         <= partition_start + reserved_sectors;
                         data_start        <= partition_start + reserved_sectors +
                                              (num_fats * sectors_per_fat);
-                        root_cluster_scan <= root_cluster;
+                        current_cluster <= root_cluster;
                         root_sector_in_cluster <= 8'd0;
                         state <= S_REQ_ROOT;
                     end
@@ -349,7 +349,7 @@ always @(posedge clk or negedge rst_n) begin
                 entry_cluster_lo <= 16'd0;
                 entry_file_size  <= 32'd0;
                 file_found       <= 1'b0;
-                sd_sec_read_addr <= cluster_lba(root_cluster_scan, data_start,
+                sd_sec_read_addr <= cluster_lba(current_cluster, data_start,
                                                 root_sector_in_cluster);
                 sd_sec_read      <= 1'b1;
                 state            <= S_WAIT_ROOT;
@@ -397,11 +397,12 @@ always @(posedge clk or negedge rst_n) begin
                         stream_done <= 1'b0;
                         format_error <= 1'b0;
                         file_error <= 1'b0;
-                        root_cluster_scan <= root_cluster;
+                        current_cluster <= root_cluster;
                         root_sector_in_cluster <= 8'd0;
                         track_switch_ack <= 1'b1;
                         state <= S_REQ_ROOT;
                     end else if (file_found) begin
+                        fat_for_root      <= 1'b0;
                         first_cluster     <= found_cluster;
                         current_cluster   <= found_cluster;
                         file_size         <= found_file_size;
@@ -415,10 +416,10 @@ always @(posedge clk or negedge rst_n) begin
                         root_sector_in_cluster <= root_sector_in_cluster + 1'b1;
                         state <= S_REQ_ROOT;
                     end else begin
-                        // The five fixed audio names are expected in the first
-                        // root cluster.  The media preparation rule keeps lookup
-                        // bounded while still allowing normal FAT fragmentation.
-                        state <= S_ERROR;
+                        fat_byte_offset <= {current_cluster[6:0],2'b00};
+                        fat_next_cluster <= 32'd0;
+                        fat_for_root <= 1'b1;
+                        state <= S_REQ_FAT;
                     end
                 end
             end
@@ -482,7 +483,7 @@ always @(posedge clk or negedge rst_n) begin
                         stream_done <= 1'b0;
                         format_error <= 1'b0;
                         file_error <= 1'b0;
-                        root_cluster_scan <= root_cluster;
+                        current_cluster <= root_cluster;
                         root_sector_in_cluster <= 8'd0;
                         track_switch_ack <= 1'b1;
                         state <= S_REQ_ROOT;
@@ -531,7 +532,7 @@ always @(posedge clk or negedge rst_n) begin
                         stream_done <= 1'b0;
                         format_error <= 1'b0;
                         file_error <= 1'b0;
-                        root_cluster_scan <= root_cluster;
+                        current_cluster <= root_cluster;
                         root_sector_in_cluster <= 8'd0;
                         track_switch_ack <= 1'b1;
                         state <= S_REQ_ROOT;
@@ -543,9 +544,16 @@ always @(posedge clk or negedge rst_n) begin
             S_FAT_NEXT: begin
                 if (fat_next_cluster[27:0] >= 28'd2 &&
                     fat_next_cluster[27:0] < 28'hffffff8) begin
-                    current_cluster   <= {4'd0,fat_next_cluster[27:0]};
-                    sector_in_cluster <= 8'd0;
-                    state             <= S_REQ_DATA;
+                    if (fat_for_root) begin
+                        current_cluster <= {4'd0,fat_next_cluster[27:0]};
+                        root_sector_in_cluster <= 8'd0;
+                        fat_for_root <= 1'b0;
+                        state <= S_REQ_ROOT;
+                    end else begin
+                        current_cluster   <= {4'd0,fat_next_cluster[27:0]};
+                        sector_in_cluster <= 8'd0;
+                        state             <= S_REQ_DATA;
+                    end
                 end else begin
                     state <= S_ERROR;
                 end
@@ -558,7 +566,7 @@ always @(posedge clk or negedge rst_n) begin
                     audio_ready <= 1'b0;
                     total_pcm_frames <= 32'd0;
                     stream_done <= 1'b0;
-                    root_cluster_scan <= root_cluster;
+                    current_cluster <= root_cluster;
                     root_sector_in_cluster <= 8'd0;
                     track_switch_ack <= 1'b1;
                     state <= S_REQ_ROOT;
@@ -574,7 +582,7 @@ always @(posedge clk or negedge rst_n) begin
                     stream_done <= 1'b0;
                     format_error <= 1'b0;
                     file_error <= 1'b0;
-                    root_cluster_scan <= root_cluster;
+                    current_cluster <= root_cluster;
                     root_sector_in_cluster <= 8'd0;
                     track_switch_ack <= 1'b1;
                     state <= S_REQ_ROOT;

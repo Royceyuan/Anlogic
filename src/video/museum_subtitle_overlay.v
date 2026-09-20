@@ -43,7 +43,6 @@ localparam [4:0]
 
 reg [4:0] state;
 reg [8:0] byte_index;
-reg [31:0] root_cluster_scan;
 reg [7:0] root_sector_in_cluster;
 reg entry_match, entry_deleted, file_found;
 reg [7:0] entry_attr;
@@ -53,6 +52,7 @@ reg [31:0] file_size, current_cluster, file_bytes_seen;
 reg [7:0] sector_in_cluster;
 reg [31:0] fat_next_cluster;
 reg [8:0] fat_byte_offset;
+reg fat_for_root;
 reg [2:0] active_track;
 
 reg header_ok, header_done;
@@ -60,8 +60,8 @@ reg [5:0] cue_count, cue_index;
 reg [2:0] record_sector;
 reg [11:0] payload_count;
 reg [31:0] cue_start, cue_end, active_cue_end;
-reg [10:0] cue_width, active_cue_width;
-reg cue_ready, active_cue_valid, pause_needs_fat;
+reg [9:0] cue_width, commit_width;
+reg cue_ready, active_cue_valid, active_cue_is_last, pause_needs_fat;
 
 reg bitmap_wr_en, write_bank;
 reg [11:0] bitmap_wr_addr;
@@ -71,16 +71,18 @@ reg commit_toggle, commit_bank;
 reg ack_sync1, ack_sync2, ack_seen;
 reg commit_sync1, commit_sync2, commit_seen, active_bank, video_ack_toggle;
 reg visible_sync1, visible_sync2;
-reg [10:0] width_sync1, width_sync2;
-reg [11:0] scroll_x;
-reg [11:0] relative_x;
-reg mapped_valid;
+reg [9:0] current_width;
+reg [11:0] scroll_x, outgoing_shift, relative_x;
+reg [1:0] slide_phase;
+reg video_has_cue, mapped_valid;
 reg [11:0] bitmap_rd_addr;
-reg hs_q,vs_q,de_q,mapped_q,bar_q;
+reg hs_q,vs_q,de_q,mapped_q,bar_q,active_bank_q;
 reg [10:0] x_q;
 reg [9:0] y_q;
 reg [23:0] rgb_q;
 reg [2:0] pixel_q;
+
+localparam [1:0] SLIDE_IDLE=2'd0, SLIDE_OUT=2'd1, SLIDE_IN=2'd2;
 
 function [31:0] cluster_lba;
     input [31:0] cluster;
@@ -121,22 +123,24 @@ function root_name_byte_match;
 endfunction
 
 wire cue_visible_50m = start && lecture_active && !lecture_finished &&
-                        active_cue_valid && audio_frame_index < active_cue_end;
+                        active_cue_valid &&
+                        (!active_cue_is_last || audio_frame_index < active_cue_end);
 
 always @(posedge clk_50m or negedge rst_n_50m) begin
     if (!rst_n_50m) begin
         state<=S_WAIT_CARD; sd_sec_read<=0; sd_sec_read_addr<=0;
         byte_index<=0;
-        root_cluster_scan<=0; root_sector_in_cluster<=0;
+        root_sector_in_cluster<=0;
         entry_match<=0; entry_deleted<=0; entry_attr<=0;
         entry_cluster_hi<=0; entry_cluster_lo<=0; entry_file_size<=0;
         file_found<=0; found_cluster<=0; found_file_size<=0;
         file_size<=0; current_cluster<=0; file_bytes_seen<=0;
         sector_in_cluster<=0; fat_next_cluster<=0; fat_byte_offset<=0;
+        fat_for_root<=0;
         active_track<=0; header_ok<=1; header_done<=0; cue_count<=0; cue_index<=0;
         record_sector<=0; payload_count<=0; cue_start<=0; cue_end<=0;
-        active_cue_end<=0; cue_width<=0; active_cue_width<=0;
-        cue_ready<=0; active_cue_valid<=0; pause_needs_fat<=0;
+        active_cue_end<=0; cue_width<=0; commit_width<=0;
+        cue_ready<=0; active_cue_valid<=0; active_cue_is_last<=0; pause_needs_fat<=0;
         bitmap_wr_en<=0; bitmap_wr_addr<=0; bitmap_wr_data<=0;
         write_bank<=1; commit_toggle<=0; commit_bank<=1;
         ack_sync1<=0; ack_sync2<=0; ack_seen<=0;
@@ -155,14 +159,14 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
             active_track<=track_index; subtitle_ready<=0;
             subtitle_total_frames<=0; format_error<=0; file_error<=0;
             cue_ready<=0; active_cue_valid<=0; cue_index<=0;
-            root_cluster_scan<=fs_root_cluster; root_sector_in_cluster<=0;
+            current_cluster<=fs_root_cluster; root_sector_in_cluster<=0;
             state<=fs_geometry_ready ? S_REQ_ROOT : S_WAIT_CARD;
         end else case (state)
             S_WAIT_CARD: begin
                 sd_sec_read<=0;
                 if (sd_init_done && fs_geometry_ready) begin
                     active_track<=track_index;
-                    root_cluster_scan<=fs_root_cluster;
+                    current_cluster<=fs_root_cluster;
                     root_sector_in_cluster<=0;
                     state<=S_REQ_ROOT;
                 end
@@ -171,7 +175,7 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
                 byte_index<=0; entry_match<=1; entry_deleted<=0; entry_attr<=0;
                 entry_cluster_hi<=0; entry_cluster_lo<=0; entry_file_size<=0;
                 file_found<=0;
-                sd_sec_read_addr<=cluster_lba(root_cluster_scan,fs_data_start,
+                sd_sec_read_addr<=cluster_lba(current_cluster,fs_data_start,
                                               root_sector_in_cluster);
                 sd_sec_read<=1; state<=S_WAIT_ROOT;
             end
@@ -209,6 +213,7 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
                 if (sd_sec_read_end) begin
                     sd_sec_read<=0;
                     if (file_found) begin
+                        fat_for_root<=0;
                         current_cluster<=found_cluster; file_size<=found_file_size;
                         sector_in_cluster<=0; file_bytes_seen<=0; header_ok<=1;
                         header_done<=0;
@@ -217,7 +222,10 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
                     end else if (root_sector_in_cluster+1'b1<fs_sectors_per_cluster) begin
                         root_sector_in_cluster<=root_sector_in_cluster+1'b1;
                         state<=S_REQ_ROOT;
-                    end else begin file_error<=1; state<=S_ERROR; end
+                    end else begin
+                        fat_byte_offset<={current_cluster[6:0],2'b00};
+                        fat_next_cluster<=0; fat_for_root<=1; state<=S_REQ_FAT;
+                    end
                 end
             end
             S_REQ_DATA: begin
@@ -261,7 +269,7 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
                                 9'd6: cue_end[23:16]<=sd_sec_read_data;
                                 9'd7: cue_end[31:24]<=sd_sec_read_data;
                                 9'd8: cue_width[7:0]<=sd_sec_read_data;
-                                9'd9: cue_width[10:8]<=sd_sec_read_data[2:0];
+                                9'd9: cue_width[9:8]<=sd_sec_read_data[1:0];
                             endcase
                         end
                         if (((record_sector==0 && byte_index>=16) || record_sector!=0) &&
@@ -325,15 +333,22 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
             end
             S_FAT_NEXT: begin
                 if (fat_next_cluster[27:0]>=2 && fat_next_cluster[27:0]<28'hffffff8) begin
-                    current_cluster<={4'd0,fat_next_cluster[27:0]};
-                    sector_in_cluster<=0; state<=S_REQ_DATA;
+                    if (fat_for_root) begin
+                        current_cluster<={4'd0,fat_next_cluster[27:0]};
+                        root_sector_in_cluster<=0; fat_for_root<=0; state<=S_REQ_ROOT;
+                    end else begin
+                        current_cluster<={4'd0,fat_next_cluster[27:0]};
+                        sector_in_cluster<=0; state<=S_REQ_DATA;
+                    end
                 end else begin file_error<=1; state<=S_ERROR; end
             end
             S_WAIT_CUE: begin
                 if (cue_ready && lecture_active && audio_frame_index>=cue_start &&
                     audio_frame_index<cue_end) begin
                     commit_bank<=write_bank; commit_toggle<=~commit_toggle;
-                    active_cue_end<=cue_end; active_cue_width<=cue_width;
+                    commit_width<=cue_width;
+                    active_cue_end<=cue_end;
+                    active_cue_is_last<=cue_index+1'b1>=cue_count;
                     active_cue_valid<=1; cue_ready<=0; state<=S_WAIT_ACK;
                 end else if (cue_ready && audio_frame_index>=cue_end) begin
                     // Late load: skip the expired cue without displaying it.
@@ -367,13 +382,24 @@ subtitle_bitmap_ram #(.ADDR_WIDTH(12),.DEPTH(4096),.REGISTER_READ(0)) u_bitmap1 
     .wr_clk(clk_50m),.wr_en(bitmap_wr_en&&write_bank),.wr_addr(bitmap_wr_addr),
     .wr_data(bitmap_wr_data),.rd_clk(video_clk),.rd_addr(bitmap_rd_addr),.rd_data(bitmap1_q));
 
-wire [11:0] center_x = (VIDEO_W-width_sync2) >> 1;
-wire [7:0] bitmap_q = active_bank ? bitmap1_q : bitmap0_q;
+wire [11:0] current_center = (VIDEO_W-current_width) >> 1;
+wire [11:0] outgoing_limit = current_center + current_width;
+wire [7:0] bitmap_q = active_bank_q ? bitmap1_q : bitmap0_q;
 
 always @(*) begin
-    relative_x = x_i>=scroll_x ? x_i-scroll_x : 0;
-    mapped_valid = de_i && visible_sync2 && y_i>=Y_START && y_i<Y_START+HEIGHT &&
-                   x_i>=scroll_x && relative_x<width_sync2;
+    if (slide_phase==SLIDE_OUT) begin
+        relative_x = x_i+outgoing_shift>=current_center ?
+                     x_i+outgoing_shift-current_center : 0;
+        mapped_valid = de_i && visible_sync2 && video_has_cue &&
+                       y_i>=Y_START && y_i<Y_START+HEIGHT &&
+                       x_i+outgoing_shift>=current_center &&
+                       relative_x<current_width;
+    end else begin
+        relative_x = x_i>=scroll_x ? x_i-scroll_x : 0;
+        mapped_valid = de_i && visible_sync2 && video_has_cue &&
+                       y_i>=Y_START && y_i<Y_START+HEIGHT &&
+                       x_i>=scroll_x && relative_x<current_width;
+    end
     bitmap_rd_addr = ((y_i-Y_START)<<6)+((y_i-Y_START)<<5)+
                      ((y_i-Y_START)<<2)+relative_x[9:3];
 end
@@ -382,21 +408,34 @@ always @(posedge video_clk or negedge video_rst_n) begin
     if (!video_rst_n) begin
         commit_sync1<=0; commit_sync2<=0; commit_seen<=0; active_bank<=0;
         video_ack_toggle<=0; visible_sync1<=0; visible_sync2<=0;
-        width_sync1<=0; width_sync2<=0; scroll_x<=VIDEO_W;
-        hs_q<=1;vs_q<=1;de_q<=0;mapped_q<=0;bar_q<=0;
+        current_width<=0; scroll_x<=VIDEO_W; outgoing_shift<=0;
+        video_has_cue<=0; slide_phase<=SLIDE_IDLE;
+        hs_q<=1;vs_q<=1;de_q<=0;mapped_q<=0;bar_q<=0;active_bank_q<=0;
         x_q<=0;y_q<=0;rgb_q<=0;pixel_q<=0;
         hs_o<=1;vs_o<=1;de_o<=0;x_o<=0;y_o<=0;rgb_o<=0;
     end else begin
         commit_sync1<=commit_toggle; commit_sync2<=commit_sync1;
         visible_sync1<=cue_visible_50m; visible_sync2<=visible_sync1;
-        width_sync1<=active_cue_width; width_sync2<=width_sync1;
         if (video_frame_tick) begin
             if (commit_sync2!=commit_seen) begin
-                commit_seen<=commit_sync2; active_bank<=commit_bank;
-                video_ack_toggle<=~video_ack_toggle; scroll_x<=VIDEO_W;
-            end else if (visible_sync2 && scroll_x>center_x) begin
-                scroll_x <= (scroll_x-center_x<=SCROLL_STEP) ? center_x :
-                            scroll_x-SCROLL_STEP;
+                commit_seen<=commit_sync2;
+                if (video_has_cue&&visible_sync2) begin
+                    outgoing_shift<=0; slide_phase<=SLIDE_OUT;
+                end else begin
+                    active_bank<=commit_bank; current_width<=commit_width;
+                    scroll_x<=VIDEO_W; video_has_cue<=1; slide_phase<=SLIDE_IN;
+                end
+            end else if (slide_phase==SLIDE_OUT) begin
+                if (outgoing_limit-outgoing_shift<=SCROLL_STEP) begin
+                    active_bank<=commit_bank; current_width<=commit_width;
+                    scroll_x<=VIDEO_W; outgoing_shift<=outgoing_limit;
+                    slide_phase<=SLIDE_IN;
+                end else outgoing_shift<=outgoing_shift+SCROLL_STEP;
+            end else if (slide_phase==SLIDE_IN) begin
+                if (scroll_x-current_center<=SCROLL_STEP) begin
+                    scroll_x<=current_center; slide_phase<=SLIDE_IDLE;
+                    video_ack_toggle<=~video_ack_toggle;
+                end else scroll_x<=scroll_x-SCROLL_STEP;
             end
         end
         hs_o<=hs_q;vs_o<=vs_q;de_o<=de_q;x_o<=x_q;y_o<=y_q;
@@ -405,8 +444,9 @@ always @(posedge video_clk or negedge video_rst_n) begin
         else if (bar_q) rgb_o<=24'h101820;
         else rgb_o<=rgb_q;
         hs_q<=hs_i;vs_q<=vs_i;de_q<=de_i;x_q<=x_i;y_q<=y_i;rgb_q<=rgb_i;
-        pixel_q<=relative_x[2:0]; mapped_q<=mapped_valid;
-        bar_q<=de_i&&visible_sync2&&y_i>=Y_START&&y_i<Y_START+HEIGHT;
+        pixel_q<=relative_x[2:0]; mapped_q<=mapped_valid; active_bank_q<=active_bank;
+        bar_q<=de_i&&visible_sync2&&video_has_cue&&
+               y_i>=Y_START&&y_i<Y_START+HEIGHT;
     end
 end
 
