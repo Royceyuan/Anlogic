@@ -34,6 +34,7 @@ module top_v66 #(
     // within the 2048-pixel adaptive row RAM/FIFO depth.
     parameter integer ADAPTIVE_BMP_MAX_WIDTH = 1280,
     parameter integer ADAPTIVE_BMP_MAX_HEIGHT = 720,
+    parameter [15:0] ADAPTIVE_BACKGROUND_RGB565 = 16'h0000,
     // Adaptive BMP can use the continuous block writer only when its input
     // stream is already raster ordered; the row writer is the safe default
     // for both top-down and bottom-up BMP orientation.
@@ -289,6 +290,8 @@ wire [23:0] video_subtitle_rgb;
 wire        video_subtitle_hs;
 wire        video_subtitle_vs;
 wire        video_subtitle_de;
+wire [10:0] video_subtitle_x;
+wire [9:0]  video_subtitle_y;
 wire        video_hs_out;
 wire        video_vs_out;
 wire        video_de_out;
@@ -336,6 +339,8 @@ wire lecture_audio_restart;
 wire [1:0] lecture_display_slot;
 wire [2:0] lecture_display_frame_slot;
 wire lecture_media_error;
+wire lecture_final_full_active;
+wire [31:0] lecture_audio_frame_index;
 localparam integer ENABLE_DUAL_FRAME_PRELOAD =
     PRELOAD_BOTH_IMAGES && !VIDEO_SEQUENCE && (VIDEO_FRAME_COUNT == 2);
 localparam integer ENABLE_MULTI_FRAME_PRELOAD =
@@ -504,7 +509,7 @@ wire [1:0] product_show_transition_context;
 wire [1:0] product_show_demo_step;
 wire [2:0] lecture_transition_mode =
     (lecture_display_slot == 2'd0) ?
-        ((lecture_active && lecture_finished) ? 3'd0 : 3'd5) :
+        (lecture_final_full_active ? 3'd6 : 3'd5) :
     (lecture_display_slot == 2'd1) ? 3'd2 : 3'd0;
 wire [2:0] selected_transition_mode =
     ENABLE_MUSEUM_LECTURE ? lecture_transition_mode :
@@ -685,7 +690,9 @@ generate
             .lecture_finished(lecture_finished), .audio_restart(lecture_audio_restart),
             .display_slot(lecture_display_slot),
             .display_frame_slot(lecture_display_frame_slot),
-            .media_error(lecture_media_error)
+            .media_error(lecture_media_error),
+            .audio_frame_index(lecture_audio_frame_index),
+            .final_full_active(lecture_final_full_active)
         );
     end else begin : g_no_museum_lecture_controller
         assign lecture_load_request = 1'b0;
@@ -704,6 +711,8 @@ generate
         assign lecture_display_slot = 2'd0;
         assign lecture_display_frame_slot = 3'd0;
         assign lecture_media_error = 1'b0;
+        assign lecture_audio_frame_index = 32'd0;
+        assign lecture_final_full_active = 1'b0;
     end
 endgenerate
 
@@ -893,8 +902,8 @@ generate
             .sample_left(audio_sample_left), .sample_right(audio_sample_right),
             .pause(audio_paused_ff2),
             .frame_tick(video_frame_tick), .hs_i(video_subtitle_hs),
-            .vs_i(video_subtitle_vs), .de_i(video_subtitle_de), .x_i(video_overview_x),
-            .y_i(video_overview_y), .rgb_i(video_subtitle_rgb), .hs_o(video_post_audio_hs),
+            .vs_i(video_subtitle_vs), .de_i(video_subtitle_de), .x_i(video_subtitle_x),
+            .y_i(video_subtitle_y), .rgb_i(video_subtitle_rgb), .hs_o(video_post_audio_hs),
             .vs_o(video_post_audio_vs), .de_o(video_post_audio_de), .x_o(video_post_audio_x),
             .y_o(video_post_audio_y), .rgb_o(video_post_audio_rgb)
         );
@@ -909,7 +918,24 @@ generate
 endgenerate
 
 generate
-    if (ENABLE_SUBTITLE) begin : g_uart_subtitle
+    if (ENABLE_SUBTITLE && ENABLE_MUSEUM_LECTURE) begin : g_museum_subtitle
+        museum_subtitle_overlay #(.VIDEO_W(VIDEO_W), .VIDEO_H(VIDEO_H))
+        u_museum_subtitle_overlay (
+            .clk_50m(clk_50m), .rst_n_50m(write_rst_n),
+            .lecture_active(lecture_active), .lecture_finished(lecture_finished),
+            .track_index(lecture_artifact_index),
+            .audio_frame_index(lecture_audio_frame_index),
+            .video_clk(video_clk), .video_rst_n(video_rst_n),
+            .video_frame_tick(video_frame_tick),
+            .hs_i(video_overview_hs), .vs_i(video_overview_vs),
+            .de_i(video_overview_de), .x_i(video_overview_x),
+            .y_i(video_overview_y), .rgb_i(video_overview_rgb),
+            .hs_o(video_subtitle_hs), .vs_o(video_subtitle_vs),
+            .de_o(video_subtitle_de), .x_o(video_subtitle_x),
+            .y_o(video_subtitle_y), .rgb_o(video_subtitle_rgb)
+        );
+        assign subtitle_uart_txd = 1'b1;
+    end else if (ENABLE_SUBTITLE) begin : g_uart_subtitle
         uart_subtitle_overlay #(
             .WIDTH(SUBTITLE_WIDTH), .HEIGHT(32),
             .X_START(SUBTITLE_X_START), .Y_START(VIDEO_H - 32),
@@ -930,12 +956,16 @@ generate
             .hs_o(video_subtitle_hs), .vs_o(video_subtitle_vs), .de_o(video_subtitle_de),
             .rgb_o(video_subtitle_rgb)
         );
+        assign video_subtitle_x = video_overview_x;
+        assign video_subtitle_y = video_overview_y;
     end else begin : g_no_uart_subtitle
         assign subtitle_uart_txd = 1'b1;
         assign video_subtitle_hs = video_overview_hs;
         assign video_subtitle_vs = video_overview_vs;
         assign video_subtitle_de = video_overview_de;
         assign video_subtitle_rgb = video_overview_rgb;
+        assign video_subtitle_x = video_overview_x;
+        assign video_subtitle_y = video_overview_y;
     end
 endgenerate
 
@@ -983,6 +1013,7 @@ fat32_image_loader #(
     .BMP_MAX_HEIGHT(ADAPTIVE_BMP ? ADAPTIVE_BMP_MAX_HEIGHT :
                     (VIDEO_MODE_1280 ? 720 : 768)),
     .ADAPTIVE_BMP(ADAPTIVE_BMP),
+    .ADAPTIVE_BACKGROUND_RGB565(ADAPTIVE_BACKGROUND_RGB565),
     .MULTI_IMAGE_BMP(MULTI_IMAGE_BMP),
     .RESOURCE_OPT_CONSTANT_MULT(RESOURCE_OPT_CONSTANT_MULT)
 ) u_fat32_image_loader (
@@ -1396,8 +1427,17 @@ always @(posedge clk_50m or negedge write_rst_n) begin
              (key_press_pulse[2] || key_press_pulse[3])))
             audio_switch_reset_count <= AUDIO_SWITCH_RESET_CYCLES;
 
-        if (key_press_pulse[0])
-            osd_panel_enable <= ~osd_panel_enable;
+        if (key_press_pulse[0]) begin
+            if (ENABLE_MUSEUM_LECTURE) begin
+                case ({brightness_level, contrast_level})
+                    4'b0000: begin brightness_level<=2'd1; contrast_level<=2'd0; end
+                    4'b0100: begin brightness_level<=2'd0; contrast_level<=2'd1; end
+                    4'b0001: begin brightness_level<=2'd2; contrast_level<=2'd2; end
+                    default: begin brightness_level<=2'd0; contrast_level<=2'd0; end
+                endcase
+            end else
+                osd_panel_enable <= ~osd_panel_enable;
+        end
 
         if (!ENABLE_MUSEUM_LECTURE && audio_control_mode) begin
             if (key_press_pulse[1]) begin

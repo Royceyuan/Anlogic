@@ -6,13 +6,15 @@ reg preload_valid=0,audio_prepared=0,audio_frame_pulse=0,audio_stream_done=0;
 reg audio_drained=0,load_accept=0,load_complete=0,load_error=0;
 reg display_transition_busy=0;
 reg [2:0] selected=0,preload_index=0,displayed_frame_slot=5;
-reg [31:0] audio_total_frames=8;
+reg [31:0] audio_total_frames=7;
 wire load_request,load_detail,preloading,cache_ready,active,paused,finished;
 wire audio_restart,media_error;
+wire final_full_active;
+wire [31:0] audio_frame_index;
 wire [1:0] load_slot,detail_index,display_slot;
 wire [2:0] load_frame_slot,load_artifact,artifact,display_frame_slot;
 always #5 clk=~clk;
-museum_lecture_controller #(.CLOCK_HZ(2),.END_HOLD_SECONDS(3)) dut(
+museum_lecture_controller #(.CLOCK_HZ(2)) dut(
  .clk(clk),.rst_n(rst_n),.enable(enable),.overview_ready(overview_ready),
  .confirm_pulse(confirm),.key_pause(key_pause),.key_return(key_return),
  .selected_index(selected),.preload_valid(preload_valid),.preload_index(preload_index),
@@ -26,7 +28,8 @@ museum_lecture_controller #(.CLOCK_HZ(2),.END_HOLD_SECONDS(3)) dut(
  .artifact_index(artifact),.preloading(preloading),.cache_ready(cache_ready),
  .lecture_active(active),.lecture_paused(paused),.lecture_finished(finished),
  .audio_restart(audio_restart),.display_slot(display_slot),
- .display_frame_slot(display_frame_slot),.media_error(media_error));
+ .display_frame_slot(display_frame_slot),.media_error(media_error),
+ .audio_frame_index(audio_frame_index),.final_full_active(final_full_active));
 task accept_complete; begin
  @(negedge clk);load_accept=1; @(negedge clk);load_accept=0;
  @(negedge clk);load_complete=1; @(negedge clk);load_complete=0;
@@ -55,22 +58,22 @@ initial begin
  key_pause=1;@(negedge clk);key_pause=0;if(!paused)$fatal(1,"pause failed");
  key_pause=1;@(negedge clk);key_pause=0;if(paused)$fatal(1,"resume failed");
  preload_index=2;@(negedge clk);check_load(0,4,2);
- pulse_audio;pulse_audio;displayed_frame_slot=1;repeat(2)@(negedge clk);
+ pulse_audio;displayed_frame_slot=1;repeat(2)@(negedge clk);
  if(load_request)$fatal(1,"detail 1 overwritten while displayed");
  pulse_audio;pulse_audio;displayed_frame_slot=2;repeat(2)@(negedge clk);check_load(1,1,2);
- pulse_audio;pulse_audio;displayed_frame_slot=3;repeat(2)@(negedge clk);check_load(2,2,2);
+ pulse_audio;displayed_frame_slot=3;repeat(2)@(negedge clk);check_load(2,2,2);
  if(!preloading)$fatal(1,"detail 3 preload started before returning to full");
+ pulse_audio;
+ if(display_frame_slot!=0||!final_full_active||finished)
+  $fatal(1,"final full view did not start before audio end");
+ displayed_frame_slot=0;display_transition_busy=1;repeat(2)@(negedge clk);check_load(3,3,2);
+ display_transition_busy=0;
  audio_stream_done=0;audio_drained=0;pulse_audio;
  if(finished)$fatal(1,"finished before final PCM frame");
  pulse_audio;
  if(!finished||display_frame_slot!=0)$fatal(1,"final PCM did not return to full view");
- repeat(2)@(negedge clk);
- if(!active||display_frame_slot!=0)$fatal(1,"full-view return was skipped");
- display_transition_busy=1;displayed_frame_slot=0;
- repeat(2)@(negedge clk);check_load(3,3,2);
- if(!active)$fatal(1,"overview started before full-view transition completed");
- display_transition_busy=0;@(negedge clk);
- repeat(5)@(negedge clk);if(!active)$fatal(1,"final full-view hold was short");
+ repeat(3)@(negedge clk);
+ if(!active||display_frame_slot!=0)$fatal(1,"final full-view hold was short");
  @(negedge clk);
  if(active||artifact!=2||display_frame_slot!=4||!audio_restart)
   $fatal(1,"auto return/promotion failed");

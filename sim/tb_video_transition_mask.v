@@ -98,6 +98,13 @@ module tb_video_transition_mask;
         mode = 3'b011; x = 11'd640; y = 10'd360; expect_rgb(rgb_in);
         x = 11'd100; y = 10'd100; expect_rgb(24'h0);
 
+        // Detail 3 -> final full view uses a center-out diamond burst.
+        mode = 3'b110; closing = 1'b0; progress = 6'd16;
+        x = 11'd640; y = 10'd360; expect_rgb(24'h0);
+        progress = 6'd24; expect_rgb(rgb_in);
+        x = 11'd100; y = 10'd100; expect_rgb(24'h0);
+        progress = 6'd32; expect_rgb(rgb_in);
+
         // Enter: selected overview panel 3 moves from x=768 to center while
         // other panels fade, then the matching full-image crop expands.
         mode = 3'b101; overview_source = 1'b1; closing = 1'b1;

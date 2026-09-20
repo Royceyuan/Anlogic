@@ -16,6 +16,7 @@ module fat32_image_loader #(
     parameter integer BMP_MAX_HEIGHT = 768,
     parameter integer ADAPTIVE_BMP   = 0,
     parameter integer MULTI_IMAGE_BMP = 0,
+    parameter [15:0] ADAPTIVE_BACKGROUND_RGB565 = 16'h0000,
     // v72: replace the fixed 960/540 products with shifts and additions.
     // Disabled by default so existing release candidates keep their netlist.
     parameter integer RESOURCE_OPT_CONSTANT_MULT = 0
@@ -1145,7 +1146,7 @@ always @(posedge clk or negedge rst_n) begin
                 image_wr_addr  <= mul_image_width(adapt_dest_row) + adapt_out_col;
                 if ((adapt_out_col < adapt_off_x) ||
                     (adapt_out_col >= adapt_off_x + adapt_fit_w)) begin
-                    image_wr_data <= 16'h0000;
+                    image_wr_data <= ADAPTIVE_BACKGROUND_RGB565;
                 end else begin
                     image_wr_data <= adapt_row_mem_read;
                     adapt_h_src_x <= adapt_h_src_x + adapt_h_step;
@@ -1190,7 +1191,7 @@ always @(posedge clk or negedge rst_n) begin
                 image_wr_row  <= adapt_dest_row[10:0];
                 image_wr_col  <= adapt_out_col[10:0];
                 image_wr_addr <= mul_image_width(adapt_dest_row) + adapt_out_col;
-                image_wr_data <= 16'h0000;
+                image_wr_data <= ADAPTIVE_BACKGROUND_RGB565;
                 if (adapt_out_col == IMAGE_WIDTH - 1) begin
                     adapt_out_col <= 32'd0;
                     adapt_q       <= adapt_q + 1'b1;

@@ -31,6 +31,8 @@ reg [10:0] center_half_w;
 reg [9:0] center_half_h;
 reg [10:0] dx;
 reg [9:0] dy;
+reg [11:0] diamond_distance;
+reg [10:0] diamond_limit;
 reg [10:0] panel_left;
 reg [10:0] panel_right;
 reg [6:0] museum_step;
@@ -70,6 +72,11 @@ always @(*) begin
         dy = y - (VIDEO_H / 2);
     else
         dy = (VIDEO_H / 2) - y;
+    diamond_distance = {1'b0, dx} + {2'b0, dy};
+    if (VIDEO_W == 1280 && VIDEO_H == 720)
+        diamond_limit = {shape_step, 6'b0} - shape_step - (shape_step >> 1);
+    else
+        diamond_limit = (shape_step * ((VIDEO_W / 2) + (VIDEO_H / 2))) >> 4;
 
     // Museum mode 5 uses 128 frame steps.  With the overview source, the
     // selected panel moves to/from x=512 while the other panels fade.  With
@@ -117,6 +124,7 @@ always @(*) begin
             3'b011: reveal = (dx < center_half_w) &&
                             (dy < center_half_h);                 // zoom reveal
             3'b101: reveal = (x >= panel_left) && (x < panel_right);
+            3'b110: reveal = (diamond_distance < diamond_limit); // diamond burst
             default: reveal = 1'b1;                               // fade
         endcase
     end

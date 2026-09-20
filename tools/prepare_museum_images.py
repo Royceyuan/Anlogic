@@ -1,38 +1,20 @@
 from pathlib import Path
 import shutil
 
-from PIL import Image, ImageOps
+from PIL import Image
 
 
 ROOT = Path(__file__).resolve().parents[2] / "素材"
 DEST = Path("E:/")
-BACKUP = DEST / "BACKUP_MAIN2_BEFORE_FULLSCREEN_20260920"
-SIZE = (1920, 1080)
-FOREGROUND_SIZE = 1080
-SIDE_WIDTH = (SIZE[0] - FOREGROUND_SIZE) // 2
-EDGE_SOURCE_WIDTH = 16
+BACKUP = DEST / "BACKUP_MAIN2_BEFORE_ADAPTIVE_20260920"
+MAX_SIZE = (1920, 1080)
 
 
 def render(source: Path, target: Path) -> None:
     with Image.open(source) as opened:
         image = opened.convert("RGB")
-    foreground = image.resize(
-        (FOREGROUND_SIZE, FOREGROUND_SIZE), Image.Resampling.LANCZOS
-    )
-    fullscreen = Image.new("RGB", SIZE)
-    left_edge = ImageOps.mirror(
-        foreground.crop((0, 0, EDGE_SOURCE_WIDTH, FOREGROUND_SIZE))
-    ).resize((SIDE_WIDTH, FOREGROUND_SIZE), Image.Resampling.LANCZOS)
-    right_edge = ImageOps.mirror(
-        foreground.crop(
-            (FOREGROUND_SIZE - EDGE_SOURCE_WIDTH, 0,
-             FOREGROUND_SIZE, FOREGROUND_SIZE)
-        )
-    ).resize((SIDE_WIDTH, FOREGROUND_SIZE), Image.Resampling.LANCZOS)
-    fullscreen.paste(left_edge, (0, 0))
-    fullscreen.paste(foreground, (SIDE_WIDTH, 0))
-    fullscreen.paste(right_edge, (SIDE_WIDTH + FOREGROUND_SIZE, 0))
-    fullscreen.save(target, "BMP")
+    image.thumbnail(MAX_SIZE, Image.Resampling.LANCZOS)
+    image.save(target, "BMP")
 
 
 def main() -> None:
@@ -52,7 +34,8 @@ def main() -> None:
     for source, target in outputs:
         render(source, target)
         with Image.open(target) as check:
-            assert check.size == SIZE and check.mode == "RGB"
+            assert check.width <= MAX_SIZE[0] and check.height <= MAX_SIZE[1]
+            assert check.mode == "RGB"
     print(f"prepared {len(outputs)} images; backup: {BACKUP}")
 
 

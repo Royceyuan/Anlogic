@@ -2,8 +2,7 @@
 `default_nettype none
 
 module museum_lecture_controller #(
-    parameter integer CLOCK_HZ = 50_000_000,
-    parameter integer END_HOLD_SECONDS = 3
+    parameter integer CLOCK_HZ = 50_000_000
 )(
     input  wire clk, input wire rst_n, input wire enable, input wire overview_ready,
     input  wire confirm_pulse, input wire key_pause, input wire key_return,
@@ -20,25 +19,28 @@ module museum_lecture_controller #(
     output reg [2:0] artifact_index, output reg preloading, output reg cache_ready,
     output reg lecture_active, output reg lecture_paused, output reg lecture_finished,
     output reg audio_restart, output reg [1:0] display_slot,
-    output wire [2:0] display_frame_slot, output reg media_error
+    output wire [2:0] display_frame_slot, output reg media_error,
+    output wire [31:0] audio_frame_index, output reg final_full_active
 );
 
-localparam [31:0] END_HOLD_CYCLES = CLOCK_HZ * END_HOLD_SECONDS;
+localparam [31:0] END_HOLD_CYCLES = (CLOCK_HZ * 3) / 2;
 reg waiting_for_load, loading_next, queued_valid, queued_ready;
 reg [1:0] next_load_step;
 reg [2:0] queued_artifact, current_full_slot, next_full_slot;
 reg current_cache_intact;
 reg return_full_pending, final_full_hold;
 reg [31:0] audio_frames_played, end_hold_count;
-wire [31:0] audio_quarter = audio_total_frames >> 2;
-wire [31:0] audio_half = audio_total_frames >> 1;
-wire [31:0] audio_three_quarters = audio_half + audio_quarter;
+reg [31:0] audio_fifth;
+wire [31:0] audio_two_fifths = audio_fifth << 1;
+wire [31:0] audio_three_fifths = audio_two_fifths + audio_fifth;
+wire [31:0] audio_four_fifths = audio_fifth << 2;
 wire [31:0] next_audio_frame = audio_frames_played + 1'b1;
 
 assign load_detail = (load_slot != 2'd0);
 assign detail_index = load_slot;
 assign display_frame_slot = (display_slot == 2'd0) ? current_full_slot :
                                                     {1'b0, display_slot};
+assign audio_frame_index = audio_frames_played;
 
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
@@ -49,9 +51,18 @@ always @(posedge clk or negedge rst_n) begin
         queued_artifact<=0; queued_valid<=0; queued_ready<=0;
         current_full_slot<=0; next_full_slot<=4; current_cache_intact<=1;
         return_full_pending<=0; final_full_hold<=0;
+        final_full_active<=0;
         audio_frames_played<=0; end_hold_count<=0;
+        audio_fifth<=0;
     end else begin
         audio_restart <= 1'b0;
+        if (!lecture_active)
+            // 0.19921875x: a shallow shift/add approximation avoids a
+            // 32-bit constant divider while keeping phase error below 0.4%.
+            audio_fifth <= (audio_total_frames >> 2) -
+                           (audio_total_frames >> 4) +
+                           (audio_total_frames >> 7) +
+                           (audio_total_frames >> 8);
 
         if (enable && overview_ready && preload_valid && !lecture_active && !preloading &&
             ((!cache_ready || artifact_index != preload_index) &&
@@ -134,6 +145,7 @@ always @(posedge clk or negedge rst_n) begin
             lecture_active<=1; lecture_paused<=0; lecture_finished<=0; display_slot<=0;
             audio_frames_played<=0; end_hold_count<=0; queued_valid<=0; queued_ready<=0;
             return_full_pending<=0; final_full_hold<=0;
+            final_full_active<=0;
         end
 
         if (lecture_active) begin
@@ -141,6 +153,7 @@ always @(posedge clk or negedge rst_n) begin
                 audio_restart<=1; lecture_paused<=0; lecture_finished<=1;
                 display_slot<=0; audio_frames_played<=0; end_hold_count<=0;
                 return_full_pending<=1; final_full_hold<=0;
+                final_full_active<=1;
             end else if (!lecture_finished) begin
                 if (key_pause) lecture_paused<=~lecture_paused;
                 if (audio_frame_pulse && !lecture_paused) begin
@@ -150,11 +163,15 @@ always @(posedge clk or negedge rst_n) begin
                         lecture_finished<=1; lecture_paused<=0; display_slot<=0;
                         end_hold_count<=0; return_full_pending<=1;
                         final_full_hold<=1;
-                    end else if (next_audio_frame>=audio_three_quarters)
+                        final_full_active<=1;
+                    end else if (next_audio_frame>=audio_four_fifths) begin
+                        display_slot<=0;
+                        final_full_active<=1;
+                    end else if (next_audio_frame>=audio_three_fifths)
                         display_slot<=3;
-                    else if (next_audio_frame>=audio_half)
+                    else if (next_audio_frame>=audio_two_fifths)
                         display_slot<=2;
-                    else if (next_audio_frame>=audio_quarter)
+                    else if (next_audio_frame>=audio_fifth)
                         display_slot<=1;
                 end
             end else if (return_full_pending &&
@@ -170,6 +187,7 @@ always @(posedge clk or negedge rst_n) begin
                 audio_restart<=1; lecture_active<=0; lecture_finished<=0;
                 display_slot<=0; audio_frames_played<=0; end_hold_count<=0;
                 return_full_pending<=0; final_full_hold<=0;
+                final_full_active<=0;
                 if (queued_ready && preload_valid && preload_index==queued_artifact) begin
                     artifact_index<=queued_artifact; current_full_slot<=next_full_slot;
                     cache_ready<=1; current_cache_intact<=1;

@@ -564,6 +564,14 @@
                     <Attr Name="CompileOrder" Val="71"/>
                 </FileInfo>
             </File>
+            <File Path="src/video/museum_subtitle_overlay.v">
+                <FileInfo>
+                    <Attr Name="UsedInSyn" Val="true"/>
+                    <Attr Name="UsedInP&R" Val="true"/>
+                    <Attr Name="BelongTo" Val="design_1"/>
+                    <Attr Name="CompileOrder" Val="74"/>
+                </FileInfo>
+            </File>
             <File Path="src/memory/top_1280x720_main1_overview.v">
                 <FileInfo>
                     <Attr Name="UsedInSyn" Val="true"/>
