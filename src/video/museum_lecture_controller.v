@@ -12,6 +12,7 @@ module museum_lecture_controller #(
     input  wire audio_frame_pulse, input wire [31:0] audio_total_frames,
     input  wire audio_stream_done, input wire audio_drained,
     input  wire [2:0] displayed_frame_slot,
+    input  wire display_transition_busy,
     output reg load_request, input wire load_accept, input wire load_complete,
     input  wire load_error, output reg [1:0] load_slot,
     output reg [2:0] load_frame_slot, output reg [2:0] load_artifact_index,
@@ -25,8 +26,9 @@ module museum_lecture_controller #(
 localparam [31:0] END_HOLD_CYCLES = CLOCK_HZ * END_HOLD_SECONDS;
 reg waiting_for_load, loading_next, queued_valid, queued_ready;
 reg [1:0] next_load_step;
-reg [2:0] queued_artifact, current_d3_slot, next_d3_slot;
+reg [2:0] queued_artifact, current_full_slot, next_full_slot;
 reg current_cache_intact;
+reg return_full_pending;
 reg [31:0] audio_frames_played, end_hold_count;
 wire [31:0] audio_quarter = audio_total_frames >> 2;
 wire [31:0] audio_half = audio_total_frames >> 1;
@@ -35,8 +37,8 @@ wire [31:0] next_audio_frame = audio_frames_played + 1'b1;
 
 assign load_detail = (load_slot != 2'd0);
 assign detail_index = load_slot;
-assign display_frame_slot = (display_slot == 2'd3) ? current_d3_slot :
-                                                          {1'b0, display_slot};
+assign display_frame_slot = (display_slot == 2'd0) ? current_full_slot :
+                                                    {1'b0, display_slot};
 
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
@@ -45,7 +47,8 @@ always @(posedge clk or negedge rst_n) begin
         lecture_active<=0; lecture_paused<=0; lecture_finished<=0; audio_restart<=0;
         display_slot<=0; media_error<=0; loading_next<=0; next_load_step<=0;
         queued_artifact<=0; queued_valid<=0; queued_ready<=0;
-        current_d3_slot<=3; next_d3_slot<=4; current_cache_intact<=1;
+        current_full_slot<=0; next_full_slot<=4; current_cache_intact<=1;
+        return_full_pending<=0;
         audio_frames_played<=0; end_hold_count<=0;
     end else begin
         audio_restart <= 1'b0;
@@ -56,35 +59,35 @@ always @(posedge clk or negedge rst_n) begin
             artifact_index<=preload_index; load_artifact_index<=preload_index;
             load_slot<=0; load_frame_slot<=0; load_request<=1; waiting_for_load<=0;
             preloading<=1; loading_next<=0; cache_ready<=0; media_error<=0;
-            current_d3_slot<=3; current_cache_intact<=1;
+            current_full_slot<=0; next_full_slot<=4; current_cache_intact<=1;
         end
 
-        // Use the spare fifth picture slot first, then overwrite each current
-        // stage only after the video domain has switched away from it.
+        // Slots 0/4 ping-pong as the full-view buffer. Detail slots 1/2/3
+        // are overwritten only after the video domain has left each detail.
         if (lecture_active && preload_valid && preload_index != artifact_index &&
             !queued_valid && !preloading) begin
             queued_artifact<=preload_index; queued_valid<=1; queued_ready<=0;
-            next_d3_slot<=(current_d3_slot==3)?4:3; next_load_step<=0;
-            load_artifact_index<=preload_index; load_slot<=3;
-            load_frame_slot<=(current_d3_slot==3)?4:3;
+            next_full_slot<=(current_full_slot==0)?4:0; next_load_step<=0;
+            load_artifact_index<=preload_index; load_slot<=0;
+            load_frame_slot<=(current_full_slot==0)?4:0;
             load_request<=1; waiting_for_load<=0; preloading<=1; loading_next<=1;
             media_error<=0;
         end
 
         if (preloading && loading_next && !load_request && !waiting_for_load) begin
-            if (next_load_step==1 && (!lecture_active || displayed_frame_slot==1)) begin
-                load_slot<=0; load_frame_slot<=0; load_request<=1;
-            end else if (next_load_step==2 && (!lecture_active || displayed_frame_slot==2)) begin
+            if (next_load_step==1 && (!lecture_active || displayed_frame_slot==2)) begin
                 load_slot<=1; load_frame_slot<=1; load_request<=1;
-            end else if (next_load_step==3 &&
-                         (!lecture_active || displayed_frame_slot==current_d3_slot)) begin
+            end else if (next_load_step==2 && (!lecture_active || displayed_frame_slot==3)) begin
                 load_slot<=2; load_frame_slot<=2; load_request<=1;
+            end else if (next_load_step==3 &&
+                         (!lecture_active || displayed_frame_slot==current_full_slot)) begin
+                load_slot<=3; load_frame_slot<=3; load_request<=1;
             end
         end
 
         if (preloading && load_request && load_accept) begin
             load_request<=0; waiting_for_load<=1;
-            if (loading_next && load_frame_slot<3)
+            if (loading_next && load_slot!=0)
                 current_cache_intact<=0;
         end
 
@@ -100,7 +103,7 @@ always @(posedge clk or negedge rst_n) begin
                     preloading<=0; loading_next<=0; queued_valid<=0; queued_ready<=0;
                 end else if (preload_index!=queued_artifact) begin
                     queued_artifact<=preload_index; load_artifact_index<=preload_index;
-                    next_load_step<=0; load_slot<=3; load_frame_slot<=next_d3_slot;
+                    next_load_step<=0; load_slot<=0; load_frame_slot<=next_full_slot;
                     load_request<=1; queued_ready<=0;
                 end else if (next_load_step==3) begin
                     preloading<=0; loading_next<=0;
@@ -108,7 +111,7 @@ always @(posedge clk or negedge rst_n) begin
                         queued_ready<=1;
                     end else begin
                         artifact_index<=queued_artifact;
-                        current_d3_slot<=next_d3_slot;
+                        current_full_slot<=next_full_slot;
                         cache_ready<=1; current_cache_intact<=1;
                         queued_valid<=0; queued_ready<=0;
                     end
@@ -130,30 +133,14 @@ always @(posedge clk or negedge rst_n) begin
             artifact_index==selected_index && audio_prepared && confirm_pulse) begin
             lecture_active<=1; lecture_paused<=0; lecture_finished<=0; display_slot<=0;
             audio_frames_played<=0; end_hold_count<=0; queued_valid<=0; queued_ready<=0;
+            return_full_pending<=0;
         end
 
         if (lecture_active) begin
             if (key_return) begin
-                audio_restart<=1; lecture_active<=0; lecture_paused<=0;
-                lecture_finished<=0; display_slot<=0; audio_frames_played<=0;
-                end_hold_count<=0;
-                if (queued_ready && preload_valid && preload_index==queued_artifact) begin
-                    artifact_index<=queued_artifact; current_d3_slot<=next_d3_slot;
-                    cache_ready<=1; current_cache_intact<=1;
-                    queued_valid<=0; queued_ready<=0;
-                    preloading<=0; loading_next<=0;
-                    load_request<=0; waiting_for_load<=0;
-                end else if (queued_valid && preload_valid &&
-                             preload_index==queued_artifact) begin
-                    cache_ready<=0;
-                end else begin
-                    if (!current_cache_intact ||
-                        (preload_valid && preload_index!=artifact_index))
-                    cache_ready<=0;
-                    preloading<=0; loading_next<=0;
-                    load_request<=0; waiting_for_load<=0;
-                    queued_valid<=0; queued_ready<=0;
-                end
+                audio_restart<=1; lecture_paused<=0; lecture_finished<=1;
+                display_slot<=0; audio_frames_played<=0; end_hold_count<=0;
+                return_full_pending<=1;
             end else if (!lecture_finished) begin
                 if (key_pause) lecture_paused<=~lecture_paused;
                 if (audio_frame_pulse && !lecture_paused) begin
@@ -164,13 +151,20 @@ always @(posedge clk or negedge rst_n) begin
                 end
                 if (audio_stream_done && audio_drained) begin
                     lecture_finished<=1; lecture_paused<=0; display_slot<=3;
-                    end_hold_count<=0;
+                    end_hold_count<=0; return_full_pending<=0;
                 end
-            end else if (END_HOLD_CYCLES<=1 || end_hold_count==END_HOLD_CYCLES-1'b1) begin
-                audio_restart<=1; lecture_active<=0; lecture_finished<=0; display_slot<=0;
-                audio_frames_played<=0; end_hold_count<=0;
+            end else if (!return_full_pending &&
+                         (END_HOLD_CYCLES<=1 ||
+                          end_hold_count==END_HOLD_CYCLES-1'b1)) begin
+                display_slot<=0; return_full_pending<=1;
+            end else if (return_full_pending &&
+                         displayed_frame_slot==current_full_slot &&
+                         !display_transition_busy) begin
+                audio_restart<=1; lecture_active<=0; lecture_finished<=0;
+                display_slot<=0; audio_frames_played<=0; end_hold_count<=0;
+                return_full_pending<=0;
                 if (queued_ready && preload_valid && preload_index==queued_artifact) begin
-                    artifact_index<=queued_artifact; current_d3_slot<=next_d3_slot;
+                    artifact_index<=queued_artifact; current_full_slot<=next_full_slot;
                     cache_ready<=1; current_cache_intact<=1;
                     queued_valid<=0; queued_ready<=0;
                     preloading<=0; loading_next<=0;
@@ -186,7 +180,8 @@ always @(posedge clk or negedge rst_n) begin
                     load_request<=0; waiting_for_load<=0;
                     queued_valid<=0; queued_ready<=0;
                 end
-            end else end_hold_count<=end_hold_count+1'b1;
+            end else if (!return_full_pending)
+                end_hold_count<=end_hold_count+1'b1;
         end
     end
 end

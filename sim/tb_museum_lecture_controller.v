@@ -4,6 +4,7 @@ module tb_museum_lecture_controller;
 reg clk=0,rst_n=0,enable=1,overview_ready=0,confirm=0,key_pause=0,key_return=0;
 reg preload_valid=0,audio_prepared=0,audio_frame_pulse=0,audio_stream_done=0;
 reg audio_drained=0,load_accept=0,load_complete=0,load_error=0;
+reg display_transition_busy=0;
 reg [2:0] selected=0,preload_index=0,displayed_frame_slot=5;
 reg [31:0] audio_total_frames=8;
 wire load_request,load_detail,preloading,cache_ready,active,paused,finished;
@@ -18,6 +19,7 @@ museum_lecture_controller #(.CLOCK_HZ(2),.END_HOLD_SECONDS(1)) dut(
  .audio_prepared(audio_prepared),.audio_frame_pulse(audio_frame_pulse),
  .audio_total_frames(audio_total_frames),.audio_stream_done(audio_stream_done),
  .audio_drained(audio_drained),.displayed_frame_slot(displayed_frame_slot),
+ .display_transition_busy(display_transition_busy),
  .load_request(load_request),.load_accept(load_accept),.load_complete(load_complete),
  .load_error(load_error),.load_slot(load_slot),.load_frame_slot(load_frame_slot),
  .load_artifact_index(load_artifact),.load_detail(load_detail),.detail_index(detail_index),
@@ -52,36 +54,48 @@ initial begin
  if(!active||display_frame_slot!=0)$fatal(1,"lecture start failed");
  key_pause=1;@(negedge clk);key_pause=0;if(!paused)$fatal(1,"pause failed");
  key_pause=1;@(negedge clk);key_pause=0;if(paused)$fatal(1,"resume failed");
- preload_index=2;@(negedge clk);check_load(3,4,2);
- pulse_audio;pulse_audio;displayed_frame_slot=1;repeat(2)@(negedge clk);check_load(0,0,2);
+ preload_index=2;@(negedge clk);check_load(0,4,2);
+ pulse_audio;pulse_audio;displayed_frame_slot=1;repeat(2)@(negedge clk);
+ if(load_request)$fatal(1,"detail 1 overwritten while displayed");
  pulse_audio;pulse_audio;displayed_frame_slot=2;repeat(2)@(negedge clk);check_load(1,1,2);
  pulse_audio;pulse_audio;displayed_frame_slot=3;repeat(2)@(negedge clk);check_load(2,2,2);
- if(preloading)$fatal(1,"rolling cache incomplete");
+ if(!preloading)$fatal(1,"detail 3 preload started before returning to full");
  audio_stream_done=1;audio_drained=0;pulse_audio;pulse_audio;
  if(finished)$fatal(1,"finished before drain");
  audio_drained=1;@(negedge clk);if(!finished)$fatal(1,"drain finish missing");
  repeat(2)@(negedge clk);
- if(active||artifact!=2||display_frame_slot!=0||!audio_restart)
+ if(!active||display_frame_slot!=0)$fatal(1,"full-view return was skipped");
+ display_transition_busy=1;displayed_frame_slot=0;
+ repeat(2)@(negedge clk);check_load(3,3,2);
+ if(!active)$fatal(1,"overview started before full-view transition completed");
+ display_transition_busy=0;@(negedge clk);
+ if(active||artifact!=2||display_frame_slot!=4||!audio_restart)
   $fatal(1,"auto return/promotion failed");
  audio_stream_done=0;audio_drained=0;selected=2;confirm=1;@(negedge clk);confirm=0;
  if(!active)$fatal(1,"promoted cache start failed");
- force dut.display_slot=3;#1;if(display_frame_slot!=4)$fatal(1,"alternate d3 missing");
+ force dut.display_slot=3;#1;if(display_frame_slot!=3)$fatal(1,"detail 3 mapping failed");
  release dut.display_slot;
+ displayed_frame_slot=3;
  key_return=1;@(negedge clk);key_return=0;
- if(active||!audio_restart)$fatal(1,"key return failed");
+ if(!active||!finished||!audio_restart)$fatal(1,"key return did not request full view");
+ display_transition_busy=1;displayed_frame_slot=4;repeat(2)@(negedge clk);
+ if(!active)$fatal(1,"key return skipped full-view transition");
+ display_transition_busy=0;@(negedge clk);
+ if(active)$fatal(1,"key return failed");
 
- // Returning after only the spare-slot preload must continue with the three
- // missing pictures instead of discarding progress and restarting at D3.
+ // Returning after only the spare full-view preload must continue with the
+ // three missing details instead of discarding progress.
  selected=2;confirm=1;@(negedge clk);confirm=0;
  if(!active)$fatal(1,"second lecture start failed");
- preload_index=1;@(negedge clk);check_load(3,3,1);
+ displayed_frame_slot=4;preload_index=1;@(negedge clk);check_load(0,0,1);
  key_return=1;@(negedge clk);key_return=0;
+ @(negedge clk);
  if(active||!preloading||!dut.queued_valid)
   $fatal(1,"partial preload was discarded on return");
- repeat(2)@(negedge clk);check_load(0,0,1);
  repeat(2)@(negedge clk);check_load(1,1,1);
  repeat(2)@(negedge clk);check_load(2,2,1);
- if(preloading||!cache_ready||artifact!=1)
+ repeat(2)@(negedge clk);check_load(3,3,1);
+ if(preloading||!cache_ready||artifact!=1||display_frame_slot!=0)
   $fatal(1,"partial preload did not finish and promote in overview");
  $display("PASS tb_museum_lecture_controller");$finish;
 end

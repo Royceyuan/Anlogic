@@ -503,7 +503,8 @@ wire product_show_paused;
 wire [1:0] product_show_transition_context;
 wire [1:0] product_show_demo_step;
 wire [2:0] lecture_transition_mode =
-    (lecture_display_slot == 2'd0) ? 3'd5 :
+    (lecture_display_slot == 2'd0) ?
+        ((lecture_active && lecture_finished) ? 3'd0 : 3'd5) :
     (lecture_display_slot == 2'd1) ? 3'd2 : 3'd0;
 wire [2:0] selected_transition_mode =
     ENABLE_MUSEUM_LECTURE ? lecture_transition_mode :
@@ -565,6 +566,7 @@ reg audio_format_error_ff1, audio_format_error_ff2;
 reg audio_file_error_ff1, audio_file_error_ff2;
 reg audio_fifo_empty_ff1, audio_fifo_empty_ff2;
 reg [2:0] displayed_frame_slot_ff1, displayed_frame_slot_ff2;
+reg transition_active_ff1_50m, transition_active_ff2_50m;
 reg audio_switch_reset_ff1, audio_switch_reset_ff2;
 wire audio_sample_valid;
 wire signed [15:0] audio_sample_left;
@@ -637,11 +639,15 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         audio_fifo_empty_ff2 <= 1'b1;
         displayed_frame_slot_ff1 <= 3'd5;
         displayed_frame_slot_ff2 <= 3'd5;
+        transition_active_ff1_50m <= 1'b0;
+        transition_active_ff2_50m <= 1'b0;
     end else begin
         audio_fifo_empty_ff1 <= audio_fifo_empty;
         audio_fifo_empty_ff2 <= audio_fifo_empty_ff1;
         displayed_frame_slot_ff1 <= display_media_index[2:0];
         displayed_frame_slot_ff2 <= displayed_frame_slot_ff1;
+        transition_active_ff1_50m <= transition_active;
+        transition_active_ff2_50m <= transition_active_ff1_50m;
     end
 end
 
@@ -664,6 +670,7 @@ generate
             .audio_stream_done(audio_stream_done),
             .audio_drained(audio_fifo_empty_ff2),
             .displayed_frame_slot(displayed_frame_slot_ff2),
+            .display_transition_busy(transition_active_ff2_50m),
             .load_request(lecture_load_request),
             .load_accept(lecture_load_accept),
             .load_complete(load_complete_event), .load_error(load_error_event),
