@@ -592,6 +592,8 @@ wire scene_timing_valid;
 wire [31:0] scene_cut1, scene_cut2, scene_cut3, scene_cut4;
 wire subtitle_format_error_50m;
 wire subtitle_file_error_50m;
+wire subtitle_entry_ready = !ENABLE_SUBTITLE || subtitle_ready_50m ||
+                            subtitle_format_error_50m || subtitle_file_error_50m;
 reg audio_format_error_ff1, audio_format_error_ff2;
 reg audio_file_error_ff1, audio_file_error_ff2;
 reg audio_fifo_empty_ff1, audio_fifo_empty_ff2;
@@ -642,6 +644,7 @@ generate
             .enable(overview_mode),
             .media_ready(overview_cache_ready && museum_preload_valid &&
                          lecture_cache_ready && audio_prepared &&
+                         subtitle_entry_ready &&
                          (lecture_artifact_index == overview_selected_ctrl)),
             .key_confirm(key_press_pulse[1]),
             .key_previous(key_press_pulse[3]),

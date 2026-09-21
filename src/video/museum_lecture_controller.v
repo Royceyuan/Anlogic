@@ -27,7 +27,7 @@ module museum_lecture_controller #(
 );
 
 localparam [31:0] END_HOLD_CYCLES = (CLOCK_HZ * 6) / 5;
-reg waiting_for_load, loading_next, queued_valid, queued_ready;
+reg waiting_for_load, loading_next, queued_valid, queued_ready, retry_used;
 reg [1:0] next_load_step;
 reg [2:0] queued_artifact, current_full_slot, next_full_slot;
 reg current_cache_intact;
@@ -55,7 +55,7 @@ always @(posedge clk or negedge rst_n) begin
         load_artifact_index<=0; artifact_index<=0; preloading<=0; cache_ready<=0;
         lecture_active<=0; lecture_paused<=0; lecture_finished<=0; audio_restart<=0;
         display_slot<=0; media_error<=0; loading_next<=0; next_load_step<=0;
-        queued_artifact<=0; queued_valid<=0; queued_ready<=0;
+        queued_artifact<=0; queued_valid<=0; queued_ready<=0; retry_used<=0;
         current_full_slot<=0; next_full_slot<=4; current_cache_intact<=1;
         return_full_pending<=0; final_full_hold<=0;
         final_full_active<=0;
@@ -77,6 +77,7 @@ always @(posedge clk or negedge rst_n) begin
             artifact_index<=preload_index; load_artifact_index<=preload_index;
             load_slot<=0; load_frame_slot<=0; load_request<=1; waiting_for_load<=0;
             preloading<=1; loading_next<=0; cache_ready<=0; media_error<=0;
+            retry_used<=0;
             current_full_slot<=0; next_full_slot<=4; current_cache_intact<=1;
         end
 
@@ -110,10 +111,17 @@ always @(posedge clk or negedge rst_n) begin
         end
 
         if (preloading && waiting_for_load && load_error) begin
-            waiting_for_load<=0; preloading<=0; load_request<=0; media_error<=1;
-            if (loading_next) begin
-                queued_valid<=0; queued_ready<=0; loading_next<=0;
-            end else cache_ready<=0;
+            waiting_for_load<=0;
+            if (!loading_next && !retry_used && preload_valid &&
+                preload_index==artifact_index) begin
+                load_slot<=0; load_frame_slot<=0; load_request<=1;
+                retry_used<=1; media_error<=0;
+            end else begin
+                preloading<=0; load_request<=0; media_error<=1;
+                if (loading_next) begin
+                    queued_valid<=0; queued_ready<=0; loading_next<=0;
+                end else cache_ready<=0;
+            end
         end else if (preloading && waiting_for_load && load_complete) begin
             waiting_for_load<=0;
             if (loading_next) begin

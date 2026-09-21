@@ -128,6 +128,16 @@ initial begin
  if(rgb_o!==24'hFFF1C7)$fatal(1,"second cue did not settle: %h",rgb_o);
  audio_frame=200;repeat(8)@(negedge vclk);
  if(rgb_o!==rgb)$fatal(1,"expired subtitle changed image: %h",rgb_o);
+ active=0;audio_frame=0;restart=1;@(negedge clk50);restart=0;
+ i=0;
+ while(!ready && i<100000) begin @(negedge clk50);i=i+1;end
+ if(!ready)$fatal(1,"subtitle did not reload for repeated lecture");
+ active=1;audio_frame=1;
+ for(i=0;i<45;i=i+1) begin
+  @(negedge vclk);frame_tick=1;@(negedge vclk);frame_tick=0;
+ end
+ repeat(5)@(negedge vclk);
+ if(rgb_o!==24'hFFF1C7)$fatal(1,"repeated lecture subtitle missing: %h",rgb_o);
  $display("PASS tb_museum_subtitle_overlay");$finish;
 end
 endmodule

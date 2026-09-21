@@ -110,6 +110,28 @@ initial begin
  repeat(2)@(negedge clk);check_load(3,3,1);
  if(preloading||!cache_ready||artifact!=1||display_frame_slot!=0)
   $fatal(1,"partial preload did not finish and promote in overview");
+
+ // Re-entering and returning from the same cached artifact must not leave
+ // the preload FSM stuck when the switches subsequently select a new one.
+ selected=1;audio_prepared=1;
+ repeat(2) begin
+  confirm=1;@(negedge clk);confirm=0;
+  if(!active)$fatal(1,"repeat lecture start failed");
+  displayed_frame_slot=0;key_return=1;@(negedge clk);key_return=0;
+  @(negedge clk);
+  if(active)$fatal(1,"repeat lecture return failed");
+ end
+ preload_index=3;@(negedge clk);
+ if(!load_request)$fatal(1,"new artifact did not start after repeated lectures");
+ @(negedge clk);load_accept=1;@(negedge clk);load_accept=0;
+ @(negedge clk);load_error=1;@(negedge clk);load_error=0;
+ if(!load_request||!preloading||media_error)
+  $fatal(1,"transient load error was not retried");
+ check_load(0,0,3);
+ for(i=1;i<4;i=i+1) begin
+  @(negedge clk);check_load(i,i,3);
+ end
+ if(!cache_ready||artifact!=3)$fatal(1,"retry did not rebuild cache");
  $display("PASS tb_museum_lecture_controller");$finish;
 end
 endmodule
