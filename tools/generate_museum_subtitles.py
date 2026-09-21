@@ -66,6 +66,8 @@ def parse_srt(path: Path, total_frames: int, timing_mode: str):
     if not raw or len(raw) > 32:
         raise ValueError(f"{path}: cue count must be 1..32")
     srt_end_ms = timestamp_ms(raw[-1][1])
+    if timing_mode == "auto":
+        timing_mode = "direct" if srt_end_ms * 48 <= total_frames else "fit"
     cues = [
         (timestamp_frames(start, total_frames, srt_end_ms, timing_mode),
          timestamp_frames(end, total_frames, srt_end_ms, timing_mode), text)
@@ -156,8 +158,8 @@ def main() -> None:
     parser.add_argument("--dest", type=Path, default=Path("E:/"))
     parser.add_argument("--audio-dir", type=Path)
     parser.add_argument(
-        "--timing-mode", choices=("direct", "fit"), default="direct",
-        help="direct preserves SRT timestamps; fit scales the whole timeline to WAV duration",
+        "--timing-mode", choices=("direct", "fit", "auto"), default="direct",
+        help="direct preserves SRT timestamps; fit scales to WAV; auto uses direct when it fits",
     )
     args = parser.parse_args()
     audio_dir = args.audio_dir or args.dest
