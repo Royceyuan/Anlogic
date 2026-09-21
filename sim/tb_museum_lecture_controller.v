@@ -76,7 +76,7 @@ initial begin
  if(finished)$fatal(1,"finished before final PCM frame");
  pulse_audio;
  if(!finished||display_frame_slot!=0)$fatal(1,"final PCM did not return to full view");
- repeat(3)@(negedge clk);
+ repeat(2)@(negedge clk);
  if(!active||display_frame_slot!=0)$fatal(1,"final full-view hold was short");
  @(negedge clk);
  if(active||artifact!=2||display_frame_slot!=4||!audio_restart)

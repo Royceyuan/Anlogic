@@ -26,7 +26,7 @@ module museum_lecture_controller #(
     output wire [31:0] audio_frame_index, output reg final_full_active
 );
 
-localparam [31:0] END_HOLD_CYCLES = (CLOCK_HZ * 3) / 2;
+localparam [31:0] END_HOLD_CYCLES = (CLOCK_HZ * 6) / 5;
 reg waiting_for_load, loading_next, queued_valid, queued_ready;
 reg [1:0] next_load_step;
 reg [2:0] queued_artifact, current_full_slot, next_full_slot;

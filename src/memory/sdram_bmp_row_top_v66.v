@@ -458,7 +458,7 @@ reg [2:0] transition_mode_ff1;
 reg [2:0] transition_mode_ff2;
 reg [2:0] transition_mode;
 reg [7:0] transition_progress;
-reg [1:0] transition_pace;
+reg transition_pace;
 reg [4:0] fade_level;
 reg fade_out_active;
 reg [1:0] brightness_level_ff1;
@@ -1795,7 +1795,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
         transition_mode_ff2 <= 3'b000;
         transition_mode    <= 3'b000;
         transition_progress <= 8'd32;
-        transition_pace    <= 2'd0;
+        transition_pace    <= 1'b0;
         brightness_level_ff1 <= 2'd0;
         brightness_level_ff2 <= 2'd0;
         contrast_level_ff1   <= 2'd0;
@@ -1887,7 +1887,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
             if (!switch_pending)
                 transition_progress <= 8'd0;
             if (!switch_pending)
-                transition_pace <= 2'd0;
+                transition_pace <= 1'b0;
             if (ENABLE_FADE)
                 fade_out_active <= 1'b1;
         end else if (ENABLE_MULTI_FRAME_PRELOAD && video_run &&
@@ -1917,7 +1917,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
             if (!switch_pending)
                 transition_progress <= 8'd0;
             if (!switch_pending)
-                transition_pace <= 2'd0;
+                transition_pace <= 1'b0;
             if (ENABLE_FADE)
                 fade_out_active <= 1'b1;
         end else if (ENABLE_MULTI_FRAME_PRELOAD && video_run && switch_pending &&
@@ -1953,7 +1953,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
             direct_switch_pending <= 1'b0;
             transition_mode <= museum_switch_transition_mode;
             transition_progress <= 8'd0;
-            transition_pace <= 2'd0;
+            transition_pace <= 1'b0;
             if (ENABLE_FADE)
                 fade_out_active <= 1'b1;
         end else if (!video_run && !read_accepted && !read_ready &&
@@ -1997,7 +1997,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
             fade_level         <= direct_switch_pending ? 5'd16 :
                                   ((transition_mode == 3'b000) ? 5'd0 : 5'd16);
             fade_out_active    <= 1'b0;
-            transition_pace    <= 2'd0;
+            transition_pace    <= 1'b0;
             if (direct_switch_pending)
                 transition_progress <= 8'd32;
             else if (transition_mode == 3'b000)
@@ -2023,12 +2023,9 @@ always @(posedge video_clk or negedge video_rst_n) begin
         end else if (video_run && video_frame_tick && ENABLE_FADE) begin
             if (transition_mode == 3'b110 &&
                 transition_progress < transition_end) begin
-                if (transition_pace == 2'd2)
-                    transition_pace <= 2'd0;
-                else
-                    transition_pace <= transition_pace + 1'b1;
+                transition_pace <= ~transition_pace;
             end else begin
-                transition_pace <= 2'd0;
+                transition_pace <= 1'b0;
             end
             if (fade_out_active) begin
                 if (transition_mode == 3'b000) begin
@@ -2036,7 +2033,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
                         fade_level <= fade_level - 1'b1;
                 end else if (transition_progress < transition_midpoint &&
                              (transition_mode != 3'b110 ||
-                              transition_pace != 2'd2)) begin
+                              !transition_pace)) begin
                     transition_progress <= transition_progress + 1'b1;
                 end
             end else if (transition_mode == 3'b000) begin
@@ -2044,7 +2041,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
                     fade_level <= fade_level + 1'b1;
             end else if (transition_progress < transition_end &&
                          (transition_mode != 3'b110 ||
-                          transition_pace != 2'd2)) begin
+                          !transition_pace)) begin
                 transition_progress <= transition_progress + 1'b1;
             end
         end else if (video_run && video_read_en && !LINEBUF_SCALE) begin

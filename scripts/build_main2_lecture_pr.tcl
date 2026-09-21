@@ -25,13 +25,15 @@ report_timing_summary -file $build_root/main2_lecture_gate.timing
 flow_status -file $build_root/main2_lecture_syn.status
 export_db $build_root/main2_lecture_gate.db
 
-set_param place seed 75
+set_param place seed 96
 place
 update_timing -mode manhattan
 report_area -io_info -file $build_root/main2_lecture_place.area
 report_timing_summary -file $build_root/main2_lecture_place.timing
+set_param route fix_hold off
 route
 fix_hold
+set_param route fix_hold on
 update_timing -mode final
 report_timing_status -file $build_root/main2_lecture_phy.ts
 report_timing_summary -file $build_root/main2_lecture_final.timing
