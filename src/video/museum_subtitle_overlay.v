@@ -32,7 +32,7 @@ localparam integer WIDTH = 800;
 localparam integer HEIGHT = 32;
 localparam integer BITMAP_BYTES = 3200;
 localparam [9:0] Y_START = VIDEO_H - 44;
-localparam [11:0] SCROLL_STEP = 12'd16;
+localparam [4:0] FADE_MAX = 5'd16;
 localparam [4:0]
     S_WAIT_CARD = 5'd0,
     S_REQ_ROOT = 5'd5, S_WAIT_ROOT = 5'd6,
@@ -72,8 +72,9 @@ reg ack_sync1, ack_sync2, ack_seen;
 reg commit_sync1, commit_sync2, commit_seen, active_bank, video_ack_toggle;
 reg visible_sync1, visible_sync2;
 reg [9:0] current_width;
-reg [11:0] scroll_x, outgoing_shift, relative_x;
-reg [1:0] slide_phase;
+reg [11:0] relative_x;
+reg [1:0] fade_phase;
+reg [4:0] fade_level;
 reg video_has_cue, mapped_valid;
 reg [11:0] bitmap_rd_addr;
 reg hs_q,vs_q,de_q,mapped_q,bar_q,active_bank_q;
@@ -82,7 +83,7 @@ reg [9:0] y_q;
 reg [23:0] rgb_q;
 reg [2:0] pixel_q;
 
-localparam [1:0] SLIDE_IDLE=2'd0, SLIDE_OUT=2'd1, SLIDE_IN=2'd2;
+localparam [1:0] FADE_IDLE=2'd0, FADE_OUT=2'd1, FADE_IN=2'd2;
 
 function [31:0] cluster_lba;
     input [31:0] cluster;
@@ -383,33 +384,35 @@ subtitle_bitmap_ram #(.ADDR_WIDTH(12),.DEPTH(4096),.REGISTER_READ(0)) u_bitmap1 
     .wr_data(bitmap_wr_data),.rd_clk(video_clk),.rd_addr(bitmap_rd_addr),.rd_data(bitmap1_q));
 
 wire [11:0] current_center = (VIDEO_W-current_width) >> 1;
-wire [11:0] outgoing_limit = current_center + current_width;
 wire [7:0] bitmap_q = active_bank_q ? bitmap1_q : bitmap0_q;
+reg [23:0] faded_text_rgb;
 
 always @(*) begin
-    if (slide_phase==SLIDE_OUT) begin
-        relative_x = x_i+outgoing_shift>=current_center ?
-                     x_i+outgoing_shift-current_center : 0;
-        mapped_valid = de_i && visible_sync2 && video_has_cue &&
-                       y_i>=Y_START && y_i<Y_START+HEIGHT &&
-                       x_i+outgoing_shift>=current_center &&
-                       relative_x<current_width;
-    end else begin
-        relative_x = x_i>=scroll_x ? x_i-scroll_x : 0;
-        mapped_valid = de_i && visible_sync2 && video_has_cue &&
-                       y_i>=Y_START && y_i<Y_START+HEIGHT &&
-                       x_i>=scroll_x && relative_x<current_width;
-    end
+    relative_x = x_i>=current_center ? x_i-current_center : 0;
+    mapped_valid = de_i && visible_sync2 && video_has_cue &&
+                   y_i>=Y_START && y_i<Y_START+HEIGHT &&
+                   x_i>=current_center && relative_x<current_width;
     bitmap_rd_addr = ((y_i-Y_START)<<6)+((y_i-Y_START)<<5)+
                      ((y_i-Y_START)<<2)+relative_x[9:3];
+    case (fade_level[4:1])
+        4'd0: faded_text_rgb = 24'h101820;
+        4'd1: faded_text_rgb = 24'h2E332F;
+        4'd2: faded_text_rgb = 24'h4C4E49;
+        4'd3: faded_text_rgb = 24'h6A6962;
+        4'd4: faded_text_rgb = 24'h888474;
+        4'd5: faded_text_rgb = 24'hA69F8D;
+        4'd6: faded_text_rgb = 24'hC4BAA6;
+        4'd7: faded_text_rgb = 24'hE2D5BD;
+        default: faded_text_rgb = 24'hFFF1C7;
+    endcase
 end
 
 always @(posedge video_clk or negedge video_rst_n) begin
     if (!video_rst_n) begin
         commit_sync1<=0; commit_sync2<=0; commit_seen<=0; active_bank<=0;
         video_ack_toggle<=0; visible_sync1<=0; visible_sync2<=0;
-        current_width<=0; scroll_x<=VIDEO_W; outgoing_shift<=0;
-        video_has_cue<=0; slide_phase<=SLIDE_IDLE;
+        current_width<=0; fade_level<=0;
+        video_has_cue<=0; fade_phase<=FADE_IDLE;
         hs_q<=1;vs_q<=1;de_q<=0;mapped_q<=0;bar_q<=0;active_bank_q<=0;
         x_q<=0;y_q<=0;rgb_q<=0;pixel_q<=0;
         hs_o<=1;vs_o<=1;de_o<=0;x_o<=0;y_o<=0;rgb_o<=0;
@@ -420,27 +423,26 @@ always @(posedge video_clk or negedge video_rst_n) begin
             if (commit_sync2!=commit_seen) begin
                 commit_seen<=commit_sync2;
                 if (video_has_cue&&visible_sync2) begin
-                    outgoing_shift<=0; slide_phase<=SLIDE_OUT;
+                    fade_phase<=FADE_OUT;
                 end else begin
                     active_bank<=commit_bank; current_width<=commit_width;
-                    scroll_x<=VIDEO_W; video_has_cue<=1; slide_phase<=SLIDE_IN;
+                    fade_level<=0; video_has_cue<=1; fade_phase<=FADE_IN;
                 end
-            end else if (slide_phase==SLIDE_OUT) begin
-                if (outgoing_limit-outgoing_shift<=SCROLL_STEP) begin
+            end else if (fade_phase==FADE_OUT) begin
+                if (fade_level==0) begin
                     active_bank<=commit_bank; current_width<=commit_width;
-                    scroll_x<=VIDEO_W; outgoing_shift<=outgoing_limit;
-                    slide_phase<=SLIDE_IN;
-                end else outgoing_shift<=outgoing_shift+SCROLL_STEP;
-            end else if (slide_phase==SLIDE_IN) begin
-                if (scroll_x-current_center<=SCROLL_STEP) begin
-                    scroll_x<=current_center; slide_phase<=SLIDE_IDLE;
+                    fade_phase<=FADE_IN;
+                end else fade_level<=fade_level-1'b1;
+            end else if (fade_phase==FADE_IN) begin
+                if (fade_level==FADE_MAX) begin
+                    fade_phase<=FADE_IDLE;
                     video_ack_toggle<=~video_ack_toggle;
-                end else scroll_x<=scroll_x-SCROLL_STEP;
+                end else fade_level<=fade_level+1'b1;
             end
         end
         hs_o<=hs_q;vs_o<=vs_q;de_o<=de_q;x_o<=x_q;y_o<=y_q;
         if (!de_q) rgb_o<=24'h000000;
-        else if (mapped_q && bitmap_q[7-pixel_q]) rgb_o<=24'hFFF1C7;
+        else if (mapped_q && bitmap_q[7-pixel_q]) rgb_o<=faded_text_rgb;
         else if (bar_q) rgb_o<=24'h101820;
         else rgb_o<=rgb_q;
         hs_q<=hs_i;vs_q<=vs_i;de_q<=de_i;x_q<=x_i;y_q<=y_i;rgb_q<=rgb_i;

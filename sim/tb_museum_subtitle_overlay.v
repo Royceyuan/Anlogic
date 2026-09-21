@@ -102,22 +102,22 @@ initial begin
  end
  if(!dut.cue_ready)$fatal(1,"second cue was not prefetched");
  audio_frame=100;repeat(8)@(negedge vclk);
- @(negedge vclk);frame_tick=1;@(negedge vclk);frame_tick=0;
- @(negedge vclk);frame_tick=1;@(negedge vclk);frame_tick=0;
- x=620;repeat(4)@(negedge vclk);
- if(rgb_o!==24'hFFF1C7)$fatal(1,"outgoing cue did not slide left: %h",rgb_o);
- i=0;
- while(dut.slide_phase!=2 && i<60) begin
-  @(negedge vclk);frame_tick=1;@(negedge vclk);frame_tick=0;i=i+1;
- end
- if(dut.slide_phase!=2)$fatal(1,"incoming phase did not start");
- @(negedge vclk);frame_tick=1;@(negedge vclk);frame_tick=0;
- x=1264;repeat(4)@(negedge vclk);
- if(rgb_o!==24'hFFF1C7)$fatal(1,"incoming cue did not slide in: %h",rgb_o);
- for(i=0;i<45;i=i+1) begin
+ for(i=0;i<9;i=i+1) begin
   @(negedge vclk);frame_tick=1;@(negedge vclk);frame_tick=0;
  end
- x=636;repeat(5)@(negedge vclk);
+ repeat(4)@(negedge vclk);
+ if(rgb_o!==24'h888474)$fatal(1,"outgoing cue did not fade: %h",rgb_o);
+ i=0;
+ while(dut.fade_phase!=2 && i<20) begin
+  @(negedge vclk);frame_tick=1;@(negedge vclk);frame_tick=0;i=i+1;
+ end
+ if(dut.fade_phase!=2||dut.fade_level!=0)$fatal(1,"incoming fade did not start");
+ repeat(4)@(negedge vclk);
+ if(rgb_o!==24'h101820)$fatal(1,"subtitle did not fade out: %h",rgb_o);
+ for(i=0;i<17;i=i+1) begin
+  @(negedge vclk);frame_tick=1;@(negedge vclk);frame_tick=0;
+ end
+ repeat(5)@(negedge vclk);
  if(rgb_o!==24'hFFF1C7)$fatal(1,"second cue did not settle: %h",rgb_o);
  audio_frame=200;repeat(8)@(negedge vclk);
  if(rgb_o!==rgb)$fatal(1,"expired subtitle changed image: %h",rgb_o);

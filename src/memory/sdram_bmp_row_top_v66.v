@@ -561,7 +561,8 @@ localparam integer AUDIO_SWITCH_RESET_CYCLES = 50_000;
 
 wire audio_stream_enable = ENABLE_AUDIO_VISUALIZER &&
                            (ENABLE_MUSEUM_LECTURE ?
-                            ((lecture_cache_ready && overview_mode) ||
+                            (((lecture_cache_ready || lecture_preloading) &&
+                              overview_mode) ||
                              (lecture_active && !lecture_finished)) :
                             (VIDEO_SEQUENCE ? initial_frame_published :
                                               (frame_valid == 5'b11111)));
