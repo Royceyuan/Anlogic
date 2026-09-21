@@ -25,7 +25,7 @@ report_timing_summary -file $build_root/main2_lecture_gate.timing
 flow_status -file $build_root/main2_lecture_syn.status
 export_db $build_root/main2_lecture_gate.db
 
-set_param place seed 76
+set_param place seed 80
 place
 update_timing -mode manhattan
 report_area -io_info -file $build_root/main2_lecture_place.area

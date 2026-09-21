@@ -603,8 +603,6 @@ reg audio_frame_toggle_ff1, audio_frame_toggle_ff2, audio_frame_toggle_seen;
 wire audio_frame_pulse_50m = audio_frame_toggle_ff2 != audio_frame_toggle_seen;
 wire audio_prepared = audio_wav_ready && (audio_fifo_wr_used >= 9'd256) &&
                       (audio_total_frames != 0);
-wire subtitle_prepared = subtitle_ready_50m &&
-                         (subtitle_total_frames == audio_total_frames);
 wire audio_active;
 wire audio_underflow;
 reg [2:0] audio_track_index;
@@ -947,7 +945,7 @@ generate
         u_museum_subtitle_overlay (
             .clk_50m(clk_50m), .rst_n_50m(write_rst_n),
             .start(audio_stream_enable), .restart(lecture_audio_restart),
-            .lecture_active(lecture_active && subtitle_prepared),
+            .lecture_active(lecture_active),
             .lecture_finished(lecture_finished),
             .track_index(lecture_artifact_index),
             .audio_frame_index(lecture_audio_frame_index),
