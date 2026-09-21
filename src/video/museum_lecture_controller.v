@@ -10,6 +10,9 @@ module museum_lecture_controller #(
     input  wire [2:0] preload_index, input wire audio_prepared,
     input  wire audio_frame_pulse, input wire [31:0] audio_total_frames,
     input  wire audio_stream_done, input wire audio_drained,
+    input  wire scene_timing_valid,
+    input  wire [31:0] scene_cut1, input wire [31:0] scene_cut2,
+    input  wire [31:0] scene_cut3, input wire [31:0] scene_cut4,
     input  wire [2:0] displayed_frame_slot,
     input  wire display_transition_busy,
     output reg load_request, input wire load_accept, input wire load_complete,
@@ -35,6 +38,10 @@ wire [31:0] audio_two_fifths = audio_fifth << 1;
 wire [31:0] audio_three_fifths = audio_two_fifths + audio_fifth;
 wire [31:0] audio_four_fifths = audio_fifth << 2;
 wire [31:0] next_audio_frame = audio_frames_played + 1'b1;
+wire [31:0] cut1 = scene_timing_valid ? scene_cut1 : audio_fifth;
+wire [31:0] cut2 = scene_timing_valid ? scene_cut2 : audio_two_fifths;
+wire [31:0] cut3 = scene_timing_valid ? scene_cut3 : audio_three_fifths;
+wire [31:0] cut4 = scene_timing_valid ? scene_cut4 : audio_four_fifths;
 
 assign load_detail = (load_slot != 2'd0);
 assign detail_index = load_slot;
@@ -164,15 +171,19 @@ always @(posedge clk or negedge rst_n) begin
                         end_hold_count<=0; return_full_pending<=1;
                         final_full_hold<=1;
                         final_full_active<=1;
-                    end else if (next_audio_frame>=audio_four_fifths) begin
+                    end else if (next_audio_frame>=cut4) begin
                         display_slot<=0;
                         final_full_active<=1;
-                    end else if (next_audio_frame>=audio_three_fifths)
-                        display_slot<=3;
-                    else if (next_audio_frame>=audio_two_fifths)
-                        display_slot<=2;
-                    else if (next_audio_frame>=audio_fifth)
-                        display_slot<=1;
+                    end else if (next_audio_frame>=cut3) begin
+                        display_slot<=3; final_full_active<=0;
+                    end else if (next_audio_frame>=cut2) begin
+                        display_slot<=2; final_full_active<=0;
+                    end else if (next_audio_frame>=cut1) begin
+                        display_slot<=1; final_full_active<=0;
+                    end else begin
+                        display_slot<=0;
+                        final_full_active<=0;
+                    end
                 end
             end else if (return_full_pending &&
                          displayed_frame_slot==current_full_slot &&

@@ -5,6 +5,8 @@ reg clk=0,rst_n=0,enable=1,overview_ready=0,confirm=0,key_pause=0,key_return=0;
 reg preload_valid=0,audio_prepared=0,audio_frame_pulse=0,audio_stream_done=0;
 reg audio_drained=0,load_accept=0,load_complete=0,load_error=0;
 reg display_transition_busy=0;
+reg scene_timing_valid=1;
+reg [31:0] scene_cut1=1,scene_cut2=3,scene_cut3=4,scene_cut4=5;
 reg [2:0] selected=0,preload_index=0,displayed_frame_slot=5;
 reg [31:0] audio_total_frames=7;
 wire load_request,load_detail,preloading,cache_ready,active,paused,finished;
@@ -21,6 +23,8 @@ museum_lecture_controller #(.CLOCK_HZ(2)) dut(
  .audio_prepared(audio_prepared),.audio_frame_pulse(audio_frame_pulse),
  .audio_total_frames(audio_total_frames),.audio_stream_done(audio_stream_done),
  .audio_drained(audio_drained),.displayed_frame_slot(displayed_frame_slot),
+ .scene_timing_valid(scene_timing_valid),
+ .scene_cut1(scene_cut1),.scene_cut2(scene_cut2),.scene_cut3(scene_cut3),.scene_cut4(scene_cut4),
  .display_transition_busy(display_transition_busy),
  .load_request(load_request),.load_accept(load_accept),.load_complete(load_complete),
  .load_error(load_error),.load_slot(load_slot),.load_frame_slot(load_frame_slot),
@@ -79,8 +83,11 @@ initial begin
   $fatal(1,"auto return/promotion failed");
  audio_stream_done=0;audio_drained=0;selected=2;confirm=1;@(negedge clk);confirm=0;
  if(!active)$fatal(1,"promoted cache start failed");
- force dut.display_slot=3;#1;if(display_frame_slot!=3)$fatal(1,"detail 3 mapping failed");
- release dut.display_slot;
+ audio_total_frames=6;scene_cut1=1;scene_cut2=2;scene_cut3=3;scene_cut4=4;
+ pulse_audio;if(display_slot!=1)$fatal(1,"script detail 1 failed");
+ pulse_audio;if(display_slot!=2)$fatal(1,"script detail 2 failed");
+ pulse_audio;if(display_slot!=3)$fatal(1,"script detail 3 failed");
+ pulse_audio;if(display_slot!=0||!final_full_active)$fatal(1,"script final full view failed");
  displayed_frame_slot=3;
  key_return=1;@(negedge clk);key_return=0;
  if(!active||!finished||!audio_restart)$fatal(1,"key return did not request full view");

@@ -20,6 +20,9 @@ module museum_subtitle_overlay #(
     input wire [7:0] sd_sec_read_data,
     input wire sd_sec_read_data_valid, input wire sd_sec_read_end,
     output reg subtitle_ready, output reg [31:0] subtitle_total_frames,
+    output reg scene_timing_valid,
+    output reg [31:0] scene_cut1, output reg [31:0] scene_cut2,
+    output reg [31:0] scene_cut3, output reg [31:0] scene_cut4,
     output reg format_error, output reg file_error,
     input wire video_clk, input wire video_rst_n, input wire video_frame_tick,
     input wire hs_i, input wire vs_i, input wire de_i,
@@ -56,6 +59,7 @@ reg fat_for_root;
 reg [2:0] active_track;
 
 reg header_ok, header_done;
+reg [7:0] header_version;
 reg [5:0] cue_count, cue_index;
 reg [2:0] record_sector;
 reg [11:0] payload_count;
@@ -145,7 +149,9 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
         bitmap_wr_en<=0; bitmap_wr_addr<=0; bitmap_wr_data<=0;
         write_bank<=1; commit_toggle<=0; commit_bank<=1;
         ack_sync1<=0; ack_sync2<=0; ack_seen<=0;
-        subtitle_ready<=0; subtitle_total_frames<=0;
+        subtitle_ready<=0; subtitle_total_frames<=0; scene_timing_valid<=0;
+        scene_cut1<=0; scene_cut2<=0; scene_cut3<=0; scene_cut4<=0;
+        header_version<=0;
         format_error<=0; file_error<=0;
     end else begin
         bitmap_wr_en <= 1'b0;
@@ -153,12 +159,14 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
         ack_sync2 <= ack_sync1;
         if (restart || !start) begin
             state<=S_WAIT_CARD; sd_sec_read<=0; subtitle_ready<=0;
-            subtitle_total_frames<=0; format_error<=0; file_error<=0;
+            subtitle_total_frames<=0; scene_timing_valid<=0;
+            format_error<=0; file_error<=0;
             cue_ready<=0; active_cue_valid<=0; cue_index<=0;
         end else if (track_index != active_track && !sd_sec_read &&
                      state != S_WAIT_CARD) begin
             active_track<=track_index; subtitle_ready<=0;
-            subtitle_total_frames<=0; format_error<=0; file_error<=0;
+            subtitle_total_frames<=0; scene_timing_valid<=0;
+            format_error<=0; file_error<=0;
             cue_ready<=0; active_cue_valid<=0; cue_index<=0;
             current_cluster<=fs_root_cluster; root_sector_in_cluster<=0;
             state<=fs_geometry_ready ? S_REQ_ROOT : S_WAIT_CARD;
@@ -217,7 +225,7 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
                         fat_for_root<=0;
                         current_cluster<=found_cluster; file_size<=found_file_size;
                         sector_in_cluster<=0; file_bytes_seen<=0; header_ok<=1;
-                        header_done<=0;
+                        header_done<=0; header_version<=0; scene_timing_valid<=0;
                         cue_count<=0; cue_index<=0; record_sector<=0;
                         payload_count<=0; state<=S_REQ_DATA;
                     end else if (root_sector_in_cluster+1'b1<fs_sectors_per_cluster) begin
@@ -242,7 +250,10 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
                             9'd1: if (sd_sec_read_data!="S") header_ok<=0;
                             9'd2: if (sd_sec_read_data!="U") header_ok<=0;
                             9'd3: if (sd_sec_read_data!="B") header_ok<=0;
-                            9'd4: if (sd_sec_read_data!=1) header_ok<=0;
+                            9'd4: begin
+                                header_version<=sd_sec_read_data;
+                                if (sd_sec_read_data!=1 && sd_sec_read_data!=2) header_ok<=0;
+                            end
                             9'd5: if (sd_sec_read_data!=8'h20) header_ok<=0;
                             9'd6: if (sd_sec_read_data!=8'h03) header_ok<=0;
                             9'd7: if (sd_sec_read_data!=HEIGHT) header_ok<=0;
@@ -257,6 +268,22 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
                             9'd17: subtitle_total_frames[15:8]<=sd_sec_read_data;
                             9'd18: subtitle_total_frames[23:16]<=sd_sec_read_data;
                             9'd19: subtitle_total_frames[31:24]<=sd_sec_read_data;
+                            9'd20: scene_cut1[7:0]<=sd_sec_read_data;
+                            9'd21: scene_cut1[15:8]<=sd_sec_read_data;
+                            9'd22: scene_cut1[23:16]<=sd_sec_read_data;
+                            9'd23: scene_cut1[31:24]<=sd_sec_read_data;
+                            9'd24: scene_cut2[7:0]<=sd_sec_read_data;
+                            9'd25: scene_cut2[15:8]<=sd_sec_read_data;
+                            9'd26: scene_cut2[23:16]<=sd_sec_read_data;
+                            9'd27: scene_cut2[31:24]<=sd_sec_read_data;
+                            9'd28: scene_cut3[7:0]<=sd_sec_read_data;
+                            9'd29: scene_cut3[15:8]<=sd_sec_read_data;
+                            9'd30: scene_cut3[23:16]<=sd_sec_read_data;
+                            9'd31: scene_cut3[31:24]<=sd_sec_read_data;
+                            9'd32: scene_cut4[7:0]<=sd_sec_read_data;
+                            9'd33: scene_cut4[15:8]<=sd_sec_read_data;
+                            9'd34: scene_cut4[23:16]<=sd_sec_read_data;
+                            9'd35: scene_cut4[31:24]<=sd_sec_read_data;
                         endcase
                     end else begin
                         if (record_sector==0) begin
@@ -288,6 +315,20 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
                     if (!header_done) begin
                         header_done<=1;
                         if (!header_ok) begin format_error<=1; state<=S_ERROR; end
+                        else if (header_version==2 && scene_cut1!=0 &&
+                                 scene_cut1<scene_cut2 && scene_cut2<scene_cut3 &&
+                                 scene_cut3<scene_cut4 &&
+                                 scene_cut4<subtitle_total_frames) begin
+                            scene_timing_valid<=1;
+                            if (sector_in_cluster+1'b1<fs_sectors_per_cluster) begin
+                                sector_in_cluster<=sector_in_cluster+1'b1; state<=S_REQ_DATA;
+                            end else begin
+                                fat_byte_offset<={current_cluster[6:0],2'b00};
+                                fat_next_cluster<=0; state<=S_REQ_FAT;
+                            end
+                        end else if (header_version==2) begin
+                            format_error<=1; state<=S_ERROR;
+                        end
                         else if (sector_in_cluster+1'b1<fs_sectors_per_cluster) begin
                             sector_in_cluster<=sector_in_cluster+1'b1; state<=S_REQ_DATA;
                         end else begin

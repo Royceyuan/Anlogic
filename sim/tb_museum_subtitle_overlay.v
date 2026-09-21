@@ -11,6 +11,8 @@ reg [7:0] sd_data=0;
 reg sd_valid=0,sd_end=0;
 wire sd_read,ready,fmt_error,file_error,hs_o,vs_o,de_o;
 wire [31:0] sd_addr,total_frames;
+wire scene_valid;
+wire [31:0] scene_cut1,scene_cut2,scene_cut3,scene_cut4;
 wire [10:0] x_o;
 wire [9:0] y_o;
 wire [23:0] rgb_o;
@@ -26,6 +28,8 @@ museum_subtitle_overlay dut(
  .sd_sec_read(sd_read),.sd_sec_read_addr(sd_addr),.sd_sec_read_data(sd_data),
  .sd_sec_read_data_valid(sd_valid),.sd_sec_read_end(sd_end),
  .subtitle_ready(ready),.subtitle_total_frames(total_frames),
+ .scene_timing_valid(scene_valid),
+ .scene_cut1(scene_cut1),.scene_cut2(scene_cut2),.scene_cut3(scene_cut3),.scene_cut4(scene_cut4),
  .format_error(fmt_error),.file_error(file_error),
  .video_clk(vclk),.video_rst_n(vrst),.video_frame_tick(frame_tick),
  .hs_i(hs),.vs_i(vs),.de_i(de),.x_i(x),.y_i(y),.rgb_i(rgb),
@@ -50,9 +54,10 @@ function [7:0] disk_byte;
       endcase
    51: case(index)
        0:disk_byte="M";1:disk_byte="S";2:disk_byte="U";3:disk_byte="B";
-       4:disk_byte=1;5:disk_byte=8'h20;6:disk_byte=8'h03;7:disk_byte=32;
+       4:disk_byte=2;5:disk_byte=8'h20;6:disk_byte=8'h03;7:disk_byte=32;
        8:disk_byte=1;9:disk_byte=2;10:disk_byte=8'h80;11:disk_byte=8'h0c;
        12:disk_byte=7;16:disk_byte=100;
+       20:disk_byte=10;24:disk_byte=20;28:disk_byte=30;32:disk_byte=40;
       endcase
    52: case(index)
        4:disk_byte=100;8:disk_byte=8;
@@ -89,6 +94,8 @@ initial begin
  while(!ready && i<100000) begin @(negedge clk50);i=i+1;end
  if(!ready)$fatal(1,"TF subtitle timeout state=%0d addr=%0d",dut.state,sd_addr);
  if(total_frames!=100||fmt_error||file_error)$fatal(1,"bad SUB header");
+ if(!scene_valid||scene_cut1!=10||scene_cut2!=20||scene_cut3!=30||scene_cut4!=40)
+  $fatal(1,"bad scene metadata");
  active=1;audio_frame=1;
  repeat(20)@(negedge clk50);
  for(i=0;i<45;i=i+1) begin

@@ -587,6 +587,8 @@ wire [7:0] audio_fs_sectors_per_cluster;
 wire [31:0] audio_fs_fat_start, audio_fs_data_start, audio_fs_root_cluster;
 wire subtitle_ready_50m;
 wire [31:0] subtitle_total_frames;
+wire scene_timing_valid;
+wire [31:0] scene_cut1, scene_cut2, scene_cut3, scene_cut4;
 wire subtitle_format_error_50m;
 wire subtitle_file_error_50m;
 reg audio_format_error_ff1, audio_format_error_ff2;
@@ -696,6 +698,9 @@ generate
             .audio_total_frames(audio_total_frames),
             .audio_stream_done(audio_stream_done),
             .audio_drained(audio_fifo_empty_ff2),
+            .scene_timing_valid(scene_timing_valid),
+            .scene_cut1(scene_cut1), .scene_cut2(scene_cut2),
+            .scene_cut3(scene_cut3), .scene_cut4(scene_cut4),
             .displayed_frame_slot(displayed_frame_slot_ff2),
             .display_transition_busy(transition_active_ff2_50m),
             .load_request(lecture_load_request),
@@ -961,6 +966,9 @@ generate
             .sd_sec_read_end(subtitle_sd_sec_read_end),
             .subtitle_ready(subtitle_ready_50m),
             .subtitle_total_frames(subtitle_total_frames),
+            .scene_timing_valid(scene_timing_valid),
+            .scene_cut1(scene_cut1), .scene_cut2(scene_cut2),
+            .scene_cut3(scene_cut3), .scene_cut4(scene_cut4),
             .format_error(subtitle_format_error_50m),
             .file_error(subtitle_file_error_50m),
             .video_clk(video_clk), .video_rst_n(video_rst_n),
@@ -1000,6 +1008,9 @@ generate
         assign subtitle_sd_sec_read_addr = 32'd0;
         assign subtitle_ready_50m = 1'b1;
         assign subtitle_total_frames = audio_total_frames;
+        assign scene_timing_valid = 1'b0;
+        assign scene_cut1 = 32'd0; assign scene_cut2 = 32'd0;
+        assign scene_cut3 = 32'd0; assign scene_cut4 = 32'd0;
         assign subtitle_format_error_50m = 1'b0;
         assign subtitle_file_error_50m = 1'b0;
     end else begin : g_no_uart_subtitle
@@ -1014,6 +1025,9 @@ generate
         assign subtitle_sd_sec_read_addr = 32'd0;
         assign subtitle_ready_50m = 1'b1;
         assign subtitle_total_frames = audio_total_frames;
+        assign scene_timing_valid = 1'b0;
+        assign scene_cut1 = 32'd0; assign scene_cut2 = 32'd0;
+        assign scene_cut3 = 32'd0; assign scene_cut4 = 32'd0;
         assign subtitle_format_error_50m = 1'b0;
         assign subtitle_file_error_50m = 1'b0;
     end

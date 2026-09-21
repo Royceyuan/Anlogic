@@ -22,6 +22,30 @@ def timestamp_ms(value: str) -> int:
     return ((int(hour) * 60 + int(minute)) * 60 + int(second)) * 1000 + int(milli)
 
 
+def script_timestamp_ms(value: str) -> int:
+    minute, second = value.split(":")
+    return (int(minute) * 60 + int(second)) * 1000
+
+
+def parse_scene_script(path: Path, total_frames: int):
+    rows = []
+    pattern = re.compile(
+        r"^\|\s*(\d+)\s*\|\s*`([0-9:]+)\s*[–-]\s*([0-9:]+)`\s*\|\s*\*\*([^*]+)\*\*"
+    )
+    for line in path.read_text(encoding="utf-8").splitlines():
+        match = pattern.match(line)
+        if match:
+            rows.append((script_timestamp_ms(match.group(2)),
+                         script_timestamp_ms(match.group(3)), match.group(4)))
+    if len(rows) != 5 or rows[0][0] != 0:
+        raise ValueError(f"{path}: expected five scene rows beginning at 00:00")
+    script_end_ms = rows[-1][1]
+    cuts = [round(start * total_frames / script_end_ms) for start, _, _ in rows[1:]]
+    if not (0 < cuts[0] < cuts[1] < cuts[2] < cuts[3] < total_frames):
+        raise ValueError(f"{path}: scene cuts must be ordered inside the WAV")
+    return cuts
+
+
 def timestamp_frames(value: str, total_frames: int, srt_end_ms: int,
                      timing_mode: str) -> int:
     ms = timestamp_ms(value)
@@ -96,10 +120,11 @@ def build_track(track: int, folder: Path, audio_dir: Path, destination: Path,
             raise ValueError(f"{audio}: expected PCM16 stereo 48kHz")
         total_frames = wav.getnframes()
     cues = parse_srt(folder / "字幕.srt", total_frames, timing_mode)
+    scene_cuts = parse_scene_script(folder / "图片切换脚本.md", total_frames)
 
     header = bytearray(512)
     header[0:4] = b"MSUB"
-    header[4] = 1
+    header[4] = 2
     struct.pack_into("<H", header, 5, WIDTH)
     header[7] = HEIGHT
     header[8] = 1
@@ -107,6 +132,7 @@ def build_track(track: int, folder: Path, audio_dir: Path, destination: Path,
     struct.pack_into("<H", header, 10, BITMAP_BYTES)
     header[12] = RECORD_BYTES // 512
     struct.pack_into("<I", header, 16, total_frames)
+    struct.pack_into("<IIII", header, 20, *scene_cuts)
 
     output = bytearray(header)
     for start, end, text in cues:
@@ -122,7 +148,7 @@ def build_track(track: int, folder: Path, audio_dir: Path, destination: Path,
     target.write_bytes(output)
     if target.stat().st_size != 512 + len(cues) * RECORD_BYTES:
         raise RuntimeError(f"failed to verify {target}")
-    return target
+    return target, scene_cuts
 
 
 def main() -> None:
@@ -138,12 +164,14 @@ def main() -> None:
     folders = sorted(path for path in ROOT.iterdir() if path.is_dir())
     if len(folders) != 5:
         raise ValueError(f"expected five artifact folders, found {len(folders)}")
-    outputs = [
+    results = [
         build_track(track, folder, audio_dir, args.dest, args.timing_mode)
         for track, folder in enumerate(folders)
     ]
-    print(f"timing={args.timing_mode}; generated " +
-          ", ".join(f"{path.name}={path.stat().st_size}" for path in outputs))
+    print(f"timing={args.timing_mode}; generated " + ", ".join(
+        f"{path.name}={path.stat().st_size}, cuts={cuts}"
+        for path, cuts in results
+    ))
 
 
 if __name__ == "__main__":
