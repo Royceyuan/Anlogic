@@ -12,6 +12,7 @@ module bmp_sdram_row_writer #(
     parameter integer WORDS_PER_ROW = WIDTH / 2,
     parameter integer BURST_WORDS  = WORDS_PER_ROW,
     parameter integer OVERVIEW_ENABLE = 0,
+    parameter integer ENABLE_ABORT = 0,
     parameter integer OVERVIEW_FRAME_COUNT = 5,
     parameter integer OVERVIEW_PANEL_WIDTH = WIDTH / OVERVIEW_FRAME_COUNT,
     parameter integer OVERVIEW_CROP_X0_0 = (WIDTH - OVERVIEW_PANEL_WIDTH) / 2,
@@ -42,6 +43,8 @@ module bmp_sdram_row_writer #(
     output wire [ADDR_BITS-1:0]    write_len,
     input  wire                    write_fifo_full,
     input  wire                    write_finish,
+    input  wire                    abort,
+    output wire                    abort_done,
 
     output reg                     frame_done,
     output reg                     error
@@ -56,6 +59,11 @@ localparam [2:0] S_DONE   = 3'd5;
 localparam [2:0] S_ERROR  = 3'd6;
 
 reg [2:0] state;
+reg abort_seen;
+wire abort_active = ENABLE_ABORT && abort;
+wire packer_rst_n = rst_n && !(abort_active && !abort_seen);
+assign abort_done = !abort_active || state == S_IDLE || state == S_DONE ||
+                    state == S_ERROR;
 reg [ROW_BITS-1:0] active_row;
 reg [9:0] rows_done;
 localparam integer BURSTS_PER_ROW = (WORDS_PER_ROW + BURST_WORDS - 1) / BURST_WORDS;
@@ -117,11 +125,11 @@ assign write_len      = ((burst_index + 1) * BURST_WORDS <= phase_words_per_row)
                          (phase_words_per_row - burst_index * BURST_WORDS);
 
 assign pack_out_ready = (state == S_STREAM) && !write_fifo_full;
-assign pack_in_valid  = overview_phase ?
+assign pack_in_valid  = abort_active ? (state == S_STREAM) : overview_phase ?
                         ((state == S_STREAM) &&
                          (overview_pixel_index < OVERVIEW_PANEL_WIDTH)) :
                         (row_valid && row_ready);
-assign row_ready      = !overview_phase && (state == S_STREAM) &&
+assign row_ready      = !abort_active && !overview_phase && (state == S_STREAM) &&
                         !write_fifo_full && pack_in_ready;
 assign write_en       = (state == S_STREAM) && pack_out_valid && !write_fifo_full;
 assign write_data     = pack_out_data;
@@ -130,10 +138,10 @@ assign overview_pixel_fire = overview_phase && pack_in_valid && pack_in_ready;
 
 rgb565_stream_packer_ready u_packer (
     .clk       (clk),
-    .rst_n     (rst_n),
+    .rst_n     (packer_rst_n),
     .in_valid  (pack_in_valid),
     .in_ready  (pack_in_ready),
-    .in_pixel  (overview_phase ?
+    .in_pixel  (abort_active ? 16'd0 : overview_phase ?
                 ((overview_pixel_index < OVERVIEW_PANEL_WIDTH) ?
                  overview_line[overview_pixel_index] : 16'd0) : row_pixel),
     .out_valid (pack_out_valid),
@@ -143,6 +151,7 @@ rgb565_stream_packer_ready u_packer (
 
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
+        abort_seen <= 1'b0;
         state       <= S_IDLE;
         active_row  <= {ROW_BITS{1'b0}};
         rows_done   <= 10'd0;
@@ -157,6 +166,7 @@ always @(posedge clk or negedge rst_n) begin
         frame_done  <= 1'b0;
         error       <= 1'b0;
     end else if (start) begin
+        abort_seen <= 1'b0;
         state        <= S_IDLE;
         active_row   <= {ROW_BITS{1'b0}};
         rows_done    <= 10'd0;
@@ -171,9 +181,10 @@ always @(posedge clk or negedge rst_n) begin
         frame_done   <= 1'b0;
         error        <= 1'b0;
     end else begin
+        abort_seen <= abort_active;
         case (state)
             S_IDLE: begin
-                if (row_valid) begin
+                if (row_valid && !abort_active) begin
                     active_row <= row_index;
                     burst_index <= {BURST_INDEX_BITS{1'b0}};
                     burst_words_sent <= {ADDR_BITS{1'b0}};
@@ -225,7 +236,9 @@ always @(posedge clk or negedge rst_n) begin
             S_DRAIN: begin
                 if (write_finish) begin
                     burst_words_sent <= {ADDR_BITS{1'b0}};
-                    if (burst_index == phase_bursts_per_row - 1) begin
+                    if (abort_active) begin
+                        state <= S_IDLE;
+                    end else if (burst_index == phase_bursts_per_row - 1) begin
                         burst_index <= {BURST_INDEX_BITS{1'b0}};
                         if (!overview_phase && OVERVIEW_ENABLE &&
                             active_overview_frame < OVERVIEW_FRAME_COUNT) begin

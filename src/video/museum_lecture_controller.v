@@ -193,6 +193,10 @@ always @(posedge clk or negedge rst_n) begin
                         final_full_active<=0;
                     end
                 end
+            end else if (key_pause && final_full_hold) begin
+                lecture_paused<=~lecture_paused;
+            end else if (lecture_paused && final_full_hold) begin
+                end_hold_count<=end_hold_count;
             end else if (return_full_pending &&
                          displayed_frame_slot==current_full_slot &&
                          !display_transition_busy && final_full_hold) begin

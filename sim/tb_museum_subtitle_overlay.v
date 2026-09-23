@@ -21,7 +21,8 @@ always #5 vclk=~vclk;
 
 museum_subtitle_overlay dut(
  .clk_50m(clk50),.rst_n_50m(rst50),.start(start),.restart(restart),
- .lecture_active(active),.lecture_finished(finished),.track_index(track),
+ .lecture_active(active),.lecture_paused(1'b0),.lecture_finished(finished),.track_index(track),
+ .name_wr_en(),.name_wr_addr(),.name_wr_data(),.name_ready(),
  .audio_frame_index(audio_frame),.sd_init_done(sd_init),
  .fs_geometry_ready(1'b1),.fs_sectors_per_cluster(8'd8),
  .fs_fat_start(32'd33),.fs_data_start(32'd35),.fs_root_cluster(32'd2),

@@ -6,11 +6,12 @@
 // fetched while the current cue is displayed.
 module museum_subtitle_overlay #(
     parameter integer VIDEO_W = 1280,
-    parameter integer VIDEO_H = 720
+    parameter integer VIDEO_H = 720,
+    parameter integer ENABLE_NAMES = 0
 )(
     input wire clk_50m, input wire rst_n_50m,
     input wire start, input wire restart,
-    input wire lecture_active, input wire lecture_finished,
+    input wire lecture_active, input wire lecture_paused, input wire lecture_finished,
     input wire [2:0] track_index, input wire [31:0] audio_frame_index,
     input wire sd_init_done,
     input wire fs_geometry_ready, input wire [7:0] fs_sectors_per_cluster,
@@ -24,6 +25,8 @@ module museum_subtitle_overlay #(
     output reg [31:0] scene_cut1, output reg [31:0] scene_cut2,
     output reg [31:0] scene_cut3, output reg [31:0] scene_cut4,
     output reg format_error, output reg file_error,
+    output reg name_wr_en, output reg [10:0] name_wr_addr,
+    output reg [7:0] name_wr_data, output reg name_ready,
     input wire video_clk, input wire video_rst_n, input wire video_frame_tick,
     input wire hs_i, input wire vs_i, input wire de_i,
     input wire [10:0] x_i, input wire [9:0] y_i, input wire [23:0] rgb_i,
@@ -57,6 +60,9 @@ reg [31:0] fat_next_cluster;
 reg [8:0] fat_byte_offset;
 reg fat_for_root;
 reg [2:0] active_track;
+reg name_mode;
+reg [26:0] name_wait_count;
+reg [6:0] name_root_sectors;
 
 reg header_ok, header_done;
 reg [7:0] header_version;
@@ -75,6 +81,7 @@ reg commit_toggle, commit_bank, commit_outline;
 reg ack_sync1, ack_sync2, ack_seen;
 reg commit_sync1, commit_sync2, commit_seen, active_bank, active_outline, video_ack_toggle;
 reg visible_sync1, visible_sync2;
+reg paused_sync1, paused_sync2;
 reg cancel_sync1, cancel_sync2, cancel_seen;
 reg [9:0] current_width;
 reg [11:0] relative_x;
@@ -107,6 +114,26 @@ function [31:0] cluster_lba;
             default: cluster_offset = (cluster - 32'd2) << 7;
         endcase
         cluster_lba = base + cluster_offset + sector_offset;
+    end
+endfunction
+
+function name_root_byte_match;
+    input [3:0] index;
+    input [7:0] value;
+    begin
+        case (index)
+            0:name_root_byte_match=value=="O";
+            1:name_root_byte_match=value=="S";
+            2:name_root_byte_match=value=="D";
+            3:name_root_byte_match=value=="N";
+            4:name_root_byte_match=value=="A";
+            5:name_root_byte_match=value=="M";
+            6:name_root_byte_match=value=="E";
+            7:name_root_byte_match=value==" ";
+            8:name_root_byte_match=value=="B";
+            9:name_root_byte_match=value=="I";
+            default:name_root_byte_match=value=="N";
+        endcase
     end
 endfunction
 
@@ -154,18 +181,26 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
         scene_cut1<=0; scene_cut2<=0; scene_cut3<=0; scene_cut4<=0;
         header_version<=0;
         format_error<=0; file_error<=0;
+        name_mode<=ENABLE_NAMES!=0; name_wait_count<=0; name_root_sectors<=0;
+        name_wr_en<=0; name_wr_addr<=0; name_wr_data<=0; name_ready<=0;
     end else begin
         bitmap_wr_en <= 1'b0;
         outline_wr_en <= 1'b0;
+        name_wr_en <= 1'b0;
+        if (name_mode && fs_geometry_ready && sd_init_done &&
+            name_wait_count != 27'd100_000_000)
+            name_wait_count <= name_wait_count + 1'b1;
         ack_sync1 <= video_ack_toggle;
         ack_sync2 <= ack_sync1;
-        if (restart || !start) begin
+        if (name_mode && name_wait_count == 27'd100_000_000) begin
+            name_mode<=0; sd_sec_read<=0; state<=S_WAIT_CARD;
+        end else if ((restart || !start) && !name_mode) begin
             state<=S_WAIT_CARD; sd_sec_read<=0; subtitle_ready<=0;
             subtitle_total_frames<=0; scene_timing_valid<=0;
             format_error<=0; file_error<=0;
             cue_ready<=0; active_cue_valid<=0; cue_index<=0;
             write_bank<=~commit_bank; ack_seen<=ack_sync2;
-        end else if (track_index != active_track && !sd_sec_read &&
+        end else if (!name_mode && track_index != active_track && !sd_sec_read &&
                      state != S_WAIT_CARD) begin
             active_track<=track_index; subtitle_ready<=0;
             subtitle_total_frames<=0; scene_timing_valid<=0;
@@ -186,6 +221,7 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
                 end
             end
             S_REQ_ROOT: begin
+                if (name_mode) name_root_sectors<=name_root_sectors+1'b1;
                 byte_index<=0; entry_match<=1; entry_deleted<=0; entry_attr<=0;
                 entry_cluster_hi<=0; entry_cluster_lo<=0; entry_file_size<=0;
                 file_found<=0;
@@ -197,12 +233,14 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
                 if (sd_sec_read_data_valid) begin
                     case (byte_index[4:0])
                         5'd0: begin
-                            entry_match<=root_name_byte_match(track_index,0,sd_sec_read_data);
+                            entry_match<=name_mode ? name_root_byte_match(0,sd_sec_read_data) :
+                                                     root_name_byte_match(track_index,0,sd_sec_read_data);
                             entry_deleted<=sd_sec_read_data==8'he5;
                         end
                         5'd1,5'd2,5'd3,5'd4,5'd5,5'd6,5'd7,5'd8,5'd9,5'd10:
-                            if (!root_name_byte_match(track_index,byte_index[3:0],
-                                                      sd_sec_read_data)) entry_match<=0;
+                            if (!(name_mode ? name_root_byte_match(byte_index[3:0],sd_sec_read_data) :
+                                  root_name_byte_match(track_index,byte_index[3:0],
+                                                      sd_sec_read_data))) entry_match<=0;
                         5'd11: entry_attr<=sd_sec_read_data;
                         5'd20: entry_cluster_hi[7:0]<=sd_sec_read_data;
                         5'd21: entry_cluster_hi[15:8]<=sd_sec_read_data;
@@ -215,7 +253,9 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
                             entry_file_size[31:24]<=sd_sec_read_data;
                             if (entry_match && !entry_deleted && entry_attr!=8'h0f &&
                                 !entry_attr[4] && {entry_cluster_hi,entry_cluster_lo}>=2 &&
-                                {sd_sec_read_data,entry_file_size[23:0]}>=4096) begin
+                                (name_mode ?
+                                 ({sd_sec_read_data,entry_file_size[23:0]}==3072) :
+                                 ({sd_sec_read_data,entry_file_size[23:0]}>=4096))) begin
                                 file_found<=1;
                                 found_cluster<={entry_cluster_hi,entry_cluster_lo};
                                 found_file_size<={sd_sec_read_data,entry_file_size[23:0]};
@@ -233,6 +273,8 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
                         header_done<=0; header_version<=0; scene_timing_valid<=0;
                         cue_count<=0; cue_index<=0; record_sector<=0;
                         payload_count<=0; state<=S_REQ_DATA;
+                    end else if (name_mode && name_root_sectors>=7'd64) begin
+                        name_mode<=0; state<=S_WAIT_CARD;
                     end else if (root_sector_in_cluster+1'b1<fs_sectors_per_cluster) begin
                         root_sector_in_cluster<=root_sector_in_cluster+1'b1;
                         state<=S_REQ_ROOT;
@@ -249,7 +291,29 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
             end
             S_WAIT_DATA: begin
                 if (sd_sec_read_data_valid && file_bytes_seen<file_size) begin
-                    if (!header_done) begin
+                    if (name_mode && !header_done) begin
+                        case (byte_index)
+                            0:if(sd_sec_read_data!="O") header_ok<=0;
+                            1:if(sd_sec_read_data!="N") header_ok<=0;
+                            2:if(sd_sec_read_data!="A") header_ok<=0;
+                            3:if(sd_sec_read_data!="M") header_ok<=0;
+                            4:if(sd_sec_read_data!=1) header_ok<=0;
+                            5:if(sd_sec_read_data!=5) header_ok<=0;
+                            6:if(sd_sec_read_data!=8'd160) header_ok<=0;
+                            7:if(sd_sec_read_data!=0) header_ok<=0;
+                            8:if(sd_sec_read_data!=16) header_ok<=0;
+                            9:if(sd_sec_read_data!=1) header_ok<=0;
+                            10:if(sd_sec_read_data!=0) header_ok<=0;
+                            11:if(sd_sec_read_data!=12) header_ok<=0;
+                        endcase
+                    end else if (name_mode) begin
+                        if (byte_index<9'd320) begin
+                            name_wr_en<=1;
+                            name_wr_addr<=({record_sector,8'd0} +
+                                           {record_sector,6'd0}) + byte_index;
+                            name_wr_data<=sd_sec_read_data;
+                        end
+                    end else if (!header_done) begin
                         case (byte_index)
                             9'd0: if (sd_sec_read_data!="M") header_ok<=0;
                             9'd1: if (sd_sec_read_data!="S") header_ok<=0;
@@ -321,7 +385,28 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
                 end
                 if (sd_sec_read_end) begin
                     sd_sec_read<=0;
-                    if (!header_done) begin
+                    if (name_mode && !header_done) begin
+                        header_done<=1;
+                        if (!header_ok) begin name_mode<=0; state<=S_WAIT_CARD; end
+                        else if (sector_in_cluster+1'b1<fs_sectors_per_cluster) begin
+                            sector_in_cluster<=sector_in_cluster+1'b1; state<=S_REQ_DATA;
+                        end else begin
+                            fat_byte_offset<={current_cluster[6:0],2'b00};
+                            fat_next_cluster<=0; state<=S_REQ_FAT;
+                        end
+                    end else if (name_mode) begin
+                        if (record_sector==4) begin
+                            name_ready<=1; name_mode<=0; state<=S_WAIT_CARD;
+                        end else begin
+                            record_sector<=record_sector+1'b1;
+                            if (sector_in_cluster+1'b1<fs_sectors_per_cluster) begin
+                                sector_in_cluster<=sector_in_cluster+1'b1; state<=S_REQ_DATA;
+                            end else begin
+                                fat_byte_offset<={current_cluster[6:0],2'b00};
+                                fat_next_cluster<=0; state<=S_REQ_FAT;
+                            end
+                        end
+                    end else if (!header_done) begin
                         header_done<=1;
                         if (!header_ok) begin format_error<=1; state<=S_ERROR; end
                         else if (header_version>=2 && scene_cut1!=0 &&
@@ -392,6 +477,8 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
                         current_cluster<={4'd0,fat_next_cluster[27:0]};
                         sector_in_cluster<=0; state<=S_REQ_DATA;
                     end
+                end else if (name_mode) begin
+                    name_mode<=0; state<=S_WAIT_CARD;
                 end else begin file_error<=1; state<=S_ERROR; end
             end
             S_WAIT_CUE: begin
@@ -462,6 +549,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
         commit_sync1<=0; commit_sync2<=0; commit_seen<=0;
         active_bank<=0; active_outline<=0;
         video_ack_toggle<=0; visible_sync1<=0; visible_sync2<=0;
+        paused_sync1<=0; paused_sync2<=0;
         cancel_sync1<=0; cancel_sync2<=0; cancel_seen<=0;
         current_width<=0; fade_level<=0;
         video_has_cue<=0; fade_phase<=FADE_IDLE;
@@ -471,6 +559,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
     end else begin
         commit_sync1<=commit_toggle; commit_sync2<=commit_sync1;
         visible_sync1<=cue_visible_50m; visible_sync2<=visible_sync1;
+        paused_sync1<=lecture_paused; paused_sync2<=paused_sync1;
         cancel_sync1<=restart || !start; cancel_sync2<=cancel_sync1;
         cancel_seen<=cancel_sync2;
         if (cancel_sync2 && !cancel_seen) begin
@@ -478,7 +567,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
             video_has_cue<=0; fade_level<=0; fade_phase<=FADE_IDLE;
         end else if (!visible_sync2) begin
             video_has_cue<=0; fade_level<=0; fade_phase<=FADE_IDLE;
-        end else if (video_frame_tick) begin
+        end else if (video_frame_tick && !paused_sync2) begin
             if (commit_sync2!=commit_seen) begin
                 commit_seen<=commit_sync2;
                 if (video_has_cue&&visible_sync2) begin

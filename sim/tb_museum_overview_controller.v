@@ -10,6 +10,8 @@ reg media_ready = 1'b0;
 reg key_confirm = 1'b0;
 reg key_previous = 1'b0;
 reg key_next = 1'b0;
+reg recover_select = 1'b0;
+reg [2:0] recover_index = 3'd0;
 reg video_frame_tick = 1'b0;
 wire [2:0] selected_index_ctrl;
 wire confirm_pulse;
@@ -23,6 +25,7 @@ museum_overview_controller #(
     .ctrl_clk(ctrl_clk), .ctrl_rst_n(ctrl_rst_n),
     .enable(enable), .media_ready(media_ready),
     .key_confirm(key_confirm), .key_previous(key_previous), .key_next(key_next),
+    .recover_select(recover_select), .recover_index(recover_index),
     .selected_index_ctrl(selected_index_ctrl), .confirm_pulse(confirm_pulse),
     .video_clk(video_clk), .video_rst_n(video_rst_n),
     .video_frame_tick(video_frame_tick), .enable_video(enable_video),
@@ -90,6 +93,15 @@ initial begin
     frame_tick;
     if (!confirm_active_video)
         $fatal(1, "confirmation feedback did not reach video domain");
+
+    @(negedge ctrl_clk); recover_index=3'd3; recover_select=1'b1;
+    @(negedge ctrl_clk); recover_select=1'b0;
+    if (selected_index_ctrl!=3) $fatal(1,"recovery did not follow switch");
+    repeat(4) @(posedge video_clk); frame_tick;
+    if (selected_index_video!=3) $fatal(1,"recovery selection did not publish");
+    @(negedge ctrl_clk); recover_index=3'd7; recover_select=1'b1;
+    @(negedge ctrl_clk); recover_select=1'b0;
+    if (selected_index_ctrl!=0) $fatal(1,"invalid recovery switch not clamped");
 
     $display("PASS museum_overview_controller wrap, gate, and frame-boundary CDC");
     $finish;

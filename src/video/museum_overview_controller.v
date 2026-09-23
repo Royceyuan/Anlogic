@@ -12,6 +12,8 @@ module museum_overview_controller #(
     input  wire       key_confirm,
     input  wire       key_previous,
     input  wire       key_next,
+    input  wire       recover_select,
+    input  wire [2:0] recover_index,
     output reg  [2:0] selected_index_ctrl,
     output reg        confirm_pulse,
 
@@ -36,7 +38,9 @@ always @(posedge ctrl_clk or negedge ctrl_rst_n) begin
         confirm_toggle_ctrl <= 1'b0;
     end else begin
         confirm_pulse <= 1'b0;
-        if (enable) begin
+        if (recover_select) begin
+            selected_index_ctrl <= (recover_index < ITEM_COUNT) ? recover_index : 3'd0;
+        end else if (enable) begin
             if (key_previous) begin
                 selected_index_ctrl <= (selected_index_ctrl == 0) ?
                                        ITEM_COUNT - 1 : selected_index_ctrl - 1'b1;

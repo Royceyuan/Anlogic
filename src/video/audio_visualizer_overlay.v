@@ -1,10 +1,12 @@
 `default_nettype none
 
 // Fixed 64-bar visualizer: playback PCM only, no feedback into audio.
-module audio_visualizer_overlay (
+module audio_visualizer_overlay #(
+    parameter integer ENABLE_EMERGENCY = 0
+) (
     input wire clk, input wire rst_n, input wire sample_valid,
     input wire signed [15:0] sample_left, input wire signed [15:0] sample_right,
-    input wire pause,
+    input wire pause, input wire emergency,
     input wire frame_tick, input wire hs_i, input wire vs_i, input wire de_i,
     input wire [10:0] x_i, input wire [9:0] y_i, input wire [23:0] rgb_i,
     output wire hs_o, output wire vs_o, output wire de_o,
@@ -70,7 +72,8 @@ always @(*) begin
     if (!de_s2)
         rgb_visualizer = 24'h000000;
     else if (bar_hit)
-        rgb_visualizer = bar_color(bar_draw_index);
+        rgb_visualizer = (ENABLE_EMERGENCY && emergency) ? 24'hff3030 :
+                         bar_color(bar_draw_index);
 end
 
 always @(posedge clk or negedge rst_n) begin

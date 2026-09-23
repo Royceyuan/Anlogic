@@ -87,6 +87,7 @@ module top_v66 #(
     ,parameter integer AUDIO_TRACK_COUNT = 4
     ,parameter integer ENABLE_MUSEUM_OVERVIEW = 0
     ,parameter integer ENABLE_MUSEUM_LECTURE = 0
+    ,parameter integer ENABLE_MAIN3 = 0
     ,parameter integer LECTURE_CLOCK_HZ = 50_000_000
     ,parameter integer OVERVIEW_CROP_X0_0 = 384
     ,parameter integer OVERVIEW_CROP_X0_1 = 384
@@ -135,6 +136,15 @@ wire init_done;
 wire init_ref_valid;
 wire mem_busy;
 wire write_rst_n;
+reg [2:0] recovery_state;
+reg [4:0] recovery_reset_count;
+reg [26:0] recovery_wait_count;
+reg recovery_select_pulse;
+wire recovery_busy = ENABLE_MAIN3 && recovery_state != 0;
+wire recovery_reset = ENABLE_MAIN3 && recovery_state == 3'd2;
+wire client_rst_n = write_rst_n && !recovery_reset;
+wire writer_abort_done;
+reg recovery_video_ff1, recovery_video_ff2;
 
 wire sd_init_done;
 wire sd_sec_read;
@@ -216,6 +226,8 @@ reg initial_frame_published;
 reg preload_select_frame_index;
 reg [15:0] frame_source_width_bcd [0:4];
 reg [15:0] frame_source_height_bcd [0:4];
+reg [15:0] overview_source_width_bcd [0:4];
+reg [15:0] overview_source_height_bcd [0:4];
 reg [15:0] published_source_width_bcd;
 reg [15:0] published_source_height_bcd;
 reg [15:0] preload_select_source_width_bcd;
@@ -311,6 +323,10 @@ wire        video_post_osd_de;
 wire [10:0] video_post_osd_x;
 wire [9:0]  video_post_osd_y;
 wire [23:0] video_subtitle_rgb;
+wire [23:0] video_status_rgb;
+wire video_status_hs, video_status_vs, video_status_de;
+wire [10:0] video_status_x;
+wire [9:0] video_status_y;
 wire        video_subtitle_hs;
 wire        video_subtitle_vs;
 wire        video_subtitle_de;
@@ -504,6 +520,36 @@ wire overview_enable_video;
 wire overview_confirm_active_video;
 wire museum_preload_valid = sw[2:0] < 3'd5;
 wire [2:0] museum_preload_index = sw[2:0];
+always @(posedge clk_50m or negedge write_rst_n) begin
+    if (!write_rst_n) begin
+        recovery_state <= 3'd0;
+        recovery_reset_count <= 5'd0;
+        recovery_wait_count <= 27'd0;
+        recovery_select_pulse <= 1'b0;
+    end else begin
+        recovery_select_pulse <= 1'b0;
+        case (recovery_state)
+            3'd0: if (ENABLE_MAIN3 && key_press_pulse[3])
+                recovery_state <= 3'd1;
+            3'd1: if (writer_abort_done) begin
+                recovery_reset_count <= 5'd0;
+                recovery_state <= 3'd2;
+            end
+            3'd2: if (recovery_reset_count == 5'd15) begin
+                recovery_wait_count <= 27'd0;
+                recovery_state <= 3'd3;
+            end else recovery_reset_count <= recovery_reset_count + 1'b1;
+            3'd3: if (sd_init_done) begin
+                recovery_select_pulse <= 1'b1;
+                recovery_state <= 3'd0;
+            end else if (recovery_wait_count == 27'd100_000_000)
+                recovery_state <= 3'd4;
+            else recovery_wait_count <= recovery_wait_count + 1'b1;
+            3'd4: if (key_press_pulse[3]) recovery_state <= 3'd1;
+            default: recovery_state <= 3'd0;
+        endcase
+    end
+end
 reg [4:0] frame_valid_ff1, frame_valid_ff2;
 reg overview_cache_ready_ff1, overview_cache_ready_ff2;
 wire [3:0] desired_display_media_index = overview_enable_video ?
@@ -570,7 +616,7 @@ wire transition_active = fade_out_active ||
                           (transition_progress < transition_end));
 localparam integer AUDIO_SWITCH_RESET_CYCLES = 50_000;
 
-wire audio_stream_enable = ENABLE_AUDIO_VISUALIZER &&
+wire audio_stream_enable = ENABLE_AUDIO_VISUALIZER && !recovery_busy &&
                            (ENABLE_MUSEUM_LECTURE ?
                             (((lecture_cache_ready || lecture_preloading) &&
                               overview_mode) ||
@@ -602,6 +648,10 @@ wire scene_timing_valid;
 wire [31:0] scene_cut1, scene_cut2, scene_cut3, scene_cut4;
 wire subtitle_format_error_50m;
 wire subtitle_file_error_50m;
+wire osd_name_wr_en;
+wire [10:0] osd_name_wr_addr;
+wire [7:0] osd_name_wr_data;
+wire osd_name_ready;
 wire subtitle_entry_ready = !ENABLE_SUBTITLE || subtitle_ready_50m ||
                             subtitle_format_error_50m || subtitle_file_error_50m;
 reg audio_format_error_ff1, audio_format_error_ff2;
@@ -627,6 +677,7 @@ reg audio_stream_enable_d;
 wire audio_switch_reset = (audio_switch_reset_count != 0);
 reg [2:0] audio_track_ff1, audio_track_ff2;
 reg audio_paused_ff1, audio_paused_ff2;
+reg lecture_paused_ff1, lecture_paused_ff2;
 wire axis_user, axis_valid, axis_last;
 wire [23:0] axis_data;
 wire axis_ready;
@@ -650,15 +701,17 @@ assign auto_mode = FORCE_SEQUENCE_AUTO || (ui_mode == MODE_SLIDESHOW);
 generate
     if (ENABLE_MUSEUM_OVERVIEW) begin : g_museum_overview_controller
         museum_overview_controller u_museum_overview_controller (
-            .ctrl_clk(clk_50m), .ctrl_rst_n(write_rst_n),
-            .enable(overview_mode),
+            .ctrl_clk(clk_50m), .ctrl_rst_n(client_rst_n),
+            .enable(overview_mode && !recovery_busy),
             .media_ready(overview_cache_ready && museum_preload_valid &&
                          lecture_cache_ready && audio_prepared &&
                          subtitle_entry_ready &&
                          (lecture_artifact_index == overview_selected_ctrl)),
-            .key_confirm(key_press_pulse[1]),
-            .key_previous(key_press_pulse[3]),
+            .key_confirm(key_press_pulse[1] && !recovery_busy),
+            .key_previous(ENABLE_MAIN3 ? 1'b0 : key_press_pulse[3]),
             .key_next(key_press_pulse[2]),
+            .recover_select(recovery_select_pulse),
+            .recover_index(museum_preload_valid ? museum_preload_index : 3'd0),
             .selected_index_ctrl(overview_selected_ctrl),
             .confirm_pulse(overview_confirm_pulse),
             .video_clk(video_clk), .video_rst_n(video_rst_n),
@@ -699,11 +752,11 @@ generate
     if (ENABLE_MUSEUM_LECTURE) begin : g_museum_lecture_controller
         museum_lecture_controller #(.CLOCK_HZ(LECTURE_CLOCK_HZ))
         u_museum_lecture_controller (
-            .clk(clk_50m), .rst_n(write_rst_n), .enable(overview_mode),
+            .clk(clk_50m), .rst_n(client_rst_n), .enable(overview_mode && !recovery_busy),
             .overview_ready(overview_cache_ready),
             .confirm_pulse(overview_confirm_pulse),
-            .key_pause(key_press_pulse[1]),
-            .key_return(key_press_pulse[2]),
+            .key_pause(key_press_pulse[1] && !recovery_busy),
+            .key_return(key_press_pulse[2] && !recovery_busy),
             .selected_index(overview_selected_ctrl),
             .preload_valid(museum_preload_valid),
             .preload_index(museum_preload_index),
@@ -938,10 +991,11 @@ assign video_output_rgb = (RIGHT_EDGE_MASK_COLUMNS != 0 && video_post_osd_de &&
 
 generate
     if (ENABLE_AUDIO_VISUALIZER && SHOW_AUDIO_VISUALIZER) begin : g_audio_visualizer_overlay
-        audio_visualizer_overlay u_audio_visualizer_overlay (
+        audio_visualizer_overlay #(.ENABLE_EMERGENCY(ENABLE_MAIN3))
+        u_audio_visualizer_overlay (
             .clk(video_clk), .rst_n(video_rst_n), .sample_valid(audio_sample_valid),
             .sample_left(audio_sample_left), .sample_right(audio_sample_right),
-            .pause(audio_paused_ff2),
+            .pause(audio_paused_ff2 || recovery_video_ff2), .emergency(1'b0),
             .frame_tick(video_frame_tick), .hs_i(video_subtitle_hs),
             .vs_i(video_subtitle_vs), .de_i(video_subtitle_de), .x_i(video_subtitle_x),
             .y_i(video_subtitle_y), .rgb_i(video_subtitle_rgb), .hs_o(video_post_audio_hs),
@@ -960,11 +1014,12 @@ endgenerate
 
 generate
     if (ENABLE_SUBTITLE && ENABLE_MUSEUM_LECTURE) begin : g_museum_subtitle
-        museum_subtitle_overlay #(.VIDEO_W(VIDEO_W), .VIDEO_H(VIDEO_H))
+        museum_subtitle_overlay #(.VIDEO_W(VIDEO_W), .VIDEO_H(VIDEO_H),
+                                  .ENABLE_NAMES(ENABLE_MAIN3))
         u_museum_subtitle_overlay (
-            .clk_50m(clk_50m), .rst_n_50m(write_rst_n),
+            .clk_50m(clk_50m), .rst_n_50m(client_rst_n),
             .start(audio_stream_enable), .restart(lecture_audio_restart),
-            .lecture_active(lecture_active),
+            .lecture_active(lecture_active), .lecture_paused(lecture_paused),
             .lecture_finished(lecture_finished),
             .track_index(lecture_artifact_index),
             .audio_frame_index(lecture_audio_frame_index),
@@ -985,17 +1040,23 @@ generate
             .scene_cut3(scene_cut3), .scene_cut4(scene_cut4),
             .format_error(subtitle_format_error_50m),
             .file_error(subtitle_file_error_50m),
+            .name_wr_en(osd_name_wr_en), .name_wr_addr(osd_name_wr_addr),
+            .name_wr_data(osd_name_wr_data), .name_ready(osd_name_ready),
             .video_clk(video_clk), .video_rst_n(video_rst_n),
             .video_frame_tick(video_frame_tick),
-            .hs_i(video_overview_hs), .vs_i(video_overview_vs),
-            .de_i(video_overview_de), .x_i(video_overview_x),
-            .y_i(video_overview_y), .rgb_i(video_overview_rgb),
+            .hs_i(video_status_hs), .vs_i(video_status_vs),
+            .de_i(video_status_de), .x_i(video_status_x),
+            .y_i(video_status_y), .rgb_i(video_status_rgb),
             .hs_o(video_subtitle_hs), .vs_o(video_subtitle_vs),
             .de_o(video_subtitle_de), .x_o(video_subtitle_x),
             .y_o(video_subtitle_y), .rgb_o(video_subtitle_rgb)
         );
         assign subtitle_uart_txd = 1'b1;
     end else if (ENABLE_SUBTITLE) begin : g_uart_subtitle
+        assign osd_name_wr_en=1'b0;
+        assign osd_name_wr_addr=11'd0;
+        assign osd_name_wr_data=8'd0;
+        assign osd_name_ready=1'b0;
         uart_subtitle_overlay #(
             .WIDTH(SUBTITLE_WIDTH), .HEIGHT(32),
             .X_START(SUBTITLE_X_START), .Y_START(VIDEO_H - 32),
@@ -1011,13 +1072,13 @@ generate
             .uart_rxd(uart_rxd), .uart_txd(subtitle_uart_txd),
             .video_clk(video_clk), .video_rst_n(video_rst_n),
             .video_frame_tick(video_frame_tick),
-            .hs_i(video_overview_hs), .vs_i(video_overview_vs), .de_i(video_overview_de),
-            .x_i(video_overview_x), .y_i(video_overview_y), .rgb_i(video_overview_rgb),
+            .hs_i(video_status_hs), .vs_i(video_status_vs), .de_i(video_status_de),
+            .x_i(video_status_x), .y_i(video_status_y), .rgb_i(video_status_rgb),
             .hs_o(video_subtitle_hs), .vs_o(video_subtitle_vs), .de_o(video_subtitle_de),
             .rgb_o(video_subtitle_rgb)
         );
-        assign video_subtitle_x = video_overview_x;
-        assign video_subtitle_y = video_overview_y;
+        assign video_subtitle_x = video_status_x;
+        assign video_subtitle_y = video_status_y;
         assign subtitle_sd_sec_read = 1'b0;
         assign subtitle_sd_sec_read_addr = 32'd0;
         assign subtitle_ready_50m = 1'b1;
@@ -1028,13 +1089,17 @@ generate
         assign subtitle_format_error_50m = 1'b0;
         assign subtitle_file_error_50m = 1'b0;
     end else begin : g_no_uart_subtitle
+        assign osd_name_wr_en=1'b0;
+        assign osd_name_wr_addr=11'd0;
+        assign osd_name_wr_data=8'd0;
+        assign osd_name_ready=1'b0;
         assign subtitle_uart_txd = 1'b1;
-        assign video_subtitle_hs = video_overview_hs;
-        assign video_subtitle_vs = video_overview_vs;
-        assign video_subtitle_de = video_overview_de;
-        assign video_subtitle_rgb = video_overview_rgb;
-        assign video_subtitle_x = video_overview_x;
-        assign video_subtitle_y = video_overview_y;
+        assign video_subtitle_hs = video_status_hs;
+        assign video_subtitle_vs = video_status_vs;
+        assign video_subtitle_de = video_status_de;
+        assign video_subtitle_rgb = video_status_rgb;
+        assign video_subtitle_x = video_status_x;
+        assign video_subtitle_y = video_status_y;
         assign subtitle_sd_sec_read = 1'b0;
         assign subtitle_sd_sec_read_addr = 32'd0;
         assign subtitle_ready_50m = 1'b1;
@@ -1050,7 +1115,8 @@ endgenerate
 assign uart_txd = subtitle_uart_txd;
 
 sd_card_top u_sd_card_top (
-    .clk(clk_50m), .rst(~write_rst_n),
+    .clk(clk_50m), .rst(~write_rst_n | (ENABLE_MAIN3 &&
+                                     (recovery_state == 3'd1 || recovery_reset))),
     .SD_nCS(sd_cs_n), .SD_DCLK(sd_clk), .SD_MOSI(sd_mosi), .SD_MISO(sd_miso),
     .sd_init_done(sd_init_done), .sd_sec_read(sd_sec_read),
     .sd_sec_read_addr(sd_sec_read_addr), .sd_sec_read_data(sd_sec_read_data),
@@ -1063,8 +1129,8 @@ sd_card_top u_sd_card_top (
 // All clients hold their request until the sector end pulse.  Latch one owner
 // per sector.  Audio remains highest priority; a subtitle cue is only seven
 // sectors and is fetched before the lower-priority image loader.
-always @(posedge clk_50m or negedge write_rst_n) begin
-    if (!write_rst_n) begin
+always @(posedge clk_50m or negedge client_rst_n) begin
+    if (!client_rst_n) begin
         sd_read_active <= 1'b0;
         sd_read_audio_owner <= 1'b0;
         sd_read_subtitle_owner <= 1'b0;
@@ -1113,7 +1179,7 @@ fat32_image_loader #(
     .MULTI_IMAGE_BMP(MULTI_IMAGE_BMP),
     .RESOURCE_OPT_CONSTANT_MULT(RESOURCE_OPT_CONSTANT_MULT)
 ) u_fat32_image_loader (
-    .clk(clk_50m), .rst_n(write_rst_n), .load_start(image_load_start),
+    .clk(clk_50m), .rst_n(client_rst_n), .load_start(image_load_start),
     // On the exact start edge load_active is still low, so use the physical
     // switch for the new transaction; afterward keep the latched selection.
     .image_file_index(loader_file_index),
@@ -1142,7 +1208,7 @@ fat32_image_loader #(
 generate
     if (ENABLE_AUDIO_VISUALIZER) begin : g_audio_wav
         fat32_wav_streamer u_wav_streamer (
-            .clk(clk_50m), .rst_n(write_rst_n), .start(audio_stream_enable),
+            .clk(clk_50m), .rst_n(client_rst_n), .start(audio_stream_enable),
             .restart(lecture_audio_restart),
             .track_index(audio_track_index),
             .sd_init_done(sd_init_done), .sd_sec_read(audio_sd_sec_read),
@@ -1167,7 +1233,7 @@ generate
             .AL_FULL_NUM(384), .AL_EMPTY_NUM(2), .SHOW_AHEAD_EN(1'b1),
             .OUTREG_EN("NOREG")
         ) u_audio_fifo (
-            .rst(~write_rst_n | audio_switch_reset), .clkw(clk_50m), .clkr(video_clk),
+            .rst(~client_rst_n | audio_switch_reset | recovery_busy), .clkw(clk_50m), .clkr(video_clk),
             .we(audio_fifo_wr_en), .di(audio_fifo_wr_data), .re(audio_fifo_rd_en),
             .dout(audio_fifo_rd_data), .valid(audio_fifo_valid), .full_flag(audio_fifo_full),
             .empty_flag(audio_fifo_empty), .afull(audio_fifo_almost_full), .aempty(),
@@ -1181,7 +1247,8 @@ generate
             .fifo_data(audio_fifo_rd_data),
             .fifo_valid(audio_fifo_valid), .fifo_empty(audio_fifo_empty),
             .fifo_used(audio_fifo_rd_used), .fifo_rd_en(audio_fifo_rd_en),
-            .paused(audio_paused_ff2), .switch_mute(audio_switch_reset_ff2),
+            .paused(audio_paused_ff2 || recovery_video_ff2),
+            .switch_mute(audio_switch_reset_ff2 || recovery_video_ff2),
             .sample_valid(audio_sample_valid), .sample_left(audio_sample_left),
             .sample_right(audio_sample_right),
             .frame_consumed_toggle(audio_frame_consumed_toggle),
@@ -1246,6 +1313,10 @@ always @(posedge video_clk or negedge video_rst_n) begin
         audio_paused_ff2       <= 1'b0;
         audio_switch_reset_ff1 <= 1'b0;
         audio_switch_reset_ff2 <= 1'b0;
+        lecture_paused_ff1 <= 1'b0;
+        lecture_paused_ff2 <= 1'b0;
+        recovery_video_ff1 <= 1'b0;
+        recovery_video_ff2 <= 1'b0;
     end else begin
         audio_format_error_ff1 <= audio_format_error_50m;
         audio_format_error_ff2 <= audio_format_error_ff1;
@@ -1257,6 +1328,10 @@ always @(posedge video_clk or negedge video_rst_n) begin
         audio_paused_ff2       <= audio_paused_ff1;
         audio_switch_reset_ff1 <= audio_switch_reset;
         audio_switch_reset_ff2 <= audio_switch_reset_ff1;
+        lecture_paused_ff1 <= lecture_paused;
+        lecture_paused_ff2 <= lecture_paused_ff1;
+        recovery_video_ff1 <= recovery_busy;
+        recovery_video_ff2 <= recovery_video_ff1;
     end
 end
 
@@ -1268,7 +1343,7 @@ generate
         bmp_row_buffer #(
             .WIDTH(SOURCE_W), .HEIGHT(SOURCE_H), .COL_BITS(11), .ROW_BITS(11)
         ) u_bmp_row_buffer (
-            .clk(clk_50m), .rst_n(write_rst_n), .in_valid(image_wr_en),
+            .clk(clk_50m), .rst_n(client_rst_n), .in_valid(image_wr_en),
             .in_row(image_wr_row[10:0]), .in_col(image_wr_col[10:0]),
             .in_pixel(image_wr_data), .overflow(row_overflow),
             .out_valid(row_valid), .out_row(row_index), .out_pixel(row_pixel),
@@ -1292,6 +1367,7 @@ generate
         bmp_sdram_row_writer #(
             .WIDTH(SOURCE_W), .HEIGHT(SOURCE_H), .ROW_BITS(11), .ADDR_BITS(21),
             .WORDS_PER_ROW(SOURCE_W / 2), .BURST_WORDS(VIDEO_WRITE_BURST_WORDS),
+            .ENABLE_ABORT(ENABLE_MAIN3),
             .OVERVIEW_ENABLE(ENABLE_MUSEUM_OVERVIEW),
             .OVERVIEW_FRAME_COUNT(5), .OVERVIEW_PANEL_WIDTH(SOURCE_W / 5),
             .OVERVIEW_CROP_X0_0(OVERVIEW_CROP_X0_0),
@@ -1311,9 +1387,11 @@ generate
             .write_en(write_en), .write_data(write_data),
             .write_base_addr(write_base_addr), .write_len(write_len),
             .write_fifo_full(write_fifo_full), .write_finish(write_finish),
+            .abort(recovery_busy), .abort_done(writer_abort_done),
             .frame_done(frame_done), .error(writer_error)
         );
     end else begin : g_block_writer
+        assign writer_abort_done = 1'b1;
         bmp_sdram_block_writer #(
             .WIDTH(SOURCE_W), .HEIGHT(SOURCE_H), .ADDR_BITS(21),
             .BLOCK_WORDS(VIDEO_WRITE_BURST_WORDS),
@@ -1513,10 +1591,43 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         frame_source_height_bcd[2] <= 16'd0;
         frame_source_height_bcd[3] <= 16'd0;
         frame_source_height_bcd[4] <= 16'd0;
+        overview_source_width_bcd[0] <= 16'd0;
+        overview_source_width_bcd[1] <= 16'd0;
+        overview_source_width_bcd[2] <= 16'd0;
+        overview_source_width_bcd[3] <= 16'd0;
+        overview_source_width_bcd[4] <= 16'd0;
+        overview_source_height_bcd[0] <= 16'd0;
+        overview_source_height_bcd[1] <= 16'd0;
+        overview_source_height_bcd[2] <= 16'd0;
+        overview_source_height_bcd[3] <= 16'd0;
+        overview_source_height_bcd[4] <= 16'd0;
         published_source_width_bcd <= 16'd0;
         published_source_height_bcd <= 16'd0;
         preload_select_source_width_bcd <= 16'd0;
         preload_select_source_height_bcd <= 16'd0;
+    end else if (recovery_busy) begin
+        image_load_start <= 1'b0;
+        writer_start <= 1'b0;
+        load_complete_event <= 1'b0;
+        load_error_event <= 1'b0;
+        audio_paused <= 1'b1;
+        audio_switch_reset_count <= AUDIO_SWITCH_RESET_CYCLES;
+        if (recovery_reset) begin
+            load_active <= 1'b0;
+            load_reported <= overview_cache_ready;
+            writer_done_seen <= 1'b0;
+            loader_done_seen <= 1'b0;
+            writer_done_clear_seen <= 1'b0;
+            loader_done_clear_seen <= 1'b0;
+            load_museum_asset <= 1'b0;
+            load_museum_detail <= 1'b0;
+            frame_valid <= overview_cache_ready ? 5'b11111 : 5'b00000;
+            initial_frame_published <= overview_cache_ready;
+            preload_select_media_index <= 4'd0;
+            preload_select_source_width_bcd <= 16'd0;
+            preload_select_source_height_bcd <= 16'd0;
+            audio_track_index <= museum_preload_valid ? museum_preload_index : 3'd0;
+        end
     end else begin
         load_complete_event <= 1'b0;
         load_error_event <= 1'b0;
@@ -1726,6 +1837,10 @@ always @(posedge clk_50m or negedge write_rst_n) begin
                 frame_source_width_bcd[load_image_index] <= binary_to_bcd4(image_source_width);
                 frame_source_height_bcd[load_image_index] <= binary_to_bcd4(image_source_height);
             end
+            if (ENABLE_MAIN3 && !load_museum_asset && load_image_index < 4'd5) begin
+                overview_source_width_bcd[load_image_index] <= binary_to_bcd4(image_source_width);
+                overview_source_height_bcd[load_image_index] <= binary_to_bcd4(image_source_height);
+            end
             if (!ENABLE_CACHED_PRELOAD || !initial_frame_published)
                 active_image_index <= load_image_index;
             if (VIDEO_SEQUENCE) begin
@@ -1874,9 +1989,11 @@ always @(posedge video_clk or negedge video_rst_n) begin
         transition_mode_ff1 <= selected_transition_mode;
         transition_mode_ff2 <= transition_mode_ff1;
         brightness_level_ff1 <= brightness_level;
-        brightness_level_ff2 <= brightness_level_ff1;
+        if (!ENABLE_MAIN3 || video_frame_tick)
+            brightness_level_ff2 <= brightness_level_ff1;
         contrast_level_ff1   <= contrast_level;
-        contrast_level_ff2   <= contrast_level_ff1;
+        if (!ENABLE_MAIN3 || video_frame_tick)
+            contrast_level_ff2   <= contrast_level_ff1;
         detail_zoom_2x_ff1   <= detail_zoom_2x;
         detail_zoom_2x_ff2   <= detail_zoom_2x_ff1;
         picture_style_ff1    <= active_picture_style;
@@ -1997,6 +2114,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
         end
 
         if (video_run && switch_pending && video_vblank_start &&
+            !(ENABLE_MAIN3 && (lecture_paused_ff2 || recovery_video_ff2)) &&
             (direct_switch_pending || !ENABLE_FADE ||
              (fade_out_active && transition_midpoint_ready))) begin
             // Stop consuming at the visible-frame boundary. The FIFO is
@@ -2041,7 +2159,8 @@ always @(posedge video_clk or negedge video_rst_n) begin
                      video_frame_start) begin
             video_run       <= 1'b1;
             read_ready      <= 1'b0;
-        end else if (video_run && video_frame_tick && ENABLE_FADE) begin
+        end else if (video_run && video_frame_tick && ENABLE_FADE &&
+                     !(ENABLE_MAIN3 && (lecture_paused_ff2 || recovery_video_ff2))) begin
             if (transition_mode == 3'b110 &&
                 transition_progress < transition_end) begin
                 transition_pace <= ~transition_pace;
@@ -2076,6 +2195,25 @@ always @(posedge video_clk or negedge video_rst_n) begin
 
     if (!video_run)
         pair_word_valid <= 1'b0;
+    if (ENABLE_MAIN3 && recovery_video_ff2) begin
+        switch_pending <= 1'b0;
+        direct_switch_pending <= 1'b0;
+        fade_out_active <= 1'b0;
+        fade_level <= 5'd16;
+        transition_progress <= 8'd32;
+        transition_pace <= 1'b0;
+        if (video_vblank_start && display_media_index != VIDEO_FRAME_COUNT &&
+            overview_cache_ready_ff2) begin
+            video_run <= 1'b0;
+            read_accepted <= 1'b0;
+            read_ready <= 1'b0;
+            read_req_r <= 1'b1;
+            linebuf_start_pending <= LINEBUF_SCALE;
+            display_media_index <= VIDEO_FRAME_COUNT;
+            display_source_width_bcd <= 16'h0960;
+            display_source_height_bcd <= 16'h0540;
+        end
+    end
     end
 end
 
@@ -2313,6 +2451,82 @@ generate
     end
 endgenerate
 
+reg [2:0] osd_artifact, osd_stage;
+reg [1:0] osd_effect;
+reg [15:0] osd_width_bcd, osd_height_bcd;
+reg [2:0] osd_lecture_artifact_ff1, osd_lecture_artifact_ff2;
+reg osd_final_full_ff1, osd_final_full_ff2;
+always @(posedge video_clk or negedge video_rst_n) begin
+    if (!video_rst_n) begin
+        osd_artifact<=0; osd_stage<=0; osd_effect<=0;
+        osd_width_bcd<=0; osd_height_bcd<=0;
+        osd_lecture_artifact_ff1<=0; osd_lecture_artifact_ff2<=0;
+        osd_final_full_ff1<=0; osd_final_full_ff2<=0;
+    end else begin
+        osd_lecture_artifact_ff1<=lecture_artifact_index;
+        osd_lecture_artifact_ff2<=osd_lecture_artifact_ff1;
+        osd_final_full_ff1<=lecture_final_full_active;
+        osd_final_full_ff2<=osd_final_full_ff1;
+        if (video_frame_tick) begin
+            case ({brightness_level_ff1,contrast_level_ff1})
+                4'b0100:osd_effect<=2'd1;
+                4'b0001:osd_effect<=2'd2;
+                4'b1010:osd_effect<=2'd3;
+                default:osd_effect<=2'd0;
+            endcase
+            if (!transition_active && !switch_pending && !recovery_video_ff2) begin
+                if (display_media_index==VIDEO_FRAME_COUNT) begin
+                    osd_artifact<=overview_selected_video;
+                    osd_stage<=3'd0;
+                    osd_width_bcd<=overview_source_width_bcd[overview_selected_video];
+                    osd_height_bcd<=overview_source_height_bcd[overview_selected_video];
+                end else begin
+                    osd_artifact<=osd_lecture_artifact_ff2;
+                    osd_stage<=osd_final_full_ff2 ? 3'd5 :
+                               (display_media_index==0 || display_media_index==4) ?
+                               3'd1 : display_media_index[2:0]+1'b1;
+                    osd_width_bcd<=display_source_width_bcd;
+                    osd_height_bcd<=display_source_height_bcd;
+                end
+            end else if (recovery_video_ff2 && overview_cache_ready_ff2 &&
+                         display_media_index==VIDEO_FRAME_COUNT) begin
+                osd_artifact<=museum_preload_valid ? museum_preload_index : 3'd0;
+                osd_stage<=3'd0;
+                osd_width_bcd<=overview_source_width_bcd[
+                    museum_preload_valid ? museum_preload_index : 3'd0];
+                osd_height_bcd<=overview_source_height_bcd[
+                    museum_preload_valid ? museum_preload_index : 3'd0];
+            end
+        end
+    end
+end
+
+generate
+    if (ENABLE_MAIN3 && VIDEO_MODE_1280 && ENABLE_MUSEUM_OVERVIEW) begin : g_museum_status_osd
+        museum_status_osd u_museum_status_osd (
+            .clk(video_clk), .rst_n(video_rst_n),
+            .hs_i(video_overview_hs), .vs_i(video_overview_vs),
+            .de_i(video_overview_de), .x_i(video_overview_x),
+            .y_i(video_overview_y), .rgb_i(video_overview_rgb),
+            .artifact(osd_artifact), .stage(osd_stage), .effect(osd_effect),
+            .width_bcd(osd_width_bcd), .height_bcd(osd_height_bcd),
+            .name_ready(osd_name_ready),
+            .name_wr_clk(clk_50m), .name_wr_en(osd_name_wr_en),
+            .name_wr_addr(osd_name_wr_addr), .name_wr_data(osd_name_wr_data),
+            .hs_o(video_status_hs), .vs_o(video_status_vs),
+            .de_o(video_status_de), .x_o(video_status_x),
+            .y_o(video_status_y), .rgb_o(video_status_rgb)
+        );
+    end else begin : g_no_museum_status_osd
+        assign video_status_hs=video_overview_hs;
+        assign video_status_vs=video_overview_vs;
+        assign video_status_de=video_overview_de;
+        assign video_status_x=video_overview_x;
+        assign video_status_y=video_overview_y;
+        assign video_status_rgb=video_overview_rgb;
+    end
+endgenerate
+
 always @(posedge mem_clk or negedge mem_rst_n) begin
     if (!mem_rst_n)
         heartbeat_count <= 26'd0;
@@ -2349,7 +2563,8 @@ wire [15:0] raw_video_seg_value =
 
 seg_hex_display u_seg_hex_display (
     .clk(mem_clk), .rst_n(mem_rst_n),
-    .value((VIDEO_SEQUENCE && VIDEO_BIN) ? raw_video_seg_value :
+    .value((ENABLE_MAIN3 && recovery_state == 3'd4) ? 16'he503 :
+           (VIDEO_SEQUENCE && VIDEO_BIN) ? raw_video_seg_value :
            (READBACK_DIAG ? diag_seg_value : normal_seg_value)),
     .seg_data(seg_data), .seg_sel(seg_sel)
 );

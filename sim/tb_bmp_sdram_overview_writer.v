@@ -50,6 +50,7 @@ bmp_sdram_row_writer #(
     .write_en(write_en), .write_data(write_data),
     .write_base_addr(write_base_addr), .write_len(write_len),
     .write_fifo_full(write_fifo_full), .write_finish(write_finish),
+    .abort(1'b0), .abort_done(),
     .frame_done(frame_done), .error(error)
 );
 

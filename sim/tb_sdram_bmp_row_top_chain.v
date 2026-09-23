@@ -19,7 +19,8 @@ module tb_sdram_bmp_row_top_chain #(
     parameter integer PHASE3_TEST = 0,
     parameter integer PHASE4_TEST = 0,
     parameter integer PHASE5_TEST = 0,
-    parameter integer SD_ABORT_TEST = 0
+    parameter integer SD_ABORT_TEST = 0,
+    parameter integer MAIN3_RECOVERY_TEST = 0
 );
     reg clk_50m = 1'b0;
     reg [3:0] key_n = 4'b1111;
@@ -57,6 +58,7 @@ module tb_sdram_bmp_row_top_chain #(
         .LINEBUF_SCALE(1), .LINEBUF_REGISTER_READ(TEST_REGISTERED),
 `ifdef V66_TOP
         .LINEBUF_NOREG_SYNC_READ(0),
+        .ENABLE_MAIN3(MAIN3_RECOVERY_TEST),
 `endif
         .LINEBUF_V26_OUTPUT_PIPELINE(TEST_V26_OUTPUT_PIPELINE),
         .LINEBUF_FIFO_RESPONSE_REGISTER(TEST_FIFO_RESPONSE_REGISTER),
@@ -350,6 +352,42 @@ module tb_sdram_bmp_row_top_chain #(
             $display("FAIL top-chain video_run timeout status=%h frame_done=%b",
                      {dut.status_code, 4'h0, dut.row_index[3:0],
                       dut.image_load_status}, dut.frame_done);
+            $finish;
+        end
+
+        if (MAIN3_RECOVERY_TEST) begin
+            @(negedge clk_50m); force dut.key_press_pulse = 4'b1000;
+            @(negedge clk_50m); release dut.key_press_pulse;
+            if (dut.recovery_state != 3'd1 || !dut.u_sd_card_top.rst)
+                $fatal(1, "KEY4 did not start SD recovery");
+            @(negedge clk_50m);
+            if (dut.recovery_state != 3'd2 || dut.client_rst_n)
+                $fatal(1, "client reset did not follow writer drain");
+            force dut.key_press_pulse = 4'b1000;
+            repeat (4) @(negedge clk_50m);
+            release dut.key_press_pulse;
+            if (dut.recovery_state != 3'd2 || !dut.video_rst_n || !dut.mem_rst_n)
+                $fatal(1, "repeated KEY4 interrupted recovery or video/SDRAM");
+            repeat (20) @(negedge clk_50m);
+            if (dut.recovery_state != 3'd0 || !dut.client_rst_n)
+                $fatal(1, "recovery did not finish after SD init");
+            force dut.sd_init_done = 1'b0;
+            force dut.key_press_pulse = 4'b1000;
+            @(negedge clk_50m); release dut.key_press_pulse;
+            repeat (20) @(negedge clk_50m);
+            if (dut.recovery_state != 3'd3)
+                $fatal(1, "recovery did not wait for SD init");
+            force dut.recovery_wait_count = 27'd100_000_000;
+            @(negedge clk_50m); release dut.recovery_wait_count;
+            if (dut.recovery_state != 3'd4)
+                $fatal(1, "SD init timeout did not enter fault state");
+            release dut.sd_init_done;
+            force dut.key_press_pulse = 4'b1000;
+            @(negedge clk_50m); release dut.key_press_pulse;
+            repeat (20) @(negedge clk_50m);
+            if (dut.recovery_state != 3'd0)
+                $fatal(1, "KEY4 did not retry after SD init failure");
+            $display("PASS MAIN3 KEY4 drain/reset/reinit, timeout retry, repeated-key isolation");
             $finish;
         end
 
@@ -1071,6 +1109,7 @@ module bmp_sdram_row_writer #(
     parameter integer OVERVIEW_ENABLE = 0,
     parameter integer OVERVIEW_FRAME_COUNT = 5,
     parameter integer OVERVIEW_PANEL_WIDTH = WIDTH / 5,
+    parameter integer ENABLE_ABORT = 0,
     parameter integer OVERVIEW_CROP_X0_0 = 0,
     parameter integer OVERVIEW_CROP_X0_1 = 0,
     parameter integer OVERVIEW_CROP_X0_2 = 0,
@@ -1086,7 +1125,8 @@ module bmp_sdram_row_writer #(
     output wire write_req, input wire write_req_ack, output wire write_en,
     output wire [31:0] write_data, output wire [ADDR_BITS-1:0] write_base_addr,
     output wire [ADDR_BITS-1:0] write_len, input wire write_fifo_full,
-    input wire write_finish, output reg frame_done, output wire error
+    input wire write_finish, input wire abort, output wire abort_done,
+    output reg frame_done, output wire error
 );
     reg [5:0] count;
     assign row_ready = 1'b1;
@@ -1096,6 +1136,7 @@ module bmp_sdram_row_writer #(
     assign write_base_addr = {ADDR_BITS{1'b0}};
     assign write_len = {ADDR_BITS{1'b0}};
     assign error = 1'b0;
+    assign abort_done = 1'b1;
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             frame_done <= 1'b0;

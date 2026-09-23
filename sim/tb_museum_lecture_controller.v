@@ -76,6 +76,12 @@ initial begin
  if(finished)$fatal(1,"finished before final PCM frame");
  pulse_audio;
  if(!finished||display_frame_slot!=0)$fatal(1,"final PCM did not return to full view");
+ key_pause=1;@(negedge clk);key_pause=0;
+ if(!paused)$fatal(1,"end hold did not pause");
+ repeat(4)@(negedge clk);
+ if(!active)$fatal(1,"end hold advanced while paused");
+ key_pause=1;@(negedge clk);key_pause=0;
+ if(paused)$fatal(1,"end hold did not resume");
  repeat(2)@(negedge clk);
  if(!active||display_frame_slot!=0)$fatal(1,"final full-view hold was short");
  @(negedge clk);
