@@ -31,8 +31,8 @@ module bmp_row_buffer #(
     output wire                  input_continue
 );
 
-reg [15:0] line_mem0 [0:WIDTH-1];
-reg [15:0] line_mem1 [0:WIDTH-1];
+wire [15:0] line_mem0_rd;
+wire [15:0] line_mem1_rd;
 
 reg                  in_active;
 reg                  in_buf;
@@ -50,16 +50,61 @@ reg [COL_BITS-1:0]   out_col;
 
 wire buf0_free;
 wire buf1_free;
+wire write_buf0;
+wire write_buf1;
+wire read_buf0;
+wire read_buf1;
+wire [COL_BITS-1:0] read_col;
 
 assign buf0_free = !ready0 && !(out_active && !out_buf);
 assign buf1_free = !ready1 && !(out_active &&  out_buf);
 
+assign write_buf0 = in_valid &&
+                    ((!in_active && buf0_free) ||
+                     (in_active && (in_row == in_row_active) && !in_buf) ||
+                     (in_active && (in_row != in_row_active) && in_buf && buf0_free));
+assign write_buf1 = in_valid &&
+                    ((!in_active && !buf0_free && buf1_free) ||
+                     (in_active && (in_row == in_row_active) && in_buf) ||
+                     (in_active && (in_row != in_row_active) && !in_buf && buf1_free));
+assign read_buf0 = (!out_active && ready0) ||
+                   (out_active && !out_buf && out_ready && !out_last);
+assign read_buf1 = (!out_active && !ready0 && ready1) ||
+                   (out_active && out_buf && out_ready && !out_last);
+assign read_col = out_active ? (out_col + 1'b1) : {COL_BITS{1'b0}};
+
 assign out_valid    = out_active;
 assign out_row      = out_buf ? row1 : row0;
-assign out_pixel    = out_buf ? line_mem1[out_col] : line_mem0[out_col];
+assign out_pixel    = out_buf ? line_mem1_rd : line_mem0_rd;
 assign out_last     = out_active && (out_col == WIDTH - 1);
 assign out_row_done = out_valid && out_ready && out_last;
 assign input_continue = !ready0 && !ready1 && !out_active;
+
+bmp_row_bank_ram #(
+    .ADDR_WIDTH(COL_BITS),
+    .DATA_DEPTH(WIDTH)
+) u_line_mem0 (
+    .clk    (clk),
+    .wr_en  (write_buf0),
+    .wr_addr(in_col),
+    .wr_data(in_pixel),
+    .rd_en  (read_buf0),
+    .rd_addr(read_col),
+    .rd_data(line_mem0_rd)
+);
+
+bmp_row_bank_ram #(
+    .ADDR_WIDTH(COL_BITS),
+    .DATA_DEPTH(WIDTH)
+) u_line_mem1 (
+    .clk    (clk),
+    .wr_en  (write_buf1),
+    .wr_addr(in_col),
+    .wr_data(in_pixel),
+    .rd_en  (read_buf1),
+    .rd_addr(read_col),
+    .rd_data(line_mem1_rd)
+);
 
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
@@ -107,7 +152,6 @@ always @(posedge clk or negedge rst_n) begin
                     in_buf        <= 1'b0;
                     in_row_active <= in_row;
                     in_col_last   <= in_col;
-                    line_mem0[in_col] <= in_pixel;
                     if (in_col == WIDTH - 1) begin
                         ready0    <= 1'b1;
                         row0      <= in_row;
@@ -118,7 +162,6 @@ always @(posedge clk or negedge rst_n) begin
                     in_buf        <= 1'b1;
                     in_row_active <= in_row;
                     in_col_last   <= in_col;
-                    line_mem1[in_col] <= in_pixel;
                     if (in_col == WIDTH - 1) begin
                         ready1    <= 1'b1;
                         row1      <= in_row;
@@ -130,11 +173,6 @@ always @(posedge clk or negedge rst_n) begin
             end else if (in_row == in_row_active) begin
                 // Pixels within one row arrive in increasing destination X.
                 in_col_last <= in_col;
-                if (!in_buf)
-                    line_mem0[in_col] <= in_pixel;
-                else
-                    line_mem1[in_col] <= in_pixel;
-
                 if (in_col == WIDTH - 1) begin
                     in_active <= 1'b0;
                     if (!in_buf) begin
@@ -153,7 +191,6 @@ always @(posedge clk or negedge rst_n) begin
                     in_buf        <= 1'b1;
                     in_row_active <= in_row;
                     in_col_last   <= in_col;
-                    line_mem1[in_col] <= in_pixel;
                     if (in_col == WIDTH - 1) begin
                         ready1    <= 1'b1;
                         row1      <= in_row;
@@ -163,7 +200,6 @@ always @(posedge clk or negedge rst_n) begin
                     in_buf        <= 1'b0;
                     in_row_active <= in_row;
                     in_col_last   <= in_col;
-                    line_mem0[in_col] <= in_pixel;
                     if (in_col == WIDTH - 1) begin
                         ready0    <= 1'b1;
                         row0      <= in_row;
@@ -176,6 +212,56 @@ always @(posedge clk or negedge rst_n) begin
         end
     end
 end
+
+endmodule
+
+// EG_LOGIC_BRAM's NOREG output still has one synchronous array-read cycle.
+// The read enable holds the current output pixel while the consumer stalls.
+module bmp_row_bank_ram #(
+    parameter integer ADDR_WIDTH = 10,
+    parameter integer DATA_DEPTH = 960
+)(
+    input  wire                  clk,
+    input  wire                  wr_en,
+    input  wire [ADDR_WIDTH-1:0] wr_addr,
+    input  wire [15:0]           wr_data,
+    input  wire                  rd_en,
+    input  wire [ADDR_WIDTH-1:0] rd_addr,
+    output wire [15:0]           rd_data
+);
+
+`ifdef SIM
+reg [15:0] memory [0:DATA_DEPTH-1];
+reg [15:0] rd_data_q;
+
+always @(posedge clk) begin
+    if (wr_en)
+        memory[wr_addr] <= wr_data;
+    if (rd_en)
+        rd_data_q <= memory[rd_addr];
+end
+
+assign rd_data = rd_data_q;
+`else
+wire [15:0] unused_a;
+
+EG_LOGIC_BRAM #(
+    .DATA_WIDTH_A(16), .DATA_WIDTH_B(16),
+    .ADDR_WIDTH_A(ADDR_WIDTH), .ADDR_WIDTH_B(ADDR_WIDTH),
+    .DATA_DEPTH_A(1 << ADDR_WIDTH), .DATA_DEPTH_B(1 << ADDR_WIDTH),
+    .BYTE_ENABLE(0), .BYTE_A(1), .BYTE_B(1), .MODE("DP"),
+    .REGMODE_A("NOREG"), .REGMODE_B("NOREG"),
+    .WRITEMODE_A("NORMAL"), .WRITEMODE_B("NORMAL"),
+    .RESETMODE("SYNC"), .DEBUGGABLE("NO"), .PACKABLE("NO"),
+    .FORCE_KEEP("OFF"), .INIT_FILE("NONE"), .FILL_ALL("NONE"),
+    .IMPLEMENT("9K")
+) u_ram (
+    .doa(unused_a), .dob(rd_data), .dia(wr_data), .dib(16'd0),
+    .cea(wr_en), .ocea(1'b0), .clka(clk), .wea(wr_en), .rsta(1'b0),
+    .ceb(rd_en), .oceb(1'b1), .clkb(clk), .web(1'b0), .rstb(1'b0),
+    .bea(1'b1), .beb(1'b1), .addra(wr_addr), .addrb(rd_addr)
+);
+`endif
 
 endmodule
 
