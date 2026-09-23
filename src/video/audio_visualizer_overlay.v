@@ -17,7 +17,7 @@ localparam [7:0] MAX_HEIGHT = 8'd50;
 reg [5:0] bar_index;
 reg [3:0] samples_in_bar;
 reg [7:0] peak_height;
-reg display_bank, frame_pending;
+reg display_bank, frame_pending, display_valid;
 reg sample_valid_q;
 reg [7:0] sample_height_q;
 
@@ -60,7 +60,8 @@ wire in_bar_span = de_s2 && x_s2 >= BAR_X0 && x_s2 < BAR_X0 + 11'd1024 &&
 wire [10:0] bar_offset = x_s2 - BAR_X0;
 wire [5:0] bar_draw_index = bar_offset[9:4];
 wire in_bar = in_bar_span && bar_offset[3:0] < 4'd6;
-wire bar_hit = in_bar && y_s2 >= (CENTER_Y - bar_height_s2) &&
+wire bar_hit = !pause && display_valid && in_bar &&
+               y_s2 >= (CENTER_Y - bar_height_s2) &&
                y_s2 <= (CENTER_Y + bar_height_s2);
 
 reg [23:0] rgb_visualizer;
@@ -75,7 +76,7 @@ end
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         bar_index <= 0; samples_in_bar <= 0; peak_height <= 0;
-        display_bank <= 0; frame_pending <= 0;
+        display_bank <= 0; frame_pending <= 0; display_valid <= 0;
         sample_valid_q <= 0; sample_height_q <= 0;
         hs_s1 <= 1; vs_s1 <= 1; de_s1 <= 0; hs_s2 <= 1; vs_s2 <= 1; de_s2 <= 0;
         x_s1 <= 0; y_s1 <= 0; rgb_s1 <= 0; x_s2 <= 0; y_s2 <= 0; rgb_s2 <= 0;
@@ -84,7 +85,10 @@ always @(posedge clk or negedge rst_n) begin
         sample_valid_q <= pause ? 1'b0 : sample_valid;
         if (!pause)
             sample_height_q <= sample_height;
-        if (!pause && sample_valid_q) begin
+        if (pause) begin
+            bar_index <= 0; samples_in_bar <= 0; peak_height <= 0;
+            frame_pending <= 0; display_valid <= 0;
+        end else if (sample_valid_q) begin
             if (bar_write_en) begin
                 samples_in_bar <= 0; peak_height <= 0;
                 if (bar_index == 6'd63) begin
@@ -100,6 +104,7 @@ always @(posedge clk or negedge rst_n) begin
         if (!pause && frame_tick && frame_pending) begin
             display_bank <= ~display_bank;
             frame_pending <= 0;
+            display_valid <= 1;
         end
         hs_s1 <= hs_i; vs_s1 <= vs_i; de_s1 <= de_i;
         x_s1 <= x_i; y_s1 <= y_i; rgb_s1 <= rgb_i;

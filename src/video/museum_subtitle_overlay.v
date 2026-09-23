@@ -426,7 +426,9 @@ subtitle_bitmap_ram #(.ADDR_WIDTH(12),.DEPTH(4096),.REGISTER_READ(0)) u_bitmap1 
 
 wire [11:0] current_center = (VIDEO_W-current_width) >> 1;
 wire [7:0] bitmap_q = active_bank_q ? bitmap1_q : bitmap0_q;
-reg [23:0] faded_text_rgb;
+wire [1:0] fade_rank = {x_q[0]^y_q[0],y_q[0]};
+wire black_pixel_visible = fade_level[4] ||
+                           fade_level[3:2] > fade_rank;
 
 always @(*) begin
     relative_x = x_i>=current_center ? x_i-current_center : 0;
@@ -435,17 +437,6 @@ always @(*) begin
                    x_i>=current_center && relative_x<current_width;
     bitmap_rd_addr = ((y_i-Y_START)<<6)+((y_i-Y_START)<<5)+
                      ((y_i-Y_START)<<2)+relative_x[9:3];
-    case (fade_level[4:1])
-        4'd0: faded_text_rgb = 24'h101820;
-        4'd1: faded_text_rgb = 24'h2E332F;
-        4'd2: faded_text_rgb = 24'h4C4E49;
-        4'd3: faded_text_rgb = 24'h6A6962;
-        4'd4: faded_text_rgb = 24'h888474;
-        4'd5: faded_text_rgb = 24'hA69F8D;
-        4'd6: faded_text_rgb = 24'hC4BAA6;
-        4'd7: faded_text_rgb = 24'hE2D5BD;
-        default: faded_text_rgb = 24'hFFF1C7;
-    endcase
 end
 
 always @(posedge video_clk or negedge video_rst_n) begin
@@ -483,7 +474,8 @@ always @(posedge video_clk or negedge video_rst_n) begin
         end
         hs_o<=hs_q;vs_o<=vs_q;de_o<=de_q;x_o<=x_q;y_o<=y_q;
         if (!de_q) rgb_o<=24'h000000;
-        else if (mapped_q && bitmap_q[7-pixel_q]) rgb_o<=faded_text_rgb;
+        else if (mapped_q && bitmap_q[7-pixel_q] && black_pixel_visible)
+            rgb_o<=24'h000000;
         else rgb_o<=rgb_q;
         hs_q<=hs_i;vs_q<=vs_i;de_q<=de_i;x_q<=x_i;y_q<=y_i;rgb_q<=rgb_i;
         pixel_q<=relative_x[2:0]; mapped_q<=mapped_valid; active_bank_q<=active_bank;

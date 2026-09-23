@@ -40,11 +40,21 @@ initial begin
         $fatal(1, "first fixed bar peak was not captured");
     pause = 1;
     for (i=0; i<14; i=i+1) play(16'sd8192);
-    if (dut.bar_index != 6'd1) $fatal(1, "paused visualizer advanced");
+    if (dut.bar_index != 0 || dut.display_valid)
+        $fatal(1, "paused visualizer did not clear");
     pause = 0;
-    @(negedge clk); de_i = 1; x_i = 11'd128; y_i = 10'd688; rgb_i = 24'h123456;
+    while (!dut.frame_pending) play(16'sd8192);
+    @(negedge clk); frame_tick = 1;
+    @(negedge clk); frame_tick = 0; de_i = 1;
+    x_i = 11'd128; y_i = 10'd600; rgb_i = 24'h123456;
+    repeat (4) @(posedge clk);
+    if (rgb_o == 24'h123456) $fatal(1, "fresh visualizer frame was not shown");
+    pause = 1;
     repeat (3) @(posedge clk);
-    if (rgb_o != 24'h123456) $fatal(1, "subtitle pixel was modified");
+    if (rgb_o != 24'h123456) $fatal(1, "paused visualizer remained visible");
+    pause = 0;
+    repeat (3) @(posedge clk);
+    if (rgb_o != 24'h123456) $fatal(1, "stale visualizer frame reappeared");
     $display("PASS tb_audio_visualizer_overlay");
     $finish;
 end

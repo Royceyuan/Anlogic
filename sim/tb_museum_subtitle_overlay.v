@@ -102,7 +102,7 @@ initial begin
   @(negedge vclk);frame_tick=1;@(negedge vclk);frame_tick=0;
  end
  repeat(5)@(negedge vclk);
- if(rgb_o!==24'hFFF1C7)$fatal(1,"TF subtitle pixel missing: %h",rgb_o);
+ if(rgb_o!==24'h000000)$fatal(1,"TF subtitle is not black: %h",rgb_o);
  x=500;repeat(4)@(negedge vclk);
  if(rgb_o!==rgb)$fatal(1,"subtitle background is not transparent: %h",rgb_o);
  x=636;repeat(4)@(negedge vclk);
@@ -116,19 +116,19 @@ initial begin
   @(negedge vclk);frame_tick=1;@(negedge vclk);frame_tick=0;
  end
  repeat(4)@(negedge vclk);
- if(rgb_o!==24'h888474)$fatal(1,"outgoing cue did not fade: %h",rgb_o);
+ if(dut.fade_level==0||dut.fade_level==16)$fatal(1,"outgoing black cue did not fade");
  i=0;
  while(dut.fade_phase!=2 && i<20) begin
   @(negedge vclk);frame_tick=1;@(negedge vclk);frame_tick=0;i=i+1;
  end
  if(dut.fade_phase!=2||dut.fade_level!=0)$fatal(1,"incoming fade did not start");
  repeat(4)@(negedge vclk);
- if(rgb_o!==24'h101820)$fatal(1,"subtitle did not fade out: %h",rgb_o);
+ if(rgb_o!==rgb)$fatal(1,"subtitle did not fade out: %h",rgb_o);
  for(i=0;i<17;i=i+1) begin
   @(negedge vclk);frame_tick=1;@(negedge vclk);frame_tick=0;
  end
  repeat(5)@(negedge vclk);
- if(rgb_o!==24'hFFF1C7)$fatal(1,"second cue did not settle: %h",rgb_o);
+ if(rgb_o!==24'h000000)$fatal(1,"second cue is not black: %h",rgb_o);
  audio_frame=200;repeat(8)@(negedge vclk);
  if(rgb_o!==rgb)$fatal(1,"expired subtitle changed image: %h",rgb_o);
  active=0;audio_frame=0;restart=1;@(negedge clk50);restart=0;
@@ -140,7 +140,7 @@ initial begin
   @(negedge vclk);frame_tick=1;@(negedge vclk);frame_tick=0;
  end
  repeat(5)@(negedge vclk);
- if(rgb_o!==24'hFFF1C7)$fatal(1,"repeated lecture subtitle missing: %h",rgb_o);
+ if(rgb_o!==24'h000000)$fatal(1,"repeated lecture subtitle is not black: %h",rgb_o);
  $display("PASS tb_museum_subtitle_overlay");$finish;
 end
 endmodule
