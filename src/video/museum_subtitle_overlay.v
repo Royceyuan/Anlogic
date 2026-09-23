@@ -81,7 +81,7 @@ reg [1:0] fade_phase;
 reg [4:0] fade_level;
 reg video_has_cue, mapped_valid;
 reg [11:0] bitmap_rd_addr;
-reg hs_q,vs_q,de_q,mapped_q,bar_q,active_bank_q;
+reg hs_q,vs_q,de_q,mapped_q,active_bank_q;
 reg [10:0] x_q;
 reg [9:0] y_q;
 reg [23:0] rgb_q;
@@ -454,7 +454,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
         video_ack_toggle<=0; visible_sync1<=0; visible_sync2<=0;
         current_width<=0; fade_level<=0;
         video_has_cue<=0; fade_phase<=FADE_IDLE;
-        hs_q<=1;vs_q<=1;de_q<=0;mapped_q<=0;bar_q<=0;active_bank_q<=0;
+        hs_q<=1;vs_q<=1;de_q<=0;mapped_q<=0;active_bank_q<=0;
         x_q<=0;y_q<=0;rgb_q<=0;pixel_q<=0;
         hs_o<=1;vs_o<=1;de_o<=0;x_o<=0;y_o<=0;rgb_o<=0;
     end else begin
@@ -484,12 +484,9 @@ always @(posedge video_clk or negedge video_rst_n) begin
         hs_o<=hs_q;vs_o<=vs_q;de_o<=de_q;x_o<=x_q;y_o<=y_q;
         if (!de_q) rgb_o<=24'h000000;
         else if (mapped_q && bitmap_q[7-pixel_q]) rgb_o<=faded_text_rgb;
-        else if (bar_q) rgb_o<=24'h101820;
         else rgb_o<=rgb_q;
         hs_q<=hs_i;vs_q<=vs_i;de_q<=de_i;x_q<=x_i;y_q<=y_i;rgb_q<=rgb_i;
         pixel_q<=relative_x[2:0]; mapped_q<=mapped_valid; active_bank_q<=active_bank;
-        bar_q<=de_i&&visible_sync2&&video_has_cue&&
-               y_i>=Y_START&&y_i<Y_START+HEIGHT;
     end
 end
 

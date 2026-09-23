@@ -103,6 +103,9 @@ initial begin
  end
  repeat(5)@(negedge vclk);
  if(rgb_o!==24'hFFF1C7)$fatal(1,"TF subtitle pixel missing: %h",rgb_o);
+ x=500;repeat(4)@(negedge vclk);
+ if(rgb_o!==rgb)$fatal(1,"subtitle background is not transparent: %h",rgb_o);
+ x=636;repeat(4)@(negedge vclk);
  i=0;
  while((dut.cue_index!=1 || !dut.cue_ready) && i<100000) begin
   @(negedge clk50);i=i+1;
