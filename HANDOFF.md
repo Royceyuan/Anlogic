@@ -1,5 +1,7 @@
 # HX4S20 多媒体工程交接
 
+> 副屏分支补充（2026-09-23）：本工作树位于 `D:\Anlogic_information\hx4s20_secondary`，分支 `secondary-screen`，从 `a158ae3225617b539e3dde5727f12e8d13a48008` 建立。下文是原主板交接快照，其中目录、分支和“下一步行动”不代表此工作树的当前状态。副屏实现、验证结果和待上板事项见 [SECONDARY_HANDOFF.md](SECONDARY_HANDOFF.md)。
+
 更新时间：2026-09-21
 适用目录：`D:\VSCode\CodeFiles\Git_TD\Anlogic`
 当前分支：`Yan_Chen_Double`，跟踪 `origin/Yan_Chen_Double`。

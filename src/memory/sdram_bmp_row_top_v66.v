@@ -87,6 +87,7 @@ module top_v66 #(
     ,parameter integer AUDIO_TRACK_COUNT = 4
     ,parameter integer ENABLE_MUSEUM_OVERVIEW = 0
     ,parameter integer ENABLE_MUSEUM_LECTURE = 0
+    ,parameter integer ENABLE_SECONDARY = 0
     ,parameter integer LECTURE_CLOCK_HZ = 50_000_000
     ,parameter integer OVERVIEW_CROP_X0_0 = 384
     ,parameter integer OVERVIEW_CROP_X0_1 = 384
@@ -114,7 +115,14 @@ module top_v66 #(
     output wire        hdmi1_ddc_scl,
     inout  wire        hdmi1_ddc_sda,
     input  wire        uart_rxd,
-    output wire        uart_txd
+    output wire        uart_txd,
+    input  wire        secondary_cmd_valid,
+    input  wire [7:0]  secondary_cmd_type,
+    input  wire [7:0]  secondary_cmd_artifact_id,
+    input  wire [15:0] secondary_cmd_emergency_id,
+    input  wire [7:0]  secondary_cmd_route_id,
+    input  wire        secondary_cmd_emergency_active,
+    output wire [2:0]  secondary_cmd_result
 );
 
 localparam integer FRAME_WORDS = (SOURCE_W * SOURCE_H) / 2;
@@ -201,6 +209,38 @@ reg [1:0] demo_transition_step;
 reg [24:0] sequence_hold_count;
 reg sequence_hold_done;
 reg [4:0] frame_valid;
+wire [2:0] secondary_page_index;
+wire secondary_emergency_active;
+wire [1:0] secondary_link_state;
+wire [2:0] secondary_master_artifact;
+wire [7:0] secondary_active_route_id;
+generate
+    if (ENABLE_SECONDARY) begin : g_secondary_controller
+        secondary_carousel_controller #(.PAGE_CYCLES(AUTO_PERIOD_CYCLES))
+        u_secondary_carousel_controller (
+            .clk(clk_50m), .rst_n(write_rst_n), .frame_valid(frame_valid),
+            .local_emergency(sw[3]),
+            .cmd_valid(secondary_cmd_valid), .cmd_type(secondary_cmd_type),
+            .cmd_artifact_id(secondary_cmd_artifact_id),
+            .cmd_emergency_id(secondary_cmd_emergency_id),
+            .cmd_route_id(secondary_cmd_route_id),
+            .cmd_emergency_active(secondary_cmd_emergency_active),
+            .page_index(secondary_page_index),
+            .emergency_active(secondary_emergency_active),
+            .link_state(secondary_link_state),
+            .master_artifact(secondary_master_artifact),
+            .active_route_id(secondary_active_route_id),
+            .cmd_result(secondary_cmd_result)
+        );
+    end else begin : g_no_secondary_controller
+        assign secondary_page_index = 3'd0;
+        assign secondary_emergency_active = 1'b0;
+        assign secondary_link_state = 2'd0;
+        assign secondary_master_artifact = 3'd7;
+        assign secondary_active_route_id = 8'd0;
+        assign secondary_cmd_result = 3'd0;
+    end
+endgenerate
 reg overview_cache_ready;
 reg initial_frame_published;
 reg preload_select_frame_index;
@@ -767,7 +807,8 @@ product_show_controller #(
     .transition_context(product_show_transition_context),
     .demo_step(product_show_demo_step)
 );
-assign desired_image_index = (ENABLE_MUSEUM_LECTURE && lecture_active) ?
+assign desired_image_index = ENABLE_SECONDARY ? {1'b0, secondary_page_index} :
+                             (ENABLE_MUSEUM_LECTURE && lecture_active) ?
                              {1'b0, lecture_display_frame_slot} :
                              (VIDEO_SEQUENCE ?
                              (auto_mode ? active_media_index : manual_image_index) :
@@ -2402,9 +2443,66 @@ generate
     end
 endgenerate
 
-assign vga_hs = video_hs_out;
-assign vga_vs = video_vs_out;
-assign vga_d  = video_rgb_out[23:12];
+wire [23:0] secondary_rgb_out;
+wire        secondary_hs_out;
+wire        secondary_vs_out;
+wire        secondary_de_out;
+generate
+    if (ENABLE_SECONDARY) begin : g_secondary_overlay
+        reg [10:0] x_q, x_q_d;
+        reg [9:0] y_q, y_q_d;
+        reg        hs_q, vs_q, de_q;
+        reg [23:0] rgb_q;
+        wire [23:0] overlay_rgb;
+        always @(posedge video_clk or negedge video_rst_n) begin
+            if (!video_rst_n) begin
+                x_q <= 11'd0;
+                x_q_d <= 11'd0;
+                y_q <= 10'd0;
+                y_q_d <= 10'd0;
+                hs_q <= 1'b1;
+                vs_q <= 1'b1;
+                de_q <= 1'b0;
+                rgb_q <= 24'h000000;
+            end else begin
+                x_q <= video_post_audio_x;
+                x_q_d <= x_q;
+                y_q <= video_post_audio_y;
+                y_q_d <= y_q;
+                hs_q <= video_hs_out;
+                vs_q <= video_vs_out;
+                de_q <= video_de_out;
+                rgb_q <= overlay_rgb;
+            end
+        end
+        secondary_page_overlay u_secondary_page_overlay (
+            .clk(video_clk), .rst_n(video_rst_n),
+            .de(video_de_out), .x(x_q_d), .y(y_q_d),
+            .pre_x(x_q), .pre_y(y_q),
+            .base_rgb(video_rgb_out),
+            .emergency_50m(secondary_emergency_active),
+            .link_state_50m(secondary_link_state),
+            .master_artifact_50m(secondary_master_artifact),
+            .route_id_50m(secondary_active_route_id),
+            .media_ready_50m(&frame_valid),
+            .media_error_50m(image_load_error | writer_error),
+            .rgb(overlay_rgb)
+        );
+        assign secondary_hs_out = hs_q;
+        assign secondary_vs_out = vs_q;
+        assign secondary_de_out = de_q;
+        assign secondary_rgb_out = rgb_q;
+    end else begin : g_no_secondary_overlay
+        assign secondary_hs_out = video_hs_out;
+        assign secondary_vs_out = video_vs_out;
+        assign secondary_de_out = video_de_out;
+        assign secondary_rgb_out = video_rgb_out;
+    end
+endgenerate
+
+assign vga_hs = secondary_hs_out;
+assign vga_vs = secondary_vs_out;
+assign vga_d  = secondary_rgb_out[23:12];
 
 generate
     if (ENABLE_AUDIO_VISUALIZER) begin : g_hdmi_audio_output
@@ -2451,8 +2549,8 @@ generate
         assign hdmi1_ddc_sda = 1'bz;
         hdmi_tx u_hdmi_tx (
             .PXLCLK_I(video_clk), .PXLCLK_5X_I(video_clk_5x), .RST_N(video_rst_n),
-            .VGA_HS(video_hs_out), .VGA_VS(video_vs_out), .VGA_DE(video_de_out),
-            .VGA_RGB(video_rgb_out), .HDMI_CLK_P(hdmi1_clk_p),
+            .VGA_HS(secondary_hs_out), .VGA_VS(secondary_vs_out), .VGA_DE(secondary_de_out),
+            .VGA_RGB(secondary_rgb_out), .HDMI_CLK_P(hdmi1_clk_p),
             .HDMI_D2_P(hdmi1_d2_p), .HDMI_D1_P(hdmi1_d1_p), .HDMI_D0_P(hdmi1_d0_p)
         );
     end

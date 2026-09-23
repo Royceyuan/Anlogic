@@ -1,6 +1,8 @@
 # Anlogic TD build outputs
 _media_*/
+_build_*/
 Runs/
+*.bid
 *.area
 *.qdb
 *.qpg
@@ -9,6 +11,8 @@ Runs/
 *.log
 *.logw
 *.err
+/final_timing.rpt
+/*.qor
 transcript
 
 # ModelSim generated libraries and local configuration
