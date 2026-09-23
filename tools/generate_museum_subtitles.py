@@ -4,7 +4,7 @@ import re
 import struct
 import wave
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 
 ROOT = Path(__file__).resolve().parents[2] / "素材"
@@ -12,7 +12,7 @@ FONT = Path(r"C:\Windows\Fonts\msyh.ttc")
 WIDTH = 800
 HEIGHT = 32
 BITMAP_BYTES = WIDTH * HEIGHT // 8
-RECORD_BYTES = 7 * 512
+RECORD_BYTES = 13 * 512
 PAYLOAD_OFFSET = 16
 
 
@@ -93,25 +93,33 @@ def render_bitmap(text: str):
         font = ImageFont.truetype(str(FONT), font_size)
         box = font.getbbox(text)
         text_width = box[2] - box[0]
-        if text_width <= WIDTH or font_size == 16:
+        text_height = box[3] - box[1]
+        if (text_width <= WIDTH - 2 and text_height <= HEIGHT - 2) or font_size == 16:
             break
         font_size -= 1
-    if text_width > WIDTH:
-        raise ValueError(f"subtitle is too wide even at 16px: {text}")
-    rendered_width = max(1, text_width)
+    if text_width > WIDTH - 2 or text_height > HEIGHT - 2:
+        raise ValueError(f"subtitle does not fit even at 16px: {text}")
+    rendered_width = max(1, text_width + 2)
     image = Image.new("L", (WIDTH, HEIGHT))
     draw = ImageDraw.Draw(image)
-    text_height = box[3] - box[1]
-    draw.text((-box[0], (HEIGHT - text_height) // 2 - box[1]), text, font=font, fill=255)
-    payload = bytearray()
+    draw.text((1 - box[0], (HEIGHT - text_height) // 2 - box[1]),
+              text, font=font, fill=255)
+    outline = image.filter(ImageFilter.MaxFilter(3))
+    body_payload = bytearray()
+    outline_payload = bytearray()
     for y in range(HEIGHT):
         for byte_x in range(WIDTH // 8):
-            value = 0
+            body_value = 0
+            outline_value = 0
             for bit in range(8):
-                if image.getpixel((byte_x * 8 + bit, y)) >= 96:
-                    value |= 1 << (7 - bit)
-            payload.append(value)
-    return rendered_width, bytes(payload)
+                pixel_x = byte_x * 8 + bit
+                if image.getpixel((pixel_x, y)) >= 96:
+                    body_value |= 1 << (7 - bit)
+                elif outline.getpixel((pixel_x, y)) >= 96:
+                    outline_value |= 1 << (7 - bit)
+            body_payload.append(body_value)
+            outline_payload.append(outline_value)
+    return rendered_width, bytes(body_payload + outline_payload)
 
 
 def build_track(track: int, folder: Path, audio_dir: Path, destination: Path,
@@ -126,12 +134,12 @@ def build_track(track: int, folder: Path, audio_dir: Path, destination: Path,
 
     header = bytearray(512)
     header[0:4] = b"MSUB"
-    header[4] = 2
+    header[4] = 3
     struct.pack_into("<H", header, 5, WIDTH)
     header[7] = HEIGHT
-    header[8] = 1
+    header[8] = 2
     header[9] = len(cues)
-    struct.pack_into("<H", header, 10, BITMAP_BYTES)
+    struct.pack_into("<H", header, 10, BITMAP_BYTES * 2)
     header[12] = RECORD_BYTES // 512
     struct.pack_into("<I", header, 16, total_frames)
     struct.pack_into("<IIII", header, 20, *scene_cuts)
@@ -142,7 +150,7 @@ def build_track(track: int, folder: Path, audio_dir: Path, destination: Path,
         record = bytearray(RECORD_BYTES)
         struct.pack_into("<IIH", record, 0, start, end, rendered_width)
         record[10] = 1  # slide in from the right
-        record[PAYLOAD_OFFSET:PAYLOAD_OFFSET + BITMAP_BYTES] = bitmap
+        record[PAYLOAD_OFFSET:PAYLOAD_OFFSET + BITMAP_BYTES * 2] = bitmap
         output.extend(record)
 
     destination.mkdir(parents=True, exist_ok=True)

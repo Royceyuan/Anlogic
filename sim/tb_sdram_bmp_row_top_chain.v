@@ -18,7 +18,8 @@ module tb_sdram_bmp_row_top_chain #(
     parameter integer PHASE2_TEST = 0,
     parameter integer PHASE3_TEST = 0,
     parameter integer PHASE4_TEST = 0,
-    parameter integer PHASE5_TEST = 0
+    parameter integer PHASE5_TEST = 0,
+    parameter integer SD_ABORT_TEST = 0
 );
     reg clk_50m = 1'b0;
     reg [3:0] key_n = 4'b1111;
@@ -349,6 +350,75 @@ module tb_sdram_bmp_row_top_chain #(
             $display("FAIL top-chain video_run timeout status=%h frame_done=%b",
                      {dut.status_code, 4'h0, dut.row_index[3:0],
                       dut.image_load_status}, dut.frame_done);
+            $finish;
+        end
+
+        if (SD_ABORT_TEST) begin
+            timeout = 0;
+            while (dut.sd_read_active && timeout < 1000) begin
+                @(negedge clk_50m); timeout = timeout + 1;
+            end
+            if (dut.sd_read_active) $fatal(1, "SD arbiter did not become idle");
+            @(negedge clk_50m);
+            force dut.image_sd_sec_read = 1'b0;
+            force dut.subtitle_sd_sec_read = 1'b0;
+            force dut.audio_sd_sec_read = 1'b1;
+            force dut.sd_sec_read_data_valid = 1'b0;
+            force dut.sd_sec_read_end = 1'b0;
+            repeat (2) @(negedge clk_50m);
+            if (!dut.sd_read_active || !dut.sd_read_audio_owner)
+                $fatal(1, "SD arbiter did not grant audio read");
+            force dut.audio_sd_sec_read = 1'b0;
+            @(negedge clk_50m);
+            if (!dut.sd_read_abandoned)
+                $fatal(1, "aborted sector was not marked stale");
+            force dut.audio_sd_sec_read = 1'b1;
+            force dut.sd_sec_read_data_valid = 1'b1;
+            #1;
+            if (dut.audio_sd_sec_read_data_valid)
+                $fatal(1, "stale sector data entered restarted audio reader");
+            force dut.sd_sec_read_end = 1'b1;
+            #1;
+            if (dut.audio_sd_sec_read_end)
+                $fatal(1, "stale sector end entered restarted audio reader");
+            @(negedge clk_50m);
+            force dut.sd_sec_read_data_valid = 1'b0;
+            force dut.sd_sec_read_end = 1'b0;
+            repeat (2) @(negedge clk_50m);
+            if (!dut.sd_read_active || dut.sd_read_abandoned)
+                $fatal(1, "new read did not start after aborted sector drained");
+            force dut.sd_sec_read_data_valid = 1'b1;
+            force dut.sd_sec_read_end = 1'b1;
+            #1;
+            if (!dut.audio_sd_sec_read_data_valid || !dut.audio_sd_sec_read_end)
+                $fatal(1, "new sector was not delivered to audio reader");
+            @(negedge clk_50m);
+            force dut.audio_sd_sec_read = 1'b0;
+            force dut.sd_sec_read_data_valid = 1'b0;
+            force dut.sd_sec_read_end = 1'b0;
+            force dut.subtitle_sd_sec_read = 1'b1;
+            repeat (2) @(negedge clk_50m);
+            if (!dut.sd_read_active || !dut.sd_read_subtitle_owner)
+                $fatal(1, "subtitle read was not granted");
+            force dut.subtitle_sd_sec_read = 1'b0;
+            @(negedge clk_50m);
+            if (!dut.sd_read_abandoned)
+                $fatal(1, "aborted subtitle sector was not marked stale");
+            force dut.subtitle_sd_sec_read = 1'b1;
+            force dut.audio_sd_sec_read = 1'b1;
+            force dut.sd_sec_read_data_valid = 1'b1;
+            force dut.sd_sec_read_end = 1'b1;
+            #1;
+            if (dut.subtitle_sd_sec_read_data_valid || dut.subtitle_sd_sec_read_end)
+                $fatal(1, "stale subtitle sector entered restarted reader");
+            @(negedge clk_50m);
+            force dut.sd_sec_read_data_valid = 1'b0;
+            force dut.sd_sec_read_end = 1'b0;
+            repeat (2) @(negedge clk_50m);
+            if (!dut.sd_read_active || !dut.sd_read_audio_owner ||
+                dut.sd_read_abandoned)
+                $fatal(1, "audio request did not follow aborted subtitle sector");
+            $display("PASS aborted audio/subtitle sectors isolated; next requests accepted");
             $finish;
         end
 
@@ -909,6 +979,7 @@ module fat32_image_loader #(
     parameter integer BMP_MAX_WIDTH = 1024,
     parameter integer BMP_MAX_HEIGHT = 768,
     parameter integer ADAPTIVE_BMP = 0,
+    parameter [15:0] ADAPTIVE_BACKGROUND_RGB565 = 16'h0000,
     parameter integer RESOURCE_OPT_CONSTANT_MULT = 0
 ) (
     input wire clk, input wire rst_n, input wire load_start,
@@ -996,12 +1067,22 @@ module bmp_sdram_row_writer #(
     parameter integer WIDTH = 640, parameter integer HEIGHT = 480,
     parameter integer ROW_BITS = 9, parameter integer ADDR_BITS = 21,
     parameter integer WORDS_PER_ROW = WIDTH / 2,
-    parameter integer BURST_WORDS = WORDS_PER_ROW
+    parameter integer BURST_WORDS = WORDS_PER_ROW,
+    parameter integer OVERVIEW_ENABLE = 0,
+    parameter integer OVERVIEW_FRAME_COUNT = 5,
+    parameter integer OVERVIEW_PANEL_WIDTH = WIDTH / 5,
+    parameter integer OVERVIEW_CROP_X0_0 = 0,
+    parameter integer OVERVIEW_CROP_X0_1 = 0,
+    parameter integer OVERVIEW_CROP_X0_2 = 0,
+    parameter integer OVERVIEW_CROP_X0_3 = 0,
+    parameter integer OVERVIEW_CROP_X0_4 = 0
 ) (
     input wire clk, input wire rst_n, input wire start,
     input wire row_valid, input wire [ROW_BITS-1:0] row_index,
     input wire [15:0] row_pixel, input wire row_last, output wire row_ready,
     input wire [ADDR_BITS-1:0] frame_base_addr,
+    input wire [ADDR_BITS-1:0] overview_base_addr,
+    input wire [3:0] overview_frame_index,
     output wire write_req, input wire write_req_ack, output wire write_en,
     output wire [31:0] write_data, output wire [ADDR_BITS-1:0] write_base_addr,
     output wire [ADDR_BITS-1:0] write_len, input wire write_fifo_full,

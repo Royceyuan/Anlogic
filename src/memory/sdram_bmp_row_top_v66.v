@@ -151,20 +151,30 @@ wire [31:0] subtitle_sd_sec_read_addr;
 reg sd_read_active;
 reg sd_read_audio_owner;
 reg sd_read_subtitle_owner;
+reg sd_read_abandoned;
+wire sd_owner_request = sd_read_audio_owner ? audio_sd_sec_read :
+                        (sd_read_subtitle_owner ? subtitle_sd_sec_read :
+                                                  image_sd_sec_read);
 wire image_sd_sec_read_data_valid = sd_sec_read_data_valid &&
                                     sd_read_active && !sd_read_audio_owner &&
-                                    !sd_read_subtitle_owner;
+                                    !sd_read_subtitle_owner &&
+                                    !sd_read_abandoned && image_sd_sec_read;
 wire image_sd_sec_read_end = sd_sec_read_end &&
                              sd_read_active && !sd_read_audio_owner &&
-                             !sd_read_subtitle_owner;
+                             !sd_read_subtitle_owner &&
+                             !sd_read_abandoned && image_sd_sec_read;
 wire audio_sd_sec_read_data_valid = sd_sec_read_data_valid &&
-                                    sd_read_active && sd_read_audio_owner;
+                                    sd_read_active && sd_read_audio_owner &&
+                                    !sd_read_abandoned && audio_sd_sec_read;
 wire audio_sd_sec_read_end = sd_sec_read_end &&
-                             sd_read_active && sd_read_audio_owner;
+                             sd_read_active && sd_read_audio_owner &&
+                             !sd_read_abandoned && audio_sd_sec_read;
 wire subtitle_sd_sec_read_data_valid = sd_sec_read_data_valid &&
-                                       sd_read_active && sd_read_subtitle_owner;
+                                       sd_read_active && sd_read_subtitle_owner &&
+                                       !sd_read_abandoned && subtitle_sd_sec_read;
 wire subtitle_sd_sec_read_end = sd_sec_read_end &&
-                                sd_read_active && sd_read_subtitle_owner;
+                                sd_read_active && sd_read_subtitle_owner &&
+                                !sd_read_abandoned && subtitle_sd_sec_read;
 reg image_load_start;
 reg writer_start;
 reg load_active;
@@ -1058,21 +1068,29 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         sd_read_active <= 1'b0;
         sd_read_audio_owner <= 1'b0;
         sd_read_subtitle_owner <= 1'b0;
+        sd_read_abandoned <= 1'b0;
     end else if (sd_read_active) begin
-        if (sd_sec_read_end)
+        if (!sd_owner_request)
+            sd_read_abandoned <= 1'b1;
+        if (sd_sec_read_end) begin
             sd_read_active <= 1'b0;
+            sd_read_abandoned <= 1'b0;
+        end
     end else if (audio_sd_sec_read) begin
         sd_read_active <= 1'b1;
         sd_read_audio_owner <= 1'b1;
         sd_read_subtitle_owner <= 1'b0;
+        sd_read_abandoned <= 1'b0;
     end else if (subtitle_sd_sec_read) begin
         sd_read_active <= 1'b1;
         sd_read_audio_owner <= 1'b0;
         sd_read_subtitle_owner <= 1'b1;
+        sd_read_abandoned <= 1'b0;
     end else if (image_sd_sec_read) begin
         sd_read_active <= 1'b1;
         sd_read_audio_owner <= 1'b0;
         sd_read_subtitle_owner <= 1'b0;
+        sd_read_abandoned <= 1'b0;
     end
 end
 

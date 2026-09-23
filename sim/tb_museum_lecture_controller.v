@@ -132,6 +132,26 @@ initial begin
   @(negedge clk);check_load(i,i,3);
  end
  if(!cache_ready||artifact!=3)$fatal(1,"retry did not rebuild cache");
+ // Exit while the next artifact's full-view image is still being read.
+ selected=3;preload_index=3;audio_prepared=1;confirm=1;
+ @(negedge clk);confirm=0;
+ if(!active)$fatal(1,"lecture before mid-load exit did not start");
+ preload_index=4;@(negedge clk);
+ if(!load_request||load_artifact!=4)$fatal(1,"queued preload did not start");
+ load_accept=1;@(negedge clk);load_accept=0;
+ displayed_frame_slot=0;key_return=1;@(negedge clk);key_return=0;
+ @(negedge clk);
+ if(active||!preloading||!dut.queued_valid||!dut.waiting_for_load)
+  $fatal(1,"in-flight preload was lost on exit");
+ load_complete=1;@(negedge clk);load_complete=0;
+ repeat(2)@(negedge clk);check_load(1,1,4);
+ repeat(2)@(negedge clk);check_load(2,2,4);
+ repeat(2)@(negedge clk);check_load(3,3,4);
+ if(preloading||!cache_ready||artifact!=4)
+  $fatal(1,"in-flight preload did not promote after exit");
+ preload_index=1;@(negedge clk);
+ if(!load_request||load_artifact!=1)
+  $fatal(1,"switch change failed after mid-load exit");
  $display("PASS tb_museum_lecture_controller");$finish;
 end
 endmodule

@@ -61,20 +61,21 @@ reg [2:0] active_track;
 reg header_ok, header_done;
 reg [7:0] header_version;
 reg [5:0] cue_count, cue_index;
-reg [2:0] record_sector;
-reg [11:0] payload_count;
+reg [3:0] record_sector;
+reg [12:0] payload_count;
 reg [31:0] cue_start, cue_end, active_cue_end;
 reg [9:0] cue_width, commit_width;
 reg cue_ready, active_cue_valid, active_cue_is_last, pause_needs_fat;
 
-reg bitmap_wr_en, write_bank;
+reg bitmap_wr_en, outline_wr_en, write_bank;
 reg [11:0] bitmap_wr_addr;
 reg [7:0] bitmap_wr_data;
-wire [7:0] bitmap0_q, bitmap1_q;
-reg commit_toggle, commit_bank;
+wire [7:0] bitmap0_q, bitmap1_q, outline0_q, outline1_q;
+reg commit_toggle, commit_bank, commit_outline;
 reg ack_sync1, ack_sync2, ack_seen;
-reg commit_sync1, commit_sync2, commit_seen, active_bank, video_ack_toggle;
+reg commit_sync1, commit_sync2, commit_seen, active_bank, active_outline, video_ack_toggle;
 reg visible_sync1, visible_sync2;
+reg cancel_sync1, cancel_sync2, cancel_seen;
 reg [9:0] current_width;
 reg [11:0] relative_x;
 reg [1:0] fade_phase;
@@ -146,8 +147,8 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
         record_sector<=0; payload_count<=0; cue_start<=0; cue_end<=0;
         active_cue_end<=0; cue_width<=0; commit_width<=0;
         cue_ready<=0; active_cue_valid<=0; active_cue_is_last<=0; pause_needs_fat<=0;
-        bitmap_wr_en<=0; bitmap_wr_addr<=0; bitmap_wr_data<=0;
-        write_bank<=1; commit_toggle<=0; commit_bank<=1;
+        bitmap_wr_en<=0; outline_wr_en<=0; bitmap_wr_addr<=0; bitmap_wr_data<=0;
+        write_bank<=1; commit_toggle<=0; commit_bank<=1; commit_outline<=0;
         ack_sync1<=0; ack_sync2<=0; ack_seen<=0;
         subtitle_ready<=0; subtitle_total_frames<=0; scene_timing_valid<=0;
         scene_cut1<=0; scene_cut2<=0; scene_cut3<=0; scene_cut4<=0;
@@ -155,6 +156,7 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
         format_error<=0; file_error<=0;
     end else begin
         bitmap_wr_en <= 1'b0;
+        outline_wr_en <= 1'b0;
         ack_sync1 <= video_ack_toggle;
         ack_sync2 <= ack_sync1;
         if (restart || !start) begin
@@ -162,6 +164,7 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
             subtitle_total_frames<=0; scene_timing_valid<=0;
             format_error<=0; file_error<=0;
             cue_ready<=0; active_cue_valid<=0; cue_index<=0;
+            write_bank<=~commit_bank; ack_seen<=ack_sync2;
         end else if (track_index != active_track && !sd_sec_read &&
                      state != S_WAIT_CARD) begin
             active_track<=track_index; subtitle_ready<=0;
@@ -170,7 +173,9 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
             cue_ready<=0; active_cue_valid<=0; cue_index<=0;
             current_cluster<=fs_root_cluster; root_sector_in_cluster<=0;
             state<=fs_geometry_ready ? S_REQ_ROOT : S_WAIT_CARD;
-        end else case (state)
+        end else begin
+        if (state!=S_WAIT_ACK) ack_seen<=ack_sync2;
+        case (state)
             S_WAIT_CARD: begin
                 sd_sec_read<=0;
                 if (sd_init_done && fs_geometry_ready) begin
@@ -252,18 +257,19 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
                             9'd3: if (sd_sec_read_data!="B") header_ok<=0;
                             9'd4: begin
                                 header_version<=sd_sec_read_data;
-                                if (sd_sec_read_data!=1 && sd_sec_read_data!=2) header_ok<=0;
+                                if (sd_sec_read_data!=1 && sd_sec_read_data!=2 &&
+                                    sd_sec_read_data!=3) header_ok<=0;
                             end
                             9'd5: if (sd_sec_read_data!=8'h20) header_ok<=0;
                             9'd6: if (sd_sec_read_data!=8'h03) header_ok<=0;
                             9'd7: if (sd_sec_read_data!=HEIGHT) header_ok<=0;
-                            9'd8: if (sd_sec_read_data!=1) header_ok<=0;
+                            9'd8: if (sd_sec_read_data!=(header_version==3 ? 2 : 1)) header_ok<=0;
                             9'd9: begin cue_count<=sd_sec_read_data[5:0];
                                 if (sd_sec_read_data==0 || sd_sec_read_data>32) header_ok<=0;
                             end
-                            9'd10: if (sd_sec_read_data!=8'h80) header_ok<=0;
-                            9'd11: if (sd_sec_read_data!=8'h0c) header_ok<=0;
-                            9'd12: if (sd_sec_read_data!=7) header_ok<=0;
+                            9'd10: if (sd_sec_read_data!=(header_version==3 ? 8'h00 : 8'h80)) header_ok<=0;
+                            9'd11: if (sd_sec_read_data!=(header_version==3 ? 8'h19 : 8'h0c)) header_ok<=0;
+                            9'd12: if (sd_sec_read_data!=(header_version==3 ? 13 : 7)) header_ok<=0;
                             9'd16: subtitle_total_frames[7:0]<=sd_sec_read_data;
                             9'd17: subtitle_total_frames[15:8]<=sd_sec_read_data;
                             9'd18: subtitle_total_frames[23:16]<=sd_sec_read_data;
@@ -301,8 +307,11 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
                             endcase
                         end
                         if (((record_sector==0 && byte_index>=16) || record_sector!=0) &&
-                            payload_count<BITMAP_BYTES) begin
-                            bitmap_wr_en<=1; bitmap_wr_addr<=payload_count;
+                            payload_count<(header_version==3 ? 13'd6400 : 13'd3200)) begin
+                            bitmap_wr_en<=payload_count<BITMAP_BYTES;
+                            outline_wr_en<=payload_count>=BITMAP_BYTES;
+                            bitmap_wr_addr<=payload_count<BITMAP_BYTES ? payload_count[11:0] :
+                                            payload_count-BITMAP_BYTES;
                             bitmap_wr_data<=sd_sec_read_data;
                             payload_count<=payload_count+1'b1;
                         end
@@ -315,7 +324,7 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
                     if (!header_done) begin
                         header_done<=1;
                         if (!header_ok) begin format_error<=1; state<=S_ERROR; end
-                        else if (header_version==2 && scene_cut1!=0 &&
+                        else if (header_version>=2 && scene_cut1!=0 &&
                                  scene_cut1<scene_cut2 && scene_cut2<scene_cut3 &&
                                  scene_cut3<scene_cut4 &&
                                  scene_cut4<subtitle_total_frames) begin
@@ -326,7 +335,7 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
                                 fat_byte_offset<={current_cluster[6:0],2'b00};
                                 fat_next_cluster<=0; state<=S_REQ_FAT;
                             end
-                        end else if (header_version==2) begin
+                        end else if (header_version>=2) begin
                             format_error<=1; state<=S_ERROR;
                         end
                         else if (sector_in_cluster+1'b1<fs_sectors_per_cluster) begin
@@ -335,8 +344,9 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
                             fat_byte_offset<={current_cluster[6:0],2'b00};
                             fat_next_cluster<=0; state<=S_REQ_FAT;
                         end
-                    end else if (record_sector==6) begin
-                        if (payload_count!=BITMAP_BYTES || cue_start>=cue_end ||
+                    end else if (record_sector==(header_version==3 ? 12 : 6)) begin
+                        if (payload_count!=(header_version==3 ? 13'd6400 : 13'd3200) ||
+                            cue_start>=cue_end ||
                             cue_width==0 || cue_width>WIDTH) begin
                             format_error<=1; state<=S_ERROR;
                         end else begin
@@ -387,7 +397,8 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
             S_WAIT_CUE: begin
                 if (cue_ready && lecture_active && audio_frame_index>=cue_start &&
                     audio_frame_index<cue_end) begin
-                    commit_bank<=write_bank; commit_toggle<=~commit_toggle;
+                    commit_bank<=write_bank; commit_outline<=header_version==3;
+                    commit_toggle<=~commit_toggle;
                     commit_width<=cue_width;
                     active_cue_end<=cue_end;
                     active_cue_is_last<=cue_index+1'b1>=cue_count;
@@ -414,6 +425,7 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
             S_COMPLETE: begin sd_sec_read<=0; end
             default: begin sd_sec_read<=0; file_error<=file_error|!format_error; end
         endcase
+        end
     end
 end
 
@@ -423,12 +435,18 @@ subtitle_bitmap_ram #(.ADDR_WIDTH(12),.DEPTH(4096),.REGISTER_READ(0)) u_bitmap0 
 subtitle_bitmap_ram #(.ADDR_WIDTH(12),.DEPTH(4096),.REGISTER_READ(0)) u_bitmap1 (
     .wr_clk(clk_50m),.wr_en(bitmap_wr_en&&write_bank),.wr_addr(bitmap_wr_addr),
     .wr_data(bitmap_wr_data),.rd_clk(video_clk),.rd_addr(bitmap_rd_addr),.rd_data(bitmap1_q));
+subtitle_bitmap_ram #(.ADDR_WIDTH(12),.DEPTH(4096),.REGISTER_READ(0)) u_outline0 (
+    .wr_clk(clk_50m),.wr_en(outline_wr_en&&!write_bank),.wr_addr(bitmap_wr_addr),
+    .wr_data(bitmap_wr_data),.rd_clk(video_clk),.rd_addr(bitmap_rd_addr),.rd_data(outline0_q));
+subtitle_bitmap_ram #(.ADDR_WIDTH(12),.DEPTH(4096),.REGISTER_READ(0)) u_outline1 (
+    .wr_clk(clk_50m),.wr_en(outline_wr_en&&write_bank),.wr_addr(bitmap_wr_addr),
+    .wr_data(bitmap_wr_data),.rd_clk(video_clk),.rd_addr(bitmap_rd_addr),.rd_data(outline1_q));
 
 wire [11:0] current_center = (VIDEO_W-current_width) >> 1;
 wire [7:0] bitmap_q = active_bank_q ? bitmap1_q : bitmap0_q;
+wire [7:0] outline_q = active_bank_q ? outline1_q : outline0_q;
 wire [1:0] fade_rank = {x_q[0]^y_q[0],y_q[0]};
-wire black_pixel_visible = fade_level[4] ||
-                           fade_level[3:2] > fade_rank;
+wire text_pixel_visible = fade_level[4] || fade_level[3:2] > fade_rank;
 
 always @(*) begin
     relative_x = x_i>=current_center ? x_i-current_center : 0;
@@ -441,8 +459,10 @@ end
 
 always @(posedge video_clk or negedge video_rst_n) begin
     if (!video_rst_n) begin
-        commit_sync1<=0; commit_sync2<=0; commit_seen<=0; active_bank<=0;
+        commit_sync1<=0; commit_sync2<=0; commit_seen<=0;
+        active_bank<=0; active_outline<=0;
         video_ack_toggle<=0; visible_sync1<=0; visible_sync2<=0;
+        cancel_sync1<=0; cancel_sync2<=0; cancel_seen<=0;
         current_width<=0; fade_level<=0;
         video_has_cue<=0; fade_phase<=FADE_IDLE;
         hs_q<=1;vs_q<=1;de_q<=0;mapped_q<=0;active_bank_q<=0;
@@ -451,18 +471,27 @@ always @(posedge video_clk or negedge video_rst_n) begin
     end else begin
         commit_sync1<=commit_toggle; commit_sync2<=commit_sync1;
         visible_sync1<=cue_visible_50m; visible_sync2<=visible_sync1;
-        if (video_frame_tick) begin
+        cancel_sync1<=restart || !start; cancel_sync2<=cancel_sync1;
+        cancel_seen<=cancel_sync2;
+        if (cancel_sync2 && !cancel_seen) begin
+            commit_seen<=commit_sync2;
+            video_has_cue<=0; fade_level<=0; fade_phase<=FADE_IDLE;
+        end else if (!visible_sync2) begin
+            video_has_cue<=0; fade_level<=0; fade_phase<=FADE_IDLE;
+        end else if (video_frame_tick) begin
             if (commit_sync2!=commit_seen) begin
                 commit_seen<=commit_sync2;
                 if (video_has_cue&&visible_sync2) begin
                     fade_phase<=FADE_OUT;
                 end else begin
-                    active_bank<=commit_bank; current_width<=commit_width;
+                    active_bank<=commit_bank; active_outline<=commit_outline;
+                    current_width<=commit_width;
                     fade_level<=0; video_has_cue<=1; fade_phase<=FADE_IN;
                 end
             end else if (fade_phase==FADE_OUT) begin
                 if (fade_level==0) begin
-                    active_bank<=commit_bank; current_width<=commit_width;
+                    active_bank<=commit_bank; active_outline<=commit_outline;
+                    current_width<=commit_width;
                     fade_phase<=FADE_IN;
                 end else fade_level<=fade_level-1'b1;
             end else if (fade_phase==FADE_IN) begin
@@ -474,8 +503,10 @@ always @(posedge video_clk or negedge video_rst_n) begin
         end
         hs_o<=hs_q;vs_o<=vs_q;de_o<=de_q;x_o<=x_q;y_o<=y_q;
         if (!de_q) rgb_o<=24'h000000;
-        else if (mapped_q && bitmap_q[7-pixel_q] && black_pixel_visible)
-            rgb_o<=24'h000000;
+        else if (mapped_q && text_pixel_visible && bitmap_q[7-pixel_q])
+            rgb_o<=24'hffffff;
+        else if (mapped_q && text_pixel_visible && active_outline &&
+                 outline_q[7-pixel_q]) rgb_o<=24'h000000;
         else rgb_o<=rgb_q;
         hs_q<=hs_i;vs_q<=vs_i;de_q<=de_i;x_q<=x_i;y_q<=y_i;rgb_q<=rgb_i;
         pixel_q<=relative_x[2:0]; mapped_q<=mapped_valid; active_bank_q<=active_bank;
