@@ -130,6 +130,9 @@ module top_v66 #(
 );
 
 localparam integer FRAME_WORDS = (SOURCE_W * SOURCE_H) / 2;
+localparam integer SECONDARY_INFO_WORDS = (VIDEO_W * VIDEO_H) / 2;
+localparam integer SECONDARY_EMERGENCY_BASE =
+    5 * FRAME_WORDS + SECONDARY_INFO_WORDS;
 localparam integer LINEBUF_SYNC_READ =
     LINEBUF_REGISTER_READ || LINEBUF_NOREG_SYNC_READ;
 localparam [20:0] FRAME0_BASE  = 21'd0;
@@ -262,6 +265,8 @@ reg [15:0] frame_source_width_bcd [0:4];
 reg [15:0] frame_source_height_bcd [0:4];
 reg secondary_info_valid;
 reg secondary_info_error;
+reg secondary_emergency_valid;
+reg secondary_emergency_error;
 reg [2:0] secondary_info_cached_artifact;
 reg [2:0] secondary_info_error_artifact;
 reg [2:0] secondary_info_load_artifact;
@@ -282,6 +287,9 @@ wire secondary_info_load_request = ENABLE_SECONDARY &&
     !(secondary_info_error &&
       secondary_info_error_artifact == secondary_info_preload_artifact) &&
     !secondary_info_video_busy;
+wire secondary_emergency_load_request = ENABLE_SECONDARY &&
+    frame_valid == 5'b11111 &&
+    !secondary_emergency_valid && !secondary_emergency_error;
 reg [15:0] published_source_width_bcd;
 reg [15:0] published_source_height_bcd;
 reg [15:0] preload_select_source_width_bcd;
@@ -462,15 +470,17 @@ wire [3:0] normal_load_start_image_index = ENABLE_MULTI_FRAME_PRELOAD ?
 wire [3:0] load_start_image_index = lecture_load_request ?
                                       {1'b0, lecture_load_frame_slot} :
                                       (secondary_info_load_request ? 4'd5 :
-                                                                   normal_load_start_image_index);
+                                      (secondary_emergency_load_request ? 4'd6 :
+                                                                   normal_load_start_image_index));
 wire [3:0] load_start_media_index = lecture_load_request ?
                                       {1'b0, lecture_load_frame_slot} :
                                       (secondary_info_load_request ? 4'd5 :
+                                      (secondary_emergency_load_request ? 4'd6 :
                                       (ENABLE_MULTI_FRAME_PRELOAD ?
                                        normal_load_start_image_index :
                                        (ENABLE_DUAL_FRAME_PRELOAD ?
                                         {3'd0, preload_load_frame_index} :
-                                        desired_media_index)));
+                                        desired_media_index))));
 wire [3:0] secondary_info_file_index = 4'd5 +
     {1'b0, (load_active ? secondary_info_load_artifact :
                            secondary_info_preload_artifact)};
@@ -478,6 +488,9 @@ wire [3:0] normal_loader_file_index = ENABLE_SECONDARY &&
                                       (load_active ? load_image_index == 4'd5 :
                                                      secondary_info_load_request) ?
                                       secondary_info_file_index :
+                                      ENABLE_SECONDARY &&
+                                      (load_active ? load_image_index == 4'd6 :
+                                                     secondary_emergency_load_request) ? 4'd10 :
                                       (VIDEO_SEQUENCE ?
                                       (load_active ? load_media_index : desired_media_index) :
                                       (MULTI_IMAGE_BMP ?
@@ -865,7 +878,9 @@ assign manual_image_pending = !auto_mode &&
                               (desired_media_index != published_media_index);
 assign load_request_pending = lecture_load_request ? lecture_load_accept :
                               (ENABLE_MULTI_FRAME_PRELOAD ?
-                              (frame_valid != 5'b11111 || secondary_info_load_request) :
+                              (frame_valid != 5'b11111 ||
+                               secondary_emergency_load_request ||
+                               secondary_info_load_request) :
                              (ENABLE_DUAL_FRAME_PRELOAD ?
                               (frame_valid != 2'b11) :
                               ((!VIDEO_SEQUENCE &&
@@ -877,7 +892,8 @@ assign load_request_pending = lecture_load_request ? lecture_load_accept :
 function [20:0] frame_base_for_index;
     input [3:0] index;
     begin
-        frame_base_for_index = index * FRAME_WORDS;
+        frame_base_for_index = (ENABLE_SECONDARY && index == 4'd6) ?
+                               SECONDARY_EMERGENCY_BASE : index * FRAME_WORDS;
     end
 endfunction
 
@@ -1173,6 +1189,8 @@ assign sd_sec_read_addr = sd_read_audio_owner ? audio_sd_sec_read_addr :
 
 fat32_image_loader #(
     .IMAGE_WIDTH(SOURCE_W), .IMAGE_HEIGHT(SOURCE_H), .IMAGE_ADDR_BITS(21),
+    .HIRES_WIDTH(ENABLE_SECONDARY ? VIDEO_W : SOURCE_W),
+    .HIRES_HEIGHT(ENABLE_SECONDARY ? VIDEO_H : SOURCE_H),
     .BMP_MAX_WIDTH(ADAPTIVE_BMP ? ADAPTIVE_BMP_MAX_WIDTH :
                    (VIDEO_MODE_1280 ? 1280 : 1024)),
     .BMP_MAX_HEIGHT(ADAPTIVE_BMP ? ADAPTIVE_BMP_MAX_HEIGHT :
@@ -1183,6 +1201,9 @@ fat32_image_loader #(
     .RESOURCE_OPT_CONSTANT_MULT(RESOURCE_OPT_CONSTANT_MULT)
 ) u_fat32_image_loader (
     .clk(clk_50m), .rst_n(write_rst_n), .load_start(image_load_start),
+    .hires_frame(ENABLE_SECONDARY &&
+                 (load_active ? load_image_index == 4'd5 :
+                                load_start_image_index == 4'd5)),
     // On the exact start edge load_active is still low, so use the physical
     // switch for the new transaction; afterward keep the latched selection.
     .image_file_index(loader_file_index),
@@ -1335,9 +1356,13 @@ assign row_input_continue = VIDEO_BIN ? bin_sector_continue :
 generate
     if (!VIDEO_BIN) begin : g_bmp_row_input
         bmp_row_buffer #(
-            .WIDTH(SOURCE_W), .HEIGHT(SOURCE_H), .COL_BITS(11), .ROW_BITS(11)
+            .WIDTH(SOURCE_W), .HEIGHT(SOURCE_H),
+            .HIRES_WIDTH(ENABLE_SECONDARY ? VIDEO_W : SOURCE_W),
+            .COL_BITS(11), .ROW_BITS(11)
         ) u_bmp_row_buffer (
-            .clk(clk_50m), .rst_n(write_rst_n), .in_valid(image_wr_en),
+            .clk(clk_50m), .rst_n(write_rst_n),
+            .hires_frame(ENABLE_SECONDARY && load_image_index == 4'd5),
+            .in_valid(image_wr_en),
             .in_row(image_wr_row[10:0]), .in_col(image_wr_col[10:0]),
             .in_pixel(image_wr_data), .overflow(row_overflow),
             .out_valid(row_valid), .out_row(row_index), .out_pixel(row_pixel),
@@ -1360,6 +1385,8 @@ generate
     if (ADAPTIVE_BMP && !ADAPTIVE_BLOCK_WRITER) begin : g_adaptive_row_writer
         bmp_sdram_row_writer #(
             .WIDTH(SOURCE_W), .HEIGHT(SOURCE_H), .ROW_BITS(11), .ADDR_BITS(21),
+            .HIRES_WIDTH(ENABLE_SECONDARY ? VIDEO_W : SOURCE_W),
+            .HIRES_HEIGHT(ENABLE_SECONDARY ? VIDEO_H : SOURCE_H),
             .WORDS_PER_ROW(SOURCE_W / 2), .BURST_WORDS(VIDEO_WRITE_BURST_WORDS),
             .OVERVIEW_ENABLE(ENABLE_MUSEUM_OVERVIEW),
             .OVERVIEW_FRAME_COUNT(5), .OVERVIEW_PANEL_WIDTH(SOURCE_W / 5),
@@ -1371,6 +1398,7 @@ generate
         ) u_bmp_sdram_row_writer (
             .clk(clk_50m), .rst_n(write_rst_n),
             .start(writer_start),
+            .hires_frame(ENABLE_SECONDARY && load_image_index == 4'd5),
             .row_valid(row_valid), .row_index(row_index),
             .row_pixel(row_pixel), .row_last(row_last), .row_ready(row_ready),
             .frame_base_addr(write_frame_base_addr),
@@ -1434,6 +1462,8 @@ generate
     if (LINEBUF_SCALE) begin : g_linebuf_scaler
         linebuf_scaler_960x540_to_1280x720 #(
             .SRC_W(SOURCE_W), .SRC_H(SOURCE_H),
+            .HIRES_W(ENABLE_SECONDARY ? VIDEO_W : SOURCE_W),
+            .HIRES_H(ENABLE_SECONDARY ? VIDEO_H : SOURCE_H),
             .DST_W(VIDEO_W), .DST_H(VIDEO_H),
             .LINEBUF_REGISTER_READ(LINEBUF_REGISTER_READ),
             .LINEBUF_NOREG_SYNC_READ(LINEBUF_NOREG_SYNC_READ),
@@ -1441,6 +1471,7 @@ generate
         ) u_linebuf_scaler (
             .clk(video_clk), .rst_n(video_rst_n),
             .source_start(linebuf_start_pulse),
+            .hires_frame(ENABLE_SECONDARY && display_media_index == 4'd5),
             .zoom_2x(display_zoom_2x),
             .museum_recenter_active(ENABLE_MUSEUM_LECTURE && transition_active &&
                                     transition_mode == 3'b101 &&
@@ -1570,6 +1601,8 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         frame_valid         <= 5'b00000;
         secondary_info_valid <= 1'b0;
         secondary_info_error <= 1'b0;
+        secondary_emergency_valid <= 1'b0;
+        secondary_emergency_error <= 1'b0;
         secondary_info_cached_artifact <= 3'd0;
         secondary_info_error_artifact <= 3'd0;
         secondary_info_load_artifact <= 3'd0;
@@ -1713,17 +1746,23 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         // desired_image_index and is applied immediately after its frame is
         // valid.  The video clock observes the stable selected frame through
         // a two-flop synchronizer below.
-        if (ENABLE_MULTI_FRAME_PRELOAD && load_reported && !load_active &&
-            frame_valid[desired_image_index]) begin
+        if (ENABLE_MULTI_FRAME_PRELOAD &&
+            ((load_reported && !load_active && frame_valid[desired_image_index]) ||
+             (secondary_emergency_active && secondary_emergency_valid) ||
+             (preload_select_media_index == 4'd6 &&
+              !secondary_emergency_active && frame_valid[desired_image_index]))) begin
             preload_select_media_index <=
+                (secondary_emergency_active && secondary_emergency_valid) ? 4'd6 :
                 (secondary_info_active && secondary_info_cache_match) ? 4'd5 :
                                                                       desired_image_index;
             active_image_index <= desired_image_index;
             preload_select_source_width_bcd <=
-                (secondary_info_active && secondary_info_cache_match) ? 16'h0960 :
+                (secondary_emergency_active && secondary_emergency_valid) ? 16'h0960 :
+                (secondary_info_active && secondary_info_cache_match) ? 16'h1280 :
                     frame_source_width_bcd[desired_image_index];
             preload_select_source_height_bcd <=
-                (secondary_info_active && secondary_info_cache_match) ? 16'h0540 :
+                (secondary_emergency_active && secondary_emergency_valid) ? 16'h0540 :
+                (secondary_info_active && secondary_info_cache_match) ? 16'h0720 :
                     frame_source_height_bcd[desired_image_index];
         end else if (ENABLE_DUAL_FRAME_PRELOAD && load_reported && !load_active &&
                      frame_valid[desired_image_index[0]]) begin
@@ -1791,6 +1830,8 @@ always @(posedge clk_50m or negedge write_rst_n) begin
             if (ENABLE_SECONDARY && load_image_index == 4'd5) begin
                 secondary_info_error <= 1'b1;
                 secondary_info_error_artifact <= secondary_info_load_artifact;
+            end else if (ENABLE_SECONDARY && load_image_index == 4'd6) begin
+                secondary_emergency_error <= 1'b1;
             end
         end else begin
             // Both completion outputs are level-held. Do not accept a high
@@ -1816,6 +1857,8 @@ always @(posedge clk_50m or negedge write_rst_n) begin
             if (ENABLE_SECONDARY && load_image_index == 4'd5) begin
                 secondary_info_valid <= 1'b1;
                 secondary_info_cached_artifact <= secondary_info_load_artifact;
+            end else if (ENABLE_SECONDARY && load_image_index == 4'd6) begin
+                secondary_emergency_valid <= 1'b1;
             end else if (ENABLE_MULTI_FRAME_PRELOAD)
                 frame_valid[load_image_index] <= 1'b1;
             else
@@ -2556,6 +2599,7 @@ generate
             .pre_x(x_q), .pre_y(y_q),
             .base_rgb(video_rgb_out),
             .emergency_50m(secondary_emergency_active),
+            .emergency_bitmap_video(display_media_index == 4'd6),
             .link_state_50m(secondary_link_state),
             .master_artifact_50m(secondary_master_artifact),
             .route_id_50m(secondary_active_route_id),

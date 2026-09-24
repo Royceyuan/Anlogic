@@ -7,6 +7,8 @@
 module linebuf_scaler_960x540_to_1280x720 #(
     parameter integer SRC_W = 960,
     parameter integer SRC_H = 540,
+    parameter integer HIRES_W = SRC_W,
+    parameter integer HIRES_H = SRC_H,
     parameter integer DST_W = 1280,
     parameter integer DST_H = 720,
     parameter integer LINEBUF_REGISTER_READ = 0,
@@ -18,6 +20,7 @@ module linebuf_scaler_960x540_to_1280x720 #(
 
     // Start one sequential source-frame transaction during video blanking.
     input  wire        source_start,
+    input  wire        hires_frame,
     input  wire        zoom_2x,
     input  wire        museum_recenter_active,
     input  wire        museum_recenter_closing,
@@ -44,10 +47,20 @@ module linebuf_scaler_960x540_to_1280x720 #(
 
 localparam integer WORDS_PER_ROW = SRC_W / 2;
 localparam integer FRAME_WORDS  = WORDS_PER_ROW * SRC_H;
+localparam integer HIRES_WORDS_PER_ROW = HIRES_W / 2;
+localparam integer HIRES_FRAME_WORDS = HIRES_WORDS_PER_ROW * HIRES_H;
+localparam integer MAX_WORDS_PER_ROW =
+    (HIRES_WORDS_PER_ROW > WORDS_PER_ROW) ? HIRES_WORDS_PER_ROW : WORDS_PER_ROW;
+localparam integer MAX_ROWS = (HIRES_H > SRC_H) ? HIRES_H : SRC_H;
+localparam integer PIPELINED_READ = (HIRES_W != SRC_W);
 localparam integer ZOOM_ROW_START = SRC_H / 4;
 localparam integer ZOOM_FRAME_WORDS = WORDS_PER_ROW * (SRC_H / 2);
-localparam integer ROW_BITS     = (SRC_H <= 1) ? 1 : $clog2(SRC_H);
-localparam integer WORD_BITS    = (WORDS_PER_ROW <= 1) ? 1 : $clog2(WORDS_PER_ROW);
+localparam integer ROW_BITS     = (MAX_ROWS <= 1) ? 1 : $clog2(MAX_ROWS);
+localparam integer WORD_BITS    = (MAX_WORDS_PER_ROW <= 1) ? 1 : $clog2(MAX_WORDS_PER_ROW);
+wire [WORD_BITS:0] active_words_per_row =
+    hires_frame ? HIRES_WORDS_PER_ROW : WORDS_PER_ROW;
+wire [ROW_BITS:0] active_rows = hires_frame ? HIRES_H : SRC_H;
+wire [ROW_BITS:0] active_zoom_row_start = active_rows >> 2;
 localparam integer LINEBUF_SYNC_READ =
     LINEBUF_REGISTER_READ || LINEBUF_NOREG_SYNC_READ;
 
@@ -73,6 +86,8 @@ reg        pending_valid;
 reg        pending_commit;
 reg [1:0]  pending_slot;
 reg [WORD_BITS-1:0] pending_word;
+reg [WORD_BITS-1:0] commit_word;
+reg [1:0] commit_slot;
 reg [31:0] source_data_hold;
 reg [10:0] source_x_d;
 reg [1:0]  source_row_slot_d;
@@ -92,6 +107,10 @@ wire [WORD_BITS-1:0] source_word_addr;
 wire        read_fire;
 wire        write_back;
 wire        response_fire;
+wire [WORD_BITS-1:0] write_back_word =
+    (PIPELINED_READ && FIFO_RESPONSE_REGISTER) ? commit_word : pending_word;
+wire [1:0] write_back_slot =
+    (PIPELINED_READ && FIFO_RESPONSE_REGISTER) ? commit_slot : pending_slot;
 wire [31:0] write_back_data;
 wire        pending_last;
 wire        free_slot0;
@@ -112,15 +131,22 @@ wire museum_panel_hit = museum_recenter_active &&
                         video_x < museum_panel_left + 11'd256;
 
 assign source_read_base_addr = source_base_addr +
-                               (zoom_2x ? WORDS_PER_ROW * ZOOM_ROW_START : 0);
-assign source_read_len = zoom_2x ? ZOOM_FRAME_WORDS : FRAME_WORDS;
+                               (zoom_2x ? active_words_per_row * active_zoom_row_start : 0);
+assign source_read_len = zoom_2x ?
+                         (hires_frame ? HIRES_FRAME_WORDS / 2 : ZOOM_FRAME_WORDS) :
+                         (hires_frame ? HIRES_FRAME_WORDS : FRAME_WORDS);
 // The vendor asynchronous FIFO registers dout.  empty only qualifies a pop;
 // commit the word after valid confirms it has reached read_data.
-assign source_read_en  = stream_active && load_active && !pending_valid &&
-                         !(FIFO_RESPONSE_REGISTER && pending_commit) &&
-                         !source_fifo_empty;
+assign source_read_en  = PIPELINED_READ ?
+                         (stream_active && load_active &&
+                          (!pending_valid || source_fifo_valid) &&
+                          (request_word < active_words_per_row) &&
+                          !source_fifo_empty) :
+                         (stream_active && load_active && !pending_valid &&
+                          !(FIFO_RESPONSE_REGISTER && pending_commit) &&
+                          !source_fifo_empty);
 assign read_fire       = source_read_en;
-assign pending_last    = (pending_word == WORDS_PER_ROW - 1);
+assign pending_last    = (write_back_word == active_words_per_row - 1'b1);
 assign response_fire   = pending_valid && source_fifo_valid;
 assign write_back      = FIFO_RESPONSE_REGISTER ? pending_commit : response_fire;
 assign write_back_data = FIFO_RESPONSE_REGISTER ? source_data_hold : source_read_data;
@@ -131,9 +157,11 @@ generate
         // wraps at x=683, so the second half of a scan line addresses the
         // wrong source pixels.
         assign source_x_times3 = {2'b00, video_x} + ({2'b00, video_x} << 1);
-        assign normal_source_x = active_zoom_2x ?
-                                 (SRC_W / 4) + (source_x_times3 >> 3) :
-                                 (source_x_times3 >> 2);
+        assign normal_source_x = (HIRES_W != SRC_W && hires_frame) ?
+                                 (active_zoom_2x ? HIRES_W / 4 + (video_x >> 1) : video_x) :
+                                 (active_zoom_2x ?
+                                  (SRC_W / 4) + (source_x_times3 >> 3) :
+                                  (source_x_times3 >> 2));
     end else begin : g_x_generic
         assign normal_source_x = active_zoom_2x ?
                                  (SRC_W / 4) + ((video_x * SRC_W) / (DST_W * 2)) :
@@ -143,9 +171,11 @@ generate
         // Likewise, 3*y needs 12 bits.  Without widening it wraps at y=342
         // and makes the display request rows which were already released.
         assign source_y_times3 = {2'b00, video_y} + ({2'b00, video_y} << 1);
-        assign source_y = active_zoom_2x ?
-                          (SRC_H / 4) + (source_y_times3 >> 3) :
-                          (source_y_times3 >> 2);
+        assign source_y = (HIRES_H != SRC_H && hires_frame) ?
+                          (active_zoom_2x ? HIRES_H / 4 + (video_y >> 1) : video_y) :
+                          (active_zoom_2x ?
+                           (SRC_H / 4) + (source_y_times3 >> 3) :
+                           (source_y_times3 >> 2));
     end else begin : g_y_generic
         assign source_y = active_zoom_2x ?
                           (SRC_H / 4) + ((video_y * SRC_H) / (DST_H * 2)) :
@@ -233,34 +263,34 @@ assign free_slot2 = !slot_valid[2];
 // Start only after three consecutive source rows have arrived.  This gives
 // the SDRAM reader enough lead time before the visible raster consumes row 1.
 assign frame_ready = slot_valid[0] &&
-                     (slot_tag0 == (active_zoom_2x ? ZOOM_ROW_START : 0)) &&
+                     (slot_tag0 == (active_zoom_2x ? active_zoom_row_start : 0)) &&
                      slot_epoch[0] == preload_epoch &&
                      slot_valid[1] &&
-                     (slot_tag1 == (active_zoom_2x ? ZOOM_ROW_START + 1 : 1)) &&
+                     (slot_tag1 == (active_zoom_2x ? active_zoom_row_start + 1 : 1)) &&
                      slot_epoch[1] == preload_epoch &&
                      slot_valid[2] &&
-                     (slot_tag2 == (active_zoom_2x ? ZOOM_ROW_START + 2 : 2)) &&
+                     (slot_tag2 == (active_zoom_2x ? active_zoom_row_start + 2 : 2)) &&
                      slot_epoch[2] == preload_epoch;
 
-al_dp_ram32 #(.ADDR_WIDTH(WORD_BITS), .DEPTH(WORDS_PER_ROW),
+al_dp_ram32 #(.ADDR_WIDTH(WORD_BITS), .DEPTH(MAX_WORDS_PER_ROW),
               .REGISTER_READ(LINEBUF_REGISTER_READ),
               .NOREG_SYNC_READ(LINEBUF_NOREG_SYNC_READ)) u_line0 (
-    .clk(clk), .wr_en(write_back && pending_slot == 2'd0),
-    .wr_addr(pending_word), .wr_data(write_back_data),
+    .clk(clk), .wr_en(write_back && write_back_slot == 2'd0),
+    .wr_addr(write_back_word), .wr_data(write_back_data),
     .rd_addr(source_word_addr), .rd_data(line0_word)
 );
-al_dp_ram32 #(.ADDR_WIDTH(WORD_BITS), .DEPTH(WORDS_PER_ROW),
+al_dp_ram32 #(.ADDR_WIDTH(WORD_BITS), .DEPTH(MAX_WORDS_PER_ROW),
               .REGISTER_READ(LINEBUF_REGISTER_READ),
               .NOREG_SYNC_READ(LINEBUF_NOREG_SYNC_READ)) u_line1 (
-    .clk(clk), .wr_en(write_back && pending_slot == 2'd1),
-    .wr_addr(pending_word), .wr_data(write_back_data),
+    .clk(clk), .wr_en(write_back && write_back_slot == 2'd1),
+    .wr_addr(write_back_word), .wr_data(write_back_data),
     .rd_addr(source_word_addr), .rd_data(line1_word)
 );
-al_dp_ram32 #(.ADDR_WIDTH(WORD_BITS), .DEPTH(WORDS_PER_ROW),
+al_dp_ram32 #(.ADDR_WIDTH(WORD_BITS), .DEPTH(MAX_WORDS_PER_ROW),
               .REGISTER_READ(LINEBUF_REGISTER_READ),
               .NOREG_SYNC_READ(LINEBUF_NOREG_SYNC_READ)) u_line2 (
-    .clk(clk), .wr_en(write_back && pending_slot == 2'd2),
-    .wr_addr(pending_word), .wr_data(write_back_data),
+    .clk(clk), .wr_en(write_back && write_back_slot == 2'd2),
+    .wr_addr(write_back_word), .wr_data(write_back_data),
     .rd_addr(source_word_addr), .rd_data(line2_word)
 );
 
@@ -309,6 +339,8 @@ always @(posedge clk or negedge rst_n) begin
         pending_commit    <= 1'b0;
         pending_slot      <= 2'd0;
         pending_word      <= {WORD_BITS{1'b0}};
+        commit_word       <= {WORD_BITS{1'b0}};
+        commit_slot       <= 2'd0;
         source_data_hold  <= 32'd0;
         source_x_d        <= 11'd0;
         source_row_slot_d <= 2'd0;
@@ -331,7 +363,7 @@ always @(posedge clk or negedge rst_n) begin
             slot_valid        <= 3'b000;
             slot_epoch        <= 3'b000;
             active_zoom_2x    <= zoom_2x;
-            load_row          <= zoom_2x ? ZOOM_ROW_START : 0;
+            load_row          <= zoom_2x ? active_zoom_row_start : 0;
             load_slot         <= 2'd0;
             // A restarted stream preloads the epoch that the next frame-start
             // will select.  video_epoch itself changes at that frame-start.
@@ -344,6 +376,8 @@ always @(posedge clk or negedge rst_n) begin
             if (FIFO_RESPONSE_REGISTER && response_fire) begin
                 source_data_hold <= source_read_data;
                 pending_commit   <= 1'b1;
+                commit_word      <= pending_word;
+                commit_slot      <= pending_slot;
             end
             if (source_read_req && read_ack_ff2) begin
                 source_read_req <= 1'b0;
@@ -399,11 +433,11 @@ always @(posedge clk or negedge rst_n) begin
 
             if (write_back) begin
                 if (pending_last) begin
-                    if (pending_slot == 2'd0) begin
+                    if (write_back_slot == 2'd0) begin
                         slot_valid[0] <= 1'b1;
                         slot_epoch[0] <= load_epoch;
                         slot_tag0     <= load_row;
-                    end else if (pending_slot == 2'd1) begin
+                    end else if (write_back_slot == 2'd1) begin
                         slot_valid[1] <= 1'b1;
                         slot_epoch[1] <= load_epoch;
                         slot_tag1     <= load_row;
@@ -415,12 +449,13 @@ always @(posedge clk or negedge rst_n) begin
 
                     load_active <= 1'b0;
                     if (load_row == (active_zoom_2x ?
-                                     (ZOOM_ROW_START + SRC_H / 2 - 1) : SRC_H - 1)) begin
+                                     (active_zoom_row_start + active_rows / 2 - 1) :
+                                     active_rows - 1)) begin
                         source_frame_done <= 1'b1;
                         // frame_fifo_read already loops at source_base_addr.
                         // Keep consuming it and wrap the line tag instead of
                         // asynchronously clearing the FIFO once per frame.
-                        load_row <= active_zoom_2x ? ZOOM_ROW_START : 0;
+                        load_row <= active_zoom_2x ? active_zoom_row_start : 0;
                         load_epoch <= ~load_epoch;
                     end else begin
                         load_row <= load_row + 1'b1;
@@ -430,13 +465,15 @@ always @(posedge clk or negedge rst_n) begin
 
             // Keep one request in flight until the generated FIFO reports
             // that the matching response is valid.
-            if (write_back && pending_word != WORDS_PER_ROW - 1)
+            if (!PIPELINED_READ && write_back && !pending_last)
                 request_word <= pending_word + 1'b1;
 
             if (read_fire) begin
                 pending_valid <= 1'b1;
                 pending_slot  <= load_slot;
                 pending_word  <= request_word;
+                if (PIPELINED_READ)
+                    request_word <= request_word + 1'b1;
             end else if (response_fire) begin
                 pending_valid <= 1'b0;
             end

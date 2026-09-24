@@ -11,6 +11,7 @@ reg [10:0] pre_x = 11'd500;
 reg [9:0] pre_y = 10'd400;
 reg [23:0] base_rgb = 24'h123456;
 reg emergency_50m = 1'b0;
+reg emergency_bitmap_video = 1'b0;
 reg [1:0] link_state_50m = 2'd0;
 reg [2:0] master_artifact_50m = 3'd7;
 reg [7:0] route_id_50m = 8'd0;
@@ -23,6 +24,7 @@ secondary_page_overlay dut (
     .clk(clk), .rst_n(rst_n), .de(de), .x(x), .y(y),
     .pre_x(pre_x), .pre_y(pre_y),
     .base_rgb(base_rgb), .emergency_50m(emergency_50m),
+    .emergency_bitmap_video(emergency_bitmap_video),
     .link_state_50m(link_state_50m),
     .master_artifact_50m(master_artifact_50m),
     .route_id_50m(route_id_50m),
@@ -72,7 +74,15 @@ initial begin
     x = 450; y = 48; #1;
     check(rgb == 24'hFFFFFF, "pipelined emergency title pixel");
 
+    emergency_bitmap_video = 1'b1;
+    step(4); frame();
+    x = 50; y = 667; #1;
+    check(rgb == base_rgb, "SD emergency bitmap keeps its lower safety text");
     emergency_50m = 1'b0;
+    step(4); frame();
+    check(rgb == base_rgb, "SD bitmap held until the media slot changes");
+    emergency_bitmap_video = 1'b0;
+
     step(4); frame();
     x = 500; y = 400; #1;
     check(rgb == 24'h142033, "media error placeholder");

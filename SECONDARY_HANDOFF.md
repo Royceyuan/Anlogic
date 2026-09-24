@@ -1,5 +1,15 @@
 # 副屏本地功能交接（2026-09-23）
 
+## 2026-09-24 原图简介 720p 与用户逃生图（当前候选）
+
+- 按用户最新要求，五张简介继续使用 `assets/secondary_exhibit_source/` 中的原始排版 PNG；`tools/prepare_secondary_exhibit_720p.py` 只等比缩放、补齐背景，生成 `assets/secondary_exhibit_720p_tf/IMAGE5.BMP`～`IMAGE9.BMP`，每张 1280×720、24-bit BMP，没有重写文字或重新生成版式。`IMAGE0`～`IMAGE4` 仍是 1280×720 文物大图。
+- SW4 紧急页改用用户的 `C:\Users\20526\Desktop\文物图片\逃生路线图.png`；原件逐字节复制到 `assets/secondary_emergency_source/escape_route_original.png`，SHA256 `283F6D6540A67E6E21D81E4DEC2F84D5BA3ADD1DE4578A17FDAB0E403433A9E6`。上卡文件 `IMAGEA.BMP` 为保持整张海报不裁切的 960×540 转换图。原件是示意海报，场馆尚未核实位置和出口，不能用作真实疏散依据。
+- 当前候选把五张轮播图存为 960×540 RGB565（槽 0～4），单张当前简介存为原生 1280×720 RGB565（槽 5），紧急海报存为 960×540 RGB565（槽 6）。布局：槽 5 基址 1,296,000 个 32-bit 字，槽 6 基址 1,756,800 个字，末地址 2,016,000 小于 8 MiB SDRAM 的 2,097,152 个字；总占用 8,064,000 bytes。大图源文件仍为 720p，但当前轮播工作帧会缩为 540p；本次清晰度提升针对简介。
+- 本地操作：SW1～SW3 改变为 0～4 时自动发预缓存命令，画面继续轮播；KEY2 模拟主板确认，切到对应简介；KEY3 返回轮播；SW4 抢占显示用户逃生图。没有主板 Ethernet 接收器，以上按键和拨码仍是本地模拟。
+- 定向 ModelSim：1280×720 简介 BMP 的 FAT32→行缓冲→SDRAM 写入测试 PASS；`IMAGEA.BMP` 文件名和 960×540 写入测试 PASS；540p、缩放与 720p SDRAM 行缓存读出测试 PASS；控制器和紧急画面叠加测试 PASS。上述仿真没有模型化板上 SDRAM 仲裁抖动，**hardware = NOT TESTED**。
+- 当前候选位流 `release/hx4s20_secondary_local_info720_v6.bit`，629649 bytes，SHA256 `CF747D1E7985966A46414903C52CA527DEA8EA76EC2280C61215946194CE550D`。TD 6.2.168116 新鲜 P&R/STA：Setup WNS +168 ps/TNS 0，Hold WNS +24 ps/TNS 0，bitgen 成功；仅有已核对的 PHY-7002、PHY-5079 警告。完整 TF→SDRAM→HDMI 板级画质与带宽仍须实测，**hardware = NOT TESTED**。旧 `hx4s20_secondary_local_precache_v4.bit` 不具备原生 720p 简介读出能力。另存 `hx4s20_secondary_local_route_v5.bit` 为 540p 简介回退版本，Setup +203 ps/TNS 0、Hold +23 ps/TNS 0，SHA256 `4346F470C7F2480B0D39E83A51F8E7B9F79BDB606F8BA6C38A78F534C7B86F18`，它会将 720p 输入缩回 540p，不能用于验收本次清晰度要求。
+- 当前未检测到 F: 卡，所以十一张新版 BMP **尚未写卡**。读卡器重新出现后使用 `tools/copy_secondary_exhibit_720p_to_sd.ps1 -DriveLetter F`，脚本要求 FAT32 并逐文件核对 SHA256；烧录新版位流前应核对卡根目录的 `IMAGE0.BMP`～`IMAGE9.BMP`、`IMAGEA.BMP`。
+
 ## 2026-09-24 预缓存命令语义更新
 
 - `ARTIFACT_SELECT.confirmed=0` 或携带有效文物编号的 `HEARTBEAT` 使副屏在继续五图轮播时，后台将对应 `IMAGE5.BMP`～`IMAGE9.BMP` 读入第 6 个 SDRAM 槽。未确认命令不切换显示画面。

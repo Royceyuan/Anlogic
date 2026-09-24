@@ -11,6 +11,8 @@
 module fat32_image_loader #(
     parameter integer IMAGE_WIDTH  = 160,
     parameter integer IMAGE_HEIGHT = 120,
+    parameter integer HIRES_WIDTH  = IMAGE_WIDTH,
+    parameter integer HIRES_HEIGHT = IMAGE_HEIGHT,
     parameter integer IMAGE_ADDR_BITS = 15,
     parameter integer BMP_MAX_WIDTH  = 1024,
     parameter integer BMP_MAX_HEIGHT = 768,
@@ -23,6 +25,7 @@ module fat32_image_loader #(
 )(
     input  wire        clk,
     input  wire        rst_n,
+    input  wire        hires_frame,
     input  wire        load_start,
     input  wire [3:0]  image_file_index,
     input  wire        museum_detail_mode,
@@ -63,6 +66,8 @@ module fat32_image_loader #(
 );
 
 localparam integer BIN_IMAGE_BYTES  = IMAGE_WIDTH * IMAGE_HEIGHT * 2;
+wire [31:0] target_width = hires_frame ? HIRES_WIDTH : IMAGE_WIDTH;
+wire [31:0] target_height = hires_frame ? HIRES_HEIGHT : IMAGE_HEIGHT;
 localparam integer BMP_HEADER_BYTES = 54;
 localparam integer BMP_MAX_FILE_BYTES = BMP_HEADER_BYTES +
                                         BMP_MAX_WIDTH * BMP_MAX_HEIGHT * 3 +
@@ -71,7 +76,9 @@ localparam integer BMP_MAX_FILE_BYTES = BMP_HEADER_BYTES +
 function [31:0] mul_image_width;
     input [31:0] value;
     begin
-        if (RESOURCE_OPT_CONSTANT_MULT && (IMAGE_WIDTH == 960))
+        if (HIRES_WIDTH != IMAGE_WIDTH && hires_frame && HIRES_WIDTH == 1280)
+            mul_image_width = (value << 10) + (value << 8);
+        else if (RESOURCE_OPT_CONSTANT_MULT && (IMAGE_WIDTH == 960))
             mul_image_width = (value << 10) - (value << 6);
         else
             mul_image_width = value * IMAGE_WIDTH;
@@ -81,7 +88,10 @@ endfunction
 function [31:0] mul_image_height;
     input [31:0] value;
     begin
-        if (RESOURCE_OPT_CONSTANT_MULT && (IMAGE_HEIGHT == 540))
+        if (HIRES_HEIGHT != IMAGE_HEIGHT && hires_frame && HIRES_HEIGHT == 720)
+            mul_image_height = (value << 9) + (value << 7) +
+                               (value << 6) + (value << 4);
+        else if (RESOURCE_OPT_CONSTANT_MULT && (IMAGE_HEIGHT == 540))
             mul_image_height = (value << 9) + (value << 4) +
                                (value << 3) + (value << 2);
         else
@@ -252,7 +262,7 @@ wire [1:0]  bmp_row_padding;
 // fit leaves an odd number of border rows.
 wire [31:0] adapt_dest_row = bmp_top_down ? adapt_q :
                              ((adapt_q < adapt_off_y) ?
-                              (IMAGE_HEIGHT - 1 - adapt_q) :
+                              (target_height - 1 - adapt_q) :
                               ((adapt_q >= adapt_off_y + adapt_fit_h) ?
                                (((adapt_q - (adapt_off_y + adapt_fit_h)) < adapt_off_y) ?
                                 (adapt_q - (adapt_off_y + adapt_fit_h)) :
@@ -263,10 +273,10 @@ wire [31:0] adapt_dest_row = bmp_top_down ? adapt_q :
 
 assign expected_file_size = active_bmp_mode ? file_size : BIN_IMAGE_BYTES;
 assign bmp_height_abs = bmp_height[31] ? (~bmp_height + 32'd1) : bmp_height;
-assign bmp_dest_y = bmp_top_down ? bmp_output_y : (IMAGE_HEIGHT - 1 - bmp_output_y);
+assign bmp_dest_y = bmp_top_down ? bmp_output_y : (target_height - 1 - bmp_output_y);
 assign bmp_dest_addr = mul_image_width(bmp_dest_y) + bmp_output_x;
-assign bmp_x_acc_next = bmp_x_acc + IMAGE_WIDTH;
-assign bmp_y_acc_next = bmp_y_acc + IMAGE_HEIGHT;
+assign bmp_x_acc_next = bmp_x_acc + target_width;
+assign bmp_y_acc_next = bmp_y_acc + target_height;
 assign bmp_row_padding = (4 - ((bmp_width * 3) & 32'd3)) & 32'd3;
 
 assign adapt_div_shift = {adapt_remainder[31:0], adapt_dividend[31]};
@@ -361,12 +371,14 @@ function [7:0] expected_name_byte;
                 4'd2: expected_name_byte = "A";
                 4'd3: expected_name_byte = "G";
                 4'd4: expected_name_byte = "E";
-                // IMAGE0.BMP through IMAGE9.BMP are valid short names. Keep
+                // IMAGE0.BMP through IMAGE9.BMP, plus the secondary screen's
+                // IMAGEA.BMP emergency page, are valid short names. Keep
                 // the old bit-0 behavior by default; v61 opts into the full
                 // four-bit index without changing v60's synthesized path.
-                4'd5: expected_name_byte = "0" +
+                4'd5: expected_name_byte = (MULTI_IMAGE_BMP && file_index == 4'd10) ?
+                                            "A" : ("0" +
                                             (MULTI_IMAGE_BMP ? file_index :
-                                                               file_index[0]);
+                                                               file_index[0]));
                 4'd6, 4'd7: expected_name_byte = " ";
                 4'd8: expected_name_byte = "B";
                 4'd9: expected_name_byte = select_bmp ? "M" : "I";
@@ -969,7 +981,7 @@ always @(posedge clk or negedge rst_n) begin
                     end else if (file_bytes_seen == expected_file_size &&
                         ((active_bmp_mode && bmp_header_valid && bmp_component == 2'd0 &&
                           bmp_padding_bytes == 2'd0 && bmp_rows_done == bmp_height_abs &&
-                          bmp_output_y == IMAGE_HEIGHT) ||
+                          bmp_output_y == target_height) ||
                          (!active_bmp_mode && !image_byte_high))) begin
                         load_done <= 1'b1;
                         busy <= 1'b0;
@@ -1007,7 +1019,7 @@ always @(posedge clk or negedge rst_n) begin
                 if (!bmp_header_valid || adapt_fit_w == 0 || adapt_fit_h == 0) begin
                     error_stage <= ERR_BMP;
                     state <= S_ERROR;
-                end else if (adapt_q >= IMAGE_HEIGHT) begin
+                end else if (adapt_q >= target_height) begin
                     load_done <= 1'b1;
                     busy      <= 1'b0;
                     state     <= S_DONE;
@@ -1079,16 +1091,16 @@ always @(posedge clk or negedge rst_n) begin
                     case (adapt_calc_stage)
                         2'd0: begin
                             if (adaptive_fit_by_width) begin
-                                adapt_fit_w <= IMAGE_WIDTH;
+                                adapt_fit_w <= target_width;
                                 adapt_fit_h <= adapt_div_quotient_next;
                                 adapt_off_x <= 32'd0;
-                                adapt_off_y <= (IMAGE_HEIGHT - adapt_div_quotient_next) >> 1;
+                                adapt_off_y <= (target_height - adapt_div_quotient_next) >> 1;
                                 adapt_dividend <= bmp_width;
-                                adapt_divisor  <= IMAGE_WIDTH;
+                                adapt_divisor  <= target_width;
                             end else begin
                                 adapt_fit_w <= adapt_div_quotient_next;
-                                adapt_fit_h <= IMAGE_HEIGHT;
-                                adapt_off_x <= (IMAGE_WIDTH - adapt_div_quotient_next) >> 1;
+                                adapt_fit_h <= target_height;
+                                adapt_off_x <= (target_width - adapt_div_quotient_next) >> 1;
                                 adapt_off_y <= 32'd0;
                                 adapt_dividend <= bmp_width;
                                 adapt_divisor  <= adapt_div_quotient_next;
@@ -1158,7 +1170,7 @@ always @(posedge clk or negedge rst_n) begin
                     end
                 end
 
-                if (adapt_out_col == IMAGE_WIDTH - 1) begin
+                if (adapt_out_col == target_width - 1) begin
                     adapt_out_col <= 32'd0;
                     adapt_q       <= adapt_q + 1'b1;
                     if (adapt_v_d == adapt_fit_h - 1) begin
@@ -1192,7 +1204,7 @@ always @(posedge clk or negedge rst_n) begin
                 image_wr_col  <= adapt_out_col[10:0];
                 image_wr_addr <= mul_image_width(adapt_dest_row) + adapt_out_col;
                 image_wr_data <= ADAPTIVE_BACKGROUND_RGB565;
-                if (adapt_out_col == IMAGE_WIDTH - 1) begin
+                if (adapt_out_col == target_width - 1) begin
                     adapt_out_col <= 32'd0;
                     adapt_q       <= adapt_q + 1'b1;
                     state         <= S_ADAPT_WAIT;

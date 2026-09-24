@@ -1,9 +1,8 @@
-"""Prepare the future rolling-cache SD package: 720p heroes, 540p info pages."""
+"""Prepare source-derived 720p exhibits and the supplied escape map."""
 
 from pathlib import Path
-from shutil import copyfile
 
-from PIL import Image, ImageOps
+from PIL import Image, ImageEnhance, ImageFilter, ImageOps
 
 
 ASSETS = Path(__file__).resolve().parents[1] / "assets"
@@ -17,12 +16,22 @@ def main() -> None:
         with Image.open(ASSETS / "secondary_exhibit_hero_source" / f"{name}.png") as source:
             hero = ImageOps.fit(source.convert("RGB"), (1280, 720), Image.Resampling.LANCZOS)
             hero.save(OUTPUT / f"IMAGE{index}.BMP", format="BMP")
-        copyfile(ASSETS / "secondary_exhibit_tf" / f"IMAGE{index}.BMP",
-                 OUTPUT / f"IMAGE{index + 5}.BMP")
+        with Image.open(ASSETS / "secondary_exhibit_source" / f"{name}.png") as source:
+            original = source.convert("RGB")
+            backdrop = ImageOps.fit(original, (1280, 720), Image.Resampling.LANCZOS)
+            backdrop = ImageEnhance.Brightness(backdrop.filter(ImageFilter.GaussianBlur(32))).enhance(0.8)
+            page = ImageOps.contain(original, (1280, 720), Image.Resampling.LANCZOS)
+            backdrop.paste(page, ((1280 - page.width) // 2, (720 - page.height) // 2))
+            backdrop.save(OUTPUT / f"IMAGE{index + 5}.BMP", format="BMP")
     for index in range(10):
         with Image.open(OUTPUT / f"IMAGE{index}.BMP") as image:
             assert image.mode == "RGB"
-            assert image.size == ((1280, 720) if index < 5 else (960, 540))
+            assert image.size == (1280, 720)
+    with Image.open(ASSETS / "secondary_emergency_source/escape_route_original.png") as source:
+        route = ImageOps.contain(source.convert("RGB"), (960, 540), Image.Resampling.LANCZOS)
+    page = Image.new("RGB", (960, 540), (24, 82, 68))
+    page.paste(route, ((960 - route.width) // 2, (540 - route.height) // 2))
+    page.save(OUTPUT / "IMAGEA.BMP", format="BMP")
 
 
 if __name__ == "__main__":

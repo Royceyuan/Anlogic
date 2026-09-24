@@ -534,6 +534,7 @@ fat32_image_loader #(
     .MULTI_IMAGE_BMP(MULTI_IMAGE_BMP)
 ) u_fat32_image_loader (
     .clk(clk_50m), .rst_n(write_rst_n), .load_start(image_load_start),
+    .hires_frame(1'b0),
     // On the exact start edge load_active is still low, so use the physical
     // switch for the new transaction; afterward keep the latched selection.
     .image_file_index(VIDEO_SEQUENCE ?
@@ -568,7 +569,8 @@ generate
         bmp_row_buffer #(
             .WIDTH(SOURCE_W), .HEIGHT(SOURCE_H), .COL_BITS(11), .ROW_BITS(11)
         ) u_bmp_row_buffer (
-            .clk(clk_50m), .rst_n(write_rst_n), .in_valid(image_wr_en),
+            .clk(clk_50m), .rst_n(write_rst_n),
+            .hires_frame(1'b0), .in_valid(image_wr_en),
             .in_row(image_wr_row[10:0]), .in_col(image_wr_col[10:0]),
             .in_pixel(image_wr_data), .overflow(row_overflow),
             .out_valid(row_valid), .out_row(row_index), .out_pixel(row_pixel),
@@ -594,7 +596,7 @@ generate
             .WORDS_PER_ROW(SOURCE_W / 2), .BURST_WORDS(VIDEO_WRITE_BURST_WORDS)
         ) u_bmp_sdram_row_writer (
             .clk(clk_50m), .rst_n(write_rst_n),
-            .start(writer_start),
+            .start(writer_start), .hires_frame(1'b0),
             .row_valid(row_valid), .row_index(row_index),
             .row_pixel(row_pixel), .row_last(row_last), .row_ready(row_ready),
             .frame_base_addr(write_frame_base_addr),
@@ -662,7 +664,7 @@ generate
             .FIFO_RESPONSE_REGISTER(LINEBUF_FIFO_RESPONSE_REGISTER)
         ) u_linebuf_scaler (
             .clk(video_clk), .rst_n(video_rst_n),
-            .source_start(linebuf_start_pulse),
+            .source_start(linebuf_start_pulse), .hires_frame(1'b0),
             .zoom_2x(1'b0),
             .museum_recenter_active(1'b0),
             .museum_recenter_closing(1'b0),

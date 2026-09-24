@@ -15,7 +15,8 @@ wire [9:0] source_y = dut.source_y;
 always #5 clk=~clk;
 
 linebuf_scaler_960x540_to_1280x720 dut (
-    .clk(clk), .rst_n(rst_n), .source_start(source_start), .zoom_2x(zoom_2x),
+    .clk(clk), .rst_n(rst_n), .source_start(source_start),
+    .hires_frame(1'b0), .zoom_2x(zoom_2x),
     .museum_recenter_active(museum_active), .museum_recenter_closing(museum_closing),
     .museum_recenter_progress(museum_progress), .museum_recenter_origin(museum_origin),
     .source_base_addr(21'd1000), .source_read_req(), .source_read_ack(1'b0),

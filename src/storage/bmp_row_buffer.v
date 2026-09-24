@@ -7,11 +7,13 @@
 module bmp_row_buffer #(
     parameter integer WIDTH  = 640,
     parameter integer HEIGHT = 480,
+    parameter integer HIRES_WIDTH = WIDTH,
     parameter integer COL_BITS = (WIDTH <= 1) ? 1 : $clog2(WIDTH),
     parameter integer ROW_BITS = (HEIGHT <= 1) ? 1 : $clog2(HEIGHT)
 )(
     input  wire                  clk,
     input  wire                  rst_n,
+    input  wire                  hires_frame,
 
     input  wire                  in_valid,
     input  wire [ROW_BITS-1:0]   in_row,
@@ -31,8 +33,9 @@ module bmp_row_buffer #(
     output wire                  input_continue
 );
 
-reg [15:0] line_mem0 [0:WIDTH-1];
-reg [15:0] line_mem1 [0:WIDTH-1];
+reg [15:0] line_mem0 [0:HIRES_WIDTH-1];
+reg [15:0] line_mem1 [0:HIRES_WIDTH-1];
+wire [COL_BITS-1:0] active_width = hires_frame ? HIRES_WIDTH : WIDTH;
 
 reg                  in_active;
 reg                  in_buf;
@@ -57,7 +60,7 @@ assign buf1_free = !ready1 && !(out_active &&  out_buf);
 assign out_valid    = out_active;
 assign out_row      = out_buf ? row1 : row0;
 assign out_pixel    = out_buf ? line_mem1[out_col] : line_mem0[out_col];
-assign out_last     = out_active && (out_col == WIDTH - 1);
+assign out_last     = out_active && (out_col == active_width - 1'b1);
 assign out_row_done = out_valid && out_ready && out_last;
 assign input_continue = !ready0 && !ready1 && !out_active;
 
@@ -78,7 +81,7 @@ always @(posedge clk or negedge rst_n) begin
     end else begin
         // Drain one completed row. The row stays stable while stalled.
         if (out_active && out_ready) begin
-            if (out_col == WIDTH - 1) begin
+            if (out_col == active_width - 1'b1) begin
                 out_active <= 1'b0;
                 out_col    <= {COL_BITS{1'b0}};
             end else begin
@@ -108,7 +111,7 @@ always @(posedge clk or negedge rst_n) begin
                     in_row_active <= in_row;
                     in_col_last   <= in_col;
                     line_mem0[in_col] <= in_pixel;
-                    if (in_col == WIDTH - 1) begin
+                    if (in_col == active_width - 1'b1) begin
                         ready0    <= 1'b1;
                         row0      <= in_row;
                         in_active <= 1'b0;
@@ -119,7 +122,7 @@ always @(posedge clk or negedge rst_n) begin
                     in_row_active <= in_row;
                     in_col_last   <= in_col;
                     line_mem1[in_col] <= in_pixel;
-                    if (in_col == WIDTH - 1) begin
+                    if (in_col == active_width - 1'b1) begin
                         ready1    <= 1'b1;
                         row1      <= in_row;
                         in_active <= 1'b0;
@@ -135,7 +138,7 @@ always @(posedge clk or negedge rst_n) begin
                 else
                     line_mem1[in_col] <= in_pixel;
 
-                if (in_col == WIDTH - 1) begin
+                if (in_col == active_width - 1'b1) begin
                     in_active <= 1'b0;
                     if (!in_buf) begin
                         ready0 <= 1'b1;
@@ -154,7 +157,7 @@ always @(posedge clk or negedge rst_n) begin
                     in_row_active <= in_row;
                     in_col_last   <= in_col;
                     line_mem1[in_col] <= in_pixel;
-                    if (in_col == WIDTH - 1) begin
+                    if (in_col == active_width - 1'b1) begin
                         ready1    <= 1'b1;
                         row1      <= in_row;
                         in_active <= 1'b0;
@@ -164,7 +167,7 @@ always @(posedge clk or negedge rst_n) begin
                     in_row_active <= in_row;
                     in_col_last   <= in_col;
                     line_mem0[in_col] <= in_pixel;
-                    if (in_col == WIDTH - 1) begin
+                    if (in_col == active_width - 1'b1) begin
                         ready0    <= 1'b1;
                         row0      <= in_row;
                         in_active <= 1'b0;

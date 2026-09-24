@@ -7,6 +7,9 @@
 module tb_fat32_bmp_adaptive_loader #(
     parameter integer IMAGE_W = 640,
     parameter integer IMAGE_H = 480,
+    parameter integer BASE_W = IMAGE_W,
+    parameter integer BASE_H = IMAGE_H,
+    parameter integer HIRES = 0,
     parameter integer IMAGE_ADDR_BITS = 19,
     parameter integer ADAPTIVE_MODE = 1,
     parameter integer DIAG_PATTERN = 0,
@@ -105,8 +108,9 @@ integer missing_count;
 always #10 clk = ~clk;
 
 fat32_image_loader #(
-    .IMAGE_WIDTH(IMAGE_W),
-    .IMAGE_HEIGHT(IMAGE_H),
+    .IMAGE_WIDTH(BASE_W),
+    .IMAGE_HEIGHT(BASE_H),
+    .HIRES_WIDTH(IMAGE_W), .HIRES_HEIGHT(IMAGE_H),
     .IMAGE_ADDR_BITS(IMAGE_ADDR_BITS),
     .ADAPTIVE_BMP(ADAPTIVE_MODE),
     .BMP_MAX_WIDTH(BMP_MAX_WIDTH),
@@ -116,6 +120,7 @@ fat32_image_loader #(
 ) dut (
     .clk                    (clk),
     .rst_n                  (rst_n),
+    .hires_frame            (HIRES != 0),
     .load_start             (load_start),
     .image_file_index       (IMAGE_INDEX[3:0]),
     .museum_detail_mode     (MUSEUM_DETAIL != 0),
@@ -144,9 +149,11 @@ fat32_image_loader #(
 );
 
 bmp_row_buffer #(
-    .WIDTH(IMAGE_W), .HEIGHT(IMAGE_H), .COL_BITS(11), .ROW_BITS(11)
+    .WIDTH(BASE_W), .HEIGHT(BASE_H), .HIRES_WIDTH(IMAGE_W),
+    .COL_BITS(11), .ROW_BITS(11)
 ) u_rows (
-    .clk(clk), .rst_n(rst_n), .in_valid(image_wr_en),
+    .clk(clk), .rst_n(rst_n), .hires_frame(HIRES != 0),
+    .in_valid(image_wr_en),
     .in_row(image_wr_row), .in_col(image_wr_col), .in_pixel(image_wr_data),
     .overflow(row_overflow), .out_valid(row_valid), .out_row(row_index),
     .out_pixel(row_pixel), .out_last(row_last), .out_ready(row_ready),
@@ -170,10 +177,13 @@ generate
         );
     end else begin : g_row_writer
         bmp_sdram_row_writer #(
-            .WIDTH(IMAGE_W), .HEIGHT(IMAGE_H), .ROW_BITS(11), .ADDR_BITS(21),
-            .WORDS_PER_ROW(IMAGE_W / 2), .BURST_WORDS(128)
+            .WIDTH(BASE_W), .HEIGHT(BASE_H),
+            .HIRES_WIDTH(IMAGE_W), .HIRES_HEIGHT(IMAGE_H),
+            .ROW_BITS(11), .ADDR_BITS(21),
+            .WORDS_PER_ROW(BASE_W / 2), .BURST_WORDS(128)
         ) u_writer (
             .clk(clk), .rst_n(rst_n), .start(load_start),
+            .hires_frame(HIRES != 0),
             .row_valid(row_valid), .row_index(row_index), .row_pixel(row_pixel),
             .row_last(row_last), .row_ready(row_ready), .frame_base_addr(21'd0),
             .overview_base_addr(21'd0), .overview_frame_index(4'd0),
@@ -372,7 +382,8 @@ initial begin
     put_byte(ROOT_LBA, 2, MUSEUM_DETAIL ? "T" : "A");
     put_byte(ROOT_LBA, 3, MUSEUM_DETAIL ? ("0" + ARTIFACT_INDEX[2:0]) : "G");
     put_byte(ROOT_LBA, 4, MUSEUM_DETAIL ? "D" : "E");
-    put_byte(ROOT_LBA, 5, "0" + (MUSEUM_DETAIL ? DETAIL_INDEX[1:0] : IMAGE_INDEX[3:0]));
+    put_byte(ROOT_LBA, 5, (!MUSEUM_DETAIL && MULTI_IMAGE_BMP && IMAGE_INDEX == 10) ?
+                            "A" : ("0" + (MUSEUM_DETAIL ? DETAIL_INDEX[1:0] : IMAGE_INDEX[3:0])));
     put_byte(ROOT_LBA, 6, " ");
     put_byte(ROOT_LBA, 7, " ");
     put_byte(ROOT_LBA, 8, "B");

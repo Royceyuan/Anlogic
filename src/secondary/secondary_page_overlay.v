@@ -13,6 +13,7 @@ module secondary_page_overlay (
     input  wire [9:0]  pre_y,
     input  wire [23:0] base_rgb,
     input  wire        emergency_50m,
+    input  wire        emergency_bitmap_video,
     input  wire [1:0]  link_state_50m,
     input  wire [2:0]  master_artifact_50m,
     input  wire [7:0]  route_id_50m,
@@ -22,6 +23,7 @@ module secondary_page_overlay (
 );
 
 reg emergency_ff1, emergency_ff2, emergency_frame;
+reg emergency_bitmap_frame;
 reg [1:0] link_ff1, link_ff2, link_frame;
 reg [2:0] artifact_ff1, artifact_ff2, artifact_frame;
 reg ready_ff1, ready_ff2, ready_frame;
@@ -33,6 +35,7 @@ reg media_pixel, main_pixel, link_pixel, artifact_pixel;
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         emergency_ff1 <= 1'b0; emergency_ff2 <= 1'b0; emergency_frame <= 1'b0;
+        emergency_bitmap_frame <= 1'b0;
         link_ff1 <= 2'd0; link_ff2 <= 2'd0; link_frame <= 2'd0;
         artifact_ff1 <= 3'd7; artifact_ff2 <= 3'd7; artifact_frame <= 3'd7;
         ready_ff1 <= 1'b0; ready_ff2 <= 1'b0; ready_frame <= 1'b0;
@@ -59,7 +62,8 @@ always @(posedge clk or negedge rst_n) begin
         link_pixel <= word_pixel(pre_x,pre_y,11'd840,10'd680,link_word);
         artifact_pixel <= digit_pixel(pre_x,pre_y,artifact_frame);
         if (x == 11'd0 && y == 10'd0) begin
-            emergency_frame <= emergency_ff2;
+            emergency_frame <= emergency_ff2 || emergency_bitmap_video;
+            emergency_bitmap_frame <= emergency_bitmap_video;
             link_frame <= link_ff2;
             artifact_frame <= artifact_ff2;
             ready_frame <= ready_ff2;
@@ -206,6 +210,9 @@ always @(*) begin
     rgb = 24'h000000;
     if (de) begin
         if (emergency_frame) begin
+            if (emergency_bitmap_frame) begin
+                rgb = base_rgb;
+            end else begin
             rgb = 24'h142033;
             if (y < 10'd128) rgb = 24'hA30F20;
             if (y >= 10'd128 && y < 10'd145) rgb = 24'hFFD45A;
@@ -224,6 +231,7 @@ always @(*) begin
                 current_pixel || route_pixel) rgb = 24'hFFFFFF;
             if (route_frame != 8'd0 && x >= 11'd58 && x < 11'd1222 &&
                 y >= 10'd610 && y < 10'd620) rgb = 24'hFFD45A;
+            end
         end else if (!ready_frame || error_frame) begin
             rgb = 24'h142033;
             if (y < 10'd110) rgb = 24'h765529;
@@ -232,7 +240,8 @@ always @(*) begin
             rgb = base_rgb;
         end
 
-        if (y >= 10'd665 && (emergency_frame || !ready_frame || error_frame)) begin
+        if (y >= 10'd665 && !emergency_bitmap_frame &&
+            (emergency_frame || !ready_frame || error_frame)) begin
             rgb = 24'h0A1322;
             if (y < 10'd670) rgb = (link_frame == 2'd1) ? 24'h16835B :
                                    (link_frame == 2'd2) ? 24'hB62931 : 24'hD7A53B;

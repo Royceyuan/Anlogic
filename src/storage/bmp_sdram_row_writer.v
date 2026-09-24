@@ -7,6 +7,8 @@
 module bmp_sdram_row_writer #(
     parameter integer WIDTH       = 640,
     parameter integer HEIGHT      = 480,
+    parameter integer HIRES_WIDTH = WIDTH,
+    parameter integer HIRES_HEIGHT = HEIGHT,
     parameter integer ROW_BITS    = (HEIGHT <= 1) ? 1 : $clog2(HEIGHT),
     parameter integer ADDR_BITS   = 21,
     parameter integer WORDS_PER_ROW = WIDTH / 2,
@@ -23,6 +25,7 @@ module bmp_sdram_row_writer #(
     input  wire                    clk,
     input  wire                    rst_n,
     input  wire                    start,
+    input  wire                    hires_frame,
 
     input  wire                    row_valid,
     input  wire [ROW_BITS-1:0]     row_index,
@@ -58,7 +61,7 @@ localparam [2:0] S_ERROR  = 3'd6;
 reg [2:0] state;
 reg [ROW_BITS-1:0] active_row;
 reg [9:0] rows_done;
-localparam integer BURSTS_PER_ROW = (WORDS_PER_ROW + BURST_WORDS - 1) / BURST_WORDS;
+localparam integer BURSTS_PER_ROW = (HIRES_WIDTH / 2 + BURST_WORDS - 1) / BURST_WORDS;
 localparam integer BURST_INDEX_BITS = (BURSTS_PER_ROW <= 1) ? 1 : $clog2(BURSTS_PER_ROW);
 reg [BURST_INDEX_BITS-1:0] burst_index;
 reg [ADDR_BITS-1:0] burst_words_sent;
@@ -96,17 +99,21 @@ wire normal_pixel_fire;
 wire overview_pixel_fire;
 wire [ADDR_BITS-1:0] phase_words_per_row = overview_phase ?
                                                     OVERVIEW_WORDS_PER_ROW :
-                                                    WORDS_PER_ROW;
+                                                    (hires_frame ? HIRES_WIDTH / 2 : WORDS_PER_ROW);
 wire [BURST_INDEX_BITS:0] phase_bursts_per_row = overview_phase ?
                                                     OVERVIEW_BURSTS_PER_ROW :
-                                                    BURSTS_PER_ROW;
+                                                    (hires_frame ? BURSTS_PER_ROW :
+                                                     (WORDS_PER_ROW + BURST_WORDS - 1) / BURST_WORDS);
+wire [ADDR_BITS-1:0] active_words_per_row =
+    hires_frame ? HIRES_WIDTH / 2 : WORDS_PER_ROW;
+wire [ROW_BITS-1:0] active_height = hires_frame ? HIRES_HEIGHT : HEIGHT;
 
 assign write_req      = (state == S_REQ);
 assign write_base_addr = overview_phase ?
                          (overview_base_addr + active_row * WORDS_PER_ROW +
                           active_overview_frame * OVERVIEW_WORDS_PER_ROW +
                           burst_index * BURST_WORDS) :
-                         (frame_base_addr + active_row * WORDS_PER_ROW +
+                         (frame_base_addr + active_row * active_words_per_row +
                           burst_index * BURST_WORDS);
 // The final burst can be shorter than BURST_WORDS (e.g. 480 words per
 // 960-pixel row with 64-word bursts).  Request only the remaining words;
@@ -234,7 +241,7 @@ always @(posedge clk or negedge rst_n) begin
                             state <= S_REQ;
                         end else begin
                             overview_phase <= 1'b0;
-                            if (rows_done == HEIGHT - 1) begin
+                            if (rows_done == active_height - 1'b1) begin
                                 frame_done <= 1'b1;
                                 state      <= S_DONE;
                             end else begin

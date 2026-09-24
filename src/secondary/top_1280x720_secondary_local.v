@@ -22,21 +22,29 @@ module top_1280x720_secondary_local (
 );
 
 // Local preview uses the same parsed-command interface as the future receiver.
-// KEY1 preloads SW1..SW3 (0..4) without changing the carousel;
-// KEY2 confirms the same selection; KEY3 returns to the carousel.
+// SW1..SW3 change preloads artifact 0..4 without changing the carousel;
+// KEY2 only simulates the main board's confirm; KEY3 returns to carousel.
 wire local_rst_n;
 wire [3:0] key_press;
 reg [2:0] sw_ff1, sw_ff2;
+reg [2:0] selected_sw;
 reset_sync u_local_reset (.clk(clk_50m), .arst_n(1'b1), .srst_n(local_rst_n));
 key_debounce u_local_keys (
     .clk(clk_50m), .rst_n(local_rst_n), .key_n(key_n),
     .key_level_n(), .key_press_pulse(key_press), .key_release_pulse()
 );
-always @(posedge clk_50m) begin
-    sw_ff1 <= exhibit_sw;
-    sw_ff2 <= sw_ff1;
+always @(posedge clk_50m or negedge local_rst_n) begin
+    if (!local_rst_n) begin
+        sw_ff1 <= 3'd7;
+        sw_ff2 <= 3'd7;
+        selected_sw <= 3'd7;
+    end else begin
+        sw_ff1 <= exhibit_sw;
+        sw_ff2 <= sw_ff1;
+        selected_sw <= sw_ff2;
+    end
 end
-wire preload_pulse = key_press[0] && (sw_ff2 <= 3'd4);
+wire preload_pulse = (sw_ff2 != selected_sw) && (sw_ff2 <= 3'd4);
 wire confirm_pulse = key_press[1] && (sw_ff2 <= 3'd4);
 wire return_pulse = key_press[2];
 wire        cmd_valid = preload_pulse || confirm_pulse || return_pulse;

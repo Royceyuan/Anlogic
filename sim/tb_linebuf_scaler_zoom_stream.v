@@ -3,6 +3,7 @@
 
 module tb_linebuf_scaler_zoom_stream;
 reg clk=0, rst_n=0, source_start=0, zoom_2x=0, video_de=0;
+reg hires_frame=0;
 reg [10:0] video_x=0;
 reg [9:0] video_y=0;
 wire source_read_req;
@@ -28,8 +29,8 @@ function [31:0] make_word;
     reg [15:0] hi;
     reg [15:0] lo;
     begin
-        row=word_index/480;
-        column=(word_index%480)*2;
+        row=word_index/(hires_frame ? 640 : 480);
+        column=(word_index%(hires_frame ? 640 : 480))*2;
         hi=16'h8000|((row<<5)+column);
         lo=16'h8000|((row<<5)+column+1);
         make_word={hi,lo};
@@ -37,9 +38,11 @@ function [31:0] make_word;
 endfunction
 
 linebuf_scaler_960x540_to_1280x720 #(
+    .HIRES_W(1280), .HIRES_H(720),
     .LINEBUF_NOREG_SYNC_READ(1), .FIFO_RESPONSE_REGISTER(1)
 ) dut (
-    .clk(clk), .rst_n(rst_n), .source_start(source_start), .zoom_2x(zoom_2x),
+    .clk(clk), .rst_n(rst_n), .source_start(source_start),
+    .hires_frame(hires_frame), .zoom_2x(zoom_2x),
     .museum_recenter_active(1'b0), .museum_recenter_closing(1'b0),
     .museum_recenter_progress(8'd0), .museum_recenter_origin(3'd0),
     .source_base_addr(21'd0), .source_read_req(source_read_req),
@@ -137,7 +140,16 @@ initial begin
         $display("FAIL zoom stream underflow=%b pixels=%0d",dut.underflow,pixel_mismatches);
         $finish;
     end
-    $display("PASS zoom stream has no row-cache underflow");
+    @(negedge clk); hires_frame=1;
+    misses=0;
+    pixel_mismatches=0;
+    begin_stream(0);
+    scan_frame;
+    if (dut.underflow || pixel_mismatches != 0) begin
+        $display("FAIL 720p stream underflow=%b pixels=%0d",dut.underflow,pixel_mismatches);
+        $finish;
+    end
+    $display("PASS 540p, zoom and native 720p streams have no row-cache underflow");
     $finish;
 end
 endmodule
