@@ -8,7 +8,7 @@
 - 本地操作：SW1～SW3 改变为 0～4 时自动发预缓存命令，画面继续轮播；KEY2 模拟主板确认，切到对应简介；KEY3 返回轮播；SW4 抢占显示用户逃生图。没有主板 Ethernet 接收器，以上按键和拨码仍是本地模拟。
 - 定向 ModelSim：1280×720 简介 BMP 的 FAT32→行缓冲→SDRAM 写入测试 PASS；`IMAGEA.BMP` 文件名和 960×540 写入测试 PASS；540p、缩放与 720p SDRAM 行缓存读出测试 PASS；控制器和紧急画面叠加测试 PASS。上述仿真没有模型化板上 SDRAM 仲裁抖动，**hardware = NOT TESTED**。
 - 当前候选位流 `release/hx4s20_secondary_local_info720_v6.bit`，629649 bytes，SHA256 `CF747D1E7985966A46414903C52CA527DEA8EA76EC2280C61215946194CE550D`。TD 6.2.168116 新鲜 P&R/STA：Setup WNS +168 ps/TNS 0，Hold WNS +24 ps/TNS 0，bitgen 成功；仅有已核对的 PHY-7002、PHY-5079 警告。完整 TF→SDRAM→HDMI 板级画质与带宽仍须实测，**hardware = NOT TESTED**。旧 `hx4s20_secondary_local_precache_v4.bit` 不具备原生 720p 简介读出能力。另存 `hx4s20_secondary_local_route_v5.bit` 为 540p 简介回退版本，Setup +203 ps/TNS 0、Hold +23 ps/TNS 0，SHA256 `4346F470C7F2480B0D39E83A51F8E7B9F79BDB606F8BA6C38A78F534C7B86F18`，它会将 720p 输入缩回 540p，不能用于验收本次清晰度要求。
-- 当前未检测到 F: 卡，所以十一张新版 BMP **尚未写卡**。读卡器重新出现后使用 `tools/copy_secondary_exhibit_720p_to_sd.ps1 -DriveLetter F`，脚本要求 FAT32 并逐文件核对 SHA256；烧录新版位流前应核对卡根目录的 `IMAGE0.BMP`～`IMAGE9.BMP`、`IMAGEA.BMP`。
+- 2026-09-24 读卡器重新插入后识别为 F: Lenovo、FAT32、Removable、Healthy。已运行 `tools/copy_secondary_exhibit_720p_to_sd.ps1 -DriveLetter F`，将 `IMAGE0.BMP`～`IMAGE9.BMP` 和 `IMAGEA.BMP` 共 11 个文件复制到卡根目录，逐文件 SHA256 校验通过；卡上总计 29,203,794 bytes。**v6 位流尚未烧录，上板现象尚未验证**。
 
 ## 2026-09-24 预缓存命令语义更新
 
