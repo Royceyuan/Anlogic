@@ -22,7 +22,8 @@ module top_1280x720_secondary_local (
 );
 
 // Local preview uses the same parsed-command interface as the future receiver.
-// KEY2 confirms SW1..SW3 (0..4); KEY3 returns to the carousel.
+// KEY1 preloads SW1..SW3 (0..4) without changing the carousel;
+// KEY2 confirms the same selection; KEY3 returns to the carousel.
 wire local_rst_n;
 wire [3:0] key_press;
 reg [2:0] sw_ff1, sw_ff2;
@@ -35,12 +36,14 @@ always @(posedge clk_50m) begin
     sw_ff1 <= exhibit_sw;
     sw_ff2 <= sw_ff1;
 end
-wire select_pulse = key_press[1] && (sw_ff2 <= 3'd4);
+wire preload_pulse = key_press[0] && (sw_ff2 <= 3'd4);
+wire confirm_pulse = key_press[1] && (sw_ff2 <= 3'd4);
 wire return_pulse = key_press[2];
-wire        cmd_valid = select_pulse || return_pulse;
+wire        cmd_valid = preload_pulse || confirm_pulse || return_pulse;
 wire [7:0]  cmd_type = return_pulse ? 8'h11 : 8'h10;
-wire [7:0]  cmd_artifact_id = select_pulse ? {5'd0, sw_ff2} : 8'hff;
-wire        cmd_confirmed = select_pulse;
+wire [7:0]  cmd_artifact_id = (preload_pulse || confirm_pulse) ?
+                              {5'd0, sw_ff2} : 8'hff;
+wire        cmd_confirmed = confirm_pulse;
 wire [7:0]  cmd_mode = 8'd1;
 wire [7:0]  cmd_lecture_phase = return_pulse ? 8'hff : 8'd0;
 wire [7:0]  cmd_lecture_reason = return_pulse ? 8'd1 : 8'd0;

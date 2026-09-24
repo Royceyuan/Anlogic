@@ -1,8 +1,17 @@
 # 副屏本地功能交接（2026-09-23）
 
+## 2026-09-24 预缓存命令语义更新
+
+- `ARTIFACT_SELECT.confirmed=0` 或携带有效文物编号的 `HEARTBEAT` 使副屏在继续五图轮播时，后台将对应 `IMAGE5.BMP`～`IMAGE9.BMP` 读入第 6 个 SDRAM 槽。未确认命令不切换显示画面。
+- `ARTIFACT_SELECT.confirmed=1` 才进入对应简介/路线页；若预缓存未完成，保持轮播，待加载成功后在帧边界切换。KEY1 本地模拟预选并预缓存，KEY2 模拟确认，KEY3 返回轮播，SW1～SW3 选择 0～4，SW4 仍是本地紧急开关。
+- 第 6 槽一次只能保存一件文物的简介；在展示旧简介时收到新预选，须等离开旧简介后才覆写该槽。预缓存失败记录对应文物错误，切换到另一个文物后允许重新加载。
+- 当前物理顶层仍没有 Ethernet PHY/UDP/MBP1 接收器，KEY1/KEY2 只是本地命令模拟。当前 SDRAM 工作帧仍为 960×540；原生 1280×720 文物图与滚动缓存是独立的待完成工作。本节描述 RTL 语义，不代表板测通过。
+- 本地候选 bit：`release/hx4s20_secondary_local_precache_v4.bit`，629649 bytes，SHA256 `B49120333D9735F31D1F0FBDA4047025F7136C07D4DD3A25FB19D1844C2B5B27`。ModelSim 控制器和叠加层仿真 PASS；TD 6.2.168116 新鲜 P&R/STA：Setup WNS +337 ps/TNS 0，Hold WNS +30 ps/TNS 0，bitgen 成功。完整 TF→SDRAM 预缓存时序与硬件仍需专门验证；**hardware = NOT TESTED**。
+- `tools/prepare_secondary_exhibit_720p.py` 已另行生成 `assets/secondary_exhibit_720p_tf/`：`IMAGE0`～`IMAGE4` 为 1280×720 BMP，`IMAGE5`～`IMAGE9` 仍为 960×540 BMP，十文件共 21,600,540 bytes。此包是将来滚动缓存版本的输入；**不要与当前 v4 bit 配套上卡**，v4 的工作帧仍为 960×540。当前机器未检测到 F: 盘，因此没有写卡。
+
 ## 2026-09-24 本地预览候选
 
-- 新 bit：`release/hx4s20_secondary_local_preview_v3.bit`，629649 bytes，SHA256 `3F241645CA150B09CCE2B2379C27D8C9A0F67BC49B7E384FBDCA3EA719A10102`。原 `hx4s20_secondary_v2_local.bit` 保留。
+- 历史 bit：`release/hx4s20_secondary_local_preview_v3.bit`，629649 bytes，SHA256 `3F241645CA150B09CCE2B2379C27D8C9A0F67BC49B7E384FBDCA3EA719A10102`。原 `hx4s20_secondary_v2_local.bit` 保留。v3 不支持预选即预缓存。
 - 保持 1280×720 HDMI 与 960×540 RGB565 六槽缓存。8 MiB SDRAM 存六张原生 1280×720 帧需 11,059,200 bytes，容量不足；过去原生 1280×720 SDRAM 读出还出现欠载。因此本候选没有宣称实现原生 720p 图片质量。
 - 本地预览：SW4=0 时，`SW3:SW2:SW1=000/001/010/011/100` 选文物 0～4；按 KEY2 进入对应简介/路线页，按 KEY3 返回五图轮播。KEY2/KEY3 走已解析命令接口；以太网接收器仍未接入。`101`～`111` 不接受选择。SW4=1 仍显示应急页。
 - 正常轮播与简介页不再叠加底部 `MAIN LINK LOST` 状态栏；媒体等待、媒体错误和应急页继续显示诊断栏。原始简介素材是 4:3 排版，放入 16:9 画布时两侧仍有浅色延展背景；这与 HDMI 黑边不同，后续需重新排版素材才能完全消除。
@@ -29,7 +38,7 @@
 
 本地开关为 `emergency_sw`，对应板上 SW4 的 C5 管脚；置 1 进入演示紧急页，置 0 解除本地紧急。远程紧急状态与本地开关取或；远程状态需要匹配 `emergency_id` 的 CLEAR 或匹配状态快照才能解除。紧急状态下链路超时不会自动清警。
 
-已解析接口定义：50 MHz 单周期 `secondary_cmd_valid`，`secondary_cmd_type` 使用约定的 `HELLO=01`、`HEARTBEAT=02`、`STATUS_QUERY=03`、`ARTIFACT_SELECT=10`、`LECTURE_STATE=11`、`PLAYBACK_STATE=12`、`EMERGENCY_SET=20`、`EMERGENCY_CLEAR=21`（均十六进制）；`secondary_cmd_artifact_id`、`secondary_cmd_confirmed`、`secondary_cmd_mode`、`secondary_cmd_lecture_phase`、`secondary_cmd_lecture_reason`、`secondary_cmd_emergency_id`、`secondary_cmd_route_id`、`secondary_cmd_emergency_active` 是提取后的字段。`ARTIFACT_SELECT.confirmed=1` 或 `HEARTBEAT.mode=2` 进入对应简介；`HEARTBEAT.mode=1` 或讲解返回恢复轮播；未确认的预选仅更新主板状态。`secondary_cmd_result` 使用 MBP1 的 OK=0、UNSUPPORTED=3、INVALID_STATE=5。CRC、ACK 与 UDP 尚不存在，不能把该接口称为网络已通。
+已解析接口定义：50 MHz 单周期 `secondary_cmd_valid`，`secondary_cmd_type` 使用约定的 `HELLO=01`、`HEARTBEAT=02`、`STATUS_QUERY=03`、`ARTIFACT_SELECT=10`、`LECTURE_STATE=11`、`PLAYBACK_STATE=12`、`EMERGENCY_SET=20`、`EMERGENCY_CLEAR=21`（均十六进制）；`secondary_cmd_artifact_id`、`secondary_cmd_confirmed`、`secondary_cmd_mode`、`secondary_cmd_lecture_phase`、`secondary_cmd_lecture_reason`、`secondary_cmd_emergency_id`、`secondary_cmd_route_id`、`secondary_cmd_emergency_active` 是提取后的字段。v4 起，未确认的 `ARTIFACT_SELECT` 会预缓存对应简介但继续轮播；`ARTIFACT_SELECT.confirmed=1` 或 `HEARTBEAT.mode=2` 进入对应简介；`HEARTBEAT.mode=1` 或讲解返回恢复轮播。`secondary_cmd_result` 使用 MBP1 的 OK=0、UNSUPPORTED=3、INVALID_STATE=5。CRC、ACK 与 UDP 尚不存在，不能把该接口称为网络已通。
 
 ## 素材
 

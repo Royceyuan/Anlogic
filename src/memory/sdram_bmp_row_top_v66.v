@@ -268,12 +268,19 @@ reg [2:0] secondary_info_load_artifact;
 reg secondary_info_video_ff1, secondary_info_video_ff2;
 wire secondary_info_cache_match = secondary_info_valid &&
                                   secondary_info_cached_artifact == secondary_info_artifact;
+wire [2:0] secondary_info_preload_artifact = secondary_info_active ?
+                                             secondary_info_artifact :
+                                             secondary_master_artifact;
+wire secondary_info_preload_valid = secondary_info_preload_artifact <= 3'd4;
+wire secondary_info_preload_match = secondary_info_valid &&
+    secondary_info_cached_artifact == secondary_info_preload_artifact;
 wire secondary_info_video_busy = secondary_info_video_ff2 ||
                                  preload_select_media_index == 4'd5;
 wire secondary_info_load_request = ENABLE_SECONDARY &&
-    frame_valid == 5'b11111 && secondary_info_active &&
-    !secondary_info_cache_match &&
-    !(secondary_info_error && secondary_info_error_artifact == secondary_info_artifact) &&
+    frame_valid == 5'b11111 && secondary_info_preload_valid &&
+    !secondary_info_preload_match &&
+    !(secondary_info_error &&
+      secondary_info_error_artifact == secondary_info_preload_artifact) &&
     !secondary_info_video_busy;
 reg [15:0] published_source_width_bcd;
 reg [15:0] published_source_height_bcd;
@@ -465,7 +472,8 @@ wire [3:0] load_start_media_index = lecture_load_request ?
                                         {3'd0, preload_load_frame_index} :
                                         desired_media_index)));
 wire [3:0] secondary_info_file_index = 4'd5 +
-    {1'b0, (load_active ? secondary_info_load_artifact : secondary_info_artifact)};
+    {1'b0, (load_active ? secondary_info_load_artifact :
+                           secondary_info_preload_artifact)};
 wire [3:0] normal_loader_file_index = ENABLE_SECONDARY &&
                                       (load_active ? load_image_index == 4'd5 :
                                                      secondary_info_load_request) ?
@@ -1697,8 +1705,7 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         secondary_info_video_ff1 <= (display_media_index == 4'd5) ||
                                     (switch_pending && pending_media_index == 4'd5);
         secondary_info_video_ff2 <= secondary_info_video_ff1;
-        if (!secondary_info_active ||
-            secondary_info_artifact != secondary_info_error_artifact)
+        if (secondary_info_preload_artifact != secondary_info_error_artifact)
             secondary_info_error <= 1'b0;
 
         // In preload mode this is a level CDC request, not a pulse: a key
@@ -1754,7 +1761,7 @@ always @(posedge clk_50m or negedge write_rst_n) begin
                 load_museum_artifact <= lecture_load_artifact_index;
                 load_museum_detail_index <= lecture_detail_index;
                 if (secondary_info_load_request) begin
-                    secondary_info_load_artifact <= secondary_info_artifact;
+                    secondary_info_load_artifact <= secondary_info_preload_artifact;
                     secondary_info_valid <= 1'b0;
                 end
                 if (lecture_load_request)
