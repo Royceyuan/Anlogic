@@ -80,7 +80,7 @@ MAIN-0、MAIN-1、MAIN-2、MAIN-3 均已由用户确认板测通过；用户于 
 - ModelSim 定向测试 `run_main4_emergency.do`、`run_main4_emergency_recovery.do` 和 `run_audio_visualizer_overlay.do` 均 PASS：覆盖应急层完全替换、告警独占、下一帧边界生效/撤销、SW4 保持恢复状态以及红色波形。MAIN-3 恢复/缩放、SD 中止、字幕路由、总览、讲解、字幕、OSD 和写突发补零回归同时通过。
 - 已修复 SW4 保持为 1 超过约 2 秒后误入恢复故障态的问题：应急有效期间恢复等待计数器保持清零，SW4 拨回 0 后才开始等待 SD 初始化。ModelSim 新增长时间保持 SW4、延迟 SD 就绪的复现检查，并与 MAIN-3 恢复、应急显示和 SD 中止回归同时通过。
 - `D:\TD_6.2.1` 完整 P&R/STA 结果：Setup WNS `+122 ps`、TNS `0`，Hold WNS `+23 ps`、TNS `0`；DRC 无多驱动、无异常时序路径。综合 LUT `13532/19600`（69.04%）、REG `8355/19600`、BRAM9K `48/64`、BRAM32K `5/16`、DSP `7/29`；放置后 LUT `13760/19600`（70.20%）、REG `8419/19600`（42.95%），最终 `7939/9800` slices（81.01%）。三角波只使用相位位选、移位和取负，未增加 BRAM/DSP；保留既有 SDRAM 25 MHz 相移时钟单段本地路由告警。
-- 待上板文件：`release/hx4s20_main4_emergency.bit`，630813 bytes，SHA256 `00EF076569ECEAEC5912F4F8AE8EB6735A19F9692413B0F6F773E117DE18A892`。详细验收步骤见 `docs/main4_board_check.md`；只有用户明确回复 `MAIN-4 BOARD PASS` 后才能标记阶段通过。
+- 待上板文件：`release/hx4s20_main4_emergency.bit`，630813 bytes，SHA256 `7355B27698B20C41E5992A068B478AC830C44567F3139F3802659D5B416E68D8`。2026-09-24 在确认 MAIN-0～MAIN-3 均已板测通过后，重新执行 MAIN-1～MAIN-4 关键回归、完整 P&R/STA/DRC 和 bitgen；结果与既有功能及资源记录一致。详细验收步骤见 `docs/main4_board_check.md`；只有用户明确回复 `MAIN-4 BOARD PASS` 后才能标记阶段通过。
 
 ### MAIN-0 审计结论（2026-09-18）
 
