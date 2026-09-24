@@ -711,7 +711,7 @@ generate
                          (lecture_artifact_index == overview_selected_ctrl)),
             .key_confirm(key_press_pulse[1] && !recovery_busy),
             .key_previous(ENABLE_MAIN3 ? 1'b0 : key_press_pulse[3]),
-            .key_next(key_press_pulse[2]),
+            .key_next(ENABLE_MAIN3 ? key_press_pulse[0] : key_press_pulse[2]),
             .recover_select(recovery_select_pulse),
             .recover_index(museum_preload_valid ? museum_preload_index : 3'd0),
             .selected_index_ctrl(overview_selected_ctrl),
@@ -1646,7 +1646,7 @@ always @(posedge clk_50m or negedge write_rst_n) begin
              (key_press_pulse[2] || key_press_pulse[3])))
             audio_switch_reset_count <= AUDIO_SWITCH_RESET_CYCLES;
 
-        if (key_press_pulse[0]) begin
+        if (ENABLE_MAIN3 ? key_press_pulse[2] : key_press_pulse[0]) begin
             if (ENABLE_MUSEUM_LECTURE) begin
                 case ({brightness_level, contrast_level})
                     4'b0000: begin brightness_level<=2'd1; contrast_level<=2'd0; end
@@ -1714,7 +1714,7 @@ always @(posedge clk_50m or negedge write_rst_n) begin
             audio_paused <= !lecture_active || lecture_paused || lecture_finished;
             if (!lecture_active || lecture_finished)
                 zoom_2x <= 1'b0;
-            else if (ENABLE_MAIN3 && key_press_pulse[2])
+            else if (ENABLE_MAIN3 && key_press_pulse[0])
                 zoom_2x <= ~zoom_2x;
         end
 
@@ -2037,6 +2037,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
                 fade_out_active <= 1'b1;
         end else if (ENABLE_MULTI_FRAME_PRELOAD && video_run &&
                      !overview_enable_video &&
+                     !transition_active &&
                      (detail_zoom_2x_ff2 != display_zoom_2x)) begin
             pending_media_index <= display_media_index;
             pending_frame_index <= display_frame_index;
@@ -2045,6 +2046,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
             pending_zoom_2x <= detail_zoom_2x_ff2;
             switch_pending <= 1'b1;
             direct_switch_pending <= 1'b1;
+            transition_mode <= 3'b000;
             fade_out_active <= 1'b0;
             fade_level <= 5'd16;
             transition_progress <= 8'd32;

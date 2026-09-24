@@ -359,45 +359,62 @@ module tb_sdram_bmp_row_top_chain #(
         end
 
         if (MAIN3_ZOOM_TEST) begin
-            @(negedge clk_50m); force dut.key_press_pulse = 4'b0100;
+            @(negedge clk_50m); force dut.key_press_pulse = 4'b0001;
             @(negedge clk_50m); release dut.key_press_pulse;
             if (dut.overview_selected_ctrl != 3'd1 || dut.zoom_2x)
-                $fatal(1, "overview KEY3 did not select next artifact");
-            force dut.lecture_active = 1'b1;
-            repeat (3) @(negedge clk_50m);
+                $fatal(1, "overview KEY1 did not select next artifact");
             force dut.key_press_pulse = 4'b0100;
+            @(negedge clk_50m); release dut.key_press_pulse;
+            if (dut.brightness_level != 2'd1 || dut.contrast_level != 2'd0 ||
+                dut.overview_selected_ctrl != 3'd1)
+                $fatal(1, "overview KEY3 did not select picture preset");
+            force dut.lecture_active = 1'b1;
+            force dut.overview_enable_video = 1'b0;
+            force dut.transition_active = 1'b0;
+            repeat (3) @(negedge clk_50m);
+            force dut.key_press_pulse = 4'b0001;
             @(negedge clk_50m); release dut.key_press_pulse;
             if (!dut.zoom_2x || !dut.detail_zoom_2x ||
                 dut.overview_selected_ctrl != 3'd1 || dut.lecture_audio_restart)
-                $fatal(1, "lecture KEY3 did not select 2x without returning");
+                $fatal(1, "lecture KEY1 did not select 2x without returning");
             timeout = 0;
             while (!dut.display_zoom_2x && timeout < 100000) begin
                 @(negedge clk_50m); timeout = timeout + 1;
             end
             if (!dut.display_zoom_2x)
                 $fatal(1, "2x did not reach frame-boundary video display");
-            force dut.key_press_pulse = 4'b0100;
+            release dut.transition_active;
+            if (dut.transition_active)
+                $fatal(1, "2x direct switch restarted transition mode=%0d progress=%0d end=%0d fade=%b",
+                       dut.transition_mode, dut.transition_progress,
+                       dut.transition_end, dut.fade_out_active);
+            force dut.key_press_pulse = 4'b0001;
             @(negedge clk_50m); release dut.key_press_pulse;
             if (dut.zoom_2x || dut.detail_zoom_2x)
-                $fatal(1, "lecture KEY3 did not restore 1x");
+                $fatal(1, "lecture KEY1 did not restore 1x");
             timeout = 0;
             while (dut.display_zoom_2x && timeout < 100000) begin
                 @(negedge clk_50m); timeout = timeout + 1;
             end
             if (dut.display_zoom_2x)
                 $fatal(1, "1x did not reach frame-boundary video display");
+            force dut.key_press_pulse = 4'b0001;
+            @(negedge clk_50m); release dut.key_press_pulse;
             force dut.key_press_pulse = 4'b0100;
             @(negedge clk_50m); release dut.key_press_pulse;
+            if (dut.brightness_level != 2'd0 || dut.contrast_level != 2'd1)
+                $fatal(1, "lecture KEY3 did not advance picture preset");
             force dut.lecture_finished = 1'b1;
             repeat (3) @(negedge clk_50m);
             if (dut.zoom_2x || dut.detail_zoom_2x)
                 $fatal(1, "zoom persisted into return transition");
             release dut.lecture_finished;
             release dut.lecture_active;
+            release dut.overview_enable_video;
             repeat (3) @(negedge clk_50m);
             if (dut.zoom_2x || dut.detail_zoom_2x)
                 $fatal(1, "zoom persisted after lecture exit");
-            $display("PASS MAIN3 overview KEY3 select, lecture 1x/2x, no return, reset on exit");
+            $display("PASS MAIN3 KEY1 select/zoom, KEY3 presets, zoom reset on exit");
             $finish;
         end
 
