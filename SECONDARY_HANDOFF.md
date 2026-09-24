@@ -1,5 +1,13 @@
 # 副屏本地功能交接（2026-09-23）
 
+## 2026-09-24 本地预览候选
+
+- 新 bit：`release/hx4s20_secondary_local_preview_v3.bit`，629649 bytes，SHA256 `3F241645CA150B09CCE2B2379C27D8C9A0F67BC49B7E384FBDCA3EA719A10102`。原 `hx4s20_secondary_v2_local.bit` 保留。
+- 保持 1280×720 HDMI 与 960×540 RGB565 六槽缓存。8 MiB SDRAM 存六张原生 1280×720 帧需 11,059,200 bytes，容量不足；过去原生 1280×720 SDRAM 读出还出现欠载。因此本候选没有宣称实现原生 720p 图片质量。
+- 本地预览：SW4=0 时，`SW3:SW2:SW1=000/001/010/011/100` 选文物 0～4；按 KEY2 进入对应简介/路线页，按 KEY3 返回五图轮播。KEY2/KEY3 走已解析命令接口；以太网接收器仍未接入。`101`～`111` 不接受选择。SW4=1 仍显示应急页。
+- 正常轮播与简介页不再叠加底部 `MAIN LINK LOST` 状态栏；媒体等待、媒体错误和应急页继续显示诊断栏。原始简介素材是 4:3 排版，放入 16:9 画布时两侧仍有浅色延展背景；这与 HDMI 黑边不同，后续需重新排版素材才能完全消除。
+- `sim/run_secondary_local.do`：控制器和叠加层仿真 PASS，Errors 0、Warnings 0。新 bit 完整综合、P&R、最终 STA：Setup WNS +548 ps/TNS 0，Hold WNS +30 ps/TNS 0；bitgen 成功。**hardware = NOT TESTED**。之前用户实测旧版偶发停在 `60B6`，本候选没有修改 TF/SDRAM 加载链，不能视为修复。
+
 ## 基线与范围
 
 - 工作树：`D:\Anlogic_information\hx4s20_secondary`；分支：`secondary-screen`；起点：`a158ae3225617b539e3dde5727f12e8d13a48008`（`origin/Yan_Chen_Double`）。主板原工作树不在此目录。
@@ -17,7 +25,7 @@
 | 五张生成的大图和五张用户提供的简介/路线图 | `assets/secondary_exhibit_v2_tf/IMAGE*.BMP` | 大图是 AI 根据用户素材生成的展示图，不是馆藏实拍；路线图尚未经场馆核定 |
 | 本地紧急开关及独立警示画面 | 控制器、`src/secondary/secondary_page_overlay.v` | 画面不依赖 TF 或网络；解除后从第 0 页重新计时 |
 | 媒体等待/错误页、LINK WAIT/OK/LOST 状态 | `secondary_page_overlay.v` | LINK 状态现在没有物理网络输入，约 2 秒后正常显示 LOST |
-| 已解析命令接口 | `top_v66` 的 `secondary_cmd_*` 和 `cmd_result` | 本地顶层当前将输入接为常量；将来 MBP1 接收器必须先完成长度、CRC、序号、boot_id 去重及 ACK，再驱动此接口 |
+| 已解析命令接口 | `top_v66` 的 `secondary_cmd_*` 和 `cmd_result` | v2 bit 将输入接为常量；v3 本地预览 bit 用 KEY2/KEY3 生成命令；将来 MBP1 接收器必须先完成长度、CRC、序号、boot_id 去重及 ACK，再驱动此接口 |
 
 本地开关为 `emergency_sw`，对应板上 SW4 的 C5 管脚；置 1 进入演示紧急页，置 0 解除本地紧急。远程紧急状态与本地开关取或；远程状态需要匹配 `emergency_id` 的 CLEAR 或匹配状态快照才能解除。紧急状态下链路超时不会自动清警。
 
@@ -56,7 +64,7 @@ Get-Content -Raw scripts/build_secondary_local_bitgen.tcl | & 'D:\Anlogic\TD5.6.
 
 本地 P&R DRC 报告无多驱动、无异常时序路径。日志有 `PHY-7002`（SDRAM 自动布局位置调整）及 `PHY-5079`（SDRAM 时钟一条本地布线）工具警告，bitgen 门禁仅允许这两个已核对代码，其他 critical warning 或时序失败会拒绝生成。主板 `top_1280x720_main2_lecture` 在本分支可由 TD 成功 elaborate；原有 `run_v26_subtitle_output_route.do` 在本机 ModelSim 10.4 遇到内部错误，优化运行又因旧 testbench stub 与核心参数/端口不匹配而失败，不能把该主板仿真算作 PASS。副屏完整 TF→SDRAM→HDMI 板级链仍须按用户后续指令验证。
 
-新版 bit 的物理顶层仍把 `secondary_cmd_valid` 接常量 0，因为 Ethernet/UDP/MBP1 接收器尚未实现。烧录新版 bit 可以观察五张大图和转场；**不能仅靠烧录观察主板确认后切简介**。该路径已在 `top_v66` 的已解析命令接口及控制器中实现，并通过控制器仿真；待接收器接入后还须重新综合/生成 bit 并做双板联调。以上 bit、仿真和时序均非板级验证。
+v2 bit 的物理顶层把 `secondary_cmd_valid` 接常量 0，因为 Ethernet/UDP/MBP1 接收器尚未实现。烧录 v2 bit 可以观察五张大图和转场；**不能仅靠 v2 bit 观察主板确认后切简介**。v3 本地预览 bit 使用按键注入同一命令接口，可独立查看简介页，但不等于主板网络已接通。待接收器接入后还须重新综合/生成 bit 并做双板联调。以上 bit、仿真和时序均非板级验证。
 
 ## 待用户下达上板指令后
 

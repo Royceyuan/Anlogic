@@ -6,6 +6,8 @@
 module top_1280x720_secondary_local (
     input  wire       clk_50m,
     input  wire       emergency_sw,
+    input  wire [2:0] exhibit_sw,
+    input  wire [3:0] key_n,
     output wire [3:0] led,
     output wire [7:0] seg_data,
     output wire [7:0] seg_sel,
@@ -19,15 +21,29 @@ module top_1280x720_secondary_local (
     output wire       hdmi1_d0_p
 );
 
-// Parsed-command interface for the later Ethernet/UDP/MBP1 receiver.
-// The receiver must validate CRC, length, boot_id and seq before cmd_valid.
-wire        cmd_valid = 1'b0;
-wire [7:0]  cmd_type = 8'd0;
-wire [7:0]  cmd_artifact_id = 8'hff;
-wire        cmd_confirmed = 1'b0;
+// Local preview uses the same parsed-command interface as the future receiver.
+// KEY2 confirms SW1..SW3 (0..4); KEY3 returns to the carousel.
+wire local_rst_n;
+wire [3:0] key_press;
+reg [2:0] sw_ff1, sw_ff2;
+reset_sync u_local_reset (.clk(clk_50m), .arst_n(1'b1), .srst_n(local_rst_n));
+key_debounce u_local_keys (
+    .clk(clk_50m), .rst_n(local_rst_n), .key_n(key_n),
+    .key_level_n(), .key_press_pulse(key_press), .key_release_pulse()
+);
+always @(posedge clk_50m) begin
+    sw_ff1 <= exhibit_sw;
+    sw_ff2 <= sw_ff1;
+end
+wire select_pulse = key_press[1] && (sw_ff2 <= 3'd4);
+wire return_pulse = key_press[2];
+wire        cmd_valid = select_pulse || return_pulse;
+wire [7:0]  cmd_type = return_pulse ? 8'h11 : 8'h10;
+wire [7:0]  cmd_artifact_id = select_pulse ? {5'd0, sw_ff2} : 8'hff;
+wire        cmd_confirmed = select_pulse;
 wire [7:0]  cmd_mode = 8'd1;
-wire [7:0]  cmd_lecture_phase = 8'hff;
-wire [7:0]  cmd_lecture_reason = 8'd0;
+wire [7:0]  cmd_lecture_phase = return_pulse ? 8'hff : 8'd0;
+wire [7:0]  cmd_lecture_reason = return_pulse ? 8'd1 : 8'd0;
 wire [15:0] cmd_emergency_id = 16'd0;
 wire [7:0]  cmd_route_id = 8'd0;
 wire        cmd_emergency_active = 1'b0;

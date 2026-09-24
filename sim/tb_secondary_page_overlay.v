@@ -56,12 +56,14 @@ initial begin
     link_state_50m = 2'd1;
     step(4); frame();
     x = 50; y = 667; #1;
-    check(rgb == 24'h16835B, "link OK footer");
+    check(rgb == base_rgb, "normal image fills bottom edge");
 
     emergency_50m = 1'b1;
     media_ready_50m = 1'b0;
     media_error_50m = 1'b1;
     step(4); frame();
+    x = 50; y = 667; #1;
+    check(rgb == 24'h16835B, "emergency footer retains link status");
     x = 250; y = 388; #1;
     check(rgb == 24'h098FEB, "emergency current-position marker over media error");
     x = 1100; y = 320; #1;

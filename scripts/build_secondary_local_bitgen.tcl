@@ -19,5 +19,5 @@ set log_ok [expr {![regexp { ERROR:|black box} $console_text] && [string first {
 foreach log_line [split $console_text "\n"] {if {[string first {CRITICAL-WARNING:} $log_line] >= 0 && ![regexp {^PHY-(7002|5079) CRITICAL-WARNING:} [string trim $log_line]]} {set log_ok 0}}
 set timing_ok [expr {$setup_ok && $hold_ok && $log_ok && $setup_wns >= 0 && $setup_tns == 0 && $setup_feps == 0 && $hold_wns >= 0 && $hold_tns == 0 && $hold_feps == 0}]
 cd $secondary_root
-if {$timing_ok} {import_db $secondary_db; bitgen -bit [file join $secondary_root release hx4s20_secondary_v2_local.bit]} else {puts "REFUSED: P&R errors or failed timing"}
+if {$timing_ok} {import_db $secondary_db; bitgen -bit [file join $secondary_root release hx4s20_secondary_local_preview_v3.bit]} else {puts "REFUSED: P&R errors or failed timing"}
 exit

@@ -232,7 +232,7 @@ always @(*) begin
             rgb = base_rgb;
         end
 
-        if (y >= 10'd665) begin
+        if (y >= 10'd665 && (emergency_frame || !ready_frame || error_frame)) begin
             rgb = 24'h0A1322;
             if (y < 10'd670) rgb = (link_frame == 2'd1) ? 24'h16835B :
                                    (link_frame == 2'd2) ? 24'hB62931 : 24'hD7A53B;
