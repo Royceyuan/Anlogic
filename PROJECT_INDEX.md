@@ -6,7 +6,7 @@
 
 当前选择的顶层是 `top_1280x720_main4_emergency`，在 MAIN-3 板测基线上增加 SW4 应急抢占、应急提示画面、独占告警音和红色波形。
 
-当前 MAIN-4 发布文件为 `release/hx4s20_main4_emergency.bit`；验证、资源、时序、SHA256 与上板步骤见 `docs/main4_board_check.md`。MAIN-3、MAIN-2、MAIN-1 和 MAIN-0 的已板测 bit 均保留作为回退。
+当前已板测通过的 MAIN-4 发布文件为 `release/hx4s20_main4_emergency.bit`；验证、资源、时序、SHA256 与上板步骤见 `docs/main4_board_check.md`。MAIN-3、MAIN-2、MAIN-1 和 MAIN-0 的已板测 bit 均保留作为回退。
 
 统一工程中仍登记 640×480、800×600 和 v66～v73 历史源文件用于回溯；这些名称与其实际历史输出分辨率一致。当前活动顶层和活动 SDC 均为 MAIN-4。
 

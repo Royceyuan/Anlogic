@@ -3,11 +3,11 @@
 更新时间：2026-09-24
 适用目录：`D:\VSCode\CodeFiles\Git_TD\Anlogic`
 当前分支：`Yan_Chen_Double`，跟踪 `origin/Yan_Chen_Double`。
-主板 MAIN-3 板测基线实现提交：`96a1d76`；用户已确认 `MAIN-3 BOARD PASS`。MAIN-4 当前为待上板候选。
+主板 MAIN-4 板测基线提交：`47cd63a`；用户已确认 `MAIN-4 BOARD PASS`。
 
 ## 1. 当前任务与最终目标
 
-MAIN-0、MAIN-1、MAIN-2、MAIN-3 均已由用户确认板测通过；用户于 2026-09-24 明确要求开始 MAIN-4。MAIN-4 已完成 RTL、定向仿真、完整 P&R/STA/DRC 和 bitgen，尚待上板确认。
+MAIN-0、MAIN-1、MAIN-2、MAIN-3、MAIN-4 均已由用户确认板测通过。MAIN-4 已完成 RTL、定向仿真、完整 P&R/STA/DRC、bitgen 和上板验收。
 
 本工程的稳定目标是 HX4S20 (`EG4S20BG256`) 上的 1280×720 HDMI 多媒体图片播放器：TF 卡读取 BMP，五图缓存和快速切换，转场、亮度/对比度、顶部 OSD、UART 中文字幕，以及 v73 候选中的 WAV 音频和音频波形可视化。
 
@@ -72,7 +72,7 @@ MAIN-0、MAIN-1、MAIN-2、MAIN-3 均已由用户确认板测通过；用户于 
 - **工具链与板测：通过。** `D:\TD_6.2.1` 最终 P&R/STA setup WNS `+114 ps`、TNS `0`，hold WNS `+30 ps`、TNS `0`，覆盖率 99.76%，时序例外为空；bitgen 完成。单独执行 `drc_check -all` 与 `report_route_status -drc`，无多驱动、无异常时序路径、路由开放网络 0；保留既有 SDRAM 25 MHz 相移时钟使用一段本地路由的工具警告。综合 LUT `12881/19600`（65.72%）、REG `8262/19600`、BRAM9K `48/64`、BRAM32K `5/16`、DSP `7/29`；放置后的 LUT `13116/19600`（66.92%），路由使用 `7712/9800` slices（78.69%）。相对上一候选，综合 LUT -868、REG -357，放置后 LUT -823、Slice -305；BRAM和DSP不变，并重新回到80% Slice软目标以内。
 - **板测通过发布文件：** `release/hx4s20_main3_interaction.bit`，630815 bytes，SHA256 `5A0B3441D9C4404DDF53090BCCD968A5B80283244B9F8432C4C55E45F47D71C4`。`release/media/OSDNAME.BIN` 与此前核验的 `E:\OSDNAME.BIN` 均为 3072 bytes、SHA256 `600E64D69B35F29B955D43DEA67C93F194C8A0317C6E5BD0DDC05A8F8B268029`。MAIN-2 bit 的 SHA256 保持 `AA788DDEEC1FE2D40B57DB16E9243513A6C20B034497F9C006B70D39784F39C9`。用户于 2026-09-24 明确回复 `MAIN-3 BOARD PASS`。
 
-### MAIN-4 应急抢占（2026-09-24，待上板）
+### MAIN-4 应急抢占（2026-09-24，已板测通过）
 
 - 新增独立顶层 `top_1280x720_main4_emergency`，仅通过 `ENABLE_MAIN4=1` 启用新增行为；MAIN-3 顶层和已板测 bit 不变。`SW4=1` 经双触发同步后进入最高优先级恢复路径，立即停止正常讲解音频、字幕、转场和普通画面，并在下一视频帧边界发布全屏应急画面；数码管显示 `E911`。
 - 应急画面由像素流水线本地生成，不读取 TF/SDRAM：深红闪烁底色、白色外框、黄黑警示带、三角感叹号和白色向右疏散箭头。应急层位于 OSD/字幕之后，普通画面无法覆盖；音频波形位于其后且强制为红色。
@@ -80,7 +80,7 @@ MAIN-0、MAIN-1、MAIN-2、MAIN-3 均已由用户确认板测通过；用户于 
 - ModelSim 定向测试 `run_main4_emergency.do`、`run_main4_emergency_recovery.do` 和 `run_audio_visualizer_overlay.do` 均 PASS：覆盖应急层完全替换、告警独占、下一帧边界生效/撤销、SW4 保持恢复状态以及红色波形。MAIN-3 恢复/缩放、SD 中止、字幕路由、总览、讲解、字幕、OSD 和写突发补零回归同时通过。
 - 已修复 SW4 保持为 1 超过约 2 秒后误入恢复故障态的问题：应急有效期间恢复等待计数器保持清零，SW4 拨回 0 后才开始等待 SD 初始化。ModelSim 新增长时间保持 SW4、延迟 SD 就绪的复现检查，并与 MAIN-3 恢复、应急显示和 SD 中止回归同时通过。
 - `D:\TD_6.2.1` 完整 P&R/STA 结果：Setup WNS `+122 ps`、TNS `0`，Hold WNS `+23 ps`、TNS `0`；DRC 无多驱动、无异常时序路径。综合 LUT `13532/19600`（69.04%）、REG `8355/19600`、BRAM9K `48/64`、BRAM32K `5/16`、DSP `7/29`；放置后 LUT `13760/19600`（70.20%）、REG `8419/19600`（42.95%），最终 `7939/9800` slices（81.01%）。三角波只使用相位位选、移位和取负，未增加 BRAM/DSP；保留既有 SDRAM 25 MHz 相移时钟单段本地路由告警。
-- 待上板文件：`release/hx4s20_main4_emergency.bit`，630813 bytes，SHA256 `7355B27698B20C41E5992A068B478AC830C44567F3139F3802659D5B416E68D8`。2026-09-24 在确认 MAIN-0～MAIN-3 均已板测通过后，重新执行 MAIN-1～MAIN-4 关键回归、完整 P&R/STA/DRC 和 bitgen；结果与既有功能及资源记录一致。详细验收步骤见 `docs/main4_board_check.md`；只有用户明确回复 `MAIN-4 BOARD PASS` 后才能标记阶段通过。
+- **板测通过发布文件：** `release/hx4s20_main4_emergency.bit`，630813 bytes，SHA256 `7355B27698B20C41E5992A068B478AC830C44567F3139F3802659D5B416E68D8`。2026-09-24 在确认 MAIN-0～MAIN-3 均已板测通过后，重新执行 MAIN-1～MAIN-4 关键回归、完整 P&R/STA/DRC 和 bitgen；用户随后明确回复 `MAIN-4 BOARD PASS`。
 
 ### MAIN-0 审计结论（2026-09-18）
 
@@ -205,7 +205,7 @@ MAIN-0、MAIN-1、MAIN-2、MAIN-3 均已由用户确认板测通过；用户于 
 
 ```text
 分支：Yan_Chen_Double（跟踪 origin/Yan_Chen_Double）
-MAIN-3 板测基线实现提交：96a1d76
+MAIN-4 板测基线提交：47cd63a
 工程：hx4s20_museum_terminal.al
 工程默认顶层：top_1280x720_main4_emergency
 MAIN-0 回退顶层：top_1280x720_feature_v72_resource_optimized
@@ -214,13 +214,13 @@ v73 候选顶层：top_1280x720_feature_v73_audio_visualizer
 活动 SDC：constraints/top_1280x720_main4_emergency.sdc
 保留最新候选 SDC：constraints/top_1280x720_v73_audio_visualizer.sdc
 当前 P&R 目录：`_build_main4_emergency`（MAIN-4 工具链证据，未跟踪）
-当前待板测 bit：`release/hx4s20_main4_emergency.bit`（MAIN-4）
-当前板测通过 bit：`release/hx4s20_main3_interaction.bit`（MAIN-3 回退）
+当前板测通过 bit：`release/hx4s20_main4_emergency.bit`（MAIN-4）
+MAIN-3 回退 bit：`release/hx4s20_main3_interaction.bit`（已板测通过）
 MAIN-2 回退 bit：`release/hx4s20_main2_lecture.bit`（已板测通过）
 MAIN-1 回退 bit：`release/hx4s20_main1_overview.bit`（已板测通过）
 MAIN-0 回退 bit：`release/hx4s20_1280x720_v72_subtitle_continuous_scroll_v2.bit`（已板测通过）
 当前商品展示文件：无（已回退）
-当前阶段状态：MAIN-4 已完成 RTL/仿真/P&R/STA/DRC/bitgen，等待 `MAIN-4 BOARD PASS`
+当前阶段状态：MAIN-4 已完成 RTL/仿真/P&R/STA/DRC/bitgen 和上板验收，用户已确认 `MAIN-4 BOARD PASS`
 ```
 
 ## 12. 下一步行动
@@ -228,9 +228,9 @@ MAIN-0 回退 bit：`release/hx4s20_1280x720_v72_subtitle_continuous_scroll_v2.b
 1. `MAIN-0` 审计、v72 综合/P&R/STA/DRC、bitgen 和板测已完成；用户已确认 `MAIN-0 BOARD PASS`。
 2. MAIN-0 板测基于 `release/hx4s20_1280x720_v72_subtitle_continuous_scroll_v2.bit`；用户确认当前基线的 HDMI、TF、SDRAM、按键、SW4 和画面稳定性满足验收要求。
 3. MAIN-1 RTL、仿真、P&R、STA/DRC、bitgen 和板测已完成；用户已明确回复 `MAIN-1 BOARD PASS`。
-4. 使用 `docs/main4_board_check.md` 上板验证 SW4 在总览、讲解、暂停、转场和后台预载期间的抢占与清除；确认普通音频不与告警混合，清除后回总览且可重新预载。
+4. MAIN-4 应急抢占、独占告警、红色动态波形、SW4 清除恢复及重新预载均已完成上板验收；用户已明确回复 `MAIN-4 BOARD PASS`。
 5. MAIN-4 未改变 TF 媒体格式。TF 根目录仍需有现行 BMP/WAV/SUB 文件及可选 `OSDNAME.BIN`；名称文件缺失应显示“文物 0～4”，不阻塞讲解。
-6. 等待用户明确回复 `MAIN-4 BOARD PASS`。提交只纳入相关源码、测试、文档和发布 bit，不纳入 `_build_*`、根目录报告或 `.bid`；未经要求不 push。
+6. MAIN-4 已结束；未经用户明确要求，不自动开始下一阶段。提交只纳入相关源码、测试、文档和发布 bit，不纳入 `_build_*`、根目录报告或 `.bid`；未经要求不 push。
 
 ## 13. 新 Agent 启动指令
 
