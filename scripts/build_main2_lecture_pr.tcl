@@ -2,9 +2,9 @@
 import_device eagle_s20.db -package EG4S20BG256
 set build_project_root [file dirname [file dirname [file normalize [info script]]]]
 set build_root [file join $build_project_root _build_main2_lecture]
-set build_project_file [file join $build_project_root hx4s20_800x600_multimedia.al]
+set build_project_file [file join $build_project_root hx4s20_museum_terminal.al]
 set build_sdc_file [file join $build_project_root constraints top_1280x720_main2_lecture.sdc]
-set build_adc_file [file join $build_project_root constraints top_1280x720_v73_audio_visualizer.adc]
+set build_adc_file [file join $build_project_root constraints hx4s20_main_board.adc]
 set build_top_module top_1280x720_main2_lecture
 
 file mkdir $build_root

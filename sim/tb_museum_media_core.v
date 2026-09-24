@@ -4,7 +4,7 @@
 // Integration-only simulation for the 1280x720 media top.  The TF loader,
 // writer and SDRAM are replaced by deterministic models; the production
 // video timing, line buffer, delay and post-processing remain unchanged.
-module tb_sdram_bmp_row_top_chain #(
+module tb_museum_media_core #(
     parameter integer TEST_REGISTERED = 0,
     parameter integer TEST_V26_OUTPUT_PIPELINE = 0,
     parameter integer TEST_FIFO_RESPONSE_REGISTER = 0,
@@ -21,7 +21,8 @@ module tb_sdram_bmp_row_top_chain #(
     parameter integer PHASE5_TEST = 0,
     parameter integer SD_ABORT_TEST = 0,
     parameter integer MAIN3_RECOVERY_TEST = 0,
-    parameter integer MAIN3_ZOOM_TEST = 0
+    parameter integer MAIN3_ZOOM_TEST = 0,
+    parameter integer MAIN4_EMERGENCY_TEST = 0
 );
     reg clk_50m = 1'b0;
     reg [3:0] key_n = 4'b1111;
@@ -41,7 +42,7 @@ module tb_sdram_bmp_row_top_chain #(
     localparam integer TB_SOURCE_H = TIMING_TEST ? 54 : 18;
 
 `ifdef V66_TOP
-    top_v66 #(
+    museum_media_core #(
 `else
     top #(
 `endif
@@ -59,7 +60,8 @@ module tb_sdram_bmp_row_top_chain #(
         .LINEBUF_SCALE(1), .LINEBUF_REGISTER_READ(TEST_REGISTERED),
 `ifdef V66_TOP
         .LINEBUF_NOREG_SYNC_READ(0),
-        .ENABLE_MAIN3(MAIN3_RECOVERY_TEST || MAIN3_ZOOM_TEST),
+        .ENABLE_MAIN3(MAIN3_RECOVERY_TEST || MAIN3_ZOOM_TEST || MAIN4_EMERGENCY_TEST),
+        .ENABLE_MAIN4(MAIN4_EMERGENCY_TEST),
         .ENABLE_MUSEUM_OVERVIEW(MAIN3_ZOOM_TEST),
         .ENABLE_MUSEUM_LECTURE(MAIN3_ZOOM_TEST),
 `endif
@@ -451,6 +453,33 @@ module tb_sdram_bmp_row_top_chain #(
             if (dut.recovery_state != 3'd0)
                 $fatal(1, "KEY4 did not retry after SD init failure");
             $display("PASS MAIN3 KEY4 drain/reset/reinit, timeout retry, repeated-key isolation");
+            $finish;
+        end
+
+        if (MAIN4_EMERGENCY_TEST) begin
+            sw[3] = 1'b1;
+            repeat (30) @(negedge clk_50m);
+            if (!dut.emergency_active_50m || !dut.recovery_busy ||
+                dut.recovery_state != 3'd3)
+                $fatal(1, "SW4 did not hold safe recovery during emergency state=%0d",
+                       dut.recovery_state);
+            while (!dut.emergency_video_ff2) @(negedge clk_50m);
+            while (!dut.video_frame_tick) @(negedge clk_50m);
+            @(negedge clk_50m);
+            if (!dut.emergency_video_active)
+                $fatal(1, "emergency video was not published at the next frame boundary");
+            sw[3] = 1'b0;
+            while (dut.emergency_video_ff2) @(negedge clk_50m);
+            while (!dut.video_frame_tick) @(negedge clk_50m);
+            @(negedge clk_50m);
+            timeout = 0;
+            while (dut.recovery_busy && timeout < 5000) begin
+                @(negedge clk_50m); timeout = timeout + 1;
+            end
+            if (dut.recovery_busy || dut.emergency_video_active ||
+                dut.recovery_state != 3'd0)
+                $fatal(1, "SW4 clear did not return to clean normal state");
+            $display("PASS MAIN4 SW4 priority, held recovery, frame-boundary clear");
             $finish;
         end
 

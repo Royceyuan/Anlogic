@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 `default_nettype none
 
-module video_timing_640x480_pclk #(
+module video_timing_programmable_pclk #(
     parameter integer H_VISIBLE = 640,
     parameter integer H_FRONT   = 16,
     parameter integer H_SYNC    = 96,

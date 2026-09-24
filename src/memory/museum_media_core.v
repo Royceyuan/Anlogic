@@ -4,7 +4,7 @@
 // Independent candidate for the official media path:
 // FAT32 -> BMP or RGB565 BIN -> row-addressed SDRAM -> HDMI.
 // VIDEO_BIN selects the raw RGB565 path without changing the stable BMP path.
-module top_v66 #(
+module museum_media_core #(
     parameter integer VIDEO_W = 640,
     parameter integer VIDEO_H = 480,
     parameter integer VIDEO_BURST_WORDS = 256,
@@ -88,6 +88,7 @@ module top_v66 #(
     ,parameter integer ENABLE_MUSEUM_OVERVIEW = 0
     ,parameter integer ENABLE_MUSEUM_LECTURE = 0
     ,parameter integer ENABLE_MAIN3 = 0
+    ,parameter integer ENABLE_MAIN4 = 0
     ,parameter integer LECTURE_CLOCK_HZ = 50_000_000
     ,parameter integer OVERVIEW_CROP_X0_0 = 384
     ,parameter integer OVERVIEW_CROP_X0_1 = 384
@@ -140,11 +141,16 @@ reg [2:0] recovery_state;
 reg [4:0] recovery_reset_count;
 reg [26:0] recovery_wait_count;
 reg recovery_select_pulse;
-wire recovery_busy = ENABLE_MAIN3 && recovery_state != 0;
-wire recovery_reset = ENABLE_MAIN3 && recovery_state == 3'd2;
+reg emergency_50m_ff1, emergency_50m_ff2;
+wire emergency_active_50m = ENABLE_MAIN4 && emergency_50m_ff2;
+wire recovery_busy = (ENABLE_MAIN3 || ENABLE_MAIN4) &&
+                     (recovery_state != 0 || emergency_active_50m);
+wire recovery_reset = (ENABLE_MAIN3 || ENABLE_MAIN4) &&
+                      recovery_state == 3'd2;
 wire client_rst_n = write_rst_n && !recovery_reset;
 wire writer_abort_done;
 reg recovery_video_ff1, recovery_video_ff2;
+reg emergency_video_ff1, emergency_video_ff2, emergency_video_active;
 
 wire sd_init_done;
 wire sd_sec_read;
@@ -323,6 +329,10 @@ wire        video_post_osd_de;
 wire [10:0] video_post_osd_x;
 wire [9:0]  video_post_osd_y;
 wire [23:0] video_subtitle_rgb;
+wire [23:0] video_emergency_rgb;
+wire video_emergency_hs, video_emergency_vs, video_emergency_de;
+wire [10:0] video_emergency_x;
+wire [9:0] video_emergency_y;
 wire [23:0] video_status_rgb;
 wire video_status_hs, video_status_vs, video_status_de;
 wire [10:0] video_status_x;
@@ -522,6 +532,15 @@ wire museum_preload_valid = sw[2:0] < 3'd5;
 wire [2:0] museum_preload_index = sw[2:0];
 always @(posedge clk_50m or negedge write_rst_n) begin
     if (!write_rst_n) begin
+        emergency_50m_ff1 <= 1'b0;
+        emergency_50m_ff2 <= 1'b0;
+    end else begin
+        emergency_50m_ff1 <= ENABLE_MAIN4 && sw[3];
+        emergency_50m_ff2 <= emergency_50m_ff1;
+    end
+end
+always @(posedge clk_50m or negedge write_rst_n) begin
+    if (!write_rst_n) begin
         recovery_state <= 3'd0;
         recovery_reset_count <= 5'd0;
         recovery_wait_count <= 27'd0;
@@ -529,7 +548,8 @@ always @(posedge clk_50m or negedge write_rst_n) begin
     end else begin
         recovery_select_pulse <= 1'b0;
         case (recovery_state)
-            3'd0: if (ENABLE_MAIN3 && key_press_pulse[3])
+            3'd0: if (emergency_active_50m ||
+                       (ENABLE_MAIN3 && key_press_pulse[3]))
                 recovery_state <= 3'd1;
             3'd1: if (writer_abort_done) begin
                 recovery_reset_count <= 5'd0;
@@ -539,13 +559,14 @@ always @(posedge clk_50m or negedge write_rst_n) begin
                 recovery_wait_count <= 27'd0;
                 recovery_state <= 3'd3;
             end else recovery_reset_count <= recovery_reset_count + 1'b1;
-            3'd3: if (sd_init_done) begin
+            3'd3: if (sd_init_done && !emergency_active_50m) begin
                 recovery_select_pulse <= 1'b1;
                 recovery_state <= 3'd0;
             end else if (recovery_wait_count == 27'd100_000_000)
                 recovery_state <= 3'd4;
             else recovery_wait_count <= recovery_wait_count + 1'b1;
-            3'd4: if (key_press_pulse[3]) recovery_state <= 3'd1;
+            3'd4: if (!emergency_active_50m && key_press_pulse[3])
+                recovery_state <= 3'd1;
             default: recovery_state <= 3'd0;
         endcase
     end
@@ -662,9 +683,18 @@ reg audio_fifo_empty_ff1, audio_fifo_empty_ff2;
 reg [2:0] displayed_frame_slot_ff1, displayed_frame_slot_ff2;
 reg transition_active_ff1_50m, transition_active_ff2_50m;
 reg audio_switch_reset_ff1, audio_switch_reset_ff2;
-wire audio_sample_valid;
-wire signed [15:0] audio_sample_left;
-wire signed [15:0] audio_sample_right;
+wire normal_audio_sample_valid;
+wire signed [15:0] normal_audio_sample_left;
+wire signed [15:0] normal_audio_sample_right;
+wire emergency_alarm_valid;
+wire signed [15:0] emergency_alarm_left;
+wire signed [15:0] emergency_alarm_right;
+wire audio_sample_valid = emergency_video_ff2 ? emergency_alarm_valid :
+                                               normal_audio_sample_valid;
+wire signed [15:0] audio_sample_left = emergency_video_ff2 ? emergency_alarm_left :
+                                                              normal_audio_sample_left;
+wire signed [15:0] audio_sample_right = emergency_video_ff2 ? emergency_alarm_right :
+                                                               normal_audio_sample_right;
 wire audio_frame_consumed_toggle;
 reg audio_frame_toggle_ff1, audio_frame_toggle_ff2, audio_frame_toggle_seen;
 wire audio_frame_pulse_50m = audio_frame_toggle_ff2 != audio_frame_toggle_seen;
@@ -992,25 +1022,50 @@ assign video_output_rgb = (RIGHT_EDGE_MASK_COLUMNS != 0 && video_post_osd_de &&
                            video_right_edge_pixel : video_osd_rgb);
 
 generate
+    if (ENABLE_MAIN4) begin : g_museum_emergency_overlay
+        museum_emergency_overlay u_museum_emergency_overlay (
+            .clk(video_clk), .rst_n(video_rst_n),
+            .emergency(emergency_video_active),
+            .frame_tick(video_frame_tick),
+            .hs_i(video_subtitle_hs), .vs_i(video_subtitle_vs),
+            .de_i(video_subtitle_de), .x_i(video_subtitle_x),
+            .y_i(video_subtitle_y), .rgb_i(video_subtitle_rgb),
+            .hs_o(video_emergency_hs), .vs_o(video_emergency_vs),
+            .de_o(video_emergency_de), .x_o(video_emergency_x),
+            .y_o(video_emergency_y), .rgb_o(video_emergency_rgb)
+        );
+    end else begin : g_no_museum_emergency_overlay
+        assign video_emergency_hs = video_subtitle_hs;
+        assign video_emergency_vs = video_subtitle_vs;
+        assign video_emergency_de = video_subtitle_de;
+        assign video_emergency_x = video_subtitle_x;
+        assign video_emergency_y = video_subtitle_y;
+        assign video_emergency_rgb = video_subtitle_rgb;
+    end
+endgenerate
+
+generate
     if (ENABLE_AUDIO_VISUALIZER && SHOW_AUDIO_VISUALIZER) begin : g_audio_visualizer_overlay
-        audio_visualizer_overlay #(.ENABLE_EMERGENCY(ENABLE_MAIN3))
+        audio_visualizer_overlay #(.ENABLE_EMERGENCY(ENABLE_MAIN4))
         u_audio_visualizer_overlay (
             .clk(video_clk), .rst_n(video_rst_n), .sample_valid(audio_sample_valid),
             .sample_left(audio_sample_left), .sample_right(audio_sample_right),
-            .pause(audio_paused_ff2 || recovery_video_ff2), .emergency(1'b0),
-            .frame_tick(video_frame_tick), .hs_i(video_subtitle_hs),
-            .vs_i(video_subtitle_vs), .de_i(video_subtitle_de), .x_i(video_subtitle_x),
-            .y_i(video_subtitle_y), .rgb_i(video_subtitle_rgb), .hs_o(video_post_audio_hs),
+            .pause(emergency_video_active ? 1'b0 :
+                   (audio_paused_ff2 || recovery_video_ff2)),
+            .emergency(emergency_video_active),
+            .frame_tick(video_frame_tick), .hs_i(video_emergency_hs),
+            .vs_i(video_emergency_vs), .de_i(video_emergency_de), .x_i(video_emergency_x),
+            .y_i(video_emergency_y), .rgb_i(video_emergency_rgb), .hs_o(video_post_audio_hs),
             .vs_o(video_post_audio_vs), .de_o(video_post_audio_de), .x_o(video_post_audio_x),
             .y_o(video_post_audio_y), .rgb_o(video_post_audio_rgb)
         );
     end else begin : g_no_audio_visualizer_overlay
-        assign video_post_audio_hs  = video_subtitle_hs;
-        assign video_post_audio_vs  = video_subtitle_vs;
-        assign video_post_audio_de  = video_subtitle_de;
-        assign video_post_audio_x   = video_overview_x;
-        assign video_post_audio_y   = video_overview_y;
-        assign video_post_audio_rgb = video_subtitle_rgb;
+        assign video_post_audio_hs  = video_emergency_hs;
+        assign video_post_audio_vs  = video_emergency_vs;
+        assign video_post_audio_de  = video_emergency_de;
+        assign video_post_audio_x   = video_emergency_x;
+        assign video_post_audio_y   = video_emergency_y;
+        assign video_post_audio_rgb = video_emergency_rgb;
     end
 endgenerate
 
@@ -1251,8 +1306,9 @@ generate
             .fifo_used(audio_fifo_rd_used), .fifo_rd_en(audio_fifo_rd_en),
             .paused(audio_paused_ff2 || recovery_video_ff2),
             .switch_mute(audio_switch_reset_ff2 || recovery_video_ff2),
-            .sample_valid(audio_sample_valid), .sample_left(audio_sample_left),
-            .sample_right(audio_sample_right),
+            .sample_valid(normal_audio_sample_valid),
+            .sample_left(normal_audio_sample_left),
+            .sample_right(normal_audio_sample_right),
             .frame_consumed_toggle(audio_frame_consumed_toggle),
             .active(audio_active), .underflow(audio_underflow)
         );
@@ -1281,12 +1337,28 @@ generate
         assign audio_stream_done      = 1'b0;
         assign audio_format_error_50m = 1'b0;
         assign audio_file_error_50m   = 1'b0;
-        assign audio_sample_valid     = 1'b0;
-        assign audio_sample_left      = 16'sd0;
-        assign audio_sample_right     = 16'sd0;
+        assign normal_audio_sample_valid = 1'b0;
+        assign normal_audio_sample_left  = 16'sd0;
+        assign normal_audio_sample_right = 16'sd0;
         assign audio_frame_consumed_toggle = 1'b0;
         assign audio_active           = 1'b0;
         assign audio_underflow        = 1'b0;
+    end
+endgenerate
+
+generate
+    if (ENABLE_MAIN4 && ENABLE_AUDIO_VISUALIZER) begin : g_emergency_alarm
+        emergency_alarm_48k #(.CLK_HZ(75_000_000)) u_emergency_alarm (
+            .clk(video_clk), .rst_n(video_rst_n),
+            .enable(emergency_video_ff2),
+            .sample_valid(emergency_alarm_valid),
+            .sample_left(emergency_alarm_left),
+            .sample_right(emergency_alarm_right)
+        );
+    end else begin : g_no_emergency_alarm
+        assign emergency_alarm_valid = 1'b0;
+        assign emergency_alarm_left = 16'sd0;
+        assign emergency_alarm_right = 16'sd0;
     end
 endgenerate
 
@@ -1319,6 +1391,9 @@ always @(posedge video_clk or negedge video_rst_n) begin
         lecture_paused_ff2 <= 1'b0;
         recovery_video_ff1 <= 1'b0;
         recovery_video_ff2 <= 1'b0;
+        emergency_video_ff1 <= 1'b0;
+        emergency_video_ff2 <= 1'b0;
+        emergency_video_active <= 1'b0;
     end else begin
         audio_format_error_ff1 <= audio_format_error_50m;
         audio_format_error_ff2 <= audio_format_error_ff1;
@@ -1334,6 +1409,10 @@ always @(posedge video_clk or negedge video_rst_n) begin
         lecture_paused_ff2 <= lecture_paused_ff1;
         recovery_video_ff1 <= recovery_busy;
         recovery_video_ff2 <= recovery_video_ff1;
+        emergency_video_ff1 <= emergency_active_50m;
+        emergency_video_ff2 <= emergency_video_ff1;
+        if (video_frame_tick)
+            emergency_video_active <= emergency_video_ff2;
     end
 end
 
@@ -1369,7 +1448,7 @@ generate
         bmp_sdram_row_writer #(
             .WIDTH(SOURCE_W), .HEIGHT(SOURCE_H), .ROW_BITS(11), .ADDR_BITS(21),
             .WORDS_PER_ROW(SOURCE_W / 2), .BURST_WORDS(VIDEO_WRITE_BURST_WORDS),
-            .ENABLE_ABORT(ENABLE_MAIN3),
+            .ENABLE_ABORT(ENABLE_MAIN3 || ENABLE_MAIN4),
             .OVERVIEW_ENABLE(ENABLE_MUSEUM_OVERVIEW),
             .OVERVIEW_FRAME_COUNT(5), .OVERVIEW_PANEL_WIDTH(SOURCE_W / 5),
             .OVERVIEW_CROP_X0_0(OVERVIEW_CROP_X0_0),
@@ -2226,7 +2305,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
     end
 end
 
-video_timing_640x480_pclk #(
+video_timing_programmable_pclk #(
     .H_VISIBLE(VIDEO_W),
     .H_FRONT(H_FRONT),
     .H_SYNC(H_SYNC),
@@ -2573,7 +2652,8 @@ wire [15:0] raw_video_seg_value =
 
 seg_hex_display u_seg_hex_display (
     .clk(mem_clk), .rst_n(mem_rst_n),
-    .value((ENABLE_MAIN3 && recovery_state == 3'd4) ? 16'he503 :
+    .value(emergency_active_50m ? 16'he911 :
+           (ENABLE_MAIN3 && recovery_state == 3'd4) ? 16'he503 :
            (VIDEO_SEQUENCE && VIDEO_BIN) ? raw_video_seg_value :
            (READBACK_DIAG ? diag_seg_value : normal_seg_value)),
     .seg_data(seg_data), .seg_sel(seg_sel)

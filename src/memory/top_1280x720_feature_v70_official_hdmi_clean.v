@@ -16,7 +16,7 @@ module top_1280x720_feature_v70_official_hdmi_clean (
     input wire uart_rxd, output wire uart_txd
 );
 
-top_v66 #(
+museum_media_core #(
     .VIDEO_W(1280), .VIDEO_H(720),
     .SOURCE_W(1280), .SOURCE_H(720),
     .VIDEO_BURST_WORDS(128),

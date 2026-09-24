@@ -15,7 +15,7 @@ integer errors;
 
 always #1 clk = ~clk;
 
-video_timing_640x480_pclk #(
+video_timing_programmable_pclk #(
     .H_VISIBLE(1280), .H_FRONT(110), .H_SYNC(40), .H_BACK(220),
     .V_VISIBLE(720), .V_FRONT(5), .V_SYNC(5), .V_BACK(20)
 ) dut (

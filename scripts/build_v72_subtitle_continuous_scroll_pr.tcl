@@ -1,7 +1,7 @@
 # Build the current v72 project with only its active 1280x720 constraint set.
 set build_project_root [file normalize [file join [file dirname [info script]] ..]]
 set build_root [file join $build_project_root _build_v72_subtitle_continuous_scroll]
-set build_project_file [file join $build_project_root hx4s20_800x600_multimedia.al]
+set build_project_file [file join $build_project_root hx4s20_museum_terminal.al]
 set build_sdc_file [file join $build_project_root constraints top_1280x720_v72_resource_optimized.sdc]
 set build_adc_file [file join $build_project_root constraints top_800x600_adaptive_v66_uart_subtitle.adc]
 set build_top_module top_1280x720_feature_v72_resource_optimized

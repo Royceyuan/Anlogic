@@ -320,7 +320,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
     end
 end
 
-video_timing_640x480_pclk u_video_timing (
+video_timing_programmable_pclk u_video_timing (
     .clk        (video_clk),
     .rst_n      (video_rst_n),
     .hs         (video_hs_i),

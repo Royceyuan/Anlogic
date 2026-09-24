@@ -3,11 +3,11 @@
 更新时间：2026-09-24
 适用目录：`D:\VSCode\CodeFiles\Git_TD\Anlogic`
 当前分支：`Yan_Chen_Double`，跟踪 `origin/Yan_Chen_Double`。
-主板 MAIN-3 板测基线实现提交：`f4ba98e`；验收记录以后续文档提交为准。
+主板 MAIN-3 板测基线实现提交：`96a1d76`；用户已确认 `MAIN-3 BOARD PASS`。MAIN-4 当前为待上板候选。
 
 ## 1. 当前任务与最终目标
 
-MAIN-0、MAIN-1、MAIN-2、MAIN-3 均已由用户确认板测通过；用户于 2026-09-24 明确回复 `MAIN-3 BOARD PASS`。尚未开始下一阶段。
+MAIN-0、MAIN-1、MAIN-2、MAIN-3 均已由用户确认板测通过；用户于 2026-09-24 明确要求开始 MAIN-4。MAIN-4 已完成 RTL、定向仿真、完整 P&R/STA/DRC 和 bitgen，尚待上板确认。
 
 本工程的稳定目标是 HX4S20 (`EG4S20BG256`) 上的 1280×720 HDMI 多媒体图片播放器：TF 卡读取 BMP，五图缓存和快速切换，转场、亮度/对比度、顶部 OSD、UART 中文字幕，以及 v73 候选中的 WAV 音频和音频波形可视化。
 
@@ -18,12 +18,12 @@ MAIN-0、MAIN-1、MAIN-2、MAIN-3 均已由用户确认板测通过；用户于 
 ### 已确认
 
 - 主板 RTL 基线提交 `cfd5b70` 为 `fix: make product show FSM authoritative so KEY2 only pauses`；其后的 MAIN-0 审计、清理和板测记录提交不改变该 RTL 基线。
-- 历史 v72 图片链和 v73 音频候选源均在当前 checkout 中；`src/memory/sdram_bmp_row_top_v66.v` 是共同的媒体核心。
-- 当前唯一 TD 工程为 `hx4s20_800x600_multimedia.al`。活动顶层为 `top_1280x720_main3_interaction`；MAIN-2/MAIN-1/v72 顶层和已板测 bit 均保留作为回退。
+- 历史 v72 图片链和 v73 音频候选源均在当前 checkout 中；`src/memory/museum_media_core.v` 是共同的媒体核心。
+- 当前唯一 TD 工程为 `hx4s20_museum_terminal.al`。活动顶层为 `top_1280x720_main4_emergency`；MAIN-3/MAIN-2/MAIN-1/v72 顶层和已板测 bit 均保留作为回退。
 - 工程目标器件为 `EG4S20BG256`；输入时钟为 50 MHz。
-- 活动 ADC 为 `constraints/top_1280x720_v73_audio_visualizer.adc`，活动 SDC 为 `constraints/top_1280x720_main3_interaction.sdc`；ADC 中的 HDMI1、DDC、TF/SPI、按键、拨码、LED、数码管和 VGA 管脚与板卡资料一致。
+- 活动 ADC 为 `constraints/hx4s20_main_board.adc`，活动 SDC 为 `constraints/top_1280x720_main4_emergency.sdc`；ADC 中的 HDMI1、DDC、TF/SPI、按键、拨码、LED、数码管和 VGA 管脚与板卡资料一致。
 - 当前工程包装顶层启用 1280×720、960×540 源帧、五图缓存、TF/SPI、SDRAM、OSD、UART 字幕、转场和音频参数接口；v72 包装未启用 v73 音频可视化。
-- v73 独立包装顶层 `src/memory/top_1280x720_feature_v73_audio_visualizer.v`、ADC/SDC 及完整 P&R 脚本存在。该包装以 `top_v66` 启用五图、1280×720、UART 字幕和音频可视化。
+- v73 独立包装顶层 `src/memory/top_1280x720_feature_v73_audio_visualizer.v`、ADC/SDC 及完整 P&R 脚本存在。该包装以 `museum_media_core` 启用五图、1280×720、UART 字幕和音频可视化。
 - 用户确认主板 HDMI、TF、SDRAM、按键、SW4、音频硬件和烧录/板测条件均可用；五件文物的全貌图和每件三张细节图已准备并转换到 TF 卡。
 - 本轮之前创建的商品展示顶层、原生四线 SD 状态机及相关实验仍不属于当前主线；除非用户再次明确提出，不要恢复或继续该实验。
 
@@ -53,7 +53,7 @@ MAIN-0、MAIN-1、MAIN-2、MAIN-3 均已由用户确认板测通过；用户于 
 - **四羊方尊音频：已修复素材根因，已上板通过。** 原 `素材\02_四羊方尊\讲解音频.wav` 和 TF `AUDIO1.WAV` 都只有约 32.24 秒，而对应 SRT 到 76.1 秒，且文件尾仍有明显非零波形，确认是源音频被截断而不是 TF 吞吐或 RTL 提前结束。已用完整讲解文稿生成并写入新的 48 kHz、PCM16、双声道 `E:\AUDIO1.WAV`，时长 74.2955 秒，SHA256 `D4F732200267A7AE4D2801CEB6928B5A23139AFA7545A682344D0770DA0A6042`；旧文件备份于 `E:\BACKUP_AUDIO_BEFORE_REPAIR_20260920\AUDIO1.WAV`。
 - **TF 字幕：新版 v3，已上板通过。** `tools/generate_museum_subtitles.py` 仍从五份 `字幕.srt`、`图片切换脚本.md` 和同编号 `AUDIO*.WAV` 生成 TF 根目录 `SUB0.BIN`～`SUB4.BIN`；无需电脑实时发送，也不把文物文字固化进 FPGA。新版每条记录预渲染 800×32 白色字芯和 1 像素黑色描边两个位平面，画面背景透明，沿用 2×2 有序淡入淡出。文件头版本 3、2 bpp、6400 字节位图、每条 13 扇区；FPGA 仍兼容旧 v1/v2 包，但旧包只有白字、没有描边。E 盘五包已更新，旧包完整备份在 `E:\BACKUP_SUBTITLES_BEFORE_OUTLINE_20260923`，并逐文件 SHA256 校验；五件文物的音频总帧数、四个画面切点和全部逐句起止时间与旧包完全一致。新版包 SHA256：SUB0 `D5623130DCA199DB2281EA0EDEBCAE85FA0BA864F53C57C2CE9B7C2C89D3A1C6`、SUB1 `96F9F33A2A70C02988625AA7C80E5C884C629FF49E707DE01C98D32A70B5868A`、SUB2 `727BFF2EE26425809EBBA5506A7892F8DB38D94FEE234E31AA90A048F875992E`、SUB3 `7321BF3D9BCA6366B40CB88191B40C4BCC0C037091B7BBF34D31A3BF7B2C4775`、SUB4 `950E73D940F752C9C701E47B30E974D593BF73FA99BD7AA72C5B031107134108`。更换音频时仍要重校准 SRT/MD，不能靠全局同比缩放掩盖局部错位。
 - **转场/画面参数/OSD：已上板通过。** MAIN-2 总览→全貌仍使用约 2.13 秒的“未选栏淡出、选中栏移到中央、再从裁剪区向左右恢复全貌”；返回时严格反向收拢。全貌→细节 1 保留帷幕，细节 1→2、2→3 保留淡入淡出；细节 3→最终全貌使用中心向外扩张的菱形爆发遮罩。菱形仍为原32级几何步进，改为每2个视频帧推进1步，按60 Hz约持续1.07秒，其他转场速度不变。KEY4 在讲解期间不会改变画面；KEY1 循环切换中性、提亮、高对比、偏暗柔和四组真实亮度/对比度参数。音频柱状可视化保持开启；进入概览、无音频或暂停时立即隐藏并清空旧波形，恢复播放后只显示新采样形成的完整一帧。调试 OSD 面板仍关闭。
-- **仿真：通过。** `tb_museum_lecture_controller` 覆盖五阶段流程、连续讲解、提前退出、退出时后台图片读盘未结束以及随后再切换文物；`tb_museum_subtitle_overlay` 覆盖 v3 双位平面、跨簇读取、白字黑描边、透明背景、淡入淡出、提交途中退出、同一文物再次讲解；`tb_sdram_bmp_row_top_chain` 新增音频/字幕扇区中止与下一请求回归；其他既有音画、转场和自适应 BMP 回归维持。相关 ModelSim 编译无错误，三个定向测试均 PASS。
+- **仿真：通过。** `tb_museum_lecture_controller` 覆盖五阶段流程、连续讲解、提前退出、退出时后台图片读盘未结束以及随后再切换文物；`tb_museum_subtitle_overlay` 覆盖 v3 双位平面、跨簇读取、白字黑描边、透明背景、淡入淡出、提交途中退出、同一文物再次讲解；`tb_museum_media_core` 新增音频/字幕扇区中止与下一请求回归；其他既有音画、转场和自适应 BMP 回归维持。相关 ModelSim 编译无错误，三个定向测试均 PASS。
 - **资源与 P&R/STA：通过。** `_build_main2_lecture_outline_fix/pr.status` 使用布局种子 76，Setup WNS `+155 ps`、TNS `0`，Hold WNS `+23 ps`、TNS `0`，0 违例。LUT 12674/19600（64.66%）、寄存器 7751/19600（39.55%）、BRAM9K 47/64（73.44%）、BRAM32K 4/16（25.00%）、DSP 7/29（24.14%）；最终 7249 slices（73.97%）。描边额外使用 2 个 BRAM32K，没有增加 BRAM9K；保留既有 SDRAM 相移时钟本地路由警告，须以板测确认。
 - **已板测 bit：** `release/hx4s20_main2_lecture.bit`，629647 bytes，SHA256 `AA788DDEEC1FE2D40B57DB16E9243513A6C20B034497F9C006B70D39784F39C9`。
 
@@ -70,10 +70,19 @@ MAIN-0、MAIN-1、MAIN-2、MAIN-3 均已由用户确认板测通过；用户于 
 - **工具链与板测：通过。** `D:\TD_6.2.1` 最终 P&R/STA setup WNS `+114 ps`、TNS `0`，hold WNS `+30 ps`、TNS `0`，覆盖率 99.76%，时序例外为空；bitgen 完成。单独执行 `drc_check -all` 与 `report_route_status -drc`，无多驱动、无异常时序路径、路由开放网络 0；保留既有 SDRAM 25 MHz 相移时钟使用一段本地路由的工具警告。综合 LUT `12881/19600`（65.72%）、REG `8262/19600`、BRAM9K `48/64`、BRAM32K `5/16`、DSP `7/29`；放置后的 LUT `13116/19600`（66.92%），路由使用 `7712/9800` slices（78.69%）。相对上一候选，综合 LUT -868、REG -357，放置后 LUT -823、Slice -305；BRAM和DSP不变，并重新回到80% Slice软目标以内。
 - **板测通过发布文件：** `release/hx4s20_main3_interaction.bit`，630815 bytes，SHA256 `5A0B3441D9C4404DDF53090BCCD968A5B80283244B9F8432C4C55E45F47D71C4`。`release/media/OSDNAME.BIN` 与此前核验的 `E:\OSDNAME.BIN` 均为 3072 bytes、SHA256 `600E64D69B35F29B955D43DEA67C93F194C8A0317C6E5BD0DDC05A8F8B268029`。MAIN-2 bit 的 SHA256 保持 `AA788DDEEC1FE2D40B57DB16E9243513A6C20B034497F9C006B70D39784F39C9`。用户于 2026-09-24 明确回复 `MAIN-3 BOARD PASS`。
 
+### MAIN-4 应急抢占（2026-09-24，待上板）
+
+- 新增独立顶层 `top_1280x720_main4_emergency`，仅通过 `ENABLE_MAIN4=1` 启用新增行为；MAIN-3 顶层和已板测 bit 不变。`SW4=1` 经双触发同步后进入最高优先级恢复路径，立即停止正常讲解音频、字幕、转场和普通画面，并在下一视频帧边界发布全屏应急画面；数码管显示 `E911`。
+- 应急画面由像素流水线本地生成，不读取 TF/SDRAM：深红闪烁底色、白色外框、黄黑警示带、三角感叹号和白色向右疏散箭头。应急层位于 OSD/字幕之后，普通画面无法覆盖；音频波形位于其后且强制为红色。
+- 告警音由 75 MHz 视频域本地生成 48 kHz 双声道 660/880 Hz 双音，每 0.5 秒交替。输出端在正常 PCM 与告警 PCM 间互斥选择，不混音；因此 TF 卡或正常 WAV 状态不影响告警。`SW4=0` 后告警停止，状态机完成 SD 客户端恢复并回到有效总览，不恢复被中断讲解，随后按当前有效 `SW1～SW3` 重新预载。
+- ModelSim 定向测试 `run_main4_emergency.do`、`run_main4_emergency_recovery.do` 和 `run_audio_visualizer_overlay.do` 均 PASS：覆盖应急层完全替换、告警独占、下一帧边界生效/撤销、SW4 保持恢复状态以及红色波形。MAIN-3 恢复/缩放、SD 中止、字幕路由、总览、讲解、字幕、OSD 和写突发补零回归同时通过。
+- `D:\TD_6.2.1` 完整 P&R/STA 结果：Setup WNS `+128 ps`、TNS `0`，Hold WNS `+24 ps`、TNS `0`；DRC 无多驱动、无异常时序路径。综合 LUT `13497/19600`（68.86%）、REG `8344/19600`、BRAM9K `48/64`、BRAM32K `5/16`、DSP `7/29`；放置后 LUT `13675/19600`（69.77%），最终 `7802/9800` slices（79.61%）。相对 MAIN-3，综合 LUT +616、REG +82、放置 LUT +559、Slice +90，BRAM/DSP 不变；仍满足 LUT <70%、Slice <80% 门槛。保留既有 SDRAM 25 MHz 相移时钟单段本地路由告警。
+- 待上板文件：`release/hx4s20_main4_emergency.bit`，630813 bytes，SHA256 `5A724FCF063DEE65A8DB8EDED6A12439AD6F3438DA76A0AC96A61E40C70E72A0`。详细验收步骤见 `docs/main4_board_check.md`；只有用户明确回复 `MAIN-4 BOARD PASS` 后才能标记阶段通过。
+
 ### MAIN-0 审计结论（2026-09-18）
 
 - **基线身份：通过。** 分支 `Yan_Chen_Double`，主板 RTL 基线为 `cfd5b70`；器件 `EG4S20BG256`。
-- **活动工程：通过。** `hx4s20_800x600_multimedia.al` 的活动顶层为 `top_1280x720_feature_v72_resource_optimized`；v73 顶层在工程中存在但为旁路候选。
+- **活动工程：通过。** `hx4s20_museum_terminal.al` 的活动顶层为 `top_1280x720_feature_v72_resource_optimized`；v73 顶层在工程中存在但为旁路候选。
 - **管脚映射：通过。** 当前 ADC 与 HX4S20C 资料中的 R7、A2/B2/B1/C1、C8/C7/C6/C5、A14/A13/B14/A12、K1/B3/E3/F5 等映射一致。
 - **当前功能接入：已确认源码事实。** 五图缓存、TF/SPI、SDRAM、1280×720 HDMI、OSD、UART 字幕和转场参数在 v72 包装中接入；最终文物素材尚未接入，符合用户当前状态。
 - **已有 bit：历史与本轮分列。** 历史 `release/hx4s20_1280x720_v72_resource_optimized.bit` 为 629664 bytes，SHA256 为 `3226099D43AAE624BBAAB9AEA543901316902BC85701E0FD7CBBF1192D4DAA05`。本轮 bit 为 `release/hx4s20_1280x720_v72_subtitle_continuous_scroll_v2.bit`，629664 bytes，SHA256 为 `556465BF25C952391BDA74C7A3C817B17EF443914DE6FDC26E2CFC91137CAB9C`。
@@ -86,7 +95,9 @@ MAIN-0、MAIN-1、MAIN-2、MAIN-3 均已由用户确认板测通过；用户于 
 
 | 文件 | 作用 |
 |---|---|
-| `hx4s20_800x600_multimedia.al` | 唯一 TD 工程；当前活动顶层为 MAIN-3 `top_1280x720_main3_interaction`。 |
+| `hx4s20_museum_terminal.al` | 唯一 TD 工程；当前活动顶层为 MAIN-4 `top_1280x720_main4_emergency`。 |
+| `src/memory/top_1280x720_main4_emergency.v` | MAIN-4 包装顶层，只开启应急功能并复用 MAIN-3 全部参数。 |
+| `src/video/museum_emergency_overlay.v` | 本地生成全屏应急画面与 48 kHz 双音告警。 |
 | `src/memory/top_1280x720_main2_lecture.v` | MAIN-2 包装顶层，启用总览、五槽讲解缓存、五路 WAV、TF 字幕和 HDMI 音频。 |
 | `src/video/museum_lecture_controller.v` | MAIN-2 初始缓存、讲解中滚动预载、错误门控和四阶段音画状态机。 |
 | `src/memory/top_1280x720_main1_overview.v` | MAIN-1 包装顶层，沿用 v72 约束层级并启用文物总览。 |
@@ -95,14 +106,15 @@ MAIN-0、MAIN-1、MAIN-2、MAIN-3 均已由用户确认板测通过；用户于 
 | `src/video/museum_overview_overlay.v` | 五栏边框、未就绪占位、高亮和确认反馈；不再缓存缩略图。 |
 | `src/memory/top_1280x720_feature_v72_resource_optimized.v` | MAIN-0 已板测通过的 1280×720 图片播放器回退顶层。 |
 | `src/memory/top_1280x720_feature_v73_audio_visualizer.v` | v73 音频可视化候选包装顶层；不能因文件存在就假定已成为工程默认顶层。 |
-| `src/memory/sdram_bmp_row_top_v66.v` | 图片缓存、SDRAM、SPI TF、按键、OSD、音频和字幕的主媒体链。 |
+| `src/memory/museum_media_core.v` | 图片缓存、SDRAM、SPI TF、按键、OSD、音频和字幕的主媒体链。 |
 | `src/audio/fat32_wav_streamer.v`、`audio_pcm_player_48k.v`、`audio_goertzel8.v` | v73 WAV 读取、PCM 播放与可视化相关模块。 |
 | `src/video/audio_visualizer_overlay.v` | 64 根蓝/青交替柱状音频波形可视化。 |
 | `src/video/museum_subtitle_overlay.v` | MAIN-2 FAT32 字幕包读取与叠加；双缓冲当前/下一条位图，并按实际 PCM 帧切换。 |
 | `tools/generate_museum_subtitles.py` | 将五件文物各自的 SRT 与同编号 WAV 绑定，生成 TF 根目录的 `SUB0.BIN`～`SUB4.BIN`。 |
 | `src/video/uart_subtitle_overlay.v` | 800×32、2-bit、双缓冲、帧边界提交的中文位图字幕。 |
 | `tools/play_museum_srt.py` | 按实际 WAV 时长缩放五份 SRT 并通过既有 UART 协议逐条发送。 |
-| `constraints/top_1280x720_v73_audio_visualizer.{adc,sdc}` | v73 独立约束；SPI：CLK A14、MOSI A13、MISO B14、CS A12；UART：F12/D12。 |
+| `constraints/hx4s20_main_board.adc` | 当前主板统一管脚约束；SPI：CLK A14、MOSI A13、MISO B14、CS A12；UART：F12/D12。 |
+| `constraints/top_1280x720_main4_emergency.sdc` | MAIN-4 时序约束；层级与 MAIN-4 包装顶层一致。 |
 | `scripts/build_v73_audio_visualizer_pr.tcl` | v73 全流程 P&R，固定 seed 75，输出 `_build_v73_audio_visualizer`。 |
 | `scripts/build_v73_audio_visualizer_bitgen.tcl` | 只从已完成的 v73 P&R DB 生成 bit。 |
 | `scripts/build_v73_multiaudio{,_controls_minimal}_bitgen.tcl` | 从同一 v73 P&R DB 输出多音频候选 bit；不会自行做 P&R。 |
@@ -118,7 +130,7 @@ MAIN-0、MAIN-1、MAIN-2、MAIN-3 均已由用户确认板测通过；用户于 
 
 ## 4. 已做出的关键决策
 
-1. **图片稳定链与音频候选隔离。** v73 通过独立顶层和参数扩展 `top_v66`，而不是替换稳定 v72 结构；新功能必须保留回退路径。
+1. **图片稳定链与音频候选隔离。** v73 通过独立顶层和参数扩展 `museum_media_core`，而不是替换稳定 v72 结构；新功能必须保留回退路径。
 2. **图片由 FPGA 自适应处理。** 用户明确不接受 PC 端强制统一拉伸；源 BMP 保留尺寸，由 FPGA 在加载期缩放。
 3. **多图使用缓存而非切图时整图重读。** 五图预加载保证按键切换快；不要回退到读取时才加载整图。
 4. **转场采用输出遮罩。** 不额外读取旧帧或增加 TF/SDRAM 带宽；OSD 保持可见。
@@ -176,7 +188,7 @@ MAIN-0、MAIN-1、MAIN-2、MAIN-3 均已由用户确认板测通过；用户于 
 ### 已确认
 
 - `Yan_Chen_Double` 以 `cfd5b70` 为主板 RTL 基线；审计和清理提交只更新文档、工程元数据并删除历史残留，不修改 RTL。
-- `.al` 文件活动模块为 MAIN-1 `top_1280x720_main1_overview`；v72 和 v73 包装源文件仍保留，其中 v73 的 P&R 脚本可显式指定 v73 顶层独立运行。
+- `.al` 文件活动模块为 MAIN-4 `top_1280x720_main4_emergency`；MAIN-0～MAIN-3 和 v73 历史包装源文件仍保留，可由各自脚本显式构建。
 - 当前 `release/` 顶层中的历史 v70/v71/v72/v73 bit 均可读取；它们不是本轮 MAIN-0 生成物。
 - `release/_timing_failed/hx4s20_sdram_native_singleword_diag.bit` 也存在，但目录名已表明它不是发布候选。
 - 2026-09-19 清理后已从干净目录生成 MAIN-0/MAIN-1 新证据；当前 `_build_v72_subtitle_continuous_scroll`、`_build_main1_overview`、根目录报告和 `.bid` 均按用户要求保留为未跟踪构建产物，不提交。
@@ -190,21 +202,22 @@ MAIN-0、MAIN-1、MAIN-2、MAIN-3 均已由用户确认板测通过；用户于 
 
 ```text
 分支：Yan_Chen_Double（跟踪 origin/Yan_Chen_Double）
-MAIN-3 板测基线实现提交：f4ba98e
-工程：hx4s20_800x600_multimedia.al
-工程默认顶层：top_1280x720_main3_interaction
+MAIN-3 板测基线实现提交：96a1d76
+工程：hx4s20_museum_terminal.al
+工程默认顶层：top_1280x720_main4_emergency
 MAIN-0 回退顶层：top_1280x720_feature_v72_resource_optimized
 v73 候选顶层：top_1280x720_feature_v73_audio_visualizer
-活动 ADC：constraints/top_1280x720_v73_audio_visualizer.adc
-活动 SDC：constraints/top_1280x720_main3_interaction.sdc
+活动 ADC：constraints/hx4s20_main_board.adc
+活动 SDC：constraints/top_1280x720_main4_emergency.sdc
 保留最新候选 SDC：constraints/top_1280x720_v73_audio_visualizer.sdc
-当前 P&R 目录：`_build_main3_interaction`（MAIN-3 工具链证据，未跟踪）
-当前板测通过 bit：`release/hx4s20_main3_interaction.bit`（MAIN-3）
+当前 P&R 目录：`_build_main4_emergency`（MAIN-4 工具链证据，未跟踪）
+当前待板测 bit：`release/hx4s20_main4_emergency.bit`（MAIN-4）
+当前板测通过 bit：`release/hx4s20_main3_interaction.bit`（MAIN-3 回退）
 MAIN-2 回退 bit：`release/hx4s20_main2_lecture.bit`（已板测通过）
 MAIN-1 回退 bit：`release/hx4s20_main1_overview.bit`（已板测通过）
 MAIN-0 回退 bit：`release/hx4s20_1280x720_v72_subtitle_continuous_scroll_v2.bit`（已板测通过）
 当前商品展示文件：无（已回退）
-当前阶段状态：MAIN-3 已于 2026-09-24 板测通过；尚未开始下一阶段
+当前阶段状态：MAIN-4 已完成 RTL/仿真/P&R/STA/DRC/bitgen，等待 `MAIN-4 BOARD PASS`
 ```
 
 ## 12. 下一步行动
@@ -212,9 +225,9 @@ MAIN-0 回退 bit：`release/hx4s20_1280x720_v72_subtitle_continuous_scroll_v2.b
 1. `MAIN-0` 审计、v72 综合/P&R/STA/DRC、bitgen 和板测已完成；用户已确认 `MAIN-0 BOARD PASS`。
 2. MAIN-0 板测基于 `release/hx4s20_1280x720_v72_subtitle_continuous_scroll_v2.bit`；用户确认当前基线的 HDMI、TF、SDRAM、按键、SW4 和画面稳定性满足验收要求。
 3. MAIN-1 RTL、仿真、P&R、STA/DRC、bitgen 和板测已完成；用户已明确回复 `MAIN-1 BOARD PASS`。
-4. 保留 MAIN-3 板测通过 bit 作为当前主板基线，并保留 MAIN-2 已板测 bit 作为回退。TF 根目录需有现行 BMP/WAV/SUB 文件及可选 `OSDNAME.BIN`；名称文件缺失应显示“文物 0～4”，不阻塞讲解。
-5. MAIN-3 已完成按键、暂停、恢复、无效拨码、名称、无复位重入及资源优化上板验证；后续修改 RTL 或重新生成 bit 后须重新执行 `docs/main3_board_check.md`。
-6. 未经用户明确要求不开始下一阶段。提交只纳入相关源码、测试、文档、媒体包和发布 bit，不纳入 `_build_*`、根目录报告或 `.bid`；本次按用户要求 push。
+4. 使用 `docs/main4_board_check.md` 上板验证 SW4 在总览、讲解、暂停、转场和后台预载期间的抢占与清除；确认普通音频不与告警混合，清除后回总览且可重新预载。
+5. MAIN-4 未改变 TF 媒体格式。TF 根目录仍需有现行 BMP/WAV/SUB 文件及可选 `OSDNAME.BIN`；名称文件缺失应显示“文物 0～4”，不阻塞讲解。
+6. 等待用户明确回复 `MAIN-4 BOARD PASS`。提交只纳入相关源码、测试、文档和发布 bit，不纳入 `_build_*`、根目录报告或 `.bid`；未经要求不 push。
 
 ## 13. 新 Agent 启动指令
 

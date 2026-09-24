@@ -1166,7 +1166,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
     end
 end
 
-video_timing_640x480_pclk #(
+video_timing_programmable_pclk #(
     .H_VISIBLE(VIDEO_W),
     .H_FRONT(H_FRONT),
     .H_SYNC(H_SYNC),

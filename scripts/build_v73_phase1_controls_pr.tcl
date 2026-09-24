@@ -1,9 +1,9 @@
 # Full Phase 1 P&R.  The Phase 0 baseline database and bit remain immutable.
 set build_project_root [file normalize [pwd]]
 set build_root [file join $build_project_root _build_v73_phase1_controls]
-set build_project_file [file join $build_project_root hx4s20_800x600_multimedia.al]
+set build_project_file [file join $build_project_root hx4s20_museum_terminal.al]
 set build_sdc_file [file join $build_project_root constraints top_1280x720_v73_audio_visualizer.sdc]
-set build_adc_file [file join $build_project_root constraints top_1280x720_v73_audio_visualizer.adc]
+set build_adc_file [file join $build_project_root constraints hx4s20_main_board.adc]
 set build_top_module top_1280x720_feature_v73_audio_visualizer
 
 file mkdir $build_root

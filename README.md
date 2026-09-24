@@ -2,20 +2,19 @@
 
 唯一安路 TD 工程入口：
 
-`hx4s20_800x600_multimedia.al`
+`hx4s20_museum_terminal.al`
 
 双击该文件即可在 Anlogic TD 中打开统一工程。当前顶层模块为
-`top_1280x720_feature_v72_resource_optimized`，目标器件为 `EG4S20BG256`。
+`top_1280x720_main4_emergency`，目标器件为 `EG4S20BG256`。
 
 ## 当前交付
 
-- 下载文件：`release/hx4s20_1280x720_v72_resource_optimized.bit`
-- 图片：TF 卡根目录放 `IMAGE0.BMP` 至 `IMAGE4.BMP`（支持自适应 24 位 BMP）
-- 手动切图：`SW4=0`，按 `KEY2` 在五张图片间切换
-- 自动切图：`SW4=1`
-- 亮度/对比度：`KEY3` / `KEY4`
-- 复位：`KEY1`
-- 中文字幕：使用 `tools/字幕发送器.vbs` 打开字幕控制台，通过 COM8 发送
+- 下载文件：`release/hx4s20_main4_emergency.bit`
+- `SW1～SW3`：选择后台预载文物；`SW4`：应急模式，高电平立即抢占
+- `KEY1`：总览切换文物，讲解中切换 1×/2×；`KEY2`：确认或暂停/继续
+- `KEY3`：循环切换画面参数；`KEY4`：应用级故障恢复
+- 图片、WAV、字幕和 OSD 名称均由 TF 卡根目录读取；详细文件约定见 `HANDOFF.md`
+- MAIN-3 已板测通过；当前 MAIN-4 位流已完成仿真、P&R、STA 和 DRC，等待板测
 
 ## 可复现构建
 
@@ -64,8 +63,9 @@ v72 在 v70c 链路上恢复五图缓存、快速切图、七种转场、自动�
 
 ## 自适应 BMP
 
-加载期间按比例缩放并居中到 800×600，超出部分用黑色填充；不需要提前把图片改成
-800×600。输入格式为 24 位、未压缩 Windows BMP（BI_RGB）。
+加载期间将最大 1920×1080 的源图按比例缩放并居中到 960×540 工作帧，再输出为
+1280×720；空余区域使用背景色补齐，不需要提前强制拉伸。输入格式为 24 位、未压缩
+Windows BMP（BI_RGB）。
 
 工程目录只保留统一 TD 入口、活动/回退源码、约束、构建脚本、源级仿真、工具、必要测试数据、官方 vendor 源和少量发布 bit。历史构建、日志和仿真 work 目录没有丢失，而是移至工程外的
 `D:/Anlogic_information/_hx4s20_multimedia_main_cleanup_20260904`，清单见其中的 `MANIFEST.csv`。当前统一工程的版本索引见 `PROJECT_INDEX.md`。

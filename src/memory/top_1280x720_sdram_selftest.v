@@ -331,7 +331,7 @@ linebuf_scaler_960x540_to_1280x720 #(
     .underflow(linebuf_underflow)
 );
 
-video_timing_640x480_pclk #(
+video_timing_programmable_pclk #(
     .H_VISIBLE(1280), .H_FRONT(110), .H_SYNC(40), .H_BACK(220),
     .V_VISIBLE(720), .V_FRONT(5), .V_SYNC(5), .V_BACK(20), .X_BITS(11)
 ) u_video_timing (

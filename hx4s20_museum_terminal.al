@@ -2,7 +2,7 @@
 <Project Version="3" Minor="2" Path="D:/VSCode/CodeFiles/Git_TD/Anlogic">
     <Project_Created_Time></Project_Created_Time>
     <TD_Version>6.2.168116</TD_Version>
-    <Name>hx4s20_800x600_multimedia</Name>
+    <Name>hx4s20_museum_terminal</Name>
     <HardWare>
         <Family>EG4</Family>
         <Device>EG4S20BG256</Device>
@@ -34,7 +34,7 @@
                     <Attr Name="CompileOrder" Val="3"/>
                 </FileInfo>
             </File>
-            <File Path="src/video/video_timing_640x480_pclk.v">
+            <File Path="src/video/video_timing_programmable_pclk.v">
                 <FileInfo>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
@@ -322,7 +322,7 @@
                     <Attr Name="CompileOrder" Val="39"/>
                 </FileInfo>
             </File>
-            <File Path="src/memory/sdram_bmp_row_top_v66.v">
+            <File Path="src/memory/museum_media_core.v">
                 <FileInfo>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
@@ -590,12 +590,28 @@
                     <Attr Name="CompileOrder" Val="75"/>
                 </FileInfo>
             </File>
+            <File Path="src/video/museum_emergency_overlay.v">
+                <FileInfo>
+                    <Attr Name="UsedInSyn" Val="true"/>
+                    <Attr Name="UsedInP&R" Val="true"/>
+                    <Attr Name="BelongTo" Val="design_1"/>
+                    <Attr Name="CompileOrder" Val="77"/>
+                </FileInfo>
+            </File>
             <File Path="src/memory/top_1280x720_main3_interaction.v">
                 <FileInfo>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
                     <Attr Name="CompileOrder" Val="76"/>
+                </FileInfo>
+            </File>
+            <File Path="src/memory/top_1280x720_main4_emergency.v">
+                <FileInfo>
+                    <Attr Name="UsedInSyn" Val="true"/>
+                    <Attr Name="UsedInP&R" Val="true"/>
+                    <Attr Name="BelongTo" Val="design_1"/>
+                    <Attr Name="CompileOrder" Val="78"/>
                 </FileInfo>
             </File>
         </Verilog>
@@ -647,7 +663,7 @@
             </File>
         </VHDL>
         <ADC_FILE>
-            <File Path="constraints/top_1280x720_v73_audio_visualizer.adc">
+            <File Path="constraints/hx4s20_main_board.adc">
                 <FileInfo>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
@@ -657,7 +673,7 @@
             </File>
         </ADC_FILE>
         <SDC_FILE>
-            <File Path="constraints/top_1280x720_main3_interaction.sdc">
+            <File Path="constraints/top_1280x720_main4_emergency.sdc">
                 <FileInfo>
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
@@ -674,8 +690,8 @@
         </FileSet>
     </FileSets>
     <TOP_MODULE>
-        <LABEL>top_1280x720_main3_interaction</LABEL>
-        <MODULE>top_1280x720_main3_interaction</MODULE>
+        <LABEL>top_1280x720_main4_emergency</LABEL>
+        <MODULE>top_1280x720_main4_emergency</MODULE>
         <CREATEINDEX>user</CREATEINDEX>
     </TOP_MODULE>
     <Property>

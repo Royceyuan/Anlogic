@@ -4,7 +4,7 @@
 
 ## 文件和回退
 
-- MAIN-3 顶层：`src/memory/top_1280x720_main3_interaction.v`；约束：`constraints/top_1280x720_main3_interaction.sdc` 和现有 `constraints/top_1280x720_v73_audio_visualizer.adc`。
+- MAIN-3 顶层：`src/memory/top_1280x720_main3_interaction.v`；约束：`constraints/top_1280x720_main3_interaction.sdc` 和现有 `constraints/hx4s20_main_board.adc`。
 - 已板测 bit：`release/hx4s20_main3_interaction.bit`，630815 bytes，SHA256 `5A0B3441D9C4404DDF53090BCCD968A5B80283244B9F8432C4C55E45F47D71C4`；MAIN-2 已通过 bit：`release/hx4s20_main2_lecture.bit`，SHA256 `AA788DDEEC1FE2D40B57DB16E9243513A6C20B034497F9C006B70D39784F39C9`，不要覆盖。
 - TF 根目录继续保留现有 `IMAGE0.BMP`～`IMAGE4.BMP`、`ART0D1.BMP`～`ART4D3.BMP`、`AUDIO0.WAV`～`AUDIO4.WAV`、`SUB0.BIN`～`SUB4.BIN`。新增 `OSDNAME.BIN`，只存五件文物名称，不含图片、音频或字幕时间轴。可用 `py tools/generate_museum_osd_names.py --dest E:\OSDNAME.BIN` 独立更新名称；超出 160×16 会报错，不截断。缺失/损坏时显示“文物 0～4”，正常讲解不应受影响。
 - 名称包总长 3072 byte：第 0 扇区 `ONAM`、版本 1、数量 5、宽 160、高 16、1bpp；后面五个各 512 byte、按文物 0～4 排列的位图区。每行 20 byte，高位在左；不足 512 byte 的尾部填零。文件可以跨 FAT32 簇。

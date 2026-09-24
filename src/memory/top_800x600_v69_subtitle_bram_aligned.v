@@ -11,7 +11,7 @@ module top_800x600_feature_v69_subtitle_bram_aligned (
     output wire hdmi1_clk_p, output wire hdmi1_d2_p, output wire hdmi1_d1_p,
     output wire hdmi1_d0_p, input wire uart_rxd, output wire uart_txd
 );
-top_v66 #(
+museum_media_core #(
     .VIDEO_W(800), .VIDEO_H(600), .SOURCE_W(800), .SOURCE_H(600),
     .VIDEO_BURST_WORDS(128), .VIDEO_WRITE_BURST_WORDS(16), .VIDEO_READ_BURST_WORDS(128),
     .VIDEO_MODE_800(1), .ADAPTIVE_BMP(1), .ADAPTIVE_BMP_MAX_WIDTH(1920),

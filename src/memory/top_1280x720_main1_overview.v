@@ -11,7 +11,7 @@ module top_1280x720_main1_overview (
     input wire uart_rxd, output wire uart_txd
 );
 
-top_v66 #(
+museum_media_core #(
     .VIDEO_W(1280), .VIDEO_H(720),
     .SOURCE_W(960), .SOURCE_H(540),
     .VIDEO_BURST_WORDS(128),

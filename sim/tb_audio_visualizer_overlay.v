@@ -4,6 +4,7 @@
 module tb_audio_visualizer_overlay;
 reg clk = 0, rst_n = 0, sample_valid = 0, frame_tick = 0;
 reg pause = 0;
+reg emergency = 0;
 reg signed [15:0] sample_left = 0, sample_right = 0;
 reg de_i = 0;
 reg [10:0] x_i = 0;
@@ -14,9 +15,10 @@ wire [10:0] x_o;
 wire [9:0] y_o;
 wire [23:0] rgb_o;
 
-audio_visualizer_overlay dut (
+audio_visualizer_overlay #(.ENABLE_EMERGENCY(1)) dut (
     .clk(clk), .rst_n(rst_n), .sample_valid(sample_valid),
     .sample_left(sample_left), .sample_right(sample_right), .pause(pause),
+    .emergency(emergency),
     .frame_tick(frame_tick),
     .hs_i(1'b1), .vs_i(1'b1), .de_i(de_i), .x_i(x_i), .y_i(y_i), .rgb_i(rgb_i),
     .hs_o(hs_o), .vs_o(vs_o), .de_o(de_o), .x_o(x_o), .y_o(y_o), .rgb_o(rgb_o)
@@ -49,6 +51,10 @@ initial begin
     x_i = 11'd128; y_i = 10'd600; rgb_i = 24'h123456;
     repeat (4) @(posedge clk);
     if (rgb_o == 24'h123456) $fatal(1, "fresh visualizer frame was not shown");
+    emergency = 1;
+    #1;
+    if (rgb_o != 24'hff3030) $fatal(1, "emergency visualizer was not red");
+    emergency = 0;
     pause = 1;
     repeat (3) @(posedge clk);
     if (rgb_o != 24'h123456) $fatal(1, "paused visualizer remained visible");
