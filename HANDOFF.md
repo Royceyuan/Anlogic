@@ -1,13 +1,13 @@
 # HX4S20 多媒体工程交接
 
-更新时间：2026-09-23
+更新时间：2026-09-24
 适用目录：`D:\VSCode\CodeFiles\Git_TD\Anlogic`
 当前分支：`Yan_Chen_Double`，跟踪 `origin/Yan_Chen_Double`。
-主板 MAIN-2 板测基线提交：`ad81b59`；MAIN-3 在其上增量开发，以 `git status --short --branch` 为准。
+主板 MAIN-3 板测基线实现提交：`f4ba98e`；验收记录以后续文档提交为准。
 
 ## 1. 当前任务与最终目标
 
-MAIN-0、MAIN-1、MAIN-2 均已由用户确认板测通过。当前实施 MAIN-3 交互、故障恢复与顶部状态面板；MAIN-3 的 RTL/仿真/P&R/bitgen 不等于板测通过，须等用户明确回复 `MAIN-3 BOARD PASS`。
+MAIN-0、MAIN-1、MAIN-2、MAIN-3 均已由用户确认板测通过；用户于 2026-09-24 明确回复 `MAIN-3 BOARD PASS`。尚未开始下一阶段。
 
 本工程的稳定目标是 HX4S20 (`EG4S20BG256`) 上的 1280×720 HDMI 多媒体图片播放器：TF 卡读取 BMP，五图缓存和快速切换，转场、亮度/对比度、顶部 OSD、UART 中文字幕，以及 v73 候选中的 WAV 音频和音频波形可视化。
 
@@ -57,7 +57,7 @@ MAIN-0、MAIN-1、MAIN-2 均已由用户确认板测通过。当前实施 MAIN-3
 - **资源与 P&R/STA：通过。** `_build_main2_lecture_outline_fix/pr.status` 使用布局种子 76，Setup WNS `+155 ps`、TNS `0`，Hold WNS `+23 ps`、TNS `0`，0 违例。LUT 12674/19600（64.66%）、寄存器 7751/19600（39.55%）、BRAM9K 47/64（73.44%）、BRAM32K 4/16（25.00%）、DSP 7/29（24.14%）；最终 7249 slices（73.97%）。描边额外使用 2 个 BRAM32K，没有增加 BRAM9K；保留既有 SDRAM 相移时钟本地路由警告，须以板测确认。
 - **已板测 bit：** `release/hx4s20_main2_lecture.bit`，629647 bytes，SHA256 `AA788DDEEC1FE2D40B57DB16E9243513A6C20B034497F9C006B70D39784F39C9`。
 
-### MAIN-3 主屏交互与状态面板（2026-09-23，待上板）
+### MAIN-3 主屏交互与状态面板（2026-09-24，已板测通过）
 
 - 在 MAIN-2 板测通过的媒体链上新增独立顶层 `top_1280x720_main3_interaction`；`ENABLE_MAIN3=0` 的旧顶层保持原行为，`release/hx4s20_main2_lecture.bit` 保留回退。
 - KEY1 在总览按 0→4 回绕高亮、音频讲解中在 1×/2×中心裁剪缩放间循环；KEY2 总览确认、讲解暂停/继续；KEY3 在标准、明亮、高对比、柔和四组亮度/对比度参数间循环；KEY4 是应用级故障恢复，不再选文物。高亮变化不发起预载，SW1～SW3 仍决定预载，且必须与高亮和有效素材匹配才能进入讲解。缩放只在帧边界直接切换并显式清除旧转场模式，不触发展开、淡入淡出或其他转场；音频结束时恢复 1× 后沿用原收拢转场。
@@ -65,10 +65,10 @@ MAIN-0、MAIN-1、MAIN-2 均已由用户确认板测通过。当前实施 MAIN-3
 - KEY4 首先静音，等待已接受的 SDRAM 写突发补零收尾；随后只复位 SD 核及图片/WAV/字幕读盘客户端和仲裁状态，不复位 PLL、HDMI 或 SDRAM 控制器。完整总览缓存保留，不完整则重建；SD 卡重新初始化后依据当前有效拨码重预载。无效拨码只显示默认高亮 0，不预载；初始化超时数码管显示 `E503`，再次 KEY4 可重试。
 - 顶部居中 960×56 半透明黑色 OSD 显示 TF 文物名称、实际展示阶段、画面预设、源 BMP 宽高及实际显示的 `ZOOM1x/ZOOM2x`。名称由 TF 根目录 `OSDNAME.BIN` 提供，缺失/损坏显示“文物 0～4”而不阻止讲解；更换名称不需重编 bit。名称包为 512-byte `ONAM` v1 头和五个 512-byte 位图区，总长 3072 byte；各位图 160×16、1bpp、高位先行。由 `py tools/generate_museum_osd_names.py --dest E:\OSDNAME.BIN` 生成，仅更改名称文件，不改 WAV/SUB 时间轴。
 - MAIN-3 不包含以太网和应急抢占；波形的应急红色控制输入在本阶段固定关闭。主副板交互协议仍以 `docs/副屏工程启动与双板以太网接口约定_20260923.md` 为准。
-- 仿真入口：`sim/run_main3_recovery.do`、`run_main3_zoom.do`、`run_museum_status_osd.do`、`run_museum_name_loader.do`、`run_museum_writer_abort.do`；MAIN-2 讲解、字幕、总览与 SD 中止读盘回归也通过。三种名称情形（有效跨簇、缺失、损坏）均 PASS，OSD 像素对齐与字形、KEY4 状态顺序、重复按键隔离及读卡初始化超时后重试、写突发补零均 PASS。2026-09-24 板测反馈连续讲解及 KEY4 后重载仍可能无字幕；已定位并修复字幕视频侧仅在取消上升沿对齐提交位的缺陷，改为整个取消期间持续对齐。新增复现测试先在旧逻辑失败，再在修复后覆盖同一文物重入、KEY4 仅复位 50 MHz 客户端、重新读包与首条字幕显示，均 PASS；用户随后上板重试两轮确认 KEY4 正常。KEY1 新缩放测试覆盖总览高亮保持、讲解中 1×/2×、帧边界直接切换、旧转场清除与退出后清零，KEY3 测试覆盖两种界面下的画面预设切换，OSD 字符测试覆盖倍率显示；当前新 bit 仍待板测。
-- **资源优化：完成，待板测。** 自适应BMP加载器原先用32位寄存器保存最大1920×1080范围内的坐标，并用32位串行除法计算960×540等比适配。现依据既有11位像素接口和行缓存上限，将坐标收窄到11位、除法数据通路收窄到21位，算法、采样点、补边和支持尺寸不变。逐像素回归覆盖1920×1080、1919×1080且每行3字节填充、640×1080 top-down纵向图，以及96×96文物细节路径；其余MAIN-1/2/3、字幕、OSD、名称与故障恢复回归全部PASS。
-- **工具链候选，未板测。** `D:\TD_6.2.1` 最终 P&R/STA setup WNS `+114 ps`、TNS `0`，hold WNS `+30 ps`、TNS `0`，覆盖率 99.76%，时序例外为空；bitgen 完成。单独执行 `drc_check -all` 与 `report_route_status -drc`，无多驱动、无异常时序路径、路由开放网络 0；保留既有 SDRAM 25 MHz 相移时钟使用一段本地路由的工具警告，须板测确认。综合 LUT `12881/19600`（65.72%）、REG `8262/19600`、BRAM9K `48/64`、BRAM32K `5/16`、DSP `7/29`；放置后的 LUT `13116/19600`（66.92%），路由使用 `7712/9800` slices（78.69%）。相对上一候选，综合 LUT -868、REG -357，放置后 LUT -823、Slice -305；BRAM和DSP不变，并重新回到80% Slice软目标以内。
-- **待测发布文件：** `release/hx4s20_main3_interaction.bit`，630815 bytes，SHA256 `5A0B3441D9C4404DDF53090BCCD968A5B80283244B9F8432C4C55E45F47D71C4`。`release/media/OSDNAME.BIN` 与此前核验的 `E:\OSDNAME.BIN` 均为 3072 bytes、SHA256 `600E64D69B35F29B955D43DEA67C93F194C8A0317C6E5BD0DDC05A8F8B268029`；本轮未检测到 E 盘，未重新核验 TF 内容。MAIN-2 bit 的 SHA256 保持 `AA788DDEEC1FE2D40B57DB16E9243513A6C20B034497F9C006B70D39784F39C9`。上板步骤见 `docs/main3_board_check.md`；只有用户回复 `MAIN-3 BOARD PASS` 才标记板测通过。
+- 仿真入口：`sim/run_main3_recovery.do`、`run_main3_zoom.do`、`run_museum_status_osd.do`、`run_museum_name_loader.do`、`run_museum_writer_abort.do`；MAIN-2 讲解、字幕、总览与 SD 中止读盘回归也通过。三种名称情形（有效跨簇、缺失、损坏）均 PASS，OSD 像素对齐与字形、KEY4 状态顺序、重复按键隔离及读卡初始化超时后重试、写突发补零均 PASS。2026-09-24 板测反馈连续讲解及 KEY4 后重载仍可能无字幕；已定位并修复字幕视频侧仅在取消上升沿对齐提交位的缺陷，改为整个取消期间持续对齐。新增复现测试先在旧逻辑失败，再在修复后覆盖同一文物重入、KEY4 仅复位 50 MHz 客户端、重新读包与首条字幕显示，均 PASS；用户随后上板重试两轮确认 KEY4 正常。KEY1 新缩放测试覆盖总览高亮保持、讲解中 1×/2×、帧边界直接切换、旧转场清除与退出后清零，KEY3 测试覆盖两种界面下的画面预设切换，OSD 字符测试覆盖倍率显示；用户最终确认当前 bit 上板通过。
+- **资源优化：完成并板测通过。** 自适应BMP加载器原先用32位寄存器保存最大1920×1080范围内的坐标，并用32位串行除法计算960×540等比适配。现依据既有11位像素接口和行缓存上限，将坐标收窄到11位、除法数据通路收窄到21位，算法、采样点、补边和支持尺寸不变。逐像素回归覆盖1920×1080、1919×1080且每行3字节填充、640×1080 top-down纵向图，以及96×96文物细节路径；其余MAIN-1/2/3、字幕、OSD、名称与故障恢复回归全部PASS。
+- **工具链与板测：通过。** `D:\TD_6.2.1` 最终 P&R/STA setup WNS `+114 ps`、TNS `0`，hold WNS `+30 ps`、TNS `0`，覆盖率 99.76%，时序例外为空；bitgen 完成。单独执行 `drc_check -all` 与 `report_route_status -drc`，无多驱动、无异常时序路径、路由开放网络 0；保留既有 SDRAM 25 MHz 相移时钟使用一段本地路由的工具警告。综合 LUT `12881/19600`（65.72%）、REG `8262/19600`、BRAM9K `48/64`、BRAM32K `5/16`、DSP `7/29`；放置后的 LUT `13116/19600`（66.92%），路由使用 `7712/9800` slices（78.69%）。相对上一候选，综合 LUT -868、REG -357，放置后 LUT -823、Slice -305；BRAM和DSP不变，并重新回到80% Slice软目标以内。
+- **板测通过发布文件：** `release/hx4s20_main3_interaction.bit`，630815 bytes，SHA256 `5A0B3441D9C4404DDF53090BCCD968A5B80283244B9F8432C4C55E45F47D71C4`。`release/media/OSDNAME.BIN` 与此前核验的 `E:\OSDNAME.BIN` 均为 3072 bytes、SHA256 `600E64D69B35F29B955D43DEA67C93F194C8A0317C6E5BD0DDC05A8F8B268029`。MAIN-2 bit 的 SHA256 保持 `AA788DDEEC1FE2D40B57DB16E9243513A6C20B034497F9C006B70D39784F39C9`。用户于 2026-09-24 明确回复 `MAIN-3 BOARD PASS`。
 
 ### MAIN-0 审计结论（2026-09-18）
 
@@ -190,7 +190,7 @@ MAIN-0、MAIN-1、MAIN-2 均已由用户确认板测通过。当前实施 MAIN-3
 
 ```text
 分支：Yan_Chen_Double（跟踪 origin/Yan_Chen_Double）
-MAIN-2 板测基线提交：ad81b59
+MAIN-3 板测基线实现提交：f4ba98e
 工程：hx4s20_800x600_multimedia.al
 工程默认顶层：top_1280x720_main3_interaction
 MAIN-0 回退顶层：top_1280x720_feature_v72_resource_optimized
@@ -199,12 +199,12 @@ v73 候选顶层：top_1280x720_feature_v73_audio_visualizer
 活动 SDC：constraints/top_1280x720_main3_interaction.sdc
 保留最新候选 SDC：constraints/top_1280x720_v73_audio_visualizer.sdc
 当前 P&R 目录：`_build_main3_interaction`（MAIN-3 工具链证据，未跟踪）
-当前待板测 bit：`release/hx4s20_main3_interaction.bit`（MAIN-3，尚未板测）
+当前板测通过 bit：`release/hx4s20_main3_interaction.bit`（MAIN-3）
 MAIN-2 回退 bit：`release/hx4s20_main2_lecture.bit`（已板测通过）
 MAIN-1 回退 bit：`release/hx4s20_main1_overview.bit`（已板测通过）
 MAIN-0 回退 bit：`release/hx4s20_1280x720_v72_subtitle_continuous_scroll_v2.bit`（已板测通过）
 当前商品展示文件：无（已回退）
-当前阶段状态：MAIN-2 已板测通过；MAIN-3 按用户确认计划实施，等待最终工具链及上板验证
+当前阶段状态：MAIN-3 已于 2026-09-24 板测通过；尚未开始下一阶段
 ```
 
 ## 12. 下一步行动
@@ -212,9 +212,9 @@ MAIN-0 回退 bit：`release/hx4s20_1280x720_v72_subtitle_continuous_scroll_v2.b
 1. `MAIN-0` 审计、v72 综合/P&R/STA/DRC、bitgen 和板测已完成；用户已确认 `MAIN-0 BOARD PASS`。
 2. MAIN-0 板测基于 `release/hx4s20_1280x720_v72_subtitle_continuous_scroll_v2.bit`；用户确认当前基线的 HDMI、TF、SDRAM、按键、SW4 和画面稳定性满足验收要求。
 3. MAIN-1 RTL、仿真、P&R、STA/DRC、bitgen 和板测已完成；用户已明确回复 `MAIN-1 BOARD PASS`。
-4. 保留 MAIN-2 已板测 bit，MAIN-3 新 bit 只作为待测版本。TF 根目录需有现行 BMP/WAV/SUB 文件及可选 `OSDNAME.BIN`；名称文件缺失应显示“文物 0～4”，不阻塞讲解。
-5. 按 `docs/main3_board_check.md` 逐件验证按键、暂停、恢复、无效拨码、名称和无复位重入。自然结束仍是最后全貌伴随音频末帧，再等待约 1.2 秒收拢。尤其确认 KEY4 不产生残留 SDRAM 写事务，图片/字幕/音频可重新加载。
-6. 仅在用户明确回复 `MAIN-3 BOARD PASS` 后标记本阶段板测通过。提交只纳入相关源码、测试、文档、媒体包和发布 bit，不纳入 `_build_*`、根目录报告或 `.bid`，不自动 push。
+4. 保留 MAIN-3 板测通过 bit 作为当前主板基线，并保留 MAIN-2 已板测 bit 作为回退。TF 根目录需有现行 BMP/WAV/SUB 文件及可选 `OSDNAME.BIN`；名称文件缺失应显示“文物 0～4”，不阻塞讲解。
+5. MAIN-3 已完成按键、暂停、恢复、无效拨码、名称、无复位重入及资源优化上板验证；后续修改 RTL 或重新生成 bit 后须重新执行 `docs/main3_board_check.md`。
+6. 未经用户明确要求不开始下一阶段。提交只纳入相关源码、测试、文档、媒体包和发布 bit，不纳入 `_build_*`、根目录报告或 `.bid`；本次按用户要求 push。
 
 ## 13. 新 Agent 启动指令
 
