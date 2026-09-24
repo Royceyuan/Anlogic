@@ -7,7 +7,7 @@
 - 第 6 槽一次只能保存一件文物的简介；在展示旧简介时收到新预选，须等离开旧简介后才覆写该槽。预缓存失败记录对应文物错误，切换到另一个文物后允许重新加载。
 - 当前物理顶层仍没有 Ethernet PHY/UDP/MBP1 接收器，KEY1/KEY2 只是本地命令模拟。当前 SDRAM 工作帧仍为 960×540；原生 1280×720 文物图与滚动缓存是独立的待完成工作。本节描述 RTL 语义，不代表板测通过。
 - 本地候选 bit：`release/hx4s20_secondary_local_precache_v4.bit`，629649 bytes，SHA256 `B49120333D9735F31D1F0FBDA4047025F7136C07D4DD3A25FB19D1844C2B5B27`。ModelSim 控制器和叠加层仿真 PASS；TD 6.2.168116 新鲜 P&R/STA：Setup WNS +337 ps/TNS 0，Hold WNS +30 ps/TNS 0，bitgen 成功。完整 TF→SDRAM 预缓存时序与硬件仍需专门验证；**hardware = NOT TESTED**。
-- `tools/prepare_secondary_exhibit_720p.py` 已另行生成 `assets/secondary_exhibit_720p_tf/`：`IMAGE0`～`IMAGE4` 为 1280×720 BMP，`IMAGE5`～`IMAGE9` 仍为 960×540 BMP，十文件共 21,600,540 bytes。此包是将来滚动缓存版本的输入；**不要与当前 v4 bit 配套上卡**，v4 的工作帧仍为 960×540。当前机器未检测到 F: 盘，因此没有写卡。
+- `tools/prepare_secondary_exhibit_720p.py` 已生成 `assets/secondary_exhibit_720p_tf/`：`IMAGE0`～`IMAGE4` 为 1280×720 BMP，`IMAGE5`～`IMAGE9` 仍为 960×540 BMP，十文件共 21,600,540 bytes。2026-09-24 已确认 F: 为 FAT32/Removable/Lenovo，原十文件与仓库旧版逐张 SHA256 相同，然后将此包写入 F: 根目录，十文件逐张 SHA256 校验通过。v4 的自适应 BMP 读取器允许这些输入尺寸，但仍将文物图缩至 960×540 工作帧；原生 720p 显示必须等待滚动缓存和更高带宽的新版 bit。此组合尚未上板验证。
 
 ## 2026-09-24 本地预览候选
 
