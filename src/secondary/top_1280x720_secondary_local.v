@@ -24,6 +24,10 @@ module top_1280x720_secondary_local (
 wire        cmd_valid = 1'b0;
 wire [7:0]  cmd_type = 8'd0;
 wire [7:0]  cmd_artifact_id = 8'hff;
+wire        cmd_confirmed = 1'b0;
+wire [7:0]  cmd_mode = 8'd1;
+wire [7:0]  cmd_lecture_phase = 8'hff;
+wire [7:0]  cmd_lecture_reason = 8'd0;
 wire [15:0] cmd_emergency_id = 16'd0;
 wire [7:0]  cmd_route_id = 8'd0;
 wire        cmd_emergency_active = 1'b0;
@@ -36,7 +40,7 @@ top_v66 #(
     .ADAPTIVE_BMP(1), .ADAPTIVE_BMP_MAX_WIDTH(1920),
     .ADAPTIVE_BMP_MAX_HEIGHT(1080),
     .ADAPTIVE_BACKGROUND_RGB565(16'h18E3), .ADAPTIVE_BLOCK_WRITER(0),
-    .ENABLE_OSD(0), .ENABLE_FADE(0), .VIDEO_SEQUENCE(0), .VIDEO_BIN(0),
+    .ENABLE_OSD(0), .ENABLE_FADE(1), .VIDEO_SEQUENCE(0), .VIDEO_BIN(0),
     .MULTI_IMAGE_BMP(1), .MULTI_FRAME_PRELOAD(1), .VIDEO_FRAME_COUNT(5),
     .FORCE_SEQUENCE_AUTO(1), .AUTO_PERIOD_CYCLES(250_000_000),
     .LINEBUF_SCALE(1), .LINEBUF_NOREG_SYNC_READ(1),
@@ -59,6 +63,10 @@ top_v66 #(
     .uart_rxd(1'b1), .uart_txd(),
     .secondary_cmd_valid(cmd_valid), .secondary_cmd_type(cmd_type),
     .secondary_cmd_artifact_id(cmd_artifact_id),
+    .secondary_cmd_confirmed(cmd_confirmed),
+    .secondary_cmd_mode(cmd_mode),
+    .secondary_cmd_lecture_phase(cmd_lecture_phase),
+    .secondary_cmd_lecture_reason(cmd_lecture_reason),
     .secondary_cmd_emergency_id(cmd_emergency_id),
     .secondary_cmd_route_id(cmd_route_id),
     .secondary_cmd_emergency_active(cmd_emergency_active),

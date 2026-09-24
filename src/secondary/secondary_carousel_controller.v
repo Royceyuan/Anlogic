@@ -14,6 +14,10 @@ module secondary_carousel_controller #(
     input  wire        cmd_valid,
     input  wire [7:0]  cmd_type,
     input  wire [7:0]  cmd_artifact_id,
+    input  wire        cmd_confirmed,
+    input  wire [7:0]  cmd_mode,
+    input  wire [7:0]  cmd_lecture_phase,
+    input  wire [7:0]  cmd_lecture_reason,
     input  wire [15:0] cmd_emergency_id,
     input  wire [7:0]  cmd_route_id,
     input  wire        cmd_emergency_active,
@@ -21,6 +25,8 @@ module secondary_carousel_controller #(
     output wire        emergency_active,
     output reg  [1:0]  link_state,
     output reg  [2:0]  master_artifact,
+    output reg         info_active,
+    output reg  [2:0]  info_artifact,
     output reg  [7:0]  active_route_id,
     output reg  [2:0]  cmd_result
 );
@@ -46,7 +52,9 @@ always @(*) begin
         case (cmd_type)
             HELLO, HEARTBEAT, STATUS_QUERY: cmd_result = OK;
             ARTIFACT_SELECT, LECTURE_STATE, PLAYBACK_STATE:
-                if (cmd_artifact_id > 8'd4 && cmd_artifact_id != 8'hff)
+                if ((cmd_artifact_id > 8'd4 && cmd_artifact_id != 8'hff) ||
+                    (cmd_type == ARTIFACT_SELECT && cmd_confirmed &&
+                     cmd_artifact_id == 8'hff))
                     cmd_result = INVALID_STATE;
             EMERGENCY_SET: cmd_result = OK;
             EMERGENCY_CLEAR:
@@ -64,6 +72,8 @@ always @(posedge clk or negedge rst_n) begin
         link_cycles <= 27'd0;
         link_state <= LINK_WAIT;
         master_artifact <= 3'd7;
+        info_active <= 1'b0;
+        info_artifact <= 3'd0;
         remote_emergency <= 1'b0;
         active_emergency_id <= 16'd0;
         active_route_id <= 8'd0;
@@ -73,9 +83,11 @@ always @(posedge clk or negedge rst_n) begin
         local_ff1 <= local_emergency;
         local_ff2 <= local_ff1;
 
-        // Local media is authoritative. Commands never touch this timer.
         if (!all_ready || emergency_active) begin
             page_index <= 3'd0;
+            page_cycles <= 28'd0;
+        end else if (info_active) begin
+            page_index <= info_artifact;
             page_cycles <= 28'd0;
         end else if (page_cycles == PAGE_CYCLES - 1) begin
             page_cycles <= 28'd0;
@@ -99,6 +111,16 @@ always @(posedge clk or negedge rst_n) begin
                     link_state <= LINK_OK;
                     link_cycles <= 27'd0;
                     master_artifact <= (cmd_artifact_id <= 8'd4) ? cmd_artifact_id[2:0] : 3'd7;
+                    if (cmd_mode == 8'd1) begin
+                        info_active <= 1'b0;
+                        page_index <= 3'd0;
+                        page_cycles <= 28'd0;
+                    end else if (cmd_mode == 8'd2 && cmd_artifact_id <= 8'd4) begin
+                        info_active <= 1'b1;
+                        info_artifact <= cmd_artifact_id[2:0];
+                        page_index <= cmd_artifact_id[2:0];
+                        page_cycles <= 28'd0;
+                    end
                     if (cmd_emergency_active) begin
                         remote_emergency <= 1'b1;
                         active_emergency_id <= cmd_emergency_id;
@@ -106,8 +128,22 @@ always @(posedge clk or negedge rst_n) begin
                     end else if (remote_emergency && cmd_emergency_id == active_emergency_id)
                         remote_emergency <= 1'b0;
                 end
-                ARTIFACT_SELECT, LECTURE_STATE, PLAYBACK_STATE:
+                ARTIFACT_SELECT, LECTURE_STATE, PLAYBACK_STATE: begin
                     master_artifact <= (cmd_artifact_id <= 8'd4) ? cmd_artifact_id[2:0] : 3'd7;
+                    if (cmd_type == ARTIFACT_SELECT && cmd_confirmed &&
+                        cmd_artifact_id <= 8'd4) begin
+                        info_active <= 1'b1;
+                        info_artifact <= cmd_artifact_id[2:0];
+                        page_index <= cmd_artifact_id[2:0];
+                        page_cycles <= 28'd0;
+                    end else if (cmd_type == LECTURE_STATE) begin
+                        if (cmd_lecture_phase == 8'hff || cmd_lecture_reason == 8'd1) begin
+                            info_active <= 1'b0;
+                            page_index <= 3'd0;
+                            page_cycles <= 28'd0;
+                        end
+                    end
+                end
                 EMERGENCY_SET: begin
                     remote_emergency <= 1'b1;
                     active_emergency_id <= cmd_emergency_id;
@@ -117,6 +153,8 @@ always @(posedge clk or negedge rst_n) begin
                 default: begin end
             endcase
         end
+        if (emergency_active)
+            info_active <= 1'b0;
     end
 end
 

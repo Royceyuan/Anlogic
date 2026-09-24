@@ -9,6 +9,10 @@ reg local_emergency = 1'b0;
 reg cmd_valid = 1'b0;
 reg [7:0] cmd_type = 8'd0;
 reg [7:0] cmd_artifact_id = 8'hff;
+reg cmd_confirmed = 1'b0;
+reg [7:0] cmd_mode = 8'd1;
+reg [7:0] cmd_lecture_phase = 8'hff;
+reg [7:0] cmd_lecture_reason = 8'd0;
 reg [15:0] cmd_emergency_id = 16'd0;
 reg [7:0] cmd_route_id = 8'd0;
 reg cmd_emergency_active = 1'b0;
@@ -16,6 +20,8 @@ wire [2:0] page_index;
 wire emergency_active;
 wire [1:0] link_state;
 wire [2:0] master_artifact;
+wire info_active;
+wire [2:0] info_artifact;
 wire [7:0] active_route_id;
 wire [2:0] cmd_result;
 
@@ -24,10 +30,14 @@ secondary_carousel_controller #(.PAGE_CYCLES(8), .LINK_TIMEOUT_CYCLES(6)) dut (
     .clk(clk), .rst_n(rst_n), .frame_valid(frame_valid),
     .local_emergency(local_emergency), .cmd_valid(cmd_valid),
     .cmd_type(cmd_type), .cmd_artifact_id(cmd_artifact_id),
+    .cmd_confirmed(cmd_confirmed), .cmd_mode(cmd_mode),
+    .cmd_lecture_phase(cmd_lecture_phase),
+    .cmd_lecture_reason(cmd_lecture_reason),
     .cmd_emergency_id(cmd_emergency_id), .cmd_route_id(cmd_route_id),
     .cmd_emergency_active(cmd_emergency_active),
     .page_index(page_index), .emergency_active(emergency_active),
     .link_state(link_state), .master_artifact(master_artifact),
+    .info_active(info_active), .info_artifact(info_artifact),
     .active_route_id(active_route_id), .cmd_result(cmd_result)
 );
 
@@ -83,7 +93,7 @@ initial begin
     check(page_index == 1, "five-second tick");
     send_cmd(8'h10, 8'd3, 16'd0, 1'b0, 3'd0);
     check(master_artifact == 3, "main artifact status");
-    check(page_index == 1, "main selection cannot move local page");
+    check(page_index == 1 && !info_active, "preselection cannot move local page");
     for (i=2; i<=4; i=i+1) begin
         step(8);
         check(page_index == i, "ordered carousel");
@@ -91,9 +101,38 @@ initial begin
     step(8);
     check(page_index == 0, "carousel wrap");
 
+    cmd_confirmed = 1'b1;
+    send_cmd(8'h10, 8'd2, 16'd0, 1'b0, 3'd0);
+    check(info_active && info_artifact == 2 && page_index == 2,
+          "confirmed artifact selects information page");
+    step(20);
+    check(page_index == 2, "information page holds during lecture");
+    cmd_confirmed = 1'b0;
+    send_cmd(8'h10, 8'd4, 16'd0, 1'b0, 3'd0);
+    check(info_active && info_artifact == 2,
+          "next preselection does not interrupt current lecture");
+    cmd_lecture_reason = 8'd1;
+    send_cmd(8'h11, 8'd2, 16'd0, 1'b0, 3'd0);
+    check(!info_active && page_index == 0, "lecture return restarts carousel");
+    cmd_lecture_reason = 8'd0;
+    cmd_mode = 8'd2;
+    send_cmd(8'h02, 8'd1, 16'd0, 1'b0, 3'd0);
+    check(info_active && info_artifact == 1, "heartbeat restores lecture state");
+    cmd_mode = 8'd1;
+    send_cmd(8'h02, 8'd1, 16'd0, 1'b0, 3'd0);
+    check(!info_active, "overview heartbeat resumes carousel");
+
+    cmd_confirmed = 1'b1;
+    send_cmd(8'h10, 8'hff, 16'd0, 1'b0, 3'd5);
+    check(!info_active, "confirmed unknown artifact rejected");
+    send_cmd(8'h10, 8'd3, 16'd0, 1'b0, 3'd0);
+    check(info_active, "lecture active before emergency");
+    cmd_confirmed = 1'b0;
+
     send_cmd(8'h20, 8'hff, 16'd42, 1'b1, 3'd0);
     step(2);
-    check(emergency_active && page_index == 0, "remote emergency priority");
+    check(emergency_active && !info_active && page_index == 0,
+          "remote emergency priority");
     send_cmd(8'h21, 8'hff, 16'd41, 1'b0, 3'd5);
     check(emergency_active, "old event cannot clear emergency");
     step(9);
@@ -112,7 +151,7 @@ initial begin
     check(!emergency_active && page_index == 0, "local clear restarts page zero");
     send_cmd(8'h10, 8'd9, 16'd0, 1'b0, 3'd5);
     check(master_artifact == 4, "invalid artifact ignored");
-    $display("PASS: SECONDARY local carousel, command isolation, emergency ID and link timeout");
+    $display("PASS: SECONDARY hero carousel, confirmed information page, emergency and link timeout");
     $finish;
 end
 endmodule
