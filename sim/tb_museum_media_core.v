@@ -468,10 +468,20 @@ module tb_museum_media_core #(
             @(negedge clk_50m);
             if (!dut.emergency_video_active)
                 $fatal(1, "emergency video was not published at the next frame boundary");
+            force dut.recovery_wait_count = 27'd100_000_000;
+            @(negedge clk_50m); release dut.recovery_wait_count;
+            @(negedge clk_50m);
+            if (dut.recovery_state != 3'd3 || dut.recovery_wait_count != 0)
+                $fatal(1, "held SW4 incorrectly entered SD timeout fault");
+            force dut.sd_init_done = 1'b0;
             sw[3] = 1'b0;
             while (dut.emergency_video_ff2) @(negedge clk_50m);
             while (!dut.video_frame_tick) @(negedge clk_50m);
             @(negedge clk_50m);
+            repeat (20) @(negedge clk_50m);
+            if (dut.recovery_state != 3'd3 || !dut.recovery_busy)
+                $fatal(1, "SW4 clear did not wait for delayed SD init");
+            release dut.sd_init_done;
             timeout = 0;
             while (dut.recovery_busy && timeout < 5000) begin
                 @(negedge clk_50m); timeout = timeout + 1;

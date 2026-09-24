@@ -5,7 +5,7 @@
 - 顶层：`top_1280x720_main4_emergency`
 - 位流：`release/hx4s20_main4_emergency.bit`
 - 大小：630813 bytes
-- SHA256：`5A724FCF063DEE65A8DB8EDED6A12439AD6F3438DA76A0AC96A61E40C70E72A0`
+- SHA256：`2B4285FAC07FEACCCE853F601AAC9C42C49195A5CE6B071EEC455FA97B893745`
 - 工程：`hx4s20_museum_terminal.al`
 - 器件：`EG4S20BG256`
 
@@ -41,8 +41,9 @@ MAIN-3 的 TF 卡内容无需修改。烧录前保持 `SW4=0`，`SW1～SW3` 选�
 ## 实现门禁记录
 
 - ModelSim：MAIN-4 画面/告警、帧边界抢占、红色波形及 MAIN-1～MAIN-3 关键回归全部 PASS。
-- 最终 STA：Setup WNS `+128 ps`、Hold WNS `+24 ps`，Setup/Hold TNS 均为 0。
+- SW4 保持为 1 时恢复等待计时器保持清零，不会在约 2 秒后误入故障态；拨回 0 后才等待 SD 初始化并恢复总览。
+- 最终 STA：Setup WNS `+149 ps`、Hold WNS `+21 ps`，Setup/Hold TNS 均为 0。
 - DRC：无多驱动、无异常时序路径；保留既有 SDRAM 25 MHz 相移时钟单段本地路由告警。
-- 放置资源：LUT 13675/19600（69.77%）、REG 8416/19600（42.94%）、BRAM9K 48/64、BRAM32K 5/16、DSP 7/29、Slice 7802/9800（79.61%）。
+- 放置资源：LUT 13727/19600（70.04%）、REG 8412/19600（42.92%）、BRAM9K 48/64、BRAM32K 5/16、DSP 7/29、Slice 7892/9800（80.53%）。
 
 全部通过后回复 `MAIN-4 BOARD PASS`；在此之前，本位流只标记为待板测候选。

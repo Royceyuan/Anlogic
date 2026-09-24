@@ -559,7 +559,11 @@ always @(posedge clk_50m or negedge write_rst_n) begin
                 recovery_wait_count <= 27'd0;
                 recovery_state <= 3'd3;
             end else recovery_reset_count <= recovery_reset_count + 1'b1;
-            3'd3: if (sd_init_done && !emergency_active_50m) begin
+            3'd3: if (emergency_active_50m) begin
+                // An emergency may be held indefinitely.  Do not turn that
+                // intentional hold into an SD-init timeout/fault.
+                recovery_wait_count <= 27'd0;
+            end else if (sd_init_done) begin
                 recovery_select_pulse <= 1'b1;
                 recovery_state <= 3'd0;
             end else if (recovery_wait_count == 27'd100_000_000)
