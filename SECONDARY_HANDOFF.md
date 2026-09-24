@@ -26,10 +26,10 @@
 ## 素材
 
 - 2026-09-24 新交互素材包：`assets/secondary_exhibit_v2_tf/IMAGE0.BMP`～`IMAGE4.BMP` 是五张无字文物大图，`IMAGE5.BMP`～`IMAGE9.BMP` 是按同一文物顺序排列的简介/路线页；`tools/prepare_secondary_exhibit_v2.py` 可重建。五张大图源文件见 `assets/secondary_exhibit_hero_source/`。TF 根目录必须放全部十张，每张 960×540、24-bit BI_RGB。
-- 旧版 `assets/secondary_exhibit_tf/IMAGE0.BMP`～`IMAGE4.BMP` 是五张简介页，只供旧轮播 bit 使用；不可与新版文件混放或互换。新版上卡用 `tools/copy_secondary_exhibit_v2_to_sd.ps1 -DriveLetter F`，脚本会核对 FAT32 并逐文件校验 SHA256。SD 卡尚未插入，未执行复制。
+- 旧版 `assets/secondary_exhibit_tf/IMAGE0.BMP`～`IMAGE4.BMP` 是五张简介页，只供旧轮播 bit 使用；不可与新版文件混放或互换。新版上卡用 `tools/copy_secondary_exhibit_v2_to_sd.ps1 -DriveLetter F`，脚本会核对 FAT32 并逐文件校验 SHA256。2026-09-24 已确认 F: 为 FAT32、Removable、USB、Healthy（卷标 Lenovo），已将十张新版 BMP 写入根目录并逐张复核 SHA256 相同；卡上媒体文件共 15,552,540 bytes。
 - 2026-09-24 用户提供 `C:\Users\20526\Desktop\文物图片` 中五张已排版 PNG，原样复制到 `assets/secondary_exhibit_source/` 并用 Git LFS 保管，原文件未改动。顺序为越王勾践剑、四羊方尊、金缕玉衣、马踏飞燕、长信宫灯，原图均为 1448×1086。原图高度超过本地顶层 `ADAPTIVE_BMP_MAX_HEIGHT=1080`，不能直接改扩展名投入 TF。
 - `tools/prepare_secondary_exhibit_images.py` 已保持原图比例、完整文字和统一地图，将五张图缩至 720×540 并以同图柔焦背景补足两侧，生成 `assets/secondary_exhibit_tf/IMAGE0.BMP`～`IMAGE4.BMP`；另有 `assets/secondary_exhibit_preview/IMAGE0.png`～`IMAGE4.png` 供查看。BMP 均为 960×540、24-bit、BI_RGB、1,555,254 bytes。TF 中只复制 `secondary_exhibit_tf` 的五个 BMP，不复制预览图。
-- 已验证 `release/hx4s20_secondary_local.bit` SHA256 仍为 `8A7E1B53082C4AA9E4F6C5087902EBE58146BF1CED3DB5396D171C5098211F62`；本轮仅换 TF 素材，bit 不需重编。2026-09-24 检查时未检测到 SD 卡盘符，尚未复制到卡，也尚未板测。插卡后确认 FAT32，用 `tools/copy_secondary_exhibit_to_sd.ps1 -DriveLetter <盘符>` 复制并逐文件校验 SHA256。
+- 旧版 `release/hx4s20_secondary_local.bit` SHA256 为 `8A7E1B53082C4AA9E4F6C5087902EBE58146BF1CED3DB5396D171C5098211F62`，对应旧版五张简介页轮播；新版卡应使用 `release/hx4s20_secondary_v2_local.bit`，见下表。尚未上板验证。
 - 用户提供的路线图是方案素材，展馆平面和当前位置尚未由场馆核定；不得用于真实导航或疏散。
 - 单张 AI 生成的虚构地图：`assets/secondary_demo/fictional_museum_map.png`，SHA256 `39493C46B8D83C79BC14DAEE5DC2513C6C0C141CCB4A6051E1C12D699E454EB9`。
 - `tools/make_secondary_demo_pages.py` 把同一演示地图嵌入五张不同标题的 960×540、24-bit BMP。现有五张文件各 `1,555,254` bytes，采用 Git LFS 跟踪。重新生成需要 Python、Pillow 和 Windows `C:/Windows/Fonts/simhei.ttf`。
