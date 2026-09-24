@@ -593,7 +593,9 @@ wire [2:0] museum_switch_transition_mode =
                                                         lecture_transition_mode) :
         transition_mode_ff2;
 wire audio_control_mode = (ui_mode == MODE_AUDIO_CONTROL);
-wire detail_zoom_2x = (ui_mode == MODE_DETAIL_VIEW) && zoom_2x;
+wire detail_zoom_2x = ENABLE_MUSEUM_LECTURE ?
+                      (lecture_active && zoom_2x) :
+                      ((ui_mode == MODE_DETAIL_VIEW) && zoom_2x);
 wire [1:0] active_picture_style =
     (ui_mode == MODE_DETAIL_VIEW) ? picture_style : 2'd0;
 reg osd_panel_enable;
@@ -756,7 +758,7 @@ generate
             .overview_ready(overview_cache_ready),
             .confirm_pulse(overview_confirm_pulse),
             .key_pause(key_press_pulse[1] && !recovery_busy),
-            .key_return(key_press_pulse[2] && !recovery_busy),
+            .key_return(key_press_pulse[2] && !recovery_busy && !ENABLE_MAIN3),
             .selected_index(overview_selected_ctrl),
             .preload_valid(museum_preload_valid),
             .preload_index(museum_preload_index),
@@ -1610,6 +1612,7 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         writer_start <= 1'b0;
         load_complete_event <= 1'b0;
         load_error_event <= 1'b0;
+        zoom_2x <= 1'b0;
         audio_paused <= 1'b1;
         audio_switch_reset_count <= AUDIO_SWITCH_RESET_CYCLES;
         if (recovery_reset) begin
@@ -1709,6 +1712,10 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         if (ENABLE_MUSEUM_LECTURE) begin
             audio_track_index <= lecture_artifact_index;
             audio_paused <= !lecture_active || lecture_paused || lecture_finished;
+            if (!lecture_active || lecture_finished)
+                zoom_2x <= 1'b0;
+            else if (ENABLE_MAIN3 && key_press_pulse[2])
+                zoom_2x <= ~zoom_2x;
         end
 
         if (!auto_mode)
@@ -2511,6 +2518,7 @@ generate
             .artifact(osd_artifact), .stage(osd_stage), .effect(osd_effect),
             .width_bcd(osd_width_bcd), .height_bcd(osd_height_bcd),
             .name_ready(osd_name_ready),
+            .zoom_2x(display_zoom_2x),
             .name_wr_clk(clk_50m), .name_wr_en(osd_name_wr_en),
             .name_wr_addr(osd_name_wr_addr), .name_wr_data(osd_name_wr_data),
             .hs_o(video_status_hs), .vs_o(video_status_vs),

@@ -9,6 +9,7 @@ module museum_status_osd (
     input wire [2:0] artifact, input wire [2:0] stage,
     input wire [1:0] effect,
     input wire [15:0] width_bcd, input wire [15:0] height_bcd,
+    input wire zoom_2x,
     input wire name_ready,
     input wire name_wr_clk, input wire name_wr_en,
     input wire [10:0] name_wr_addr, input wire [7:0] name_wr_data,
@@ -419,7 +420,8 @@ always @(*) begin
             1:chosen_ascii=5'd18; // O
             2:chosen_ascii=5'd18;
             3:chosen_ascii=5'd19; // M
-            4,5:chosen_ascii=5'd20; // -
+            4:chosen_ascii=zoom_2x ? 5'd2 : 5'd1;
+            5:chosen_ascii=5'd16; // x
         endcase
     end
 end

@@ -20,7 +20,8 @@ module tb_sdram_bmp_row_top_chain #(
     parameter integer PHASE4_TEST = 0,
     parameter integer PHASE5_TEST = 0,
     parameter integer SD_ABORT_TEST = 0,
-    parameter integer MAIN3_RECOVERY_TEST = 0
+    parameter integer MAIN3_RECOVERY_TEST = 0,
+    parameter integer MAIN3_ZOOM_TEST = 0
 );
     reg clk_50m = 1'b0;
     reg [3:0] key_n = 4'b1111;
@@ -49,16 +50,18 @@ module tb_sdram_bmp_row_top_chain #(
         .ENABLE_OSD(PHASE1_TEST || PHASE2_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST),
         .ENABLE_FADE(PHASE3_TEST || PHASE4_TEST || PHASE5_TEST),
         .VIDEO_SEQUENCE(0), .VIDEO_BIN(0), .ADAPTIVE_BMP(1),
-        .PRELOAD_BOTH_IMAGES(PRELOAD_TEST || MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST),
-        .MULTI_IMAGE_BMP(MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST),
-        .MULTI_FRAME_PRELOAD(MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST),
-        .VIDEO_FRAME_COUNT((MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST) ? 5 : 2),
+        .PRELOAD_BOTH_IMAGES(PRELOAD_TEST || MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || MAIN3_ZOOM_TEST),
+        .MULTI_IMAGE_BMP(MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || MAIN3_ZOOM_TEST),
+        .MULTI_FRAME_PRELOAD(MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || MAIN3_ZOOM_TEST),
+        .VIDEO_FRAME_COUNT((MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || MAIN3_ZOOM_TEST) ? 5 : 2),
         .AUTO_PERIOD_CYCLES(PHASE4_TEST ? 32 : 250000000),
         .SOURCE_W(TB_SOURCE_W), .SOURCE_H(TB_SOURCE_H),
         .LINEBUF_SCALE(1), .LINEBUF_REGISTER_READ(TEST_REGISTERED),
 `ifdef V66_TOP
         .LINEBUF_NOREG_SYNC_READ(0),
-        .ENABLE_MAIN3(MAIN3_RECOVERY_TEST),
+        .ENABLE_MAIN3(MAIN3_RECOVERY_TEST || MAIN3_ZOOM_TEST),
+        .ENABLE_MUSEUM_OVERVIEW(MAIN3_ZOOM_TEST),
+        .ENABLE_MUSEUM_LECTURE(MAIN3_ZOOM_TEST),
 `endif
         .LINEBUF_V26_OUTPUT_PIPELINE(TEST_V26_OUTPUT_PIPELINE),
         .LINEBUF_FIFO_RESPONSE_REGISTER(TEST_FIFO_RESPONSE_REGISTER),
@@ -66,7 +69,7 @@ module tb_sdram_bmp_row_top_chain #(
         // The production switch point is VIDEO_W+19, after video_delay has
         // drained.  The compact preload raster therefore needs at least 20
         // horizontal blanking clocks; legacy timing tests retain 2 clocks.
-        .H_FRONT((PRELOAD_TEST || MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST) ? 22 : 2),
+        .H_FRONT((PRELOAD_TEST || MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || MAIN3_ZOOM_TEST) ? 22 : 2),
         .H_SYNC(2), .H_BACK(2),
         .V_FRONT(1), .V_SYNC(1), .V_BACK(1)
     ) dut (
@@ -352,6 +355,49 @@ module tb_sdram_bmp_row_top_chain #(
             $display("FAIL top-chain video_run timeout status=%h frame_done=%b",
                      {dut.status_code, 4'h0, dut.row_index[3:0],
                       dut.image_load_status}, dut.frame_done);
+            $finish;
+        end
+
+        if (MAIN3_ZOOM_TEST) begin
+            @(negedge clk_50m); force dut.key_press_pulse = 4'b0100;
+            @(negedge clk_50m); release dut.key_press_pulse;
+            if (dut.overview_selected_ctrl != 3'd1 || dut.zoom_2x)
+                $fatal(1, "overview KEY3 did not select next artifact");
+            force dut.lecture_active = 1'b1;
+            repeat (3) @(negedge clk_50m);
+            force dut.key_press_pulse = 4'b0100;
+            @(negedge clk_50m); release dut.key_press_pulse;
+            if (!dut.zoom_2x || !dut.detail_zoom_2x ||
+                dut.overview_selected_ctrl != 3'd1 || dut.lecture_audio_restart)
+                $fatal(1, "lecture KEY3 did not select 2x without returning");
+            timeout = 0;
+            while (!dut.display_zoom_2x && timeout < 100000) begin
+                @(negedge clk_50m); timeout = timeout + 1;
+            end
+            if (!dut.display_zoom_2x)
+                $fatal(1, "2x did not reach frame-boundary video display");
+            force dut.key_press_pulse = 4'b0100;
+            @(negedge clk_50m); release dut.key_press_pulse;
+            if (dut.zoom_2x || dut.detail_zoom_2x)
+                $fatal(1, "lecture KEY3 did not restore 1x");
+            timeout = 0;
+            while (dut.display_zoom_2x && timeout < 100000) begin
+                @(negedge clk_50m); timeout = timeout + 1;
+            end
+            if (dut.display_zoom_2x)
+                $fatal(1, "1x did not reach frame-boundary video display");
+            force dut.key_press_pulse = 4'b0100;
+            @(negedge clk_50m); release dut.key_press_pulse;
+            force dut.lecture_finished = 1'b1;
+            repeat (3) @(negedge clk_50m);
+            if (dut.zoom_2x || dut.detail_zoom_2x)
+                $fatal(1, "zoom persisted into return transition");
+            release dut.lecture_finished;
+            release dut.lecture_active;
+            repeat (3) @(negedge clk_50m);
+            if (dut.zoom_2x || dut.detail_zoom_2x)
+                $fatal(1, "zoom persisted after lecture exit");
+            $display("PASS MAIN3 overview KEY3 select, lecture 1x/2x, no return, reset on exit");
             $finish;
         end
 
