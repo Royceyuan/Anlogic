@@ -28,10 +28,12 @@ def main() -> None:
             assert image.mode == "RGB"
             assert image.size == (1280, 720)
     with Image.open(ASSETS / "secondary_emergency_source/escape_route_original.png") as source:
-        route = ImageOps.contain(source.convert("RGB"), (960, 540), Image.Resampling.LANCZOS)
-    page = Image.new("RGB", (960, 540), (24, 82, 68))
-    page.paste(route, ((960 - route.width) // 2, (540 - route.height) // 2))
-    page.save(OUTPUT / "IMAGEA.BMP", format="BMP")
+        # Keep the supplied floor plan and route; enlarge the useful map area
+        # instead of shrinking its title, legend and footer into tiny pixels.
+        route = source.convert("RGB").crop((160, 160, 1228, 761))
+        route = route.resize((960, 540), Image.Resampling.LANCZOS)
+        route = route.filter(ImageFilter.UnsharpMask(radius=1.0, percent=120, threshold=3))
+        route.save(OUTPUT / "IMAGEA.BMP", format="BMP")
 
 
 if __name__ == "__main__":

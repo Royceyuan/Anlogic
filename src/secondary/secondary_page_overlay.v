@@ -28,8 +28,7 @@ reg [1:0] link_ff1, link_ff2, link_frame;
 reg [2:0] artifact_ff1, artifact_ff2, artifact_frame;
 reg ready_ff1, ready_ff2, ready_frame;
 reg error_ff1, error_ff2, error_frame;
-reg [7:0] route_ff1, route_ff2, route_frame;
-reg emergency_title_pixel, exit_pixel, current_pixel, route_pixel;
+reg emergency_title_pixel;
 reg media_pixel, main_pixel, link_pixel, artifact_pixel;
 
 always @(posedge clk or negedge rst_n) begin
@@ -40,9 +39,7 @@ always @(posedge clk or negedge rst_n) begin
         artifact_ff1 <= 3'd7; artifact_ff2 <= 3'd7; artifact_frame <= 3'd7;
         ready_ff1 <= 1'b0; ready_ff2 <= 1'b0; ready_frame <= 1'b0;
         error_ff1 <= 1'b0; error_ff2 <= 1'b0; error_frame <= 1'b0;
-        route_ff1 <= 8'd0; route_ff2 <= 8'd0; route_frame <= 8'd0;
-        emergency_title_pixel <= 1'b0; exit_pixel <= 1'b0;
-        current_pixel <= 1'b0; route_pixel <= 1'b0;
+        emergency_title_pixel <= 1'b0;
         media_pixel <= 1'b0; main_pixel <= 1'b0;
         link_pixel <= 1'b0; artifact_pixel <= 1'b0;
     end else begin
@@ -51,11 +48,7 @@ always @(posedge clk or negedge rst_n) begin
         artifact_ff1 <= master_artifact_50m; artifact_ff2 <= artifact_ff1;
         ready_ff1 <= media_ready_50m; ready_ff2 <= ready_ff1;
         error_ff1 <= media_error_50m; error_ff2 <= error_ff1;
-        route_ff1 <= route_id_50m; route_ff2 <= route_ff1;
         emergency_title_pixel <= word_pixel(pre_x,pre_y,11'd450,10'd48,4'd0);
-        exit_pixel <= word_pixel(pre_x,pre_y,11'd1080,10'd350,4'd1);
-        current_pixel <= word_pixel(pre_x,pre_y,11'd88,10'd235,4'd7);
-        route_pixel <= word_pixel(pre_x,pre_y,11'd88,10'd555,4'd5);
         media_pixel <= word_pixel(pre_x,pre_y,11'd410,10'd312,
                                   error_frame ? 4'd9 : 4'd8);
         main_pixel <= word_pixel(pre_x,pre_y,11'd36,10'd680,4'd6);
@@ -68,7 +61,6 @@ always @(posedge clk or negedge rst_n) begin
             artifact_frame <= artifact_ff2;
             ready_frame <= ready_ff2;
             error_frame <= error_ff2;
-            route_frame <= route_ff2;
         end
     end
 end
@@ -203,9 +195,6 @@ endfunction
 
 wire [3:0] link_word = (link_frame == 2'd1) ? 4'd3 :
                        (link_frame == 2'd2) ? 4'd4 : 4'd2;
-wire [10:0] pos_dx = (x > 11'd250) ? x - 11'd250 : 11'd250 - x;
-wire [9:0] pos_dy = (y > 10'd388) ? y - 10'd388 : 10'd388 - y;
-
 always @(*) begin
     rgb = 24'h000000;
     if (de) begin
@@ -213,24 +202,9 @@ always @(*) begin
             if (emergency_bitmap_frame) begin
                 rgb = base_rgb;
             end else begin
-            rgb = 24'h142033;
-            if (y < 10'd128) rgb = 24'hA30F20;
-            if (y >= 10'd128 && y < 10'd145) rgb = 24'hFFD45A;
-            if ((x < 11'd36 || x > 11'd1244 || y < 10'd164 || y > 10'd630) &&
-                y >= 10'd150 && y < 10'd640) rgb = 24'hFFD45A;
-            if (x >= 11'd220 && x < 11'd990 && y >= 10'd376 && y < 10'd400)
-                rgb = 24'h10D8EF;
-            if (x >= 11'd940 && x < 11'd1030 &&
-                ((y > 10'd388 ? y - 10'd388 : 10'd388 - y) < (x - 11'd940) / 2))
-                rgb = 24'h10D8EF;
-            if (x >= 11'd1060 && x < 11'd1200 && y >= 10'd300 && y < 10'd485)
-                rgb = 24'h16835B;
-            if (pos_dx + pos_dy < 11'd43) rgb = 24'hFFFFFF;
-            if (pos_dx + pos_dy < 11'd29) rgb = 24'h098FEB;
-            if (emergency_title_pixel || exit_pixel ||
-                current_pixel || route_pixel) rgb = 24'hFFFFFF;
-            if (route_frame != 8'd0 && x >= 11'd58 && x < 11'd1222 &&
-                y >= 10'd610 && y < 10'd620) rgb = 24'hFFD45A;
+                rgb = 24'h142033;
+                if (y < 10'd128) rgb = 24'hA30F20;
+                if (emergency_title_pixel || media_pixel) rgb = 24'hFFFFFF;
             end
         end else if (!ready_frame || error_frame) begin
             rgb = 24'h142033;
@@ -240,8 +214,8 @@ always @(*) begin
             rgb = base_rgb;
         end
 
-        if (y >= 10'd665 && !emergency_bitmap_frame &&
-            (emergency_frame || !ready_frame || error_frame)) begin
+        if (y >= 10'd665 && !emergency_frame &&
+            (!ready_frame || error_frame)) begin
             rgb = 24'h0A1322;
             if (y < 10'd670) rgb = (link_frame == 2'd1) ? 24'h16835B :
                                    (link_frame == 2'd2) ? 24'hB62931 : 24'hD7A53B;

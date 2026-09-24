@@ -65,11 +65,11 @@ initial begin
     media_error_50m = 1'b1;
     step(4); frame();
     x = 50; y = 667; #1;
-    check(rgb == 24'h16835B, "emergency footer retains link status");
+    check(rgb == 24'h142033, "emergency wait has no link footer");
     x = 250; y = 388; #1;
-    check(rgb == 24'h098FEB, "emergency current-position marker over media error");
+    check(rgb == 24'h142033, "emergency wait has no old route marker");
     x = 1100; y = 320; #1;
-    check(rgb == 24'h16835B, "emergency exit block");
+    check(rgb == 24'h142033, "emergency wait has no old exit block");
     pre_x = 450; pre_y = 48; step(1);
     x = 450; y = 48; #1;
     check(rgb == 24'hFFFFFF, "pipelined emergency title pixel");
@@ -89,7 +89,7 @@ initial begin
     pre_x = 410; pre_y = 312; step(1);
     x = 410; y = 312; #1;
     check(rgb == 24'hFFFFFF, "pipelined media error text");
-    $display("PASS: SECONDARY emergency priority, route graphics, link and media placeholders");
+    $display("PASS: SECONDARY emergency bitmap, wait and media placeholders");
     $finish;
 end
 endmodule
