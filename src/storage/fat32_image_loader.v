@@ -67,6 +67,11 @@ localparam integer BMP_HEADER_BYTES = 54;
 localparam integer BMP_MAX_FILE_BYTES = BMP_HEADER_BYTES +
                                         BMP_MAX_WIDTH * BMP_MAX_HEIGHT * 3 +
                                         BMP_MAX_HEIGHT * 3;
+// The public pixel coordinates and row RAM are 11 bits, so valid adaptive
+// inputs already have a hard ceiling of 2047 pixels per axis.  The largest
+// supported scale product is 1920*540 or 1080*960, both below 2^20.
+localparam integer ADAPT_COORD_BITS = 11;
+localparam integer ADAPT_DIV_BITS = 21;
 
 function [31:0] mul_image_width;
     input [31:0] value;
@@ -202,39 +207,39 @@ wire [15:0] adapt_row_mem_read;
 wire        adapt_row_mem_write;
 wire [10:0] adapt_row_mem_write_addr;
 wire [15:0] adapt_row_mem_write_data;
-reg [31:0] adapt_rows_received;
-reg [31:0] adapt_src_row;
+reg [ADAPT_COORD_BITS-1:0] adapt_rows_received;
+reg [ADAPT_COORD_BITS-1:0] adapt_src_row;
 reg        adapt_row_valid;
 reg        adapt_fifo_mode;
-reg [31:0] adapt_q;
-reg [31:0] adapt_out_col;
-reg [31:0] adapt_load_col;
-reg [31:0] adapt_v_next_src;
-reg [31:0] adapt_v_d;
-reg [31:0] adapt_v_acc;
-reg [31:0] adapt_fit_w;
-reg [31:0] adapt_fit_h;
-reg [31:0] adapt_off_x;
-reg [31:0] adapt_off_y;
-reg [31:0] adapt_h_step;
-reg [31:0] adapt_h_rem;
-reg [31:0] adapt_h_src_x;
-reg [31:0] adapt_h_acc;
-reg [31:0] adapt_v_step;
-reg [31:0] adapt_v_rem;
+reg [ADAPT_COORD_BITS-1:0] adapt_q;
+reg [ADAPT_COORD_BITS-1:0] adapt_out_col;
+reg [ADAPT_COORD_BITS-1:0] adapt_load_col;
+reg [ADAPT_COORD_BITS-1:0] adapt_v_next_src;
+reg [ADAPT_COORD_BITS-1:0] adapt_v_d;
+reg [ADAPT_COORD_BITS-1:0] adapt_v_acc;
+reg [ADAPT_COORD_BITS-1:0] adapt_fit_w;
+reg [ADAPT_COORD_BITS-1:0] adapt_fit_h;
+reg [ADAPT_COORD_BITS-1:0] adapt_off_x;
+reg [ADAPT_COORD_BITS-1:0] adapt_off_y;
+reg [ADAPT_COORD_BITS-1:0] adapt_h_step;
+reg [ADAPT_COORD_BITS-1:0] adapt_h_rem;
+reg [ADAPT_COORD_BITS-1:0] adapt_h_src_x;
+reg [ADAPT_COORD_BITS-1:0] adapt_h_acc;
+reg [ADAPT_COORD_BITS-1:0] adapt_v_step;
+reg [ADAPT_COORD_BITS-1:0] adapt_v_rem;
 reg        adapt_calc_done;
 reg [1:0]  adapt_calc_stage;
 reg [5:0]  adapt_calc_bit;
-reg [31:0] adapt_dividend;
-reg [31:0] adapt_divisor;
-reg [31:0] adapt_quotient;
-reg [32:0] adapt_remainder;
+reg [ADAPT_DIV_BITS-1:0] adapt_dividend;
+reg [ADAPT_DIV_BITS-1:0] adapt_divisor;
+reg [ADAPT_DIV_BITS-1:0] adapt_quotient;
+reg [ADAPT_DIV_BITS:0] adapt_remainder;
 
-wire [32:0] adapt_div_shift;
+wire [ADAPT_DIV_BITS:0] adapt_div_shift;
 wire        adapt_div_ge;
-wire [32:0] adapt_div_subtracted;
-wire [31:0] adapt_div_quotient_next;
-wire [31:0] adapt_div_remainder_next;
+wire [ADAPT_DIV_BITS:0] adapt_div_subtracted;
+wire [ADAPT_DIV_BITS-1:0] adapt_div_quotient_next;
+wire [ADAPT_DIV_BITS-1:0] adapt_div_remainder_next;
 wire        adaptive_fit_by_width;
 
 wire [31:0] expected_file_size;
@@ -269,15 +274,19 @@ assign bmp_x_acc_next = bmp_x_acc + IMAGE_WIDTH;
 assign bmp_y_acc_next = bmp_y_acc + IMAGE_HEIGHT;
 assign bmp_row_padding = (4 - ((bmp_width * 3) & 32'd3)) & 32'd3;
 
-assign adapt_div_shift = {adapt_remainder[31:0], adapt_dividend[31]};
+assign adapt_div_shift = {adapt_remainder[ADAPT_DIV_BITS-1:0],
+                          adapt_dividend[ADAPT_DIV_BITS-1]};
 assign adapt_div_ge = (adapt_div_shift >= {1'b0, adapt_divisor});
 assign adapt_div_subtracted = adapt_div_ge ?
                               (adapt_div_shift - {1'b0, adapt_divisor}) :
                               adapt_div_shift;
 assign adapt_div_quotient_next = adapt_div_ge ?
-                                  (adapt_quotient | (32'd1 << adapt_calc_bit)) :
+                                  (adapt_quotient |
+                                   ({{(ADAPT_DIV_BITS-1){1'b0}},1'b1}
+                                    << adapt_calc_bit)) :
                                   adapt_quotient;
-assign adapt_div_remainder_next = adapt_div_subtracted[31:0];
+assign adapt_div_remainder_next =
+       adapt_div_subtracted[ADAPT_DIV_BITS-1:0];
 assign adaptive_fit_by_width = (mul_image_height(bmp_width) >=
                                 mul_image_width(bmp_height_abs));
 assign adapt_row_mem_write = ADAPTIVE_BMP &&
@@ -952,7 +961,7 @@ always @(posedge clk or negedge rst_n) begin
                         image_resume_fat <= (sector_in_cluster + 8'd1 >= bpb_sectors_per_cluster);
                         if (!adapt_calc_done) begin
                             adapt_calc_stage <= 2'd0;
-                            adapt_calc_bit   <= 6'd31;
+                            adapt_calc_bit   <= ADAPT_DIV_BITS - 1;
                             adapt_quotient   <= 32'd0;
                             adapt_remainder  <= 33'd0;
                             if (adaptive_fit_by_width) begin
@@ -1072,7 +1081,7 @@ always @(posedge clk or negedge rst_n) begin
                 status_code <= 4'd6;
                 // One restoring-division bit per clock keeps the scaling
                 // setup out of the pixel path and avoids a large divider.
-                adapt_dividend <= {adapt_dividend[30:0], 1'b0};
+                adapt_dividend <= {adapt_dividend[ADAPT_DIV_BITS-2:0], 1'b0};
                 adapt_remainder <= {1'b0, adapt_div_remainder_next};
                 adapt_quotient <= adapt_div_quotient_next;
                 if (adapt_calc_bit == 0) begin
@@ -1094,7 +1103,7 @@ always @(posedge clk or negedge rst_n) begin
                                 adapt_divisor  <= adapt_div_quotient_next;
                             end
                             adapt_calc_stage <= 2'd1;
-                            adapt_calc_bit   <= 6'd31;
+                            adapt_calc_bit   <= ADAPT_DIV_BITS - 1;
                             adapt_quotient   <= 32'd0;
                             adapt_remainder  <= 33'd0;
                         end
@@ -1104,7 +1113,7 @@ always @(posedge clk or negedge rst_n) begin
                             adapt_dividend <= bmp_height_abs;
                             adapt_divisor <= adapt_fit_h;
                             adapt_calc_stage <= 2'd2;
-                            adapt_calc_bit   <= 6'd31;
+                            adapt_calc_bit   <= ADAPT_DIV_BITS - 1;
                             adapt_quotient   <= 32'd0;
                             adapt_remainder  <= 33'd0;
                         end

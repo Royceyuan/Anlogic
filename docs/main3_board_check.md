@@ -5,7 +5,7 @@
 ## 文件和回退
 
 - MAIN-3 顶层：`src/memory/top_1280x720_main3_interaction.v`；约束：`constraints/top_1280x720_main3_interaction.sdc` 和现有 `constraints/top_1280x720_v73_audio_visualizer.adc`。
-- 待测 bit：`release/hx4s20_main3_interaction.bit`，630815 bytes，SHA256 `6B832D403F6D13FFDA802AC1585CA2B444B91C54155C1C54F4F8FF62B115EB3E`；MAIN-2 已通过 bit：`release/hx4s20_main2_lecture.bit`，SHA256 `AA788DDEEC1FE2D40B57DB16E9243513A6C20B034497F9C006B70D39784F39C9`，不要覆盖。
+- 待测 bit：`release/hx4s20_main3_interaction.bit`，630815 bytes，SHA256 `5A0B3441D9C4404DDF53090BCCD968A5B80283244B9F8432C4C55E45F47D71C4`；MAIN-2 已通过 bit：`release/hx4s20_main2_lecture.bit`，SHA256 `AA788DDEEC1FE2D40B57DB16E9243513A6C20B034497F9C006B70D39784F39C9`，不要覆盖。
 - TF 根目录继续保留现有 `IMAGE0.BMP`～`IMAGE4.BMP`、`ART0D1.BMP`～`ART4D3.BMP`、`AUDIO0.WAV`～`AUDIO4.WAV`、`SUB0.BIN`～`SUB4.BIN`。新增 `OSDNAME.BIN`，只存五件文物名称，不含图片、音频或字幕时间轴。可用 `py tools/generate_museum_osd_names.py --dest E:\OSDNAME.BIN` 独立更新名称；超出 160×16 会报错，不截断。缺失/损坏时显示“文物 0～4”，正常讲解不应受影响。
 - 名称包总长 3072 byte：第 0 扇区 `ONAM`、版本 1、数量 5、宽 160、高 16、1bpp；后面五个各 512 byte、按文物 0～4 排列的位图区。每行 20 byte，高位在左；不足 512 byte 的尾部填零。文件可以跨 FAT32 簇。
 - 仓库 `release/media/OSDNAME.BIN` 与 `E:\OSDNAME.BIN` 的 SHA256 都是 `600E64D69B35F29B955D43DEA67C93F194C8A0317C6E5BD0DDC05A8F8B268029`。
@@ -31,4 +31,4 @@
 
 在仓库根目录执行 ModelSim：`D:\Modelsim\win64\vsim.exe -c -do "do run_museum_status_osd.do"` 等，工作目录为 `sim`。综合布局布线：把 `scripts/build_main3_interaction_pr.tcl` 内容输入 `D:\TD_6.2.1\bin\td_commands_prompt.exe`；最终检查 `_build_main3_interaction/main3_interaction_pr.status` 与 `main3_interaction_final.timing` 的 setup/hold WNS 非负、TNS 均为 0，再执行 `scripts/build_main3_interaction_bitgen.tcl`。构建目录和根目录自动报告不提交。
 
-本候选版 setup WNS `+170 ps`、hold WNS `+24 ps`、TNS 均 `0`，STA 覆盖 99.77%。综合 LUT `13749/19600`（70.15%），放置后 LUT `13939/19600`（71.12%）、BRAM9K `48/64`、BRAM32K `5/16`、DSP `7/29`；路由 slices `8017/9800`（81.81%）。比原软目标 Slice 80% 略高，用户允许资源有余时适度增加；板测重点关注长时间稳定性。
+本候选版 setup WNS `+114 ps`、hold WNS `+30 ps`、TNS 均 `0`，STA 覆盖 99.76%。综合 LUT `12881/19600`（65.72%），放置后 LUT `13116/19600`（66.92%）、BRAM9K `48/64`、BRAM32K `5/16`、DSP `7/29`；路由 slices `7712/9800`（78.69%）。相对上一候选，综合 LUT 减少 868、寄存器减少 357，布局后 LUT 减少 823、Slice 减少 305，BRAM和DSP不变。优化仅收窄1920×1080自适应BMP路径的内部坐标与串行除法位宽；最大尺寸、纵向top-down、行填充和完整MAIN-3回归均通过。
