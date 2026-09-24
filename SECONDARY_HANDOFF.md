@@ -14,7 +14,7 @@
 | 720p 彩条、时序、LED、数码管 | `src/secondary/top_1280x720_secondary.v` | 仅诊断顶层，无媒体链 |
 | TF 根目录 `IMAGE0.BMP`～`IMAGE4.BMP`、五帧预载、自适应缩放、SDRAM 读取 | `src/secondary/top_1280x720_secondary_local.v` 复用 `top_v66` | 所有 `frame_valid` 为 1 后才显示内容 |
 | 50 MHz 独立 5 秒轮播，0→1→2→3→4→0 | `src/secondary/secondary_carousel_controller.v` | 画面切换仍由原视频链在帧边界提交；主板文物选择不改轮播页或计时器 |
-| 五个文物演示信息页和虚构地图 | `assets/secondary_demo_tf/IMAGE*.BMP` | 仅演示素材，不代表真实展馆或真实疏散路线；文物照片、简介、展柜号均为占位 |
+| 五个用户提供的文物信息页和路线图 | `assets/secondary_exhibit_tf/IMAGE*.BMP` | 路线图尚未经场馆核定，不代表真实导航或疏散路线 |
 | 本地紧急开关及独立警示画面 | 控制器、`src/secondary/secondary_page_overlay.v` | 画面不依赖 TF 或网络；解除后从第 0 页重新计时 |
 | 媒体等待/错误页、LINK WAIT/OK/LOST 状态 | `secondary_page_overlay.v` | LINK 状态现在没有物理网络输入，约 2 秒后正常显示 LOST |
 | 已解析命令接口 | `top_v66` 的 `secondary_cmd_*` 和 `cmd_result` | 本地顶层当前将输入接为常量；将来 MBP1 接收器必须先完成长度、CRC、序号、boot_id 去重及 ACK，再驱动此接口 |
@@ -25,6 +25,10 @@
 
 ## 素材
 
+- 2026-09-24 用户提供 `C:\Users\20526\Desktop\文物图片` 中五张已排版 PNG，原样复制到 `assets/secondary_exhibit_source/` 并用 Git LFS 保管，原文件未改动。顺序为越王勾践剑、四羊方尊、金缕玉衣、马踏飞燕、长信宫灯，原图均为 1448×1086。原图高度超过本地顶层 `ADAPTIVE_BMP_MAX_HEIGHT=1080`，不能直接改扩展名投入 TF。
+- `tools/prepare_secondary_exhibit_images.py` 已保持原图比例、完整文字和统一地图，将五张图缩至 720×540 并以同图柔焦背景补足两侧，生成 `assets/secondary_exhibit_tf/IMAGE0.BMP`～`IMAGE4.BMP`；另有 `assets/secondary_exhibit_preview/IMAGE0.png`～`IMAGE4.png` 供查看。BMP 均为 960×540、24-bit、BI_RGB、1,555,254 bytes。TF 中只复制 `secondary_exhibit_tf` 的五个 BMP，不复制预览图。
+- 已验证 `release/hx4s20_secondary_local.bit` SHA256 仍为 `8A7E1B53082C4AA9E4F6C5087902EBE58146BF1CED3DB5396D171C5098211F62`；本轮仅换 TF 素材，bit 不需重编。2026-09-24 检查时未检测到 SD 卡盘符，尚未复制到卡，也尚未板测。插卡后确认 FAT32，用 `tools/copy_secondary_exhibit_to_sd.ps1 -DriveLetter <盘符>` 复制并逐文件校验 SHA256。
+- 用户提供的路线图是方案素材，展馆平面和当前位置尚未由场馆核定；不得用于真实导航或疏散。
 - 单张 AI 生成的虚构地图：`assets/secondary_demo/fictional_museum_map.png`，SHA256 `39493C46B8D83C79BC14DAEE5DC2513C6C0C141CCB4A6051E1C12D699E454EB9`。
 - `tools/make_secondary_demo_pages.py` 把同一演示地图嵌入五张不同标题的 960×540、24-bit BMP。现有五张文件各 `1,555,254` bytes，采用 Git LFS 跟踪。重新生成需要 Python、Pillow 和 Windows `C:/Windows/Fonts/simhei.ttf`。
 - 后续换真实资料时只替换五张同名 BMP。必须先由场馆确认平面图、当前位置、出口和路线；此演示图**不能当实际疏散指引**。
@@ -52,6 +56,6 @@ Get-Content -Raw scripts/build_secondary_local_bitgen.tcl | & 'D:\Anlogic\TD5.6.
 ## 待用户下达上板指令后
 
 1. 先单独烧录 SECONDARY-0 诊断 bit，确认显示器识别 1280×720、彩条与边界稳定，连续运行 30 分钟。记录显示器/LED/数码管现象。
-2. TF 卡 FAT32 根目录仅放本交付的 `IMAGE0.BMP`～`IMAGE4.BMP`，再烧录本地功能 bit。依次确认五页全出现、每页 5.0 秒 ±1 帧、无撕裂和旧页残留。分别移除/损坏某页素材，核对占位画面和数码管错误码。
+2. TF 卡 FAT32 根目录放 `assets/secondary_exhibit_tf/IMAGE0.BMP`～`IMAGE4.BMP`，再烧录本地功能 bit。依次确认五页全出现、每页 5.0 秒 ±1 帧、无撕裂和旧页残留。分别移除/损坏某页素材，核对占位画面和数码管错误码。
 3. 将 SW4 置 1、再置 0，观察紧急页优先显示、解除后从第 0 页恢复。真实位置和路线未替换前，不用于现场引导。
 4. 只有上述板测记录齐全才分别标记对应 `SECONDARY-N BOARD PASS`。后续 Ethernet 按独立 PHY 诊断、UDP/MBP1、双板联调推进。
