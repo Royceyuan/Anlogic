@@ -76,7 +76,7 @@ endmodule
 module emergency_alarm_48k #(
     parameter integer CLK_HZ = 75_000_000,
     parameter integer SAMPLE_RATE_HZ = 48_000,
-    parameter [15:0] AMPLITUDE = 16'h2800
+    parameter integer LEVEL_SHIFT = 2
 ) (
     input wire clk, input wire rst_n, input wire enable,
     output reg sample_valid,
@@ -94,6 +94,9 @@ reg [31:0] sample_acc;
 reg [31:0] tone_phase;
 reg [14:0] cadence_count;
 reg tone_high;
+wire [14:0] triangle_ramp = tone_phase[30] ? ~tone_phase[29:15] : tone_phase[29:15];
+wire [14:0] attenuated_ramp = triangle_ramp >> LEVEL_SHIFT;
+wire signed [15:0] triangle_level = $signed({1'b0, attenuated_ramp});
 
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
@@ -117,8 +120,8 @@ always @(posedge clk or negedge rst_n) begin
             sample_acc <= sample_acc - SAMPLE_TICK_THRESHOLD;
             tone_phase <= tone_phase + (tone_high ? PHASE_STEP_HIGH : PHASE_STEP_LOW);
             sample_valid <= 1'b1;
-            sample_left <= tone_phase[31] ? -AMPLITUDE : AMPLITUDE;
-            sample_right <= tone_phase[31] ? -AMPLITUDE : AMPLITUDE;
+            sample_left <= tone_phase[31] ? -triangle_level : triangle_level;
+            sample_right <= tone_phase[31] ? -triangle_level : triangle_level;
             if (cadence_count == HALF_SECOND_SAMPLES - 1) begin
                 cadence_count <= 15'd0;
                 tone_high <= ~tone_high;

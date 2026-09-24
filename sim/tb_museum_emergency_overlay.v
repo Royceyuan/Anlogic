@@ -9,6 +9,10 @@ wire [23:0] out;
 wire alarm_valid;
 wire signed [15:0] alarm_left,alarm_right;
 integer valid_count=0;
+integer changed_count=0;
+integer positive_count=0;
+integer negative_count=0;
+reg signed [15:0] previous_sample=0;
 always #1 clk=~clk;
 
 museum_emergency_overlay dut_overlay(
@@ -21,9 +25,12 @@ emergency_alarm_48k #(.CLK_HZ(480_000)) dut_alarm(
 
 always @(posedge clk) if(alarm_valid) begin
  valid_count=valid_count+1;
- if(alarm_left!==alarm_right ||
-    (alarm_left!==16'sh2800 && alarm_left!==-16'sh2800))
+ if(alarm_left!==alarm_right || alarm_left > 16'sd8191 || alarm_left < -16'sd8191)
   $fatal(1,"invalid emergency PCM %h/%h",alarm_left,alarm_right);
+ if(valid_count>1 && alarm_left!=previous_sample) changed_count=changed_count+1;
+ if(alarm_left>0) positive_count=positive_count+1;
+ if(alarm_left<0) negative_count=negative_count+1;
+ previous_sample=alarm_left;
 end
 
 task check_pixel;
@@ -42,6 +49,9 @@ initial begin
  check_pixel(11'd600,10'd360,24'hffffff);
  repeat(2000) @(posedge clk);
  if(valid_count<150)$fatal(1,"alarm sample rate too low count=%0d",valid_count);
+ if(changed_count<100 || positive_count==0 || negative_count==0)
+  $fatal(1,"alarm PCM did not vary with tone changed=%0d pos=%0d neg=%0d",
+         changed_count,positive_count,negative_count);
  emergency=0;#2;
  check_pixel(11'd600,10'd360,24'h123456);
  repeat(20) @(posedge clk);
