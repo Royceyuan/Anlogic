@@ -17,7 +17,7 @@ wire [10:0] x_o;
 wire [9:0] y_o;
 wire [23:0] rgb_o;
 always #10 clk50=~clk50;
-always #5 vclk=~vclk;
+always #6.666 vclk=~vclk;
 
 museum_subtitle_overlay dut(
  .clk_50m(clk50),.rst_n_50m(rst50),.start(start),.restart(restart),
@@ -108,7 +108,8 @@ initial begin
  i=0;
  while(dut.state!=13 && i<1000) begin @(negedge clk50);i=i+1;end
  if(dut.state!=13)$fatal(1,"first subtitle commit did not start");
- active=0;restart=1;@(negedge clk50);restart=0;
+ active=0;start=0;restart=1;@(negedge clk50);restart=0;
+ repeat(4)@(negedge vclk);start=1;
  if(ready)$fatal(1,"early restart did not invalidate old subtitle");
  i=0;
  while(!ready && i<100000) begin @(negedge clk50);i=i+1;end
@@ -150,8 +151,9 @@ initial begin
  if(rgb_o!==24'hffffff)$fatal(1,"second cue is not white: %h",rgb_o);
  audio_frame=200;repeat(8)@(negedge vclk);
  if(rgb_o!==rgb)$fatal(1,"expired subtitle changed image: %h",rgb_o);
- @(negedge clk50);active=0;audio_frame=0;restart=1;
+ @(negedge clk50);active=0;start=0;audio_frame=0;restart=1;
  @(negedge clk50);restart=0;
+ repeat(4)@(negedge vclk);start=1;
  if(ready)$fatal(1,"repeat restart did not invalidate old subtitle");
  i=0;
  while(!ready && i<100000) begin @(negedge clk50);i=i+1;end
@@ -162,6 +164,40 @@ initial begin
  end
  repeat(5)@(negedge vclk);
  if(rgb_o!==24'hffffff)$fatal(1,"repeated lecture subtitle is not white: %h",rgb_o);
+ // KEY4 resets the 50 MHz reader, but video timing keeps running.  A cancel
+ // sampled before the reader reset must still retire the old commit toggle.
+ i=0;
+ while((dut.cue_index!=1 || !dut.cue_ready) && i<100000) begin
+  @(negedge clk50);i=i+1;
+ end
+ if(!dut.cue_ready)$fatal(1,"KEY4 setup did not prefetch second cue");
+ audio_frame=100;
+ repeat(8)@(negedge vclk);
+ @(negedge vclk);frame_tick=1;@(negedge vclk);frame_tick=0;
+ repeat(5)@(negedge vclk);
+ active=0;start=0;
+ repeat(5)@(negedge vclk);
+ if(dut.commit_toggle!==1'b1 || dut.commit_seen!==1'b1)
+  $fatal(1,"KEY4 setup did not leave a pending odd commit: toggle=%b seen=%b",
+         dut.commit_toggle,dut.commit_seen);
+ rst50=0;
+ repeat(6)@(negedge vclk);
+ rst50=1;
+ repeat(6)@(negedge vclk);
+ if(dut.commit_seen!==dut.commit_sync2)
+  $fatal(1,"KEY4 left stale video commit state: seen=%b sync=%b",
+         dut.commit_seen,dut.commit_sync2);
+ repeat(520)@(negedge clk50);
+ start=1;audio_frame=0;
+ i=0;
+ while(!ready && i<100000) begin @(negedge clk50);i=i+1;end
+ if(!ready)$fatal(1,"subtitle did not reload after KEY4");
+ active=1;audio_frame=1;
+ for(i=0;i<45;i=i+1) begin
+  @(negedge vclk);frame_tick=1;@(negedge vclk);frame_tick=0;
+ end
+ repeat(5)@(negedge vclk);
+ if(rgb_o!==24'hffffff)$fatal(1,"KEY4 recovery subtitle is not white: %h",rgb_o);
  $display("PASS tb_museum_subtitle_overlay");$finish;
 end
 endmodule

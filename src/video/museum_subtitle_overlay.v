@@ -82,7 +82,7 @@ reg ack_sync1, ack_sync2, ack_seen;
 reg commit_sync1, commit_sync2, commit_seen, active_bank, active_outline, video_ack_toggle;
 reg visible_sync1, visible_sync2;
 reg paused_sync1, paused_sync2;
-reg cancel_sync1, cancel_sync2, cancel_seen;
+reg cancel_sync1, cancel_sync2;
 reg [9:0] current_width;
 reg [11:0] relative_x;
 reg [1:0] fade_phase;
@@ -550,7 +550,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
         active_bank<=0; active_outline<=0;
         video_ack_toggle<=0; visible_sync1<=0; visible_sync2<=0;
         paused_sync1<=0; paused_sync2<=0;
-        cancel_sync1<=0; cancel_sync2<=0; cancel_seen<=0;
+        cancel_sync1<=0; cancel_sync2<=0;
         current_width<=0; fade_level<=0;
         video_has_cue<=0; fade_phase<=FADE_IDLE;
         hs_q<=1;vs_q<=1;de_q<=0;mapped_q<=0;active_bank_q<=0;
@@ -561,8 +561,8 @@ always @(posedge video_clk or negedge video_rst_n) begin
         visible_sync1<=cue_visible_50m; visible_sync2<=visible_sync1;
         paused_sync1<=lecture_paused; paused_sync2<=paused_sync1;
         cancel_sync1<=restart || !start; cancel_sync2<=cancel_sync1;
-        cancel_seen<=cancel_sync2;
-        if (cancel_sync2 && !cancel_seen) begin
+        // A 50 MHz reader reset can change commit_toggle after cancel rises.
+        if (cancel_sync2) begin
             commit_seen<=commit_sync2;
             video_has_cue<=0; fade_level<=0; fade_phase<=FADE_IDLE;
         end else if (!visible_sync2) begin
