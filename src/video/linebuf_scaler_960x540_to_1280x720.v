@@ -11,7 +11,8 @@ module linebuf_scaler_960x540_to_1280x720 #(
     parameter integer DST_H = 720,
     parameter integer LINEBUF_REGISTER_READ = 0,
     parameter integer LINEBUF_NOREG_SYNC_READ = 0,
-    parameter integer FIFO_RESPONSE_REGISTER = 0
+    parameter integer FIFO_RESPONSE_REGISTER = 0,
+    parameter integer ENABLE_PAN = 0
 ) (
     input  wire        clk,
     input  wire        rst_n,
@@ -19,6 +20,8 @@ module linebuf_scaler_960x540_to_1280x720 #(
     // Start one sequential source-frame transaction during video blanking.
     input  wire        source_start,
     input  wire        zoom_2x,
+    input  wire signed [15:0] pan_x,
+    input  wire signed [15:0] pan_y,
     input  wire        museum_recenter_active,
     input  wire        museum_recenter_closing,
     input  wire [7:0]  museum_recenter_progress,
@@ -62,6 +65,8 @@ reg        load_epoch;
 reg        video_epoch;
 reg        video_started;
 reg        active_zoom_2x;
+reg signed [15:0] active_pan_x;
+reg [9:0] active_zoom_row_start;
 reg [WORD_BITS-1:0] request_word;
 reg        load_active;
 reg        stream_active;
@@ -86,6 +91,16 @@ wire [10:0] normal_source_x;
 wire [9:0]  source_y;
 wire [12:0] source_x_times3;
 wire [11:0] source_y_times3;
+wire signed [15:0] pan_x_effective = ENABLE_PAN ? pan_x : 16'sd0;
+wire signed [15:0] pan_y_effective = ENABLE_PAN ? pan_y : 16'sd0;
+wire [9:0] zoom_row_start = ZOOM_ROW_START + pan_y_effective;
+wire [20:0] zoom_word_offset;
+generate if (WORDS_PER_ROW == 480) begin : g_zoom_offset_480
+    assign zoom_word_offset = ({11'd0, zoom_row_start} << 9) -
+                              ({11'd0, zoom_row_start} << 5);
+end else begin : g_zoom_offset_generic
+    assign zoom_word_offset = WORDS_PER_ROW * zoom_row_start;
+end endgenerate
 wire        source_row_hit;
 wire [1:0]  source_row_slot;
 wire [WORD_BITS-1:0] source_word_addr;
@@ -112,7 +127,7 @@ wire museum_panel_hit = museum_recenter_active &&
                         video_x < museum_panel_left + 11'd256;
 
 assign source_read_base_addr = source_base_addr +
-                               (zoom_2x ? WORDS_PER_ROW * ZOOM_ROW_START : 0);
+                               (zoom_2x ? zoom_word_offset : 0);
 assign source_read_len = zoom_2x ? ZOOM_FRAME_WORDS : FRAME_WORDS;
 // The vendor asynchronous FIFO registers dout.  empty only qualifies a pop;
 // commit the word after valid confirms it has reached read_data.
@@ -132,11 +147,12 @@ generate
         // wrong source pixels.
         assign source_x_times3 = {2'b00, video_x} + ({2'b00, video_x} << 1);
         assign normal_source_x = active_zoom_2x ?
-                                 (SRC_W / 4) + (source_x_times3 >> 3) :
+                                 (SRC_W / 4) + active_pan_x + (source_x_times3 >> 3) :
                                  (source_x_times3 >> 2);
     end else begin : g_x_generic
         assign normal_source_x = active_zoom_2x ?
-                                 (SRC_W / 4) + ((video_x * SRC_W) / (DST_W * 2)) :
+                                 (SRC_W / 4) + active_pan_x +
+                                 ((video_x * SRC_W) / (DST_W * 2)) :
                                  ((video_x * SRC_W) / DST_W);
     end
     if ((SRC_H == 540) && (DST_H == 720)) begin : g_y_3_over_4
@@ -144,11 +160,12 @@ generate
         // and makes the display request rows which were already released.
         assign source_y_times3 = {2'b00, video_y} + ({2'b00, video_y} << 1);
         assign source_y = active_zoom_2x ?
-                          (SRC_H / 4) + (source_y_times3 >> 3) :
+                          active_zoom_row_start + (source_y_times3 >> 3) :
                           (source_y_times3 >> 2);
     end else begin : g_y_generic
         assign source_y = active_zoom_2x ?
-                          (SRC_H / 4) + ((video_y * SRC_H) / (DST_H * 2)) :
+                          active_zoom_row_start +
+                          ((video_y * SRC_H) / (DST_H * 2)) :
                           ((video_y * SRC_H) / DST_H);
     end
 endgenerate
@@ -233,13 +250,13 @@ assign free_slot2 = !slot_valid[2];
 // Start only after three consecutive source rows have arrived.  This gives
 // the SDRAM reader enough lead time before the visible raster consumes row 1.
 assign frame_ready = slot_valid[0] &&
-                     (slot_tag0 == (active_zoom_2x ? ZOOM_ROW_START : 0)) &&
+                     (slot_tag0 == (active_zoom_2x ? active_zoom_row_start : 0)) &&
                      slot_epoch[0] == preload_epoch &&
                      slot_valid[1] &&
-                     (slot_tag1 == (active_zoom_2x ? ZOOM_ROW_START + 1 : 1)) &&
+                     (slot_tag1 == (active_zoom_2x ? active_zoom_row_start + 1 : 1)) &&
                      slot_epoch[1] == preload_epoch &&
                      slot_valid[2] &&
-                     (slot_tag2 == (active_zoom_2x ? ZOOM_ROW_START + 2 : 2)) &&
+                     (slot_tag2 == (active_zoom_2x ? active_zoom_row_start + 2 : 2)) &&
                      slot_epoch[2] == preload_epoch;
 
 al_dp_ram32 #(.ADDR_WIDTH(WORD_BITS), .DEPTH(WORDS_PER_ROW),
@@ -304,6 +321,8 @@ always @(posedge clk or negedge rst_n) begin
         video_epoch       <= 1'b0;
         video_started     <= 1'b0;
         active_zoom_2x    <= 1'b0;
+        active_pan_x       <= 16'sd0;
+        active_zoom_row_start <= ZOOM_ROW_START;
         request_word      <= {WORD_BITS{1'b0}};
         pending_valid     <= 1'b0;
         pending_commit    <= 1'b0;
@@ -331,7 +350,9 @@ always @(posedge clk or negedge rst_n) begin
             slot_valid        <= 3'b000;
             slot_epoch        <= 3'b000;
             active_zoom_2x    <= zoom_2x;
-            load_row          <= zoom_2x ? ZOOM_ROW_START : 0;
+            active_pan_x       <= zoom_2x ? pan_x_effective : 16'sd0;
+            active_zoom_row_start <= zoom_2x ? zoom_row_start : ZOOM_ROW_START;
+            load_row          <= zoom_2x ? zoom_row_start : 0;
             load_slot         <= 2'd0;
             // A restarted stream preloads the epoch that the next frame-start
             // will select.  video_epoch itself changes at that frame-start.
@@ -415,12 +436,12 @@ always @(posedge clk or negedge rst_n) begin
 
                     load_active <= 1'b0;
                     if (load_row == (active_zoom_2x ?
-                                     (ZOOM_ROW_START + SRC_H / 2 - 1) : SRC_H - 1)) begin
+                                     (active_zoom_row_start + SRC_H / 2 - 1) : SRC_H - 1)) begin
                         source_frame_done <= 1'b1;
                         // frame_fifo_read already loops at source_base_addr.
                         // Keep consuming it and wrap the line tag instead of
                         // asynchronously clearing the FIFO once per frame.
-                        load_row <= active_zoom_2x ? ZOOM_ROW_START : 0;
+                        load_row <= active_zoom_2x ? active_zoom_row_start : 0;
                         load_epoch <= ~load_epoch;
                     end else begin
                         load_row <= load_row + 1'b1;

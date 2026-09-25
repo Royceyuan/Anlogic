@@ -2,9 +2,13 @@
 `default_nettype none
 
 // MBP1 byte-stream codec. One UDP datagram is one contiguous rx_valid burst.
+// HOLD_TX_FIELDS=0 saves a register bank when the sender keeps send_* stable
+// until send_ready returns high after TX. The default retains legacy timing.
 // Payloads larger than 16 bytes are validated but only the first 16 bytes
 // are exposed; the main-board command set never consumes more than 12.
-module mbp1_codec (
+module mbp1_codec #(
+    parameter integer HOLD_TX_FIELDS = 1
+) (
     input  wire         clk,
     input  wire         rst,
     input  wire [7:0]   rx_data,
@@ -153,10 +157,43 @@ localparam TX_IDLE = 2'd0, TX_ACK = 2'd1, TX_SEND = 2'd2;
 reg [1:0] tx_state;
 reg [5:0] tx_index;
 reg [15:0] tx_crc;
-reg [7:0] tx_type_hold, tx_flags_hold;
-reg [4:0] tx_payload_length_hold;
-reg [31:0] tx_seq_hold, tx_boot_hold, tx_uptime_hold;
-reg [127:0] tx_payload_hold;
+wire [7:0] active_type, active_flags;
+wire [4:0] active_payload_length;
+wire [31:0] active_seq, active_boot, active_uptime;
+wire [127:0] active_payload;
+generate if (HOLD_TX_FIELDS) begin : g_hold_tx
+    reg [7:0] type_hold, flags_hold;
+    reg [4:0] length_hold;
+    reg [31:0] seq_hold, boot_hold, uptime_hold;
+    reg [127:0] payload_hold;
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            type_hold <= 0; flags_hold <= 0; length_hold <= 0;
+            seq_hold <= 0; boot_hold <= 0; uptime_hold <= 0;
+            payload_hold <= 0;
+        end else if (send && send_ready && send_payload_length <= 5'd16) begin
+            type_hold <= send_type; flags_hold <= send_flags;
+            length_hold <= send_payload_length; seq_hold <= send_seq;
+            boot_hold <= send_boot_id; uptime_hold <= send_uptime_ms;
+            payload_hold <= send_payload;
+        end
+    end
+    assign active_type = type_hold;
+    assign active_flags = flags_hold;
+    assign active_payload_length = length_hold;
+    assign active_seq = seq_hold;
+    assign active_boot = boot_hold;
+    assign active_uptime = uptime_hold;
+    assign active_payload = payload_hold;
+end else begin : g_direct_tx
+    assign active_type = send_type;
+    assign active_flags = send_flags;
+    assign active_payload_length = send_payload_length;
+    assign active_seq = send_seq;
+    assign active_boot = send_boot_id;
+    assign active_uptime = send_uptime_ms;
+    assign active_payload = send_payload;
+end endgenerate
 wire [15:0] tx_crc_next = crc_byte(tx_crc, tx_data);
 assign send_ready = (tx_state == TX_IDLE);
 
@@ -218,23 +255,9 @@ always @(posedge clk or posedge rst) begin
         tx_length <= 16'd0;
         tx_index <= 6'd0;
         tx_crc <= 16'hffff;
-        tx_type_hold <= 8'd0;
-        tx_flags_hold <= 8'd0;
-        tx_payload_length_hold <= 5'd0;
-        tx_seq_hold <= 32'd0;
-        tx_boot_hold <= 32'd0;
-        tx_uptime_hold <= 32'd0;
-        tx_payload_hold <= 128'd0;
     end else begin
         case (tx_state)
             TX_IDLE: if (send && send_payload_length <= 5'd16) begin
-                tx_type_hold <= send_type;
-                tx_flags_hold <= send_flags;
-                tx_payload_length_hold <= send_payload_length;
-                tx_seq_hold <= send_seq;
-                tx_boot_hold <= send_boot_id;
-                tx_uptime_hold <= send_uptime_ms;
-                tx_payload_hold <= send_payload;
                 tx_length <= 16'd22 + send_payload_length;
                 tx_index <= 6'd0;
                 tx_crc <= 16'hffff;
@@ -250,22 +273,22 @@ always @(posedge clk or posedge rst) begin
                 end
             end
             TX_SEND: begin
-                if (tx_index < 6'd20 + tx_payload_length_hold)
+                if (tx_index < 6'd20 + active_payload_length)
                     tx_crc <= tx_crc_next;
-                if (tx_index == 6'd21 + tx_payload_length_hold) begin
+                if (tx_index == 6'd21 + active_payload_length) begin
                     tx_valid <= 1'b0;
                     tx_state <= TX_IDLE;
                 end else begin
                     tx_index <= tx_index + 6'd1;
-                    if (tx_index + 6'd1 == 6'd20 + tx_payload_length_hold)
+                    if (tx_index + 6'd1 == 6'd20 + active_payload_length)
                         tx_data <= tx_crc_next[15:8];
-                    else if (tx_index + 6'd1 == 6'd21 + tx_payload_length_hold)
+                    else if (tx_index + 6'd1 == 6'd21 + active_payload_length)
                         tx_data <= tx_crc[7:0];
                     else
                         tx_data <= packet_byte(tx_index + 6'd1,
-                            tx_type_hold, tx_flags_hold, tx_payload_length_hold,
-                            tx_seq_hold, tx_boot_hold, tx_uptime_hold,
-                            tx_payload_hold);
+                            active_type, active_flags, active_payload_length,
+                            active_seq, active_boot, active_uptime,
+                            active_payload);
                 end
             end
             default: tx_state <= TX_IDLE;

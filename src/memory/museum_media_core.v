@@ -90,6 +90,7 @@ module museum_media_core #(
     ,parameter integer ENABLE_MAIN3 = 0
     ,parameter integer ENABLE_MAIN4 = 0
     ,parameter integer ENABLE_MAIN5_CONTROLS = 0
+    ,parameter integer ENABLE_MAIN5_REMOTE = 0
     ,parameter integer LECTURE_CLOCK_HZ = 50_000_000
     ,parameter integer OVERVIEW_CROP_X0_0 = 384
     ,parameter integer OVERVIEW_CROP_X0_1 = 384
@@ -117,7 +118,17 @@ module museum_media_core #(
     output wire        hdmi1_ddc_scl,
     inout  wire        hdmi1_ddc_sda,
     input  wire        uart_rxd,
-    output wire        uart_txd
+    output wire        uart_txd,
+    input  wire        remote_command_valid,
+    input  wire [7:0]  remote_command_type,
+    input  wire [63:0] remote_command_payload,
+    output reg         remote_command_done,
+    output reg  [7:0]  remote_command_result,
+    output wire [7:0]  main5_mode,
+    output wire [127:0] main5_heartbeat,
+    output wire [63:0] main5_playback,
+    output wire [95:0] main5_display,
+    output wire [127:0] main5_diagnostic
 );
 
 localparam integer FRAME_WORDS = (SOURCE_W * SOURCE_H) / 2;
@@ -217,6 +228,31 @@ reg [3:0] manual_image_index;
 reg [1:0] brightness_level;
 reg [1:0] contrast_level;
 reg zoom_2x;
+reg [7:0] main5_preset_shadow;
+reg [2:0] main5_brightness_shadow, main5_contrast_shadow;
+reg [2:0] main5_saturation_shadow, main5_temperature_shadow;
+reg signed [15:0] main5_pan_x_shadow, main5_pan_y_shadow;
+reg main5_request_toggle, main5_request_busy;
+reg main5_ack_ff1, main5_ack_ff2, main5_ack_seen;
+reg [7:0] main5_preset_applied;
+reg [2:0] main5_brightness_applied, main5_contrast_applied;
+reg [2:0] main5_saturation_applied, main5_temperature_applied;
+reg main5_request_ff1, main5_request_ff2, main5_request_seen;
+reg main5_video_ack_toggle;
+reg main5_video_ack_applied;
+reg main5_ack_applied_ff1, main5_ack_applied_ff2;
+reg [7:0] main5_preset_video;
+reg [2:0] main5_brightness_video, main5_contrast_video;
+reg [2:0] main5_saturation_video, main5_temperature_video;
+reg signed [15:0] main5_pan_x_video, main5_pan_y_video;
+reg [2:0] main5_phase_ff1, main5_phase_ff2, main5_phase_seen;
+reg signed [15:0] display_pan_x, display_pan_y;
+reg signed [15:0] pending_pan_x, pending_pan_y;
+reg transition_active_ff1_50m, transition_active_ff2_50m;
+reg signed [15:0] main5_pan_hold_x, main5_pan_hold_y;
+reg signed [15:0] main5_pan_report_x, main5_pan_report_y;
+reg main5_pan_status_toggle, main5_pan_status_ff1, main5_pan_status_ff2;
+reg main5_pan_status_seen, main5_zoom_ff1, main5_zoom_ff2;
 reg [1:0] picture_style;
 reg [1:0] auto_speed_level;
 reg auto_mode_d;
@@ -531,6 +567,141 @@ wire overview_enable_video;
 wire overview_confirm_active_video;
 wire museum_preload_valid = sw[2:0] < 3'd5;
 wire [2:0] museum_preload_index = sw[2:0];
+wire signed [15:0] requested_pan_x = remote_command_payload[31:16];
+wire signed [15:0] requested_pan_y = remote_command_payload[15:0];
+wire main5_remote_busy = emergency_active_50m || recovery_busy ||
+                         transition_active_ff2_50m || main5_request_busy;
+always @(posedge clk_50m or negedge write_rst_n) begin
+    if (!write_rst_n) begin
+        main5_preset_shadow <= 8'd0;
+        main5_brightness_shadow <= 3'd3;
+        main5_contrast_shadow <= 3'd2;
+        main5_saturation_shadow <= 3'd3;
+        main5_temperature_shadow <= 3'd3;
+        main5_pan_x_shadow <= 16'sd0;
+        main5_pan_y_shadow <= 16'sd0;
+        main5_preset_applied <= 8'd0;
+        main5_brightness_applied <= 3'd3;
+        main5_contrast_applied <= 3'd2;
+        main5_saturation_applied <= 3'd3;
+        main5_temperature_applied <= 3'd3;
+        main5_request_toggle <= 1'b0;
+        main5_request_busy <= 1'b0;
+        main5_ack_ff1 <= 1'b0;
+        main5_ack_ff2 <= 1'b0;
+        main5_ack_seen <= 1'b0;
+        main5_ack_applied_ff1 <= 1'b0;
+        main5_ack_applied_ff2 <= 1'b0;
+        remote_command_done <= 1'b0;
+        remote_command_result <= 8'd0;
+    end else begin
+        main5_ack_ff1 <= main5_video_ack_toggle;
+        main5_ack_ff2 <= main5_ack_ff1;
+        main5_ack_applied_ff1 <= main5_video_ack_applied;
+        main5_ack_applied_ff2 <= main5_ack_applied_ff1;
+        remote_command_done <= 1'b0;
+        if (main5_ack_ff2 != main5_ack_seen) begin
+            main5_ack_seen <= main5_ack_ff2;
+            main5_request_busy <= 1'b0;
+            if (main5_ack_applied_ff2) begin
+                main5_preset_applied <= main5_preset_shadow;
+                main5_brightness_applied <= main5_brightness_shadow;
+                main5_contrast_applied <= main5_contrast_shadow;
+                main5_saturation_applied <= main5_saturation_shadow;
+                main5_temperature_applied <= main5_temperature_shadow;
+            end
+        end
+        if (ENABLE_MAIN5_REMOTE && remote_command_valid) begin
+            remote_command_done <= 1'b1;
+            remote_command_result <= 8'd0;
+            if (main5_remote_busy) remote_command_result <= 8'd4;
+            else case (remote_command_type)
+                8'h13: begin
+                    if (remote_command_payload[63:56] > 8'd3 ||
+                        remote_command_payload[55:48] != 8'd1 ||
+                        remote_command_payload[47:32] != 16'd0)
+                        remote_command_result <= 8'd5;
+                    else begin
+                        main5_preset_shadow <= remote_command_payload[63:56];
+                        case (remote_command_payload[63:56])
+                            8'd0: begin
+                                main5_brightness_shadow<=3'd3;
+                                main5_contrast_shadow<=3'd2;
+                                main5_saturation_shadow<=3'd3;
+                                main5_temperature_shadow<=3'd3;
+                            end
+                            8'd1: begin
+                                main5_brightness_shadow<=3'd5;
+                                main5_contrast_shadow<=3'd3;
+                                main5_saturation_shadow<=3'd4;
+                                main5_temperature_shadow<=3'd4;
+                            end
+                            8'd2: begin
+                                main5_brightness_shadow<=3'd3;
+                                main5_contrast_shadow<=3'd4;
+                                main5_saturation_shadow<=3'd4;
+                                main5_temperature_shadow<=3'd3;
+                            end
+                            default: begin
+                                main5_brightness_shadow<=3'd2;
+                                main5_contrast_shadow<=3'd1;
+                                main5_saturation_shadow<=3'd2;
+                                main5_temperature_shadow<=3'd4;
+                            end
+                        endcase
+                        main5_pan_x_shadow <= main5_pan_report_x;
+                        main5_pan_y_shadow <= main5_pan_report_y;
+                        main5_request_toggle <= ~main5_request_toggle;
+                        main5_request_busy <= 1'b1;
+                    end
+                end
+                8'h14: begin
+                    if (remote_command_payload[63:56] > 8'd6 ||
+                        remote_command_payload[55:48] > 8'd4 ||
+                        remote_command_payload[47:40] > 8'd5 ||
+                        remote_command_payload[39:32] > 8'd6 ||
+                        remote_command_payload[31:24] != 8'd1 ||
+                        remote_command_payload[23:0] != 24'd0)
+                        remote_command_result <= 8'd5;
+                    else begin
+                        main5_preset_shadow <= 8'hff;
+                        main5_brightness_shadow <= remote_command_payload[58:56];
+                        main5_contrast_shadow <= remote_command_payload[50:48];
+                        main5_saturation_shadow <= remote_command_payload[42:40];
+                        main5_temperature_shadow <= remote_command_payload[34:32];
+                        main5_pan_x_shadow <= main5_pan_report_x;
+                        main5_pan_y_shadow <= main5_pan_report_y;
+                        main5_request_toggle <= ~main5_request_toggle;
+                        main5_request_busy <= 1'b1;
+                    end
+                end
+                8'h15: begin
+                    if (!lecture_active || !zoom_2x ||
+                        remote_command_payload[63:56] != {5'd0, lecture_artifact_index} ||
+                        remote_command_payload[55:48] != {5'd0, lecture_display_frame_slot} ||
+                        remote_command_payload[47:40] != 8'd2 ||
+                        remote_command_payload[39:33] != 7'd0 ||
+                        (!remote_command_payload[32] &&
+                         (requested_pan_x < -16'sd240 || requested_pan_x > 16'sd240 ||
+                          requested_pan_y < -16'sd135 || requested_pan_y > 16'sd135)))
+                        remote_command_result <= 8'd5;
+                    else begin
+                        main5_preset_shadow <= main5_preset_applied;
+                        main5_brightness_shadow <= main5_brightness_applied;
+                        main5_contrast_shadow <= main5_contrast_applied;
+                        main5_saturation_shadow <= main5_saturation_applied;
+                        main5_temperature_shadow <= main5_temperature_applied;
+                        main5_pan_x_shadow <= remote_command_payload[32] ? 16'sd0 : requested_pan_x;
+                        main5_pan_y_shadow <= remote_command_payload[32] ? 16'sd0 : requested_pan_y;
+                        main5_request_toggle <= ~main5_request_toggle;
+                        main5_request_busy <= 1'b1;
+                    end
+                end
+                default: remote_command_result <= 8'd3;
+            endcase
+        end
+    end
+end
 always @(posedge clk_50m or negedge write_rst_n) begin
     if (!write_rst_n) begin
         emergency_50m_ff1 <= 1'b0;
@@ -690,7 +861,6 @@ reg audio_format_error_ff1, audio_format_error_ff2;
 reg audio_file_error_ff1, audio_file_error_ff2;
 reg audio_fifo_empty_ff1, audio_fifo_empty_ff2;
 reg [2:0] displayed_frame_slot_ff1, displayed_frame_slot_ff2;
-reg transition_active_ff1_50m, transition_active_ff2_50m;
 reg audio_switch_reset_ff1, audio_switch_reset_ff2;
 wire normal_audio_sample_valid;
 wire signed [15:0] normal_audio_sample_left;
@@ -1538,11 +1708,13 @@ generate
             .DST_W(VIDEO_W), .DST_H(VIDEO_H),
             .LINEBUF_REGISTER_READ(LINEBUF_REGISTER_READ),
             .LINEBUF_NOREG_SYNC_READ(LINEBUF_NOREG_SYNC_READ),
-            .FIFO_RESPONSE_REGISTER(LINEBUF_FIFO_RESPONSE_REGISTER)
+            .FIFO_RESPONSE_REGISTER(LINEBUF_FIFO_RESPONSE_REGISTER),
+            .ENABLE_PAN(ENABLE_MAIN5_REMOTE)
         ) u_linebuf_scaler (
             .clk(video_clk), .rst_n(video_rst_n),
             .source_start(linebuf_start_pulse),
             .zoom_2x(display_zoom_2x),
+            .pan_x(display_pan_x), .pan_y(display_pan_y),
             .museum_recenter_active(ENABLE_MUSEUM_LECTURE && transition_active &&
                                     transition_mode == 3'b101 &&
                                     display_media_index == VIDEO_FRAME_COUNT),
@@ -2051,6 +2223,10 @@ always @(posedge video_clk or negedge video_rst_n) begin
         detail_zoom_2x_ff2   <= 1'b0;
         display_zoom_2x      <= 1'b0;
         pending_zoom_2x      <= 1'b0;
+        display_pan_x        <= 16'sd0;
+        display_pan_y        <= 16'sd0;
+        pending_pan_x        <= 16'sd0;
+        pending_pan_y        <= 16'sd0;
         picture_style_ff1    <= 2'd0;
         picture_style_ff2    <= 2'd0;
         frame_valid_ff1      <= 5'd0;
@@ -2133,6 +2309,8 @@ always @(posedge video_clk or negedge video_rst_n) begin
             pending_source_height_bcd <= overview_enable_video ?
                                          16'h0540 : preload_select_source_height_ff2;
             pending_zoom_2x <= overview_enable_video ? 1'b0 : detail_zoom_2x_ff2;
+            pending_pan_x <= 16'sd0;
+            pending_pan_y <= 16'sd0;
             switch_pending <= 1'b1;
             direct_switch_pending <= 1'b0;
             if (!switch_pending)
@@ -2152,6 +2330,26 @@ always @(posedge video_clk or negedge video_rst_n) begin
             pending_source_width_bcd <= display_source_width_bcd;
             pending_source_height_bcd <= display_source_height_bcd;
             pending_zoom_2x <= detail_zoom_2x_ff2;
+            pending_pan_x <= 16'sd0;
+            pending_pan_y <= 16'sd0;
+            switch_pending <= 1'b1;
+            direct_switch_pending <= 1'b1;
+            transition_mode <= 3'b000;
+            fade_out_active <= 1'b0;
+            fade_level <= 5'd16;
+            transition_progress <= 8'd32;
+        end else if (ENABLE_MAIN5_REMOTE && ENABLE_MULTI_FRAME_PRELOAD &&
+                     video_run && display_zoom_2x && !overview_enable_video &&
+                     !transition_active && !switch_pending &&
+                     ((main5_pan_x_video != display_pan_x) ||
+                      (main5_pan_y_video != display_pan_y))) begin
+            pending_media_index <= display_media_index;
+            pending_frame_index <= display_frame_index;
+            pending_source_width_bcd <= display_source_width_bcd;
+            pending_source_height_bcd <= display_source_height_bcd;
+            pending_zoom_2x <= display_zoom_2x;
+            pending_pan_x <= main5_pan_x_video;
+            pending_pan_y <= main5_pan_y_video;
             switch_pending <= 1'b1;
             direct_switch_pending <= 1'b1;
             transition_mode <= 3'b000;
@@ -2165,6 +2363,8 @@ always @(posedge video_clk or negedge video_rst_n) begin
             pending_source_width_bcd <= preload_select_source_width_ff2;
             pending_source_height_bcd <= preload_select_source_height_ff2;
             pending_zoom_2x <= detail_zoom_2x_ff2;
+            pending_pan_x <= 16'sd0;
+            pending_pan_y <= 16'sd0;
             switch_pending <= 1'b1;
             direct_switch_pending <= 1'b0;
             if (!switch_pending)
@@ -2178,7 +2378,10 @@ always @(posedge video_clk or negedge video_rst_n) begin
         end else if (ENABLE_MULTI_FRAME_PRELOAD && video_run && switch_pending &&
                      (desired_display_media_index == display_media_index) &&
                      (overview_enable_video ||
-                      (detail_zoom_2x_ff2 == display_zoom_2x))) begin
+                      (detail_zoom_2x_ff2 == display_zoom_2x)) &&
+                     !(ENABLE_MAIN5_REMOTE && direct_switch_pending &&
+                       ((pending_pan_x != display_pan_x) ||
+                        (pending_pan_y != display_pan_y)))) begin
             switch_pending  <= 1'b0;
             direct_switch_pending <= 1'b0;
             fade_out_active <= 1'b0;
@@ -2204,6 +2407,8 @@ always @(posedge video_clk or negedge video_rst_n) begin
             pending_source_height_bcd <= overview_enable_video ?
                                          16'h0540 : published_source_height_ff2;
             pending_zoom_2x <= overview_enable_video ? 1'b0 : detail_zoom_2x_ff2;
+            pending_pan_x <= 16'sd0;
+            pending_pan_y <= 16'sd0;
             switch_pending <= 1'b1;
             direct_switch_pending <= 1'b0;
             transition_mode <= museum_switch_transition_mode;
@@ -2222,6 +2427,8 @@ always @(posedge video_clk or negedge video_rst_n) begin
             display_source_height_bcd <= overview_enable_video ?
                                          16'h0540 : published_source_height_ff2;
             display_zoom_2x <= overview_enable_video ? 1'b0 : detail_zoom_2x_ff2;
+            display_pan_x <= 16'sd0;
+            display_pan_y <= 16'sd0;
             read_req_r <= 1'b1;
             linebuf_start_pending <= LINEBUF_SCALE;
         end else if (read_req_r && read_ack_ff2) begin
@@ -2245,6 +2452,8 @@ always @(posedge video_clk or negedge video_rst_n) begin
             display_source_width_bcd <= pending_source_width_bcd;
             display_source_height_bcd <= pending_source_height_bcd;
             display_zoom_2x <= pending_zoom_2x;
+            display_pan_x <= pending_pan_x;
+            display_pan_y <= pending_pan_y;
             linebuf_start_pending <= LINEBUF_SCALE;
             switch_pending     <= 1'b0;
             direct_switch_pending <= 1'b0;
@@ -2378,6 +2587,66 @@ always @(posedge video_clk or negedge video_rst_n) begin
     end
 end
 
+always @(posedge video_clk or negedge video_rst_n) begin
+    if (!video_rst_n) begin
+        main5_request_ff1 <= 1'b0;
+        main5_request_ff2 <= 1'b0;
+        main5_request_seen <= 1'b0;
+        main5_video_ack_toggle <= 1'b0;
+        main5_video_ack_applied <= 1'b0;
+        main5_preset_video <= 8'd0;
+        main5_brightness_video <= 3'd3;
+        main5_contrast_video <= 3'd2;
+        main5_saturation_video <= 3'd3;
+        main5_temperature_video <= 3'd3;
+        main5_pan_x_video <= 16'sd0;
+        main5_pan_y_video <= 16'sd0;
+        main5_phase_ff1 <= 3'd0;
+        main5_phase_ff2 <= 3'd0;
+        main5_phase_seen <= 3'd0;
+    end else begin
+        main5_request_ff1 <= main5_request_toggle;
+        main5_request_ff2 <= main5_request_ff1;
+        main5_phase_ff1 <= lecture_display_frame_slot;
+        main5_phase_ff2 <= main5_phase_ff1;
+        if (main5_phase_ff2 != main5_phase_seen) begin
+            main5_phase_seen <= main5_phase_ff2;
+        end
+        if (ENABLE_MAIN5_REMOTE && main5_request_ff2 != main5_request_seen &&
+            video_frame_tick) begin
+            if (emergency_video_ff2 || recovery_video_ff2 || !transition_active) begin
+                main5_request_seen <= main5_request_ff2;
+                main5_video_ack_toggle <= ~main5_video_ack_toggle;
+                main5_video_ack_applied <= !emergency_video_ff2 && !recovery_video_ff2;
+                if (!emergency_video_ff2 && !recovery_video_ff2) begin
+                    main5_preset_video <= main5_preset_shadow;
+                    main5_brightness_video <= main5_brightness_shadow;
+                    main5_contrast_video <= main5_contrast_shadow;
+                    main5_saturation_video <= main5_saturation_shadow;
+                    main5_temperature_video <= main5_temperature_shadow;
+                    main5_pan_x_video <= main5_pan_x_shadow;
+                    main5_pan_y_video <= main5_pan_y_shadow;
+                end
+            end
+        end
+        if (!detail_zoom_2x_ff2 || emergency_video_ff2 || recovery_video_ff2 ||
+            main5_phase_ff2 != main5_phase_seen) begin
+            main5_pan_x_video <= 16'sd0;
+            main5_pan_y_video <= 16'sd0;
+        end
+    end
+end
+
+generate if (ENABLE_MAIN5_REMOTE) begin : g_main5_adjust
+rgb888_adjust_main5 u_rgb888_adjust (
+    .de(video_de), .rgb_in(video_rgb),
+    .brightness_index(main5_brightness_video),
+    .contrast_index(main5_contrast_video),
+    .saturation_index(main5_saturation_video),
+    .temperature_index(main5_temperature_video),
+    .rgb_out(video_adjusted_rgb)
+);
+end else begin : g_legacy_adjust
 rgb888_adjust u_rgb888_adjust (
     .de               (video_de),
     .rgb_in           (video_rgb),
@@ -2386,6 +2655,7 @@ rgb888_adjust u_rgb888_adjust (
     .picture_style    (picture_style_ff2),
     .rgb_out          (video_adjusted_rgb)
 );
+end endgenerate
 
 generate
     if (ENABLE_FADE) begin : g_video_fade
@@ -2569,7 +2839,7 @@ generate
 endgenerate
 
 reg [2:0] osd_artifact, osd_stage;
-reg [1:0] osd_effect;
+reg [2:0] osd_effect;
 reg [15:0] osd_width_bcd, osd_height_bcd;
 reg [2:0] osd_lecture_artifact_ff1, osd_lecture_artifact_ff2;
 reg osd_final_full_ff1, osd_final_full_ff2;
@@ -2585,7 +2855,10 @@ always @(posedge video_clk or negedge video_rst_n) begin
         osd_final_full_ff1<=lecture_final_full_active;
         osd_final_full_ff2<=osd_final_full_ff1;
         if (video_frame_tick) begin
-            case ({brightness_level_ff1,contrast_level_ff1})
+            if (ENABLE_MAIN5_REMOTE)
+                osd_effect <= (main5_preset_video == 8'hff) ? 3'd4 :
+                              main5_preset_video[2:0];
+            else case ({brightness_level_ff1,contrast_level_ff1})
                 4'b0100:osd_effect<=2'd1;
                 4'b0001:osd_effect<=2'd2;
                 4'b1010:osd_effect<=2'd3;
@@ -2811,6 +3084,78 @@ generate
         );
     end
 endgenerate
+
+// The displayed viewport is sampled only after its frame-boundary commit.
+always @(posedge video_clk or negedge video_rst_n) begin
+    if (!video_rst_n) begin
+        main5_pan_hold_x <= 16'sd0;
+        main5_pan_hold_y <= 16'sd0;
+        main5_pan_status_toggle <= 1'b0;
+    end else if (display_pan_x != main5_pan_hold_x ||
+                 display_pan_y != main5_pan_hold_y) begin
+        main5_pan_hold_x <= display_pan_x;
+        main5_pan_hold_y <= display_pan_y;
+        main5_pan_status_toggle <= ~main5_pan_status_toggle;
+    end
+end
+always @(posedge clk_50m or negedge write_rst_n) begin
+    if (!write_rst_n) begin
+        main5_pan_status_ff1 <= 1'b0;
+        main5_pan_status_ff2 <= 1'b0;
+        main5_pan_status_seen <= 1'b0;
+        main5_pan_report_x <= 16'sd0;
+        main5_pan_report_y <= 16'sd0;
+        main5_zoom_ff1 <= 1'b0;
+        main5_zoom_ff2 <= 1'b0;
+    end else begin
+        main5_pan_status_ff1 <= main5_pan_status_toggle;
+        main5_pan_status_ff2 <= main5_pan_status_ff1;
+        main5_zoom_ff1 <= display_zoom_2x;
+        main5_zoom_ff2 <= main5_zoom_ff1;
+        if (main5_pan_status_ff2 != main5_pan_status_seen) begin
+            main5_pan_status_seen <= main5_pan_status_ff2;
+            main5_pan_report_x <= main5_pan_hold_x;
+            main5_pan_report_y <= main5_pan_hold_y;
+        end
+    end
+end
+
+wire [7:0] main5_error = (image_load_error || writer_error || row_overflow) ? 8'd1 :
+                         (audio_file_error_50m || audio_format_error_50m) ? 8'd2 :
+                         (subtitle_file_error_50m || subtitle_format_error_50m) ? 8'd3 :
+                         8'd0;
+assign main5_mode = emergency_active_50m ? 8'd3 :
+                    main5_error != 0 ? 8'd4 :
+                    !sd_init_done ? 8'd0 : lecture_active ? 8'd2 : 8'd1;
+wire [7:0] main5_artifact = lecture_active ? {5'd0, lecture_artifact_index} :
+                            {5'd0, overview_selected_ctrl};
+wire [7:0] main5_phase = lecture_active ?
+                         {5'd0, lecture_display_frame_slot} : 8'hff;
+wire [7:0] main5_play_state = !lecture_active ? 8'd0 :
+                              transition_active_ff2_50m ? 8'd3 :
+                              lecture_finished ? 8'd4 :
+                              lecture_paused ? 8'd2 : 8'd1;
+wire [31:0] main5_audio_frame = lecture_active ? lecture_audio_frame_index : 32'd0;
+assign main5_heartbeat = {main5_mode, main5_artifact, main5_phase,
+                          main5_play_state, {7'd0, emergency_active_50m},
+                          main5_preset_applied, main5_error, 8'd0,
+                          main5_audio_frame, 15'd0, emergency_active_50m, 16'd0};
+assign main5_playback = {main5_artifact, main5_play_state, main5_phase,
+                         main5_preset_applied, main5_audio_frame};
+assign main5_display = {main5_preset_applied,
+                        {5'd0, main5_brightness_applied},
+                        {5'd0, main5_contrast_applied},
+                        {5'd0, main5_saturation_applied},
+                        {5'd0, main5_temperature_applied},
+                        main5_zoom_ff2 ? 8'd2 : 8'd1,
+                        {6'd0, overview_osd_visible, normal_waveform_visible},
+                        main5_phase, main5_pan_report_x, main5_pan_report_y};
+wire [7:0] main5_storage = !sd_init_done ? 8'd0 :
+                           main5_error != 0 ? 8'd3 :
+                           (load_active || sd_read_active) ? 8'd2 : 8'd1;
+assign main5_diagnostic = {24'd0, main5_storage, {3'd0, frame_valid},
+                           {5'd0, subtitle_ready_50m, audio_prepared,
+                            overview_cache_ready}, main5_error, 8'd0, 64'd0};
 
 endmodule
 

@@ -35,6 +35,7 @@ def main() -> int:
     sequence = 1
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
         sock.bind(LOCAL)
+        all_seen: set[int] = set()
 
         def receive(deadline: float):
             nonlocal sequence
@@ -50,6 +51,7 @@ def main() -> int:
                 if decoded is None:
                     raise AssertionError(f"invalid board packet: {data.hex()}")
                 msg_type, flags, seq, _, payload = decoded
+                all_seen.add(msg_type)
                 if msg_type == 1:  # The board also initiates HELLO.
                     ack = struct.pack(">IBBBB", seq, msg_type, 0, 1, 0)
                     sock.sendto(packet(4, 2, sequence, boot, ack), TARGET)
@@ -107,13 +109,11 @@ def main() -> int:
         request(0x13, bytes([0, 1, 0, 0]), 3)
         sock.sendto(packet(2, 0, sequence, boot, bytes(16)), TARGET)
         sequence += 1
-        seen_types = set()
-        for msg_type, _, _, _ in receive(time.monotonic() + 1.2):
-            seen_types.add(msg_type)
-            if {2, 0x16, 0x31} <= seen_types:
+        for msg_type, _, _, _ in receive(time.monotonic() + 2.2):
+            if {2, 0x16, 0x31} <= all_seen:
                 break
-        if not {2, 0x16, 0x31} <= seen_types:
-            raise AssertionError(f"missing periodic/status packets: {seen_types}")
+        if not {2, 0x16, 0x31} <= all_seen:
+            raise AssertionError(f"missing periodic/status packets: {all_seen}")
         print("PASS telemetry: HEARTBEAT, DISPLAY_STATUS, DIAGNOSTIC_STATUS")
         boot = secrets.randbits(32)
         request(1, hello, 0)

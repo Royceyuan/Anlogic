@@ -18,7 +18,7 @@ report_timing_status -file [file join $build_root main5b_gate.ts]
 report_timing_summary -file [file join $build_root main5b_gate.timing]
 flow_status -file [file join $build_root main5b_syn.status]
 export_db [file join $build_root main5b_gate.db]
-set_param place seed 17
+set_param place seed 99
 place
 update_timing -mode manhattan
 report_area -io_info -file [file join $build_root main5b_place.area]

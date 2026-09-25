@@ -3,6 +3,7 @@
 
 module tb_linebuf_scaler_zoom;
 reg clk=0, rst_n=0, source_start=0, zoom_2x=0;
+reg signed [15:0] pan_x=0, pan_y=0;
 reg museum_active=0, museum_closing=0;
 reg [7:0] museum_progress=0;
 reg [2:0] museum_origin=0;
@@ -14,8 +15,9 @@ wire [9:0] source_y = dut.source_y;
 
 always #5 clk=~clk;
 
-linebuf_scaler_960x540_to_1280x720 dut (
+linebuf_scaler_960x540_to_1280x720 #(.ENABLE_PAN(1)) dut (
     .clk(clk), .rst_n(rst_n), .source_start(source_start), .zoom_2x(zoom_2x),
+    .pan_x(pan_x), .pan_y(pan_y),
     .museum_recenter_active(museum_active), .museum_recenter_closing(museum_closing),
     .museum_recenter_progress(museum_progress), .museum_recenter_origin(museum_origin),
     .source_base_addr(21'd1000), .source_read_req(), .source_read_ack(1'b0),
@@ -51,6 +53,12 @@ initial begin
     check_map(0,0,240,135);
     check_map(640,360,480,270);
     check_map(1279,719,719,404);
+    @(negedge clk); pan_x=16'sd32; pan_y=-16'sd16; source_start=1;
+    @(posedge clk); #1; source_start=0;
+    if (source_read_base_addr !== 21'd58120 || source_read_len !== 21'd129600)
+        $fatal(1,"pan read range");
+    check_map(0,0,272,119);
+    check_map(1279,719,751,388);
     @(negedge clk); zoom_2x=0; source_start=1;
     @(posedge clk); #1; source_start=0;
     if (source_read_base_addr !== 21'd1000 || source_read_len !== 21'd259200) begin

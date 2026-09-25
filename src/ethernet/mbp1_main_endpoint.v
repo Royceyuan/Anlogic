@@ -5,7 +5,9 @@
 // Ethernet stack; all application state here runs in the UDP clock domain.
 module mbp1_main_endpoint #(
     parameter integer CLOCKS_PER_MS = 125000,
-    parameter integer ENABLE_CONTROL = 0
+    parameter integer ENABLE_CONTROL = 0,
+    parameter integer ENABLE_PLAYBACK = 0,
+    parameter integer HOLD_TX_FIELDS = 1
 ) (
     input  wire         clk,
     input  wire         rst,
@@ -22,6 +24,7 @@ module mbp1_main_endpoint #(
     input  wire         phy_link,
     input  wire [7:0]   main_mode,
     input  wire [127:0] heartbeat_payload,
+    input  wire [63:0]  playback_payload,
     input  wire [95:0]  display_payload,
     input  wire [127:0] diagnostic_payload,
     output reg          command_valid,
@@ -48,7 +51,7 @@ reg [4:0] send_payload_length;
 reg [31:0] send_seq, send_boot_id, send_uptime_ms;
 reg [127:0] send_payload;
 
-mbp1_codec u_codec (
+mbp1_codec #(.HOLD_TX_FIELDS(HOLD_TX_FIELDS)) u_codec (
     .clk(clk), .rst(rst), .rx_data(rx_data), .rx_valid(rx_valid),
     .rx_length(rx_length), .packet_valid(packet_valid),
     .packet_type(packet_type), .packet_flags(packet_flags),
@@ -72,12 +75,19 @@ assign peer_alive = phy_link && peer_boot_seen &&
                     (heartbeat_age_ms < 16'd2000);
 
 reg [31:0] ms_divider;
+reg [1:0] tx_gap_ms;
 reg [9:0] snapshot_ms;
 reg [6:0] hello_wait_ms;
 reg [3:0] hello_attempts;
 reg hello_pending, hello_waiting;
 reg [31:0] hello_seq;
 reg heartbeat_pending, display_pending, diagnostic_pending;
+reg [95:0] last_display_sent;
+reg playback_pending, playback_waiting;
+reg [31:0] playback_seq;
+reg [6:0] playback_wait_ms;
+reg [3:0] playback_attempts;
+reg [31:0] last_playback_header;
 reg ack_pending;
 reg [31:0] ack_seq;
 reg [7:0] ack_type, ack_result;
@@ -96,6 +106,7 @@ wire command_length_ok = (packet_type == 8'h13 &&
 always @(posedge clk or posedge rst) begin
     if (rst) begin
         ms_divider <= 32'd0;
+        tx_gap_ms <= 2'd0;
         uptime_ms <= 32'd0;
         snapshot_ms <= 10'd0;
         heartbeat_age_ms <= 16'd2000;
@@ -107,6 +118,13 @@ always @(posedge clk or posedge rst) begin
         heartbeat_pending <= 1'b0;
         display_pending <= 1'b0;
         diagnostic_pending <= 1'b0;
+        last_display_sent <= {96{1'b1}};
+        playback_pending <= ENABLE_PLAYBACK;
+        playback_waiting <= 1'b0;
+        playback_seq <= 32'd0;
+        playback_wait_ms <= 7'd0;
+        playback_attempts <= 4'd0;
+        last_playback_header <= 32'd0;
         ack_pending <= 1'b0;
         ack_seq <= 32'd0;
         ack_type <= 8'd0;
@@ -136,6 +154,7 @@ always @(posedge clk or posedge rst) begin
         send <= 1'b0;
         if (ms_tick) begin
             ms_divider <= 32'd0;
+            if (tx_gap_ms != 0) tx_gap_ms <= tx_gap_ms - 2'd1;
             uptime_ms <= uptime_ms + 32'd1;
             if (heartbeat_age_ms < 16'd2000)
                 heartbeat_age_ms <= heartbeat_age_ms + 16'd1;
@@ -144,11 +163,15 @@ always @(posedge clk or posedge rst) begin
                 heartbeat_pending <= 1'b1;
                 display_pending <= 1'b1;
                 diagnostic_pending <= 1'b1;
+                if (ENABLE_PLAYBACK && !playback_waiting)
+                    playback_pending <= 1'b1;
             end else begin
                 snapshot_ms <= snapshot_ms + 10'd1;
                 if (snapshot_ms == 10'd499) begin
                     heartbeat_pending <= 1'b1;
                     display_pending <= 1'b1;
+                    if (ENABLE_PLAYBACK && !playback_waiting)
+                        playback_pending <= 1'b1;
                 end
             end
             if (hello_waiting && hello_wait_ms == 7'd99) begin
@@ -161,6 +184,15 @@ always @(posedge clk or posedge rst) begin
                     hello_waiting <= 1'b0;
             end else if (hello_waiting)
                 hello_wait_ms <= hello_wait_ms + 7'd1;
+            if (playback_waiting && playback_wait_ms == 7'd99) begin
+                playback_wait_ms <= 7'd0;
+                if (playback_attempts < 4'd10) begin
+                    playback_pending <= 1'b1;
+                    if (retry_count != 16'hffff)
+                        retry_count <= retry_count + 16'd1;
+                end else playback_waiting <= 1'b0;
+            end else if (playback_waiting)
+                playback_wait_ms <= playback_wait_ms + 7'd1;
         end else
             ms_divider <= ms_divider + 32'd1;
 
@@ -175,7 +207,14 @@ always @(posedge clk or posedge rst) begin
             ack_seq <= command_seq;
             ack_type <= command_type;
             ack_result <= command_result;
-            if (command_result == 8'd0) display_pending <= 1'b1;
+        end
+
+        if (display_payload != last_display_sent)
+            display_pending <= 1'b1;
+
+        if (ENABLE_PLAYBACK && playback_payload[63:32] != last_playback_header) begin
+            last_playback_header <= playback_payload[63:32];
+            if (!playback_waiting) playback_pending <= 1'b1;
         end
 
         if (packet_valid) begin
@@ -187,10 +226,14 @@ always @(posedge clk or posedge rst) begin
                 hello_pending <= 1'b1;
             end
             if (packet_type == 8'h04 && packet_payload_length == 16'd8 &&
-                packet_payload[31:24] == 8'h01 &&
-                packet_payload[63:32] == hello_seq &&
-                packet_payload[23:16] == 8'd0)
-                hello_waiting <= 1'b0;
+                packet_payload[23:16] == 8'd0) begin
+                if (packet_payload[31:24] == 8'h01 &&
+                    packet_payload[63:32] == hello_seq)
+                    hello_waiting <= 1'b0;
+                if (packet_payload[31:24] == 8'h12 &&
+                    packet_payload[63:32] == playback_seq)
+                    playback_waiting <= 1'b0;
+            end
             else if (packet_type == 8'h02 &&
                      packet_payload_length == 16'd16)
                 heartbeat_age_ms <= 16'd0;
@@ -209,6 +252,7 @@ always @(posedge clk or posedge rst) begin
                     else begin
                         display_pending <= 1'b1;
                         diagnostic_pending <= 1'b1;
+                        if (ENABLE_PLAYBACK) playback_pending <= 1'b1;
                     end
                 end else if (packet_type == 8'h03) begin
                     if (packet_payload_length != 16'd0)
@@ -217,6 +261,7 @@ always @(posedge clk or posedge rst) begin
                         heartbeat_pending <= 1'b1;
                         display_pending <= 1'b1;
                         diagnostic_pending <= 1'b1;
+                        if (ENABLE_PLAYBACK) playback_pending <= 1'b1;
                     end
                 end else if (is_command) begin
                     if (!command_length_ok)
@@ -252,12 +297,14 @@ always @(posedge clk or posedge rst) begin
 
         // An ACK outranks periodic telemetry. Never launch on a receive or
         // command-completion cycle so a new ACK cannot be cleared by launch.
-        if (!packet_valid && !command_done && !send && send_ready && tx_ready) begin
+        if (!packet_valid && !command_done && !send && send_ready &&
+            tx_ready && tx_gap_ms == 0) begin
             send_boot_id <= local_boot_id;
             send_uptime_ms <= uptime_ms;
             send_flags <= 8'd0;
             send_seq <= next_seq;
             if (ack_pending) begin
+                tx_gap_ms <= 2'd2;
                 send <= 1'b1;
                 send_type <= 8'h04;
                 send_flags <= 8'h02;
@@ -267,6 +314,7 @@ always @(posedge clk or posedge rst) begin
                 ack_pending <= 1'b0;
                 next_seq <= next_seq + 32'd1;
             end else if (hello_pending) begin
+                tx_gap_ms <= 2'd2;
                 send <= 1'b1;
                 send_type <= 8'h01;
                 send_flags <= hello_waiting ? 8'h05 : 8'h01;
@@ -286,20 +334,42 @@ always @(posedge clk or posedge rst) begin
                 hello_wait_ms <= 7'd0;
                 hello_pending <= 1'b0;
             end else if (heartbeat_pending) begin
+                tx_gap_ms <= 2'd2;
                 send <= 1'b1;
                 send_type <= 8'h02;
                 send_payload_length <= 5'd16;
                 send_payload <= heartbeat_payload;
                 heartbeat_pending <= 1'b0;
                 next_seq <= next_seq + 32'd1;
+            end else if (ENABLE_PLAYBACK && playback_pending) begin
+                tx_gap_ms <= 2'd2;
+                send <= 1'b1;
+                send_type <= 8'h12;
+                send_flags <= playback_waiting ? 8'h05 : 8'h01;
+                send_payload_length <= 5'd8;
+                send_payload <= {playback_payload, 64'd0};
+                if (!playback_waiting) begin
+                    playback_seq <= next_seq;
+                    playback_attempts <= 4'd1;
+                    next_seq <= next_seq + 32'd1;
+                end else begin
+                    send_seq <= playback_seq;
+                    playback_attempts <= playback_attempts + 4'd1;
+                end
+                playback_waiting <= 1'b1;
+                playback_wait_ms <= 7'd0;
+                playback_pending <= 1'b0;
             end else if (display_pending) begin
+                tx_gap_ms <= 2'd2;
                 send <= 1'b1;
                 send_type <= 8'h16;
                 send_payload_length <= 5'd12;
                 send_payload <= {display_payload, 32'd0};
+                last_display_sent <= display_payload;
                 display_pending <= 1'b0;
                 next_seq <= next_seq + 32'd1;
             end else if (diagnostic_pending) begin
+                tx_gap_ms <= 2'd2;
                 send <= 1'b1;
                 send_type <= 8'h31;
                 send_payload_length <= 5'd16;

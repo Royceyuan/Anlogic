@@ -2,6 +2,7 @@
 
 module tb_mbp1_main_endpoint;
 parameter ENABLE_CONTROL = 0;
+parameter HOLD_TX_FIELDS = 1;
 reg clk = 0;
 always #5 clk = ~clk;
 reg rst = 1;
@@ -48,14 +49,16 @@ mbp1_codec u_host (
     .tx_valid(host_tx_valid), .tx_length(host_tx_length)
 );
 
-mbp1_main_endpoint #(.CLOCKS_PER_MS(10), .ENABLE_CONTROL(ENABLE_CONTROL)) dut (
+mbp1_main_endpoint #(.CLOCKS_PER_MS(10), .ENABLE_CONTROL(ENABLE_CONTROL),
+                     .HOLD_TX_FIELDS(HOLD_TX_FIELDS)) dut (
     .clk(clk), .rst(rst), .rx_data(host_tx_data),
     .rx_valid(host_tx_valid), .rx_length(host_tx_length),
     .tx_ready(1'b1), .tx_ack(board_tx_ack),
     .tx_request(board_tx_request), .tx_data(board_tx_data),
     .tx_valid(board_tx_valid), .tx_length(board_tx_length),
     .local_boot_id(32'ha0010001), .phy_link(1'b1), .main_mode(8'd1),
-    .heartbeat_payload(128'd0), .display_payload(96'd0),
+    .heartbeat_payload(128'd0), .playback_payload(64'd0),
+    .display_payload(96'd0),
     .diagnostic_payload(128'd0), .command_valid(command_valid), .command_type(),
     .command_seq(), .command_payload(), .command_done(command_done),
     .command_result(8'd0), .peer_alive(peer_alive),

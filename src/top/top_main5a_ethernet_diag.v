@@ -2,7 +2,10 @@
 `default_nettype none
 
 module top_main5a_ethernet_diag #(
-    parameter integer MBP1_DIAG = 0
+    parameter integer MBP1_DIAG = 0,
+    parameter integer LIGHT_UDP = 0,
+    parameter integer MBP1_EXTERNAL_STATUS = 0,
+    parameter integer MBP1_CONTROL = 0
 ) (
     input  wire       clk_50m,
     input  wire       key_reset_n,
@@ -17,7 +20,21 @@ module top_main5a_ethernet_diag #(
     inout  wire       eth_mdio,
     output wire [3:0] led,
     output wire [7:0] seg_data,
-    output wire [7:0] seg_sel
+    output wire [7:0] seg_sel,
+    input  wire [7:0] main_mode,
+    input  wire [127:0] heartbeat_payload,
+    input  wire [63:0] playback_payload,
+    input  wire [95:0] display_payload,
+    input  wire [127:0] diagnostic_payload,
+    output wire command_valid,
+    output wire [7:0] command_type,
+    output wire [31:0] command_seq,
+    output wire [63:0] command_payload,
+    input  wire command_done,
+    input  wire [7:0] command_result,
+    output wire peer_alive,
+    output wire network_clk,
+    output wire network_reset
 );
 
 localparam [47:0] LOCAL_MAC = 48'h02_48_58_34_20_01;
@@ -99,6 +116,8 @@ always @(posedge rx_clk or posedge sys_reset) begin
     else rx_reset_pipe <= {rx_reset_pipe[1:0], 1'b0};
 end
 wire udp_reset = udp_reset_pipe[2];
+assign network_clk = udp_clk;
+assign network_reset = udp_reset;
 wire tx_reset = tx_reset_pipe[2];
 wire rx_reset = rx_reset_pipe[2];
 
@@ -193,6 +212,11 @@ wire ip_rx_error;
 wire arp_error;
 wire phy_link = phy_status[10];
 
+wire [7:0] endpoint_mode = MBP1_EXTERNAL_STATUS ? main_mode : 8'd1;
+wire [127:0] endpoint_heartbeat = MBP1_EXTERNAL_STATUS ? heartbeat_payload : {8'd1, 120'd0};
+wire [63:0] endpoint_playback = MBP1_EXTERNAL_STATUS ? playback_payload : 64'd0;
+wire [95:0] endpoint_display = MBP1_EXTERNAL_STATUS ? display_payload : 96'd0;
+wire [127:0] endpoint_diagnostic;
 generate if (MBP1_DIAG) begin : g_mbp1
     reg [31:0] free_run = 32'd0;
     reg [31:0] boot_id = 32'h500b0001;
@@ -201,23 +225,42 @@ generate if (MBP1_DIAG) begin : g_mbp1
         free_run <= free_run + 32'd1;
         if (sys_reset) boot_id <= free_run ^ 32'h500b0001;
     end
-    mbp1_main_endpoint u_mbp1 (
+    assign endpoint_diagnostic = MBP1_EXTERNAL_STATUS ?
+                                 {{7'd0, phy_link},
+                                  inband_speed == 2'b10 ? 8'd3 :
+                                  inband_speed == 2'b01 ? 8'd2 : 8'd1,
+                                  inband_duplex ? 8'd2 : 8'd1,
+                                  diagnostic_payload[103:64], mbp_crc_errors,
+                                  mbp_drops, mbp_retries, 16'd0} :
+                                 {{7'd0, phy_link}, 8'd3, 8'd2,
+                                    40'd0, mbp_crc_errors, mbp_drops,
+                                    mbp_retries, 16'd0};
+    mbp1_main_endpoint #(.ENABLE_CONTROL(MBP1_CONTROL),
+                          .ENABLE_PLAYBACK(MBP1_EXTERNAL_STATUS),
+                          .HOLD_TX_FIELDS(!MBP1_EXTERNAL_STATUS)) u_mbp1 (
         .clk(udp_clk), .rst(udp_reset),
         .rx_data(app_rx_data), .rx_valid(app_rx_valid), .rx_length(app_rx_length),
         .tx_ready(udp_tx_ready), .tx_ack(app_tx_ack),
         .tx_request(app_tx_request), .tx_data(app_tx_data),
         .tx_valid(app_tx_valid), .tx_length(app_tx_length),
-        .local_boot_id(boot_id), .phy_link(phy_link), .main_mode(8'd1),
-        .heartbeat_payload({8'd1, 120'd0}), .display_payload(96'd0),
-        .diagnostic_payload({{7'd0, phy_link}, 8'd3, 8'd2,
-                             40'd0, mbp_crc_errors, mbp_drops,
-                             mbp_retries, 16'd0}),
-        .command_valid(), .command_type(), .command_seq(),
-        .command_payload(), .command_done(1'b0), .command_result(8'd0),
-        .peer_alive(), .crc_error_count(mbp_crc_errors),
+        .local_boot_id(boot_id), .phy_link(phy_link), .main_mode(endpoint_mode),
+        .heartbeat_payload(endpoint_heartbeat), .display_payload(endpoint_display),
+        .playback_payload(endpoint_playback),
+        .diagnostic_payload(endpoint_diagnostic),
+        .command_valid(command_valid), .command_type(command_type),
+        .command_seq(command_seq), .command_payload(command_payload),
+        .command_done(MBP1_CONTROL ? command_done : 1'b0),
+        .command_result(MBP1_CONTROL ? command_result : 8'd0),
+        .peer_alive(peer_alive), .crc_error_count(mbp_crc_errors),
         .drop_count(mbp_drops), .retry_count(mbp_retries)
     );
 end else begin : g_echo
+    assign command_valid = 1'b0;
+    assign command_type = 8'd0;
+    assign command_seq = 32'd0;
+    assign command_payload = 64'd0;
+    assign peer_alive = 1'b0;
+    assign endpoint_diagnostic = 128'd0;
     udp_echo_buffer u_echo (
         .clk(udp_clk), .rst(udp_reset),
         .rx_data(app_rx_data), .rx_valid(app_rx_valid), .rx_length(app_rx_length),
@@ -227,6 +270,25 @@ end else begin : g_echo
     );
 end endgenerate
 
+generate if (LIGHT_UDP) begin : g_light_udp
+mbp1_fixed_udp u_udp_stack (
+    .clk(udp_clk), .rst(udp_reset),
+    .mac_rx_data(temac_rx_data), .mac_rx_valid(~temac_rx_valid_n),
+    .mac_rx_sof_n(temac_rx_sof), .mac_rx_eof_n(temac_rx_eof),
+    .mac_rx_ready_n(temac_rx_ready),
+    .mac_tx_data(temac_tx_data), .mac_tx_valid_n(temac_tx_valid),
+    .mac_tx_sof_n(temac_tx_sof), .mac_tx_eof_n(temac_tx_eof),
+    .mac_tx_ready_n(temac_tx_ready),
+    .app_rx_data(app_rx_data), .app_rx_valid(app_rx_valid),
+    .app_rx_length(app_rx_length),
+    .app_tx_request(app_tx_request), .app_tx_data(app_tx_data),
+    .app_tx_valid(app_tx_valid), .app_tx_length(app_tx_length),
+    .app_tx_ready(udp_tx_ready), .app_tx_ack(app_tx_ack)
+);
+assign app_rx_port = UDP_PORT;
+assign ip_rx_error = 1'b0;
+assign arp_error = 1'b0;
+end else begin : g_official_udp
 udp_ip_protocol_stack #(
     .DEVICE("EG4"),
     .LOCAL_UDP_PORT_NUM(UDP_PORT),
@@ -248,6 +310,7 @@ udp_ip_protocol_stack #(
     .temac_tx_data(temac_tx_data), .temac_tx_sof(temac_tx_sof), .temac_tx_eof(temac_tx_eof),
     .ip_rx_error(ip_rx_error), .arp_request_no_reply_error(arp_error)
 );
+end endgenerate
 
 wire mdio_drive_low;
 wire [15:0] phy_id1;

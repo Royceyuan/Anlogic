@@ -2,6 +2,7 @@
 module tb_museum_status_osd;
 reg clk=0,rst_n=0,hs=1,vs=1,de=1,name_ready=0,name_we=0,zoom_2x=0;
 reg panel_enable=1;
+reg [2:0] effect=0;
 reg [10:0] x=0,name_addr=0;
 reg [9:0] y=0;
 reg [7:0] name_data=0;
@@ -13,7 +14,7 @@ always #5 clk=~clk;
 museum_status_osd dut(
     .clk(clk),.rst_n(rst_n),.panel_enable(panel_enable),.hs_i(hs),.vs_i(vs),.de_i(de),
     .x_i(x),.y_i(y),.rgb_i(24'h808080),
-    .artifact(3'd0),.stage(3'd0),.effect(2'd0),
+    .artifact(3'd0),.stage(3'd0),.effect(effect),
     .width_bcd(16'h1920),.height_bcd(16'h1080),
     .zoom_2x(zoom_2x),
     .name_ready(name_ready),.name_wr_clk(clk),.name_wr_en(name_we),
@@ -48,6 +49,9 @@ initial begin
  check(11'd869,10'd45,24'h404040); // ZOOM1x digit
  zoom_2x=1;
  check(11'd869,10'd45,24'hffffff); // ZOOM2x digit
+ effect=3'd4;
+ check(11'd185,10'd45,24'hffffff); // CUSTOM first C
+ check(11'd183,10'd45,24'h404040);
  panel_enable=0;
  check(11'd400,10'd20,24'h808080); // disabled panel stays aligned and transparent
  $display("PASS tb_museum_status_osd enable, TF name, pixel alignment");

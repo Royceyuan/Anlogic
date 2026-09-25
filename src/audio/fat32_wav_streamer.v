@@ -104,19 +104,21 @@ function [31:0] cluster_lba;
     input [31:0] base;
     input [7:0] sector_offset;
     reg [31:0] cluster_offset;
+    reg [2:0] shift;
     begin
         // FAT32 legal cluster sizes are powers of two.  Shifts avoid turning
         // this address calculation into several DSP blocks.
         case (sectors_per_cluster)
-            8'd1:   cluster_offset = cluster - 32'd2;
-            8'd2:   cluster_offset = (cluster - 32'd2) << 1;
-            8'd4:   cluster_offset = (cluster - 32'd2) << 2;
-            8'd8:   cluster_offset = (cluster - 32'd2) << 3;
-            8'd16:  cluster_offset = (cluster - 32'd2) << 4;
-            8'd32:  cluster_offset = (cluster - 32'd2) << 5;
-            8'd64:  cluster_offset = (cluster - 32'd2) << 6;
-            default: cluster_offset = (cluster - 32'd2) << 7;
+            8'd1:   shift = 3'd0;
+            8'd2:   shift = 3'd1;
+            8'd4:   shift = 3'd2;
+            8'd8:   shift = 3'd3;
+            8'd16:  shift = 3'd4;
+            8'd32:  shift = 3'd5;
+            8'd64:  shift = 3'd6;
+            default: shift = 3'd7;
         endcase
+        cluster_offset = (cluster - 32'd2) << shift;
         cluster_lba = base + cluster_offset + sector_offset;
     end
 endfunction

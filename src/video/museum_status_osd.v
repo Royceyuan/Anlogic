@@ -8,7 +8,7 @@ module museum_status_osd (
     input wire hs_i, input wire vs_i, input wire de_i,
     input wire [10:0] x_i, input wire [9:0] y_i, input wire [23:0] rgb_i,
     input wire [2:0] artifact, input wire [2:0] stage,
-    input wire [1:0] effect,
+    input wire [2:0] effect,
     input wire [15:0] width_bcd, input wire [15:0] height_bcd,
     input wire zoom_2x,
     input wire name_ready,
@@ -368,6 +368,10 @@ function [34:0] ascii_bitmap;
             19:ascii_bitmap={5'b10001,5'b11011,5'b10101,5'b10101,5'b10001,5'b10001,5'b10001};
             20:ascii_bitmap={5'b00000,5'b00000,5'b00000,5'b11111,5'b00000,5'b00000,5'b00000};
             21:ascii_bitmap={5'b11111,5'b10000,5'b10000,5'b11110,5'b10000,5'b10000,5'b10000};
+            22:ascii_bitmap={5'b01110,5'b10001,5'b10000,5'b10000,5'b10000,5'b10001,5'b01110}; // C
+            23:ascii_bitmap={5'b10001,5'b10001,5'b10001,5'b10001,5'b10001,5'b10001,5'b01110}; // U
+            24:ascii_bitmap={5'b01111,5'b10000,5'b10000,5'b01110,5'b00001,5'b00001,5'b11110}; // S
+            25:ascii_bitmap={5'b11111,5'b00100,5'b00100,5'b00100,5'b00100,5'b00100,5'b00100}; // T
             default:ascii_bitmap=35'd0;
         endcase
     end
@@ -409,8 +413,19 @@ always @(*) begin
         local_x=x_s0-540; local_y=y_s0-20;
         if (stage>=2 && stage<=4 && local_x[5:4]==2)
             chosen_ascii=stage-1'b1;
-    end else if (x_s0>=180 && x_s0<228 && y_s0>=44 && y_s0<60) begin
+    end else if (x_s0>=180 && x_s0<(effect==3'd4 ? 276 : 228) &&
+                 y_s0>=44 && y_s0<60) begin
         local_x=x_s0-180; local_y=y_s0-44;
+        if (effect==3'd4) begin
+            case(local_x[6:4])
+                0:chosen_ascii=5'd22; // C
+                1:chosen_ascii=5'd23; // U
+                2:chosen_ascii=5'd24; // S
+                3:chosen_ascii=5'd25; // T
+                4:chosen_ascii=5'd18; // O
+                5:chosen_ascii=5'd19; // M
+            endcase
+        end
     end else if (x_s0>=540 && x_s0<684 && y_s0>=44 && y_s0<60) begin
         local_x=x_s0-540; local_y=y_s0-44;
         chosen_ascii=ascii_code((x_s0-540)>>4,width_bcd,height_bcd);

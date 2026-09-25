@@ -2,7 +2,8 @@
 `default_nettype none
 
 module top_1280x720_main4_emergency #(
-    parameter integer ENABLE_MAIN5_CONTROLS = 0
+    parameter integer ENABLE_MAIN5_CONTROLS = 0,
+    parameter integer ENABLE_MAIN5_REMOTE = 0
 ) (
     input wire clk_50m, input wire [3:0] key_n, input wire [3:0] sw,
     output wire [3:0] led, output wire [7:0] seg_data, output wire [7:0] seg_sel,
@@ -10,7 +11,15 @@ module top_1280x720_main4_emergency #(
     output wire vga_hs, output wire vga_vs, output wire [11:0] vga_d,
     output wire hdmi1_clk_p, output wire hdmi1_d2_p, output wire hdmi1_d1_p,
     output wire hdmi1_d0_p, output wire hdmi1_ddc_scl, inout wire hdmi1_ddc_sda,
-    input wire uart_rxd, output wire uart_txd
+    input wire uart_rxd, output wire uart_txd,
+    input wire remote_command_valid, input wire [7:0] remote_command_type,
+    input wire [63:0] remote_command_payload,
+    output wire remote_command_done, output wire [7:0] remote_command_result,
+    output wire [7:0] main5_mode,
+    output wire [127:0] main5_heartbeat,
+    output wire [63:0] main5_playback,
+    output wire [95:0] main5_display,
+    output wire [127:0] main5_diagnostic
 );
 
 museum_media_core #(
@@ -33,6 +42,7 @@ museum_media_core #(
     .ENABLE_MUSEUM_OVERVIEW(1), .ENABLE_MUSEUM_LECTURE(1),
     .ENABLE_MAIN3(1), .ENABLE_MAIN4(1),
     .ENABLE_MAIN5_CONTROLS(ENABLE_MAIN5_CONTROLS),
+    .ENABLE_MAIN5_REMOTE(ENABLE_MAIN5_REMOTE),
     .ENABLE_AUDIO_VISUALIZER(1), .SHOW_AUDIO_VISUALIZER(1),
     .AUDIO_TRACK_COUNT(5),
     .OVERVIEW_CROP_X0_0(384), .OVERVIEW_CROP_X0_1(384),
@@ -48,7 +58,15 @@ museum_media_core #(
     .hdmi1_clk_p(hdmi1_clk_p), .hdmi1_d2_p(hdmi1_d2_p),
     .hdmi1_d1_p(hdmi1_d1_p), .hdmi1_d0_p(hdmi1_d0_p),
     .hdmi1_ddc_scl(hdmi1_ddc_scl), .hdmi1_ddc_sda(hdmi1_ddc_sda),
-    .uart_rxd(uart_rxd), .uart_txd(uart_txd)
+    .uart_rxd(uart_rxd), .uart_txd(uart_txd),
+    .remote_command_valid(remote_command_valid),
+    .remote_command_type(remote_command_type),
+    .remote_command_payload(remote_command_payload),
+    .remote_command_done(remote_command_done),
+    .remote_command_result(remote_command_result),
+    .main5_mode(main5_mode), .main5_heartbeat(main5_heartbeat),
+    .main5_playback(main5_playback), .main5_display(main5_display),
+    .main5_diagnostic(main5_diagnostic)
 );
 endmodule
 

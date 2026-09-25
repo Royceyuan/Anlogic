@@ -23,12 +23,19 @@ module tb_museum_media_core #(
     parameter integer MAIN3_RECOVERY_TEST = 0,
     parameter integer MAIN3_ZOOM_TEST = 0,
     parameter integer MAIN4_EMERGENCY_TEST = 0,
-    parameter integer MAIN5_CONTROLS_TEST = 0
+    parameter integer MAIN5_CONTROLS_TEST = 0,
+    parameter integer MAIN5_REMOTE_TEST = 0
 );
     reg clk_50m = 1'b0;
     reg [3:0] key_n = 4'b1111;
     reg [3:0] sw = 4'b0000;
     reg sd_miso = 1'b1;
+    reg remote_command_valid = 1'b0;
+    reg [7:0] remote_command_type = 8'd0;
+    reg [63:0] remote_command_payload = 64'd0;
+    wire remote_command_done;
+    wire [7:0] remote_command_result;
+    wire [95:0] main5_display;
 
     wire [3:0] led;
     wire [7:0] seg_data, seg_sel;
@@ -52,20 +59,21 @@ module tb_museum_media_core #(
         .ENABLE_OSD(PHASE1_TEST || PHASE2_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST),
         .ENABLE_FADE(PHASE3_TEST || PHASE4_TEST || PHASE5_TEST),
         .VIDEO_SEQUENCE(0), .VIDEO_BIN(0), .ADAPTIVE_BMP(1),
-        .PRELOAD_BOTH_IMAGES(PRELOAD_TEST || MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || MAIN3_ZOOM_TEST || MAIN5_CONTROLS_TEST),
-        .MULTI_IMAGE_BMP(MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || MAIN3_ZOOM_TEST || MAIN5_CONTROLS_TEST),
-        .MULTI_FRAME_PRELOAD(MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || MAIN3_ZOOM_TEST || MAIN5_CONTROLS_TEST),
-        .VIDEO_FRAME_COUNT((MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || MAIN3_ZOOM_TEST || MAIN5_CONTROLS_TEST) ? 5 : 2),
+        .PRELOAD_BOTH_IMAGES(PRELOAD_TEST || MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || MAIN3_ZOOM_TEST || MAIN5_CONTROLS_TEST || MAIN5_REMOTE_TEST),
+        .MULTI_IMAGE_BMP(MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || MAIN3_ZOOM_TEST || MAIN5_CONTROLS_TEST || MAIN5_REMOTE_TEST),
+        .MULTI_FRAME_PRELOAD(MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || MAIN3_ZOOM_TEST || MAIN5_CONTROLS_TEST || MAIN5_REMOTE_TEST),
+        .VIDEO_FRAME_COUNT((MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || MAIN3_ZOOM_TEST || MAIN5_CONTROLS_TEST || MAIN5_REMOTE_TEST) ? 5 : 2),
         .AUTO_PERIOD_CYCLES(PHASE4_TEST ? 32 : 250000000),
         .SOURCE_W(TB_SOURCE_W), .SOURCE_H(TB_SOURCE_H),
         .LINEBUF_SCALE(1), .LINEBUF_REGISTER_READ(TEST_REGISTERED),
 `ifdef V66_TOP
         .LINEBUF_NOREG_SYNC_READ(0),
-        .ENABLE_MAIN3(MAIN3_RECOVERY_TEST || MAIN3_ZOOM_TEST || MAIN4_EMERGENCY_TEST || MAIN5_CONTROLS_TEST),
-        .ENABLE_MAIN4(MAIN4_EMERGENCY_TEST),
-        .ENABLE_MAIN5_CONTROLS(MAIN5_CONTROLS_TEST),
-        .ENABLE_MUSEUM_OVERVIEW(MAIN3_ZOOM_TEST || MAIN5_CONTROLS_TEST),
-        .ENABLE_MUSEUM_LECTURE(MAIN3_ZOOM_TEST || MAIN5_CONTROLS_TEST),
+        .ENABLE_MAIN3(MAIN3_RECOVERY_TEST || MAIN3_ZOOM_TEST || MAIN4_EMERGENCY_TEST || MAIN5_CONTROLS_TEST || MAIN5_REMOTE_TEST),
+        .ENABLE_MAIN4(MAIN4_EMERGENCY_TEST || MAIN5_REMOTE_TEST),
+        .ENABLE_MAIN5_CONTROLS(MAIN5_CONTROLS_TEST || MAIN5_REMOTE_TEST),
+        .ENABLE_MAIN5_REMOTE(MAIN5_REMOTE_TEST),
+        .ENABLE_MUSEUM_OVERVIEW(MAIN3_ZOOM_TEST || MAIN5_CONTROLS_TEST || MAIN5_REMOTE_TEST),
+        .ENABLE_MUSEUM_LECTURE(MAIN3_ZOOM_TEST || MAIN5_CONTROLS_TEST || MAIN5_REMOTE_TEST),
 `endif
         .LINEBUF_V26_OUTPUT_PIPELINE(TEST_V26_OUTPUT_PIPELINE),
         .LINEBUF_FIFO_RESPONSE_REGISTER(TEST_FIFO_RESPONSE_REGISTER),
@@ -73,7 +81,7 @@ module tb_museum_media_core #(
         // The production switch point is VIDEO_W+19, after video_delay has
         // drained.  The compact preload raster therefore needs at least 20
         // horizontal blanking clocks; legacy timing tests retain 2 clocks.
-        .H_FRONT((PRELOAD_TEST || MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || MAIN3_ZOOM_TEST || MAIN5_CONTROLS_TEST) ? 22 : 2),
+        .H_FRONT((PRELOAD_TEST || MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || MAIN3_ZOOM_TEST || MAIN5_CONTROLS_TEST || MAIN5_REMOTE_TEST) ? 22 : 2),
         .H_SYNC(2), .H_BACK(2),
         .V_FRONT(1), .V_SYNC(1), .V_BACK(1)
     ) dut (
@@ -84,7 +92,13 @@ module tb_museum_media_core #(
         .hdmi1_clk_p(hdmi1_clk_p), .hdmi1_d2_p(hdmi1_d2_p),
         .hdmi1_d1_p(hdmi1_d1_p), .hdmi1_d0_p(hdmi1_d0_p)
 `ifdef V66_TOP
-        ,.uart_rxd(1'b1), .uart_txd()
+        ,.uart_rxd(1'b1), .uart_txd(),
+        .remote_command_valid(remote_command_valid),
+        .remote_command_type(remote_command_type),
+        .remote_command_payload(remote_command_payload),
+        .remote_command_done(remote_command_done),
+        .remote_command_result(remote_command_result),
+        .main5_display(main5_display)
 `endif
     );
 
@@ -142,6 +156,25 @@ module tb_museum_media_core #(
                             {pixel565[4:0], pixel565[4:2]}};
         end
     endfunction
+
+    task send_remote;
+        input [7:0] kind;
+        input [63:0] payload;
+        input [7:0] expected_result;
+        begin
+            @(negedge clk_50m);
+            remote_command_type=kind;
+            remote_command_payload=payload;
+            remote_command_valid=1'b1;
+            @(posedge remote_command_done);
+            #1;
+            if (remote_command_result !== expected_result)
+                $fatal(1,"remote command %h result=%d expected=%d",
+                       kind,remote_command_result,expected_result);
+            @(negedge clk_50m);
+            remote_command_valid=1'b0;
+        end
+    endtask
 
     always @(posedge clk_50m) begin
 `ifndef STUB_STORE
@@ -419,6 +452,61 @@ module tb_museum_media_core #(
             if (dut.zoom_2x || dut.detail_zoom_2x)
                 $fatal(1, "zoom persisted after lecture exit");
             $display("PASS MAIN3 KEY1 select/zoom, KEY3 presets, zoom reset on exit");
+            $finish;
+        end
+
+        if (MAIN5_REMOTE_TEST) begin
+            force dut.transition_active=1'b0;
+            repeat(5) @(negedge clk_50m);
+            send_remote(8'h13,{8'd1,8'd1,16'd0,32'd0},8'd0);
+            timeout=0;
+            while (dut.main5_preset_applied!=8'd1 && timeout<100000) begin
+                @(negedge clk_50m); timeout=timeout+1;
+            end
+            if (dut.main5_preset_applied!=8'd1 ||
+                dut.main5_brightness_applied!=3'd5 ||
+                dut.main5_contrast_applied!=3'd3 ||
+                dut.main5_saturation_applied!=3'd4 ||
+                dut.main5_temperature_applied!=3'd4)
+                $fatal(1,"preset did not apply atomically");
+            send_remote(8'h14,{8'd7,8'd3,8'd4,8'd5,8'd1,8'd0,16'd0},8'd5);
+            if (dut.main5_preset_applied!=8'd1)
+                $fatal(1,"invalid adjust changed preset");
+            send_remote(8'h14,{8'd4,8'd3,8'd4,8'd5,8'd1,8'd0,16'd0},8'd0);
+            timeout=0;
+            while (dut.main5_preset_applied!=8'hff && timeout<100000) begin
+                @(negedge clk_50m); timeout=timeout+1;
+            end
+            if (dut.main5_preset_applied!=8'hff ||
+                dut.main5_brightness_applied!=3'd4 ||
+                dut.main5_temperature_applied!=3'd5 ||
+                main5_display[95:88]!=8'hff)
+                $fatal(1,"custom adjust/status failed");
+            force dut.lecture_active=1'b1;
+            force dut.overview_enable_video=1'b0;
+            force dut.lecture_display_frame_slot=3'd0;
+            force dut.transition_active=1'b0;
+            force dut.zoom_2x=1'b1;
+            timeout=0;
+            while (!dut.display_zoom_2x && timeout<100000) begin
+                @(negedge clk_50m); timeout=timeout+1;
+            end
+            if (!dut.display_zoom_2x) $fatal(1,"zoom entry timeout");
+            repeat(6) @(negedge clk_50m);
+            send_remote(8'h15,{8'd0,8'd0,8'd2,8'd0,16'sd3,16'sd2},8'd0);
+            timeout=0;
+            while ((dut.display_pan_x!=16'sd3 || dut.display_pan_y!=16'sd2) &&
+                   timeout<100000) begin
+                @(negedge clk_50m); timeout=timeout+1;
+            end
+            if (dut.display_pan_x!=16'sd3 || dut.display_pan_y!=16'sd2 ||
+                dut.transition_active)
+                $fatal(1,"viewport did not move without transition");
+            send_remote(8'h15,{8'd1,8'd0,8'd2,8'd0,16'sd0,16'sd0},8'd5);
+            sw[3]=1'b1;
+            repeat(6) @(negedge clk_50m);
+            send_remote(8'h13,{8'd0,8'd1,16'd0,32'd0},8'd4);
+            $display("PASS MAIN5 remote preset/adjust/viewport/priority");
             $finish;
         end
 
