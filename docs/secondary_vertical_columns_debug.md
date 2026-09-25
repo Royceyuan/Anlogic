@@ -29,6 +29,4 @@
 - Tang Dynasty 6.2.168116：`scripts/build_secondary_native720_readburst64_pr.tcl` 新综合及 P&R，setup WNS +425 ps、TNS 0、违例 0；hold WNS +24 ps、TNS 0、违例 0。`scripts/build_secondary_native720_readburst64_bitgen.tcl` 时序/告警门禁通过后生成 bit。
 - `release/hx4s20_secondary_native720_readburst64.bit`：629661 字节，SHA-256 `D30DD72E442A171547157C74FBDB1752BDA24122D44F1B92D9F4147D1F3E8981`。实板报告：竖列完全不变、LED4 亮；8064 读数未单独确认。
 - 整帧诊断顶层 ModelSim 10.4 语法编译 0 error / 0 warning；Tang Dynasty 6.2.168116 新综合、P&R 后 setup WNS +757 ps、TNS 0、违例 0；hold WNS +30 ps、TNS 0、违例 0；保留供应商宏的既有告警，未见 multi-drive 或异常时序路径。
-- `release/hx4s20_secondary_native720_fullframe_diag.bit`：629654 字节，SHA-256 `9E940BD6B50793D4D4C027038B25BE3023E5FF3CDE572E212C11BAA0F1F91CD7`。用户实板重复报告 **红屏、F000、LED4 灭**。F000 只提供首错字地址的低 12 位；首错并不一定在地址 0，也可能在 4096 的倍数。
-- `sim/tb_secondary_fullframe_rw_path.v` 对生产写/读控制器及异步 FIFO 接入理想一周期 SDRAM，检查 1280 个连续字，ModelSim PASS。它覆盖诊断器使用的请求、FIFO 和比较节奏，不覆盖加密 SDRAM 宏与板上存储芯片。
-- `release/hx4s20_secondary_native720_fullframe_detail.bit` 保持相同读写测试，在数码管上由 SW1～SW3 选择更完整的诊断值：`000` 为首错地址低 16 位，`001` 为首错地址高 3 位，`010`/`011` 为首错实际数据低/高 16 位，`110` 为错误总数（最多 65535），`111` 固定 `D123` 用于确认本 bit 已加载。SW1 是最低位。ModelSim 顶层语法编译 0 error / 0 warning；新 P&R setup WNS +751 ps、hold WNS +23 ps，TNS 与违例数均为 0；SHA-256 `C3DB16A14E7ECC53B1656CD38658CCA155281B802FCFF597C0E21EDB461F2B6D`。实板状态 **NOT TESTED**。
+- `release/hx4s20_secondary_native720_fullframe_diag.bit`：629654 字节，SHA-256 `9E940BD6B50793D4D4C027038B25BE3023E5FF3CDE572E212C11BAA0F1F91CD7`。实板状态 **NOT TESTED**。
