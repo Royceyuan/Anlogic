@@ -8,6 +8,7 @@ from PIL import Image, ImageEnhance, ImageFilter, ImageOps
 ASSETS = Path(__file__).resolve().parents[1] / "assets"
 NAMES = ("越王勾践剑", "四羊方尊", "金缕玉衣", "马踏飞燕", "长信宫灯")
 OUTPUT = ASSETS / "secondary_exhibit_720p_tf"
+EMERGENCY_720P = ASSETS / "secondary_emergency_720p"
 
 
 def main() -> None:
@@ -28,6 +29,12 @@ def main() -> None:
             assert image.mode == "RGB"
             assert image.size == (1280, 720)
     with Image.open(ASSETS / "secondary_emergency_source/escape_route_original.png") as source:
+        full_route = ImageOps.contain(source.convert("RGB"), (1280, 720), Image.Resampling.LANCZOS)
+        full_page = Image.new("RGB", (1280, 720), (24, 82, 68))
+        full_page.paste(full_route, ((1280 - full_route.width) // 2, 0))
+        EMERGENCY_720P.mkdir(exist_ok=True)
+        full_page.save(EMERGENCY_720P / "IMAGEA.BMP", format="BMP")
+        full_page.save(EMERGENCY_720P / "preview.png")
         # Keep the supplied floor plan and route; enlarge the useful map area
         # instead of shrinking its title, legend and footer into tiny pixels.
         route = source.convert("RGB").crop((160, 160, 1228, 761))
