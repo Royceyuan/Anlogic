@@ -5,11 +5,14 @@
 // receiver owns CRC, boot_id, seq/deduplication and ACK transmission.
 module secondary_carousel_controller #(
     parameter integer PAGE_CYCLES = 250_000_000,
-    parameter integer LINK_TIMEOUT_CYCLES = 100_000_000
+    parameter integer LINK_TIMEOUT_CYCLES = 100_000_000,
+    parameter integer STREAMING = 0
 ) (
     input  wire        clk,
     input  wire        rst_n,
     input  wire [4:0]  frame_valid,
+    input  wire        page_ready,
+    input  wire [2:0]  displayed_artifact,
     input  wire        local_emergency,
     input  wire        cmd_valid,
     input  wire [7:0]  cmd_type,
@@ -22,6 +25,7 @@ module secondary_carousel_controller #(
     input  wire [7:0]  cmd_route_id,
     input  wire        cmd_emergency_active,
     output reg  [2:0]  page_index,
+    output reg  [2:0]  resume_page_index,
     output wire        emergency_active,
     output reg  [1:0]  link_state,
     output reg  [2:0]  master_artifact,
@@ -68,6 +72,7 @@ end
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         page_index <= 3'd0;
+        resume_page_index <= 3'd0;
         page_cycles <= 28'd0;
         link_cycles <= 27'd0;
         link_state <= LINK_WAIT;
@@ -83,11 +88,16 @@ always @(posedge clk or negedge rst_n) begin
         local_ff1 <= local_emergency;
         local_ff2 <= local_ff1;
 
-        if (!all_ready || emergency_active) begin
+        if (!STREAMING && !all_ready) begin
             page_index <= 3'd0;
+            page_cycles <= 28'd0;
+        end else if (emergency_active) begin
+            if (!STREAMING) page_index <= 3'd0;
             page_cycles <= 28'd0;
         end else if (info_active) begin
             page_index <= info_artifact;
+            page_cycles <= 28'd0;
+        end else if (STREAMING && !page_ready) begin
             page_cycles <= 28'd0;
         end else if (page_cycles == PAGE_CYCLES - 1) begin
             page_cycles <= 28'd0;
@@ -113,9 +123,12 @@ always @(posedge clk or negedge rst_n) begin
                     master_artifact <= (cmd_artifact_id <= 8'd4) ? cmd_artifact_id[2:0] : 3'd7;
                     if (cmd_mode == 8'd1) begin
                         info_active <= 1'b0;
-                        page_index <= 3'd0;
+                        page_index <= STREAMING ? resume_page_index : 3'd0;
                         page_cycles <= 28'd0;
                     end else if (cmd_mode == 8'd2 && cmd_artifact_id <= 8'd4) begin
+                        if (!info_active)
+                            resume_page_index <= STREAMING && displayed_artifact <= 3'd4 ?
+                                                 displayed_artifact : page_index;
                         info_active <= 1'b1;
                         info_artifact <= cmd_artifact_id[2:0];
                         page_index <= cmd_artifact_id[2:0];
@@ -132,6 +145,9 @@ always @(posedge clk or negedge rst_n) begin
                     master_artifact <= (cmd_artifact_id <= 8'd4) ? cmd_artifact_id[2:0] : 3'd7;
                     if (cmd_type == ARTIFACT_SELECT && cmd_confirmed &&
                         cmd_artifact_id <= 8'd4) begin
+                        if (!info_active)
+                            resume_page_index <= STREAMING && displayed_artifact <= 3'd4 ?
+                                                 displayed_artifact : page_index;
                         info_active <= 1'b1;
                         info_artifact <= cmd_artifact_id[2:0];
                         page_index <= cmd_artifact_id[2:0];
@@ -139,7 +155,7 @@ always @(posedge clk or negedge rst_n) begin
                     end else if (cmd_type == LECTURE_STATE) begin
                         if (cmd_lecture_phase == 8'hff || cmd_lecture_reason == 8'd1) begin
                             info_active <= 1'b0;
-                            page_index <= 3'd0;
+                            page_index <= STREAMING ? resume_page_index : 3'd0;
                             page_cycles <= 28'd0;
                         end
                     end
@@ -153,7 +169,7 @@ always @(posedge clk or negedge rst_n) begin
                 default: begin end
             endcase
         end
-        if (emergency_active)
+        if (emergency_active && !STREAMING)
             info_active <= 1'b0;
     end
 end

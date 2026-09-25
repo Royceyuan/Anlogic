@@ -22,7 +22,7 @@ module secondary_page_overlay (
     output reg  [23:0] rgb
 );
 
-reg emergency_ff1, emergency_ff2, emergency_frame;
+reg emergency_frame;
 reg emergency_bitmap_frame;
 reg [1:0] link_ff1, link_ff2, link_frame;
 reg [2:0] artifact_ff1, artifact_ff2, artifact_frame;
@@ -33,7 +33,7 @@ reg media_pixel, main_pixel, link_pixel, artifact_pixel;
 
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-        emergency_ff1 <= 1'b0; emergency_ff2 <= 1'b0; emergency_frame <= 1'b0;
+        emergency_frame <= 1'b0;
         emergency_bitmap_frame <= 1'b0;
         link_ff1 <= 2'd0; link_ff2 <= 2'd0; link_frame <= 2'd0;
         artifact_ff1 <= 3'd7; artifact_ff2 <= 3'd7; artifact_frame <= 3'd7;
@@ -43,7 +43,6 @@ always @(posedge clk or negedge rst_n) begin
         media_pixel <= 1'b0; main_pixel <= 1'b0;
         link_pixel <= 1'b0; artifact_pixel <= 1'b0;
     end else begin
-        emergency_ff1 <= emergency_50m; emergency_ff2 <= emergency_ff1;
         link_ff1 <= link_state_50m; link_ff2 <= link_ff1;
         artifact_ff1 <= master_artifact_50m; artifact_ff2 <= artifact_ff1;
         ready_ff1 <= media_ready_50m; ready_ff2 <= ready_ff1;
@@ -55,7 +54,7 @@ always @(posedge clk or negedge rst_n) begin
         link_pixel <= word_pixel(pre_x,pre_y,11'd840,10'd680,link_word);
         artifact_pixel <= digit_pixel(pre_x,pre_y,artifact_frame);
         if (x == 11'd0 && y == 10'd0) begin
-            emergency_frame <= emergency_ff2 || emergency_bitmap_video;
+            emergency_frame <= emergency_bitmap_video;
             emergency_bitmap_frame <= emergency_bitmap_video;
             link_frame <= link_ff2;
             artifact_frame <= artifact_ff2;

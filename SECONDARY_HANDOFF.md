@@ -100,3 +100,9 @@ v2 bit 的物理顶层把 `secondary_cmd_valid` 接常量 0，因为 Ethernet/UD
 2. TF 卡 FAT32 根目录放 `assets/secondary_exhibit_v2_tf/IMAGE0.BMP`～`IMAGE9.BMP`，再烧录新版本地功能 bit。未连接主板命令时确认五张大图依次出现、每页 5.0 秒 ±1 帧并有转场，无撕裂和旧页残留。连接 MBP1 接收器后，确认进入讲解时测试五张对应简介，退出后恢复轮播；分别移除/损坏某页素材，核对占位画面和数码管错误码。
 3. 将 SW4 置 1、再置 0，观察紧急页优先显示、解除后从第 0 页恢复。真实位置和路线未替换前，不用于现场引导。
 4. 只有上述板测记录齐全才分别标记对应 `SECONDARY-N BOARD PASS`。后续 Ethernet 按独立 PHY 诊断、UDP/MBP1、双板联调推进。
+
+## 2026-09-25 原生 720p 后续状态
+
+上面的 960×540 本地预览操作是历史记录。当前 SD 卡已使用 `assets/secondary_exhibit_720p_tf/IMAGE0.BMP`～`IMAGEA.BMP`（11 张 1280×720 BMP）；原生 720p v1 的实板画面更清晰，用户观察到固定竖列重影、偶发白点及几个切换等待问题。详见 `docs/secondary_native720_v1.md`。
+
+针对切换等待与预缓存，`docs/secondary_native720_v2.md` 记录新候选 bit、操作和验证边界。v2 已通过仿真和 P&R，尚未实板验证。固定竖列重影及白点仍需先用 `release/hx4s20_secondary_0.bit`（纯 HDMI、数码管 5000）与原生 720p bit 对照；不要把新交互 bit 当作画质故障已修复的证据。以太网接收器仍未接入。

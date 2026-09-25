@@ -61,18 +61,8 @@ initial begin
     check(rgb == base_rgb, "normal image fills bottom edge");
 
     emergency_50m = 1'b1;
-    media_ready_50m = 1'b0;
-    media_error_50m = 1'b1;
     step(4); frame();
-    x = 50; y = 667; #1;
-    check(rgb == 24'h142033, "emergency wait has no link footer");
-    x = 250; y = 388; #1;
-    check(rgb == 24'h142033, "emergency wait has no old route marker");
-    x = 1100; y = 320; #1;
-    check(rgb == 24'h142033, "emergency wait has no old exit block");
-    pre_x = 450; pre_y = 48; step(1);
-    x = 450; y = 48; #1;
-    check(rgb == 24'hFFFFFF, "pipelined emergency title pixel");
+    check(rgb == base_rgb, "hold current image until emergency bitmap switches");
 
     emergency_bitmap_video = 1'b1;
     step(4); frame();
@@ -82,7 +72,8 @@ initial begin
     step(4); frame();
     check(rgb == base_rgb, "SD bitmap held until the media slot changes");
     emergency_bitmap_video = 1'b0;
-
+    media_ready_50m = 1'b0;
+    media_error_50m = 1'b1;
     step(4); frame();
     x = 500; y = 400; #1;
     check(rgb == 24'h142033, "media error placeholder");

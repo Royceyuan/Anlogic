@@ -27,7 +27,8 @@ wire [2:0] cmd_result;
 
 always #5 clk = ~clk;
 secondary_carousel_controller #(.PAGE_CYCLES(8), .LINK_TIMEOUT_CYCLES(6)) dut (
-    .clk(clk), .rst_n(rst_n), .frame_valid(frame_valid),
+    .clk(clk), .rst_n(rst_n), .frame_valid(frame_valid), .page_ready(1'b1),
+    .displayed_artifact(3'd0),
     .local_emergency(local_emergency), .cmd_valid(cmd_valid),
     .cmd_type(cmd_type), .cmd_artifact_id(cmd_artifact_id),
     .cmd_confirmed(cmd_confirmed), .cmd_mode(cmd_mode),
@@ -35,7 +36,8 @@ secondary_carousel_controller #(.PAGE_CYCLES(8), .LINK_TIMEOUT_CYCLES(6)) dut (
     .cmd_lecture_reason(cmd_lecture_reason),
     .cmd_emergency_id(cmd_emergency_id), .cmd_route_id(cmd_route_id),
     .cmd_emergency_active(cmd_emergency_active),
-    .page_index(page_index), .emergency_active(emergency_active),
+    .page_index(page_index), .resume_page_index(),
+    .emergency_active(emergency_active),
     .link_state(link_state), .master_artifact(master_artifact),
     .info_active(info_active), .info_artifact(info_artifact),
     .active_route_id(active_route_id), .cmd_result(cmd_result)
