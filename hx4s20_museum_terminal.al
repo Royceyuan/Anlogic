@@ -614,6 +614,14 @@
                     <Attr Name="CompileOrder" Val="78"/>
                 </FileInfo>
             </File>
+            <File Path="src/memory/top_1280x720_main5_local_controls.v">
+                <FileInfo>
+                    <Attr Name="UsedInSyn" Val="true"/>
+                    <Attr Name="UsedInP&R" Val="true"/>
+                    <Attr Name="BelongTo" Val="design_1"/>
+                    <Attr Name="CompileOrder" Val="79"/>
+                </FileInfo>
+            </File>
         </Verilog>
         <VHDL>
             <File Path="vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/hdmi_tx.vhd">

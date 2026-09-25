@@ -22,7 +22,8 @@ module tb_museum_media_core #(
     parameter integer SD_ABORT_TEST = 0,
     parameter integer MAIN3_RECOVERY_TEST = 0,
     parameter integer MAIN3_ZOOM_TEST = 0,
-    parameter integer MAIN4_EMERGENCY_TEST = 0
+    parameter integer MAIN4_EMERGENCY_TEST = 0,
+    parameter integer MAIN5_CONTROLS_TEST = 0
 );
     reg clk_50m = 1'b0;
     reg [3:0] key_n = 4'b1111;
@@ -51,19 +52,20 @@ module tb_museum_media_core #(
         .ENABLE_OSD(PHASE1_TEST || PHASE2_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST),
         .ENABLE_FADE(PHASE3_TEST || PHASE4_TEST || PHASE5_TEST),
         .VIDEO_SEQUENCE(0), .VIDEO_BIN(0), .ADAPTIVE_BMP(1),
-        .PRELOAD_BOTH_IMAGES(PRELOAD_TEST || MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || MAIN3_ZOOM_TEST),
-        .MULTI_IMAGE_BMP(MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || MAIN3_ZOOM_TEST),
-        .MULTI_FRAME_PRELOAD(MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || MAIN3_ZOOM_TEST),
-        .VIDEO_FRAME_COUNT((MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || MAIN3_ZOOM_TEST) ? 5 : 2),
+        .PRELOAD_BOTH_IMAGES(PRELOAD_TEST || MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || MAIN3_ZOOM_TEST || MAIN5_CONTROLS_TEST),
+        .MULTI_IMAGE_BMP(MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || MAIN3_ZOOM_TEST || MAIN5_CONTROLS_TEST),
+        .MULTI_FRAME_PRELOAD(MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || MAIN3_ZOOM_TEST || MAIN5_CONTROLS_TEST),
+        .VIDEO_FRAME_COUNT((MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || MAIN3_ZOOM_TEST || MAIN5_CONTROLS_TEST) ? 5 : 2),
         .AUTO_PERIOD_CYCLES(PHASE4_TEST ? 32 : 250000000),
         .SOURCE_W(TB_SOURCE_W), .SOURCE_H(TB_SOURCE_H),
         .LINEBUF_SCALE(1), .LINEBUF_REGISTER_READ(TEST_REGISTERED),
 `ifdef V66_TOP
         .LINEBUF_NOREG_SYNC_READ(0),
-        .ENABLE_MAIN3(MAIN3_RECOVERY_TEST || MAIN3_ZOOM_TEST || MAIN4_EMERGENCY_TEST),
+        .ENABLE_MAIN3(MAIN3_RECOVERY_TEST || MAIN3_ZOOM_TEST || MAIN4_EMERGENCY_TEST || MAIN5_CONTROLS_TEST),
         .ENABLE_MAIN4(MAIN4_EMERGENCY_TEST),
-        .ENABLE_MUSEUM_OVERVIEW(MAIN3_ZOOM_TEST),
-        .ENABLE_MUSEUM_LECTURE(MAIN3_ZOOM_TEST),
+        .ENABLE_MAIN5_CONTROLS(MAIN5_CONTROLS_TEST),
+        .ENABLE_MUSEUM_OVERVIEW(MAIN3_ZOOM_TEST || MAIN5_CONTROLS_TEST),
+        .ENABLE_MUSEUM_LECTURE(MAIN3_ZOOM_TEST || MAIN5_CONTROLS_TEST),
 `endif
         .LINEBUF_V26_OUTPUT_PIPELINE(TEST_V26_OUTPUT_PIPELINE),
         .LINEBUF_FIFO_RESPONSE_REGISTER(TEST_FIFO_RESPONSE_REGISTER),
@@ -71,7 +73,7 @@ module tb_museum_media_core #(
         // The production switch point is VIDEO_W+19, after video_delay has
         // drained.  The compact preload raster therefore needs at least 20
         // horizontal blanking clocks; legacy timing tests retain 2 clocks.
-        .H_FRONT((PRELOAD_TEST || MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || MAIN3_ZOOM_TEST) ? 22 : 2),
+        .H_FRONT((PRELOAD_TEST || MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || MAIN3_ZOOM_TEST || MAIN5_CONTROLS_TEST) ? 22 : 2),
         .H_SYNC(2), .H_BACK(2),
         .V_FRONT(1), .V_SYNC(1), .V_BACK(1)
     ) dut (
@@ -417,6 +419,31 @@ module tb_museum_media_core #(
             if (dut.zoom_2x || dut.detail_zoom_2x)
                 $fatal(1, "zoom persisted after lecture exit");
             $display("PASS MAIN3 KEY1 select/zoom, KEY3 presets, zoom reset on exit");
+            $finish;
+        end
+
+        if (MAIN5_CONTROLS_TEST) begin
+            if (!dut.overview_osd_visible || !dut.normal_waveform_visible)
+                $fatal(1, "MAIN5 controls did not default visible");
+            @(negedge clk_50m); force dut.key_press_pulse = 4'b0100;
+            @(negedge clk_50m); release dut.key_press_pulse;
+            if (dut.overview_osd_visible || !dut.normal_waveform_visible ||
+                dut.brightness_level != 0 || dut.contrast_level != 0)
+                $fatal(1, "overview KEY3 did not exclusively hide overview OSD");
+            force dut.lecture_active = 1'b1;
+            force dut.overview_enable_video = 1'b0;
+            repeat (3) @(negedge clk_50m);
+            force dut.key_press_pulse = 4'b0100;
+            @(negedge clk_50m); release dut.key_press_pulse;
+            if (dut.overview_osd_visible || dut.normal_waveform_visible)
+                $fatal(1, "lecture KEY3 did not exclusively hide normal waveform");
+            force dut.key_press_pulse = 4'b0100;
+            @(negedge clk_50m); release dut.key_press_pulse;
+            if (!dut.normal_waveform_visible)
+                $fatal(1, "lecture KEY3 did not restore normal waveform");
+            release dut.lecture_active;
+            release dut.overview_enable_video;
+            $display("PASS MAIN5 KEY3 overview OSD / lecture waveform split");
             $finish;
         end
 

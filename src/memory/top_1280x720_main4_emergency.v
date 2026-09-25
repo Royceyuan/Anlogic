@@ -1,7 +1,9 @@
 `timescale 1ns / 1ps
 `default_nettype none
 
-module top_1280x720_main4_emergency (
+module top_1280x720_main4_emergency #(
+    parameter integer ENABLE_MAIN5_CONTROLS = 0
+) (
     input wire clk_50m, input wire [3:0] key_n, input wire [3:0] sw,
     output wire [3:0] led, output wire [7:0] seg_data, output wire [7:0] seg_sel,
     output wire sd_clk, output wire sd_mosi, input wire sd_miso, output wire sd_cs_n,
@@ -30,6 +32,7 @@ museum_media_core #(
     .RESOURCE_OPT_CONSTANT_MULT(1), .SUBTITLE_RESOURCE_OPT_ADDR(1),
     .ENABLE_MUSEUM_OVERVIEW(1), .ENABLE_MUSEUM_LECTURE(1),
     .ENABLE_MAIN3(1), .ENABLE_MAIN4(1),
+    .ENABLE_MAIN5_CONTROLS(ENABLE_MAIN5_CONTROLS),
     .ENABLE_AUDIO_VISUALIZER(1), .SHOW_AUDIO_VISUALIZER(1),
     .AUDIO_TRACK_COUNT(5),
     .OVERVIEW_CROP_X0_0(384), .OVERVIEW_CROP_X0_1(384),

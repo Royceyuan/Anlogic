@@ -4,6 +4,7 @@
 // Three-clock video overlay. Name bytes are loaded by the subtitle FAT reader.
 module museum_status_osd (
     input wire clk, input wire rst_n,
+    input wire panel_enable,
     input wire hs_i, input wire vs_i, input wire de_i,
     input wire [10:0] x_i, input wire [9:0] y_i, input wire [23:0] rgb_i,
     input wire [2:0] artifact, input wire [2:0] stage,
@@ -472,7 +473,8 @@ always @(posedge clk or negedge rst_n) begin
         x_s0<=x_i;y_s0<=y_i;rgb_s0<=rgb_i;
         hs_s1<=hs_s0;vs_s1<=vs_s0;de_s1<=de_s0;
         x_s1<=x_s0;y_s1<=y_s0;rgb_s1<=rgb_s0;
-        panel_s1<=de_s0 && x_s0>=160 && x_s0<1120 && y_s0>=12 && y_s0<68;
+        panel_s1<=panel_enable && de_s0 && x_s0>=160 && x_s0<1120 &&
+                  y_s0>=12 && y_s0<68;
         name_s1<=de_s0 && ready_s2 && x_s0>=180 && x_s0<340 &&
                  y_s0>=20 && y_s0<36;
         if (x_s0>=180 && x_s0<340 && y_s0>=20 && y_s0<36)

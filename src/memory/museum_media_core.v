@@ -89,6 +89,7 @@ module museum_media_core #(
     ,parameter integer ENABLE_MUSEUM_LECTURE = 0
     ,parameter integer ENABLE_MAIN3 = 0
     ,parameter integer ENABLE_MAIN4 = 0
+    ,parameter integer ENABLE_MAIN5_CONTROLS = 0
     ,parameter integer LECTURE_CLOCK_HZ = 50_000_000
     ,parameter integer OVERVIEW_CROP_X0_0 = 384
     ,parameter integer OVERVIEW_CROP_X0_1 = 384
@@ -625,6 +626,10 @@ wire [1:0] active_picture_style =
     (ui_mode == MODE_DETAIL_VIEW) ? picture_style : 2'd0;
 reg osd_panel_enable;
 reg osd_panel_enable_ff1, osd_panel_enable_ff2;
+reg overview_osd_visible;
+reg normal_waveform_visible;
+reg overview_osd_visible_ff1, overview_osd_visible_ff2;
+reg normal_waveform_visible_ff1, normal_waveform_visible_ff2;
 reg [1:0] ui_mode_ff1, ui_mode_ff2;
 reg [1:0] auto_speed_level_ff1, auto_speed_level_ff2;
 reg slideshow_paused_ff1, slideshow_paused_ff2;
@@ -1055,7 +1060,9 @@ generate
             .clk(video_clk), .rst_n(video_rst_n), .sample_valid(audio_sample_valid),
             .sample_left(audio_sample_left), .sample_right(audio_sample_right),
             .pause(emergency_video_active ? 1'b0 :
-                   (audio_paused_ff2 || recovery_video_ff2)),
+                   (audio_paused_ff2 || recovery_video_ff2 ||
+                    (ENABLE_MAIN5_CONTROLS &&
+                     (overview_enable_video || !normal_waveform_visible_ff2)))),
             .emergency(emergency_video_active),
             .frame_tick(video_frame_tick), .hs_i(video_emergency_hs),
             .vs_i(video_emergency_vs), .de_i(video_emergency_de), .x_i(video_emergency_x),
@@ -1654,6 +1661,8 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         audio_paused <= 1'b0;
         audio_stream_enable_d <= 1'b0;
         osd_panel_enable <= 1'b1;
+        overview_osd_visible <= 1'b1;
+        normal_waveform_visible <= 1'b1;
         audio_switch_reset_count <= 20'd0;
         frame_ready_toggle <= 1'b0;
         auto_mode_d       <= 1'b0;
@@ -1729,7 +1738,8 @@ always @(posedge clk_50m or negedge write_rst_n) begin
              (key_press_pulse[2] || key_press_pulse[3])))
             audio_switch_reset_count <= AUDIO_SWITCH_RESET_CYCLES;
 
-        if (ENABLE_MAIN3 ? key_press_pulse[2] : key_press_pulse[0]) begin
+        if ((!ENABLE_MAIN3 && key_press_pulse[0]) ||
+            (ENABLE_MAIN3 && !ENABLE_MAIN5_CONTROLS && key_press_pulse[2])) begin
             if (ENABLE_MUSEUM_LECTURE) begin
                 case ({brightness_level, contrast_level})
                     4'b0000: begin brightness_level<=2'd1; contrast_level<=2'd0; end
@@ -1739,6 +1749,13 @@ always @(posedge clk_50m or negedge write_rst_n) begin
                 endcase
             end else
                 osd_panel_enable <= ~osd_panel_enable;
+        end
+
+        if (ENABLE_MAIN5_CONTROLS && key_press_pulse[2]) begin
+            if (overview_mode)
+                overview_osd_visible <= ~overview_osd_visible;
+            else if (lecture_active)
+                normal_waveform_visible <= ~normal_waveform_visible;
         end
 
         if (!ENABLE_MUSEUM_LECTURE && audio_control_mode) begin
@@ -2015,6 +2032,10 @@ always @(posedge video_clk or negedge video_rst_n) begin
         transition_context_ff2 <= 2'd0;
         osd_panel_enable_ff1 <= 1'b1;
         osd_panel_enable_ff2 <= 1'b1;
+        overview_osd_visible_ff1 <= 1'b1;
+        overview_osd_visible_ff2 <= 1'b1;
+        normal_waveform_visible_ff1 <= 1'b1;
+        normal_waveform_visible_ff2 <= 1'b1;
         ui_mode_ff1        <= MODE_PRODUCT_SHOW;
         ui_mode_ff2        <= MODE_PRODUCT_SHOW;
         transition_mode_ff1 <= 3'b000;
@@ -2074,6 +2095,10 @@ always @(posedge video_clk or negedge video_rst_n) begin
         transition_context_ff2 <= transition_context_ff1;
         osd_panel_enable_ff1 <= osd_panel_enable;
         osd_panel_enable_ff2 <= osd_panel_enable_ff1;
+        overview_osd_visible_ff1 <= overview_osd_visible;
+        overview_osd_visible_ff2 <= overview_osd_visible_ff1;
+        normal_waveform_visible_ff1 <= normal_waveform_visible;
+        normal_waveform_visible_ff2 <= normal_waveform_visible_ff1;
         ui_mode_ff1        <= ui_mode;
         ui_mode_ff2        <= ui_mode_ff1;
         transition_mode_ff1 <= selected_transition_mode;
@@ -2597,6 +2622,8 @@ generate
     if (ENABLE_MAIN3 && VIDEO_MODE_1280 && ENABLE_MUSEUM_OVERVIEW) begin : g_museum_status_osd
         museum_status_osd u_museum_status_osd (
             .clk(video_clk), .rst_n(video_rst_n),
+            .panel_enable(!ENABLE_MAIN5_CONTROLS || !overview_enable_video ||
+                          overview_osd_visible_ff2),
             .hs_i(video_overview_hs), .vs_i(video_overview_vs),
             .de_i(video_overview_de), .x_i(video_overview_x),
             .y_i(video_overview_y), .rgb_i(video_overview_rgb),
