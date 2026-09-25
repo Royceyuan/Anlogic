@@ -81,8 +81,27 @@ wire inband_link;
 wire [1:0] inband_speed;
 wire inband_duplex;
 
+reg [2:0] udp_reset_pipe = 3'b111;
+reg [2:0] tx_reset_pipe = 3'b111;
+reg [2:0] rx_reset_pipe = 3'b111;
+always @(posedge udp_clk or posedge sys_reset) begin
+    if (sys_reset) udp_reset_pipe <= 3'b111;
+    else udp_reset_pipe <= {udp_reset_pipe[1:0], 1'b0};
+end
+always @(posedge tx_clk or posedge sys_reset) begin
+    if (sys_reset) tx_reset_pipe <= 3'b111;
+    else tx_reset_pipe <= {tx_reset_pipe[1:0], 1'b0};
+end
+always @(posedge rx_clk or posedge sys_reset) begin
+    if (sys_reset) rx_reset_pipe <= 3'b111;
+    else rx_reset_pipe <= {rx_reset_pipe[1:0], 1'b0};
+end
+wire udp_reset = udp_reset_pipe[2];
+wire tx_reset = tx_reset_pipe[2];
+wire rx_reset = rx_reset_pipe[2];
+
 temac_block #(.DEVICE("EG4")) u_temac (
-    .reset(1'b0),
+    .reset(sys_reset),
     .gtx_clk(clk_125_udp),
     .gtx_clk_90(clk_125_90),
     .rx_clk(rx_clk),
@@ -141,19 +160,19 @@ wire temac_rx_sof;
 wire temac_rx_eof;
 
 tx_client_fifo #(.DEVICE("EG4")) u_tx_fifo (
-    .rd_clk(tx_clk), .rd_sreset(1'b0), .rd_enable(tx_clk_en),
+    .rd_clk(tx_clk), .rd_sreset(tx_reset), .rd_enable(tx_clk_en),
     .tx_data(tx_data), .tx_data_valid(tx_valid), .tx_ack(tx_ready),
     .tx_collision(tx_collision), .tx_retransmit(tx_retransmit), .overflow(),
-    .wr_clk(udp_clk), .wr_sreset(1'b0), .wr_data(temac_tx_data),
+    .wr_clk(udp_clk), .wr_sreset(udp_reset), .wr_data(temac_tx_data),
     .wr_sof_n(temac_tx_sof), .wr_eof_n(temac_tx_eof),
     .wr_src_rdy_n(temac_tx_valid), .wr_dst_rdy_n(temac_tx_ready), .wr_fifo_status()
 );
 
 rx_client_fifo #(.DEVICE("EG4")) u_rx_fifo (
-    .wr_clk(rx_clk), .wr_enable(rx_clk_en), .wr_sreset(1'b0),
+    .wr_clk(rx_clk), .wr_enable(rx_clk_en), .wr_sreset(rx_reset),
     .rx_data(rx_data), .rx_data_valid(rx_valid), .rx_good_frame(rx_good),
     .rx_bad_frame(rx_bad), .overflow(),
-    .rd_clk(udp_clk), .rd_sreset(1'b0), .rd_data_out(temac_rx_data),
+    .rd_clk(udp_clk), .rd_sreset(udp_reset), .rd_data_out(temac_rx_data),
     .rd_sof_n(temac_rx_sof), .rd_eof_n(temac_rx_eof),
     .rd_src_rdy_n(temac_rx_valid_n), .rd_dst_rdy_n(temac_rx_ready), .rx_fifo_status()
 );
@@ -172,7 +191,7 @@ wire ip_rx_error;
 wire arp_error;
 
 udp_echo_buffer u_echo (
-    .clk(udp_clk), .rst(sys_reset),
+    .clk(udp_clk), .rst(udp_reset),
     .rx_data(app_rx_data), .rx_valid(app_rx_valid), .rx_length(app_rx_length),
     .tx_ready(udp_tx_ready), .tx_ack(app_tx_ack),
     .tx_request(app_tx_request), .tx_data(app_tx_data),
@@ -185,7 +204,7 @@ udp_ip_protocol_stack #(
     .LOCAL_IP_ADDRESS(LOCAL_IP),
     .LOCAL_MAC_ADDRESS(LOCAL_MAC)
 ) u_udp_stack (
-    .udp_rx_clk(udp_clk), .udp_tx_clk(udp_clk), .reset(1'b0),
+    .udp_rx_clk(udp_clk), .udp_tx_clk(udp_clk), .reset(udp_reset),
     .input_local_udp_port_num(UDP_PORT), .input_local_udp_port_num_valid(1'b0),
     .udp2app_tx_ready(udp_tx_ready), .udp2app_tx_ack(app_tx_ack),
     .app_tx_request(app_tx_request), .app_tx_data_valid(app_tx_valid),
@@ -221,8 +240,8 @@ reg rx_toggle;
 reg tx_toggle;
 reg [7:0] rx_packet_count;
 reg [7:0] tx_packet_count;
-always @(posedge udp_clk or posedge sys_reset) begin
-    if (sys_reset) begin
+always @(posedge udp_clk or posedge udp_reset) begin
+    if (udp_reset) begin
         rx_valid_d <= 1'b0;
         rx_toggle <= 1'b0;
         tx_toggle <= 1'b0;
