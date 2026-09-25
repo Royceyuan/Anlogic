@@ -18,6 +18,7 @@ report_timing_status -file [file join $build_root main5a_ethernet_diag_gate.ts]
 report_timing_summary -file [file join $build_root main5a_ethernet_diag_gate.timing]
 flow_status -file [file join $build_root main5a_ethernet_diag_syn.status]
 export_db [file join $build_root main5a_ethernet_diag_gate.db]
+set_param place seed 11
 place
 update_timing -mode manhattan
 report_area -io_info -file [file join $build_root main5a_ethernet_diag_place.area]

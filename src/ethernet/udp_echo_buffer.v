@@ -26,16 +26,19 @@ reg [15:0] packet_length;
 reg [15:0] sent_count;
 reg rx_valid_d;
 
-wire [11:0] ram_read_address = (state == SEND) ? read_pointer + 12'd1 : 12'd0;
+wire [11:0] ram_read_address = (state == WAIT_ACK) ? 12'd1 :
+                               (state == SEND) ? read_pointer + 12'd2 : 12'd0;
 wire [7:0] ram_read_data;
 
 `ifdef SIM
 reg [7:0] memory [0:4095];
+reg [7:0] sim_ram_read_data;
 always @(posedge clk) begin
     if (rx_valid)
         memory[write_pointer] <= rx_data;
+    sim_ram_read_data <= memory[ram_read_address];
 end
-assign ram_read_data = memory[ram_read_address];
+assign ram_read_data = sim_ram_read_data;
 `else
 wire [7:0] unused_a;
 EG_LOGIC_BRAM #(
@@ -78,7 +81,7 @@ always @(posedge clk or posedge rst) begin
         case (state)
             WAIT_RX: begin
                 tx_valid <= 1'b0;
-                if (rx_valid_d && !rx_valid && (packet_length != 16'd0) && tx_ready) begin
+                if (!rx_valid && !rx_valid_d && (packet_length != 16'd0) && tx_ready) begin
                     read_pointer <= 12'd0;
                     sent_count <= 16'd0;
                     tx_length <= packet_length;
