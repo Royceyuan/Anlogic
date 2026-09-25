@@ -22,6 +22,9 @@
             <File Path="src/ethernet/mdio_clause22_monitor.v"><FileInfo><Attr Name="UsedInSyn" Val="true"/><Attr Name="UsedInP&amp;R" Val="true"/><Attr Name="BelongTo" Val="design_1"/><Attr Name="CompileOrder" Val="15"/></FileInfo></File>
             <File Path="src/ethernet/udp_echo_buffer.v"><FileInfo><Attr Name="UsedInSyn" Val="true"/><Attr Name="UsedInP&amp;R" Val="true"/><Attr Name="BelongTo" Val="design_1"/><Attr Name="CompileOrder" Val="16"/></FileInfo></File>
             <File Path="src/top/top_main5a_ethernet_diag.v"><FileInfo><Attr Name="UsedInSyn" Val="true"/><Attr Name="UsedInP&amp;R" Val="true"/><Attr Name="BelongTo" Val="design_1"/><Attr Name="CompileOrder" Val="17"/></FileInfo></File>
+            <File Path="src/ethernet/mbp1_codec.v"><FileInfo><Attr Name="UsedInSyn" Val="true"/><Attr Name="UsedInP&amp;R" Val="true"/><Attr Name="BelongTo" Val="design_1"/><Attr Name="CompileOrder" Val="21"/></FileInfo></File>
+            <File Path="src/ethernet/mbp1_main_endpoint.v"><FileInfo><Attr Name="UsedInSyn" Val="true"/><Attr Name="UsedInP&amp;R" Val="true"/><Attr Name="BelongTo" Val="design_1"/><Attr Name="CompileOrder" Val="22"/></FileInfo></File>
+            <File Path="src/top/top_main5b_mbp1_diag.v"><FileInfo><Attr Name="UsedInSyn" Val="true"/><Attr Name="UsedInP&amp;R" Val="true"/><Attr Name="BelongTo" Val="design_1"/><Attr Name="CompileOrder" Val="23"/></FileInfo></File>
         </Verilog>
         <ADC_FILE><File Path="constraints/top_main5a_ethernet_diag.adc"><FileInfo><Attr Name="UsedInSyn" Val="true"/><Attr Name="UsedInP&amp;R" Val="true"/><Attr Name="BelongTo" Val="constrain_1"/><Attr Name="CompileOrder" Val="1"/></FileInfo></File></ADC_FILE>
         <SDC_FILE><File Path="constraints/top_main5a_ethernet_diag.sdc"><FileInfo><Attr Name="UsedInSyn" Val="true"/><Attr Name="UsedInP&amp;R" Val="true"/><Attr Name="BelongTo" Val="constrain_1"/><Attr Name="CompileOrder" Val="2"/></FileInfo></File></SDC_FILE>

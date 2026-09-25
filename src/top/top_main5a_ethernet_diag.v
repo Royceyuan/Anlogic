@@ -1,7 +1,9 @@
 `timescale 1ns / 1ps
 `default_nettype none
 
-module top_main5a_ethernet_diag (
+module top_main5a_ethernet_diag #(
+    parameter integer MBP1_DIAG = 0
+) (
     input  wire       clk_50m,
     input  wire       key_reset_n,
     input  wire [1:0] debug_sel,
@@ -189,14 +191,41 @@ wire [15:0] app_rx_length;
 wire [15:0] app_rx_port;
 wire ip_rx_error;
 wire arp_error;
+wire phy_link = phy_status[10];
 
-udp_echo_buffer u_echo (
-    .clk(udp_clk), .rst(udp_reset),
-    .rx_data(app_rx_data), .rx_valid(app_rx_valid), .rx_length(app_rx_length),
-    .tx_ready(udp_tx_ready), .tx_ack(app_tx_ack),
-    .tx_request(app_tx_request), .tx_data(app_tx_data),
-    .tx_valid(app_tx_valid), .tx_length(app_tx_length)
-);
+generate if (MBP1_DIAG) begin : g_mbp1
+    reg [31:0] free_run = 32'd0;
+    reg [31:0] boot_id = 32'h500b0001;
+    wire [15:0] mbp_crc_errors, mbp_drops, mbp_retries;
+    always @(posedge clk_50m) begin
+        free_run <= free_run + 32'd1;
+        if (sys_reset) boot_id <= free_run ^ 32'h500b0001;
+    end
+    mbp1_main_endpoint u_mbp1 (
+        .clk(udp_clk), .rst(udp_reset),
+        .rx_data(app_rx_data), .rx_valid(app_rx_valid), .rx_length(app_rx_length),
+        .tx_ready(udp_tx_ready), .tx_ack(app_tx_ack),
+        .tx_request(app_tx_request), .tx_data(app_tx_data),
+        .tx_valid(app_tx_valid), .tx_length(app_tx_length),
+        .local_boot_id(boot_id), .phy_link(phy_link), .main_mode(8'd1),
+        .heartbeat_payload({8'd1, 120'd0}), .display_payload(96'd0),
+        .diagnostic_payload({{7'd0, phy_link}, 8'd3, 8'd2,
+                             40'd0, mbp_crc_errors, mbp_drops,
+                             mbp_retries, 16'd0}),
+        .command_valid(), .command_type(), .command_seq(),
+        .command_payload(), .command_done(1'b0), .command_result(8'd0),
+        .peer_alive(), .crc_error_count(mbp_crc_errors),
+        .drop_count(mbp_drops), .retry_count(mbp_retries)
+    );
+end else begin : g_echo
+    udp_echo_buffer u_echo (
+        .clk(udp_clk), .rst(udp_reset),
+        .rx_data(app_rx_data), .rx_valid(app_rx_valid), .rx_length(app_rx_length),
+        .tx_ready(udp_tx_ready), .tx_ack(app_tx_ack),
+        .tx_request(app_tx_request), .tx_data(app_tx_data),
+        .tx_valid(app_tx_valid), .tx_length(app_tx_length)
+    );
+end endgenerate
 
 udp_ip_protocol_stack #(
     .DEVICE("EG4"),
@@ -267,7 +296,6 @@ always @(posedge clk_50m or posedge sys_reset) begin
         heartbeat_count <= heartbeat_count + 26'd1;
 end
 
-wire phy_link = phy_status[10];
 assign led = ~{tx_toggle, rx_toggle, phy_link, heartbeat_count[25]};
 
 reg [15:0] display_value;
