@@ -1,0 +1,11 @@
+create_clock -name clk_50m -period 20 -waveform {0 10} [get_ports {clk_50m}]
+create_clock -name eth_rgmii_rx_clk -period 8 -waveform {0 4} [get_ports {eth_rgmii_rx_clk}]
+
+create_generated_clock -name pll_125m_mac -source [get_ports {clk_50m}] -master_clock {clk_50m} -multiply_by 2.5 [get_pins {u_clk_gen/u_pll_0/pll_inst.clkc[0]}]
+create_generated_clock -name pll_125m_udp -source [get_ports {clk_50m}] -master_clock {clk_50m} -multiply_by 2.5 [get_pins {u_clk_gen/u_pll_0/pll_inst.clkc[1]}]
+create_generated_clock -name pll_12p5m -source [get_ports {clk_50m}] -master_clock {clk_50m} -divide_by 4 [get_pins {u_clk_gen/u_pll_0/pll_inst.clkc[2]}]
+create_generated_clock -name udp_clk_125m -add -source [get_pins {u_clk_gen/u_pll_0/pll_inst.clkc[1]}] -master_clock {pll_125m_udp} -divide_by 1 [get_nets {udp_clk}]
+derive_pll_clocks -instance [get_cells {u_rx_pll/pll_inst}]
+
+set_clock_groups -exclusive -group [get_clocks {udp_clk_125m}]
+set_clock_groups -exclusive -group [get_clocks {eth_rgmii_rx_clk}]
