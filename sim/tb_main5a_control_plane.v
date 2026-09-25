@@ -93,6 +93,11 @@ initial begin
     rx_valid = 1'b0;
     repeat (4) @(negedge clk);
     if (tx_request) $fatal(1, "request raised while tx_ready is low");
+    rx_length = 16'd1;
+    send_byte(8'haa);
+    rx_valid = 1'b0;
+    rx_length = 16'd4;
+    repeat (4) @(negedge clk);
     tx_ready = 1'b1;
     wait (tx_request);
     @(negedge clk);

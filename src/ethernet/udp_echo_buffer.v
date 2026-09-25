@@ -25,6 +25,9 @@ reg [11:0] read_pointer;
 reg [15:0] packet_length;
 reg [15:0] sent_count;
 reg rx_valid_d;
+reg receiving;
+wire accept_byte = rx_valid && (receiving ||
+    (state == WAIT_RX && packet_length == 16'd0 && !rx_valid_d));
 
 wire [11:0] ram_read_address = (state == WAIT_ACK) ? 12'd1 :
                                (state == SEND) ? read_pointer + 12'd2 : 12'd0;
@@ -34,7 +37,7 @@ wire [7:0] ram_read_data;
 reg [7:0] memory [0:4095];
 reg [7:0] sim_ram_read_data;
 always @(posedge clk) begin
-    if (rx_valid)
+    if (accept_byte)
         memory[write_pointer] <= rx_data;
     sim_ram_read_data <= memory[ram_read_address];
 end
@@ -53,7 +56,7 @@ EG_LOGIC_BRAM #(
     .IMPLEMENT("32K")
 ) u_packet_ram (
     .doa(unused_a), .dob(ram_read_data), .dia(rx_data), .dib(8'd0),
-    .cea(rx_valid), .ocea(1'b0), .clka(clk), .wea(rx_valid), .rsta(1'b0),
+    .cea(accept_byte), .ocea(1'b0), .clka(clk), .wea(accept_byte), .rsta(1'b0),
     .ceb(1'b1), .oceb(1'b1), .clkb(clk), .web(1'b0), .rstb(1'b0),
     .bea(1'b1), .beb(1'b1), .addra(write_pointer), .addrb(ram_read_address)
 );
@@ -67,13 +70,18 @@ always @(posedge clk or posedge rst) begin
         packet_length <= 16'd0;
         sent_count <= 16'd0;
         rx_valid_d <= 1'b0;
+        receiving <= 1'b0;
         tx_request <= 1'b0;
         tx_data <= 8'd0;
         tx_valid <= 1'b0;
         tx_length <= 16'd0;
     end else begin
         rx_valid_d <= rx_valid;
-        if (rx_valid) begin
+        if (!rx_valid)
+            receiving <= 1'b0;
+        else if (accept_byte)
+            receiving <= 1'b1;
+        if (accept_byte) begin
             write_pointer <= write_pointer + 12'd1;
             packet_length <= (rx_length > 16'd4096) ? 16'd4096 : rx_length;
         end

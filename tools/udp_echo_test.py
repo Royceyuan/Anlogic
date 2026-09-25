@@ -14,6 +14,8 @@ def main() -> int:
     sock.bind(LOCAL)
     run_id = secrets.token_bytes(4)
     passed = 0
+    old_run = 0
+    old_sequence = 0
     for sequence in range(count):
         payload = b"MAIN5A" + run_id + sequence.to_bytes(2, "big") + bytes(range(32))
         started = time.perf_counter()
@@ -36,8 +38,10 @@ def main() -> int:
                 print(f"PASS {sequence:03d}: {(time.perf_counter() - started) * 1000:.2f} ms")
                 break
             if echoed.startswith(b"MAIN5A") and echoed[6:10] != run_id:
+                old_run += 1
                 continue
             if echoed.startswith(b"MAIN5A" + run_id) and echoed[10:12] != payload[10:12]:
+                old_sequence += 1
                 continue
             print(f"FAIL {sequence:03d}: payload mismatch, bytes={len(echoed)}")
             print(f"  sent: {payload.hex(' ')}")
@@ -45,7 +49,7 @@ def main() -> int:
             break
         else:
             print(f"FAIL {sequence:03d}: timeout")
-    print(f"result: {passed}/{count}")
+    print(f"result: {passed}/{count}; stale run={old_run}, stale sequence={old_sequence}")
     return 0 if passed == count else 1
 
 
