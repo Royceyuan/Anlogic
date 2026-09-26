@@ -56,6 +56,7 @@ endfunction
 
 reg rx_valid_d;
 reg [15:0] rx_count, rx_expected_length;
+reg [8:0] rx_crc_end_index;
 reg [15:0] rx_crc, rx_crc_wire;
 reg rx_header_ok;
 wire [15:0] rx_index = rx_valid_d ? rx_count : 16'd0;
@@ -66,6 +67,7 @@ always @(posedge clk or posedge rst) begin
         rx_valid_d <= 1'b0;
         rx_count <= 16'd0;
         rx_expected_length <= 16'd0;
+        rx_crc_end_index <= 9'd0;
         rx_crc <= 16'hffff;
         rx_crc_wire <= 16'd0;
         rx_header_ok <= 1'b0;
@@ -85,6 +87,7 @@ always @(posedge clk or posedge rst) begin
         if (rx_valid) begin
             if (!rx_valid_d) begin
                 rx_expected_length <= rx_length;
+                rx_crc_end_index <= rx_length[8:0] - 9'd2;
                 rx_header_ok <= (rx_data == 8'h4d);
                 packet_payload <= 64'd0;
                 packet_seq <= 32'd0;
@@ -95,11 +98,12 @@ always @(posedge clk or posedge rst) begin
             end
             if (rx_index != 16'hffff)
                 rx_count <= rx_index + 16'd1;
-            if (rx_index < rx_length - 16'd2 && rx_length >= 16'd22)
+            if ((!rx_valid_d && rx_length >= 16'd22) ||
+                (rx_valid_d && rx_index < {7'd0, rx_crc_end_index}))
                 rx_crc <= crc_byte(rx_crc_base, rx_data);
-            if (rx_index == rx_length - 16'd2 && rx_length >= 16'd22)
+            if (rx_valid_d && rx_index == {7'd0, rx_crc_end_index})
                 rx_crc_wire[15:8] <= rx_data;
-            if (rx_index == rx_length - 16'd1 && rx_length >= 16'd22)
+            if (rx_valid_d && rx_index == {7'd0, rx_crc_end_index} + 16'd1)
                 rx_crc_wire[7:0] <= rx_data;
             case (rx_index)
                 16'd1:  if (rx_data != 8'h42) rx_header_ok <= 1'b0;

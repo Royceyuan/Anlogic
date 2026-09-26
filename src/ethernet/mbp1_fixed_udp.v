@@ -34,6 +34,22 @@ localparam [31:0] PEER_IP = 32'hc0_a8_0a_02;
 localparam [15:0] PORT = 16'd5000;
 assign mac_rx_ready_n = 1'b0;
 
+reg [7:0] rx_data_q;
+reg rx_valid_q, rx_sof_n_q, rx_eof_n_q;
+always @(posedge clk or posedge rst) begin
+    if (rst) begin
+        rx_data_q <= 8'd0;
+        rx_valid_q <= 1'b0;
+        rx_sof_n_q <= 1'b1;
+        rx_eof_n_q <= 1'b1;
+    end else begin
+        rx_data_q <= mac_rx_data;
+        rx_valid_q <= mac_rx_valid;
+        rx_sof_n_q <= mac_rx_sof_n;
+        rx_eof_n_q <= mac_rx_eof_n;
+    end
+end
+
 reg [8:0] rx_index;
 reg [47:0] rx_src_mac;
 reg [15:0] rx_ether_type, rx_arp_op;
@@ -43,11 +59,11 @@ reg [15:0] rx_src_port, rx_dst_port, rx_udp_length;
 reg rx_udp_accepted, arp_reply_pending, peer_mac_seen;
 reg arp_reply_taken;
 reg [47:0] peer_mac;
-wire [8:0] rx_position = !mac_rx_sof_n ? 9'd0 : rx_index;
+wire [8:0] rx_position = !rx_sof_n_q ? 9'd0 : rx_index;
 wire [15:0] rx_payload_length = rx_udp_length - 16'd8;
-assign app_rx_data = mac_rx_data;
+assign app_rx_data = rx_data_q;
 assign app_rx_length = rx_payload_length;
-assign app_rx_valid = mac_rx_valid && rx_udp_accepted &&
+assign app_rx_valid = rx_valid_q && rx_udp_accepted &&
                       rx_position >= 9'd42 &&
                       {7'd0, rx_position} < 16'd42 + rx_payload_length;
 
@@ -73,34 +89,34 @@ always @(posedge clk or posedge rst) begin
         peer_mac <= 48'd0;
     end else begin
       if (arp_reply_taken) arp_reply_pending <= 1'b0;
-      if (mac_rx_valid) begin
+      if (rx_valid_q) begin
         rx_index <= rx_position + 9'd1;
-        if (!mac_rx_sof_n) rx_udp_accepted <= 1'b0;
+        if (!rx_sof_n_q) rx_udp_accepted <= 1'b0;
         case (rx_position)
             9'd6, 9'd7, 9'd8, 9'd9, 9'd10, 9'd11:
-                rx_src_mac <= {rx_src_mac[39:0], mac_rx_data};
-            9'd12, 9'd13: rx_ether_type <= {rx_ether_type[7:0], mac_rx_data};
-            9'd14: rx_ip_version <= mac_rx_data;
+                rx_src_mac <= {rx_src_mac[39:0], rx_data_q};
+            9'd12, 9'd13: rx_ether_type <= {rx_ether_type[7:0], rx_data_q};
+            9'd14: rx_ip_version <= rx_data_q;
             9'd20: begin
-                rx_arp_op <= {rx_arp_op[7:0], mac_rx_data};
-                rx_ip_flags_hi <= mac_rx_data;
+                rx_arp_op <= {rx_arp_op[7:0], rx_data_q};
+                rx_ip_flags_hi <= rx_data_q;
             end
             9'd21: begin
-                rx_arp_op <= {rx_arp_op[7:0], mac_rx_data};
-                rx_ip_flags_lo <= mac_rx_data;
+                rx_arp_op <= {rx_arp_op[7:0], rx_data_q};
+                rx_ip_flags_lo <= rx_data_q;
             end
-            9'd23: rx_ip_proto <= mac_rx_data;
+            9'd23: rx_ip_proto <= rx_data_q;
             9'd26, 9'd27, 9'd28, 9'd29:
-                rx_src_ip <= {rx_src_ip[23:0], mac_rx_data};
+                rx_src_ip <= {rx_src_ip[23:0], rx_data_q};
             9'd30, 9'd31, 9'd32, 9'd33:
-                rx_dst_ip <= {rx_dst_ip[23:0], mac_rx_data};
-            9'd34, 9'd35: rx_src_port <= {rx_src_port[7:0], mac_rx_data};
-            9'd36, 9'd37: rx_dst_port <= {rx_dst_port[7:0], mac_rx_data};
-            9'd38, 9'd39: rx_udp_length <= {rx_udp_length[7:0], mac_rx_data};
+                rx_dst_ip <= {rx_dst_ip[23:0], rx_data_q};
+            9'd34, 9'd35: rx_src_port <= {rx_src_port[7:0], rx_data_q};
+            9'd36, 9'd37: rx_dst_port <= {rx_dst_port[7:0], rx_data_q};
+            9'd38, 9'd39: rx_udp_length <= {rx_udp_length[7:0], rx_data_q};
             default: begin end
         endcase
         if (rx_position >= 9'd38 && rx_position <= 9'd41)
-            rx_arp_target_ip <= {rx_arp_target_ip[23:0], mac_rx_data};
+            rx_arp_target_ip <= {rx_arp_target_ip[23:0], rx_data_q};
         if (rx_position == 9'd41) begin
             if (rx_ether_type == 16'h0800 && rx_ip_version == 8'h45 &&
                 rx_ip_flags_hi[5:0] == 6'd0 && rx_ip_flags_lo == 8'd0 &&
@@ -112,13 +128,13 @@ always @(posedge clk or posedge rst) begin
                 peer_mac <= rx_src_mac;
                 peer_mac_seen <= 1'b1;
             end else if (rx_ether_type == 16'h0806 && rx_arp_op == 16'h0001 &&
-                         {rx_arp_target_ip[23:0], mac_rx_data} == OUR_IP) begin
+                         {rx_arp_target_ip[23:0], rx_data_q} == OUR_IP) begin
                 peer_mac <= rx_src_mac;
                 peer_mac_seen <= 1'b1;
                 arp_reply_pending <= 1'b1;
             end
         end
-        if (!mac_rx_eof_n) rx_udp_accepted <= 1'b0;
+        if (!rx_eof_n_q) rx_udp_accepted <= 1'b0;
       end
     end
 end
@@ -127,10 +143,12 @@ localparam [2:0] TX_IDLE = 3'd0, TX_COLLECT = 3'd1, TX_WAIT = 3'd2,
                  TX_ARP = 3'd3, TX_UDP = 3'd4;
 reg [2:0] tx_state;
 reg [8:0] tx_index;
+reg [5:0] tx_payload_read_index;
 reg [6:0] tx_count;
 reg [5:0] tx_payload_length;
 reg [7:0] tx_payload [0:63];
 reg [47:0] tx_peer_mac;
+reg [7:0] tx_byte_reg;
 wire [15:0] udp_length = 16'd8 + {10'd0, tx_payload_length};
 wire [15:0] ip_length = 16'd20 + udp_length;
 wire [19:0] ip_sum = 20'h4500 + {4'd0, ip_length} + 20'h4000 +
@@ -161,26 +179,27 @@ function [7:0] mac_byte;
     end
 endfunction
 
+wire [8:0] tx_lookup_index = tx_index + 9'd1;
 reg [7:0] tx_byte;
 always @* begin
     tx_byte = 8'd0;
-    if (tx_index < 9'd6) tx_byte = mac_byte(tx_peer_mac, tx_index[2:0]);
-    else if (tx_index < 9'd12) tx_byte = mac_byte(OUR_MAC, tx_index[2:0] - 3'd6);
+    if (tx_lookup_index < 9'd6) tx_byte = mac_byte(tx_peer_mac, tx_lookup_index[2:0]);
+    else if (tx_lookup_index < 9'd12) tx_byte = mac_byte(OUR_MAC, tx_lookup_index[2:0] - 3'd6);
     else if (tx_state == TX_ARP) begin
-        case (tx_index)
+        case (tx_lookup_index)
             9'd12: tx_byte = 8'h08; 9'd13: tx_byte = 8'h06;
             9'd14: tx_byte = 8'h00; 9'd15: tx_byte = 8'h01;
             9'd16: tx_byte = 8'h08; 9'd17: tx_byte = 8'h00;
             9'd18: tx_byte = 8'h06; 9'd19: tx_byte = 8'h04;
             9'd20: tx_byte = 8'h00; 9'd21: tx_byte = 8'h02;
             9'd22, 9'd23, 9'd24, 9'd25, 9'd26, 9'd27:
-                tx_byte = mac_byte(OUR_MAC, tx_index[2:0] - 3'd6);
+                tx_byte = mac_byte(OUR_MAC, tx_lookup_index[2:0] - 3'd6);
             9'd28: tx_byte = OUR_IP[31:24];
             9'd29: tx_byte = OUR_IP[23:16];
             9'd30: tx_byte = OUR_IP[15:8];
             9'd31: tx_byte = OUR_IP[7:0];
             9'd32, 9'd33, 9'd34, 9'd35, 9'd36, 9'd37:
-                tx_byte = mac_byte(tx_peer_mac, tx_index[2:0]);
+                tx_byte = mac_byte(tx_peer_mac, tx_lookup_index[2:0]);
             9'd38: tx_byte = PEER_IP[31:24];
             9'd39: tx_byte = PEER_IP[23:16];
             9'd40: tx_byte = PEER_IP[15:8];
@@ -188,7 +207,7 @@ always @* begin
             default: tx_byte = 8'd0;
         endcase
     end else begin
-        case (tx_index)
+        case (tx_lookup_index)
             9'd12: tx_byte = 8'h08; 9'd13: tx_byte = 8'h00;
             9'd14: tx_byte = 8'h45; 9'd15: tx_byte = 8'h00;
             9'd16: tx_byte = ip_length[15:8];
@@ -212,21 +231,23 @@ always @* begin
             9'd37: tx_byte = PORT[7:0];
             9'd38: tx_byte = udp_length[15:8];
             9'd39: tx_byte = udp_length[7:0];
-            default: if (tx_index >= 9'd42 && tx_index < 9'd42 +
+            default: if (tx_lookup_index >= 9'd42 && tx_lookup_index < 9'd42 +
                          {3'd0, tx_payload_length})
-                tx_byte = tx_payload[tx_index - 9'd42];
+                tx_byte = tx_payload[tx_payload_read_index];
         endcase
     end
 end
-assign mac_tx_data = tx_byte;
+assign mac_tx_data = tx_byte_reg;
 
 always @(posedge clk or posedge rst) begin
     if (rst) begin
         tx_state <= TX_IDLE;
         tx_index <= 9'd0;
+        tx_payload_read_index <= 6'd0;
         tx_count <= 7'd0;
         tx_payload_length <= 6'd0;
         tx_peer_mac <= 48'd0;
+        tx_byte_reg <= 8'd0;
         app_tx_ack <= 1'b0;
         arp_reply_taken <= 1'b0;
     end else begin
@@ -236,6 +257,7 @@ always @(posedge clk or posedge rst) begin
             TX_IDLE: begin
                 if (arp_reply_pending) begin
                     tx_peer_mac <= peer_mac;
+                    tx_byte_reg <= peer_mac[47:40];
                     arp_reply_taken <= 1'b1;
                     tx_index <= 9'd0;
                     tx_state <= TX_ARP;
@@ -256,12 +278,19 @@ always @(posedge clk or posedge rst) begin
             end
             TX_WAIT: begin
                 tx_index <= 9'd0;
+                tx_payload_read_index <= 6'd0;
+                tx_byte_reg <= tx_peer_mac[47:40];
                 tx_state <= TX_UDP;
             end
             TX_ARP, TX_UDP: if (!mac_tx_ready_n) begin
                 if (tx_index == tx_frame_length - 9'd1)
                     tx_state <= TX_IDLE;
-                else tx_index <= tx_index + 9'd1;
+                else begin
+                    tx_index <= tx_index + 9'd1;
+                    if (tx_state == TX_UDP && tx_index >= 9'd41)
+                        tx_payload_read_index <= tx_payload_read_index + 6'd1;
+                    tx_byte_reg <= tx_byte;
+                end
             end
             default: tx_state <= TX_IDLE;
         endcase

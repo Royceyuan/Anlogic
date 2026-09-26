@@ -1,8 +1,11 @@
 `timescale 1ns/1ps
-module tb_mbp1_media_bridge;
+module tb_mbp1_media_bridge #(
+    parameter integer NET_HALF_PERIOD = 4,
+    parameter integer MEDIA_HALF_PERIOD = 10
+);
 reg net_clk=0, media_clk=0, rst=1;
-always #4 net_clk=~net_clk;
-always #10 media_clk=~media_clk;
+always #NET_HALF_PERIOD net_clk=~net_clk;
+always #MEDIA_HALF_PERIOD media_clk=~media_clk;
 reg [7:0] media_mode=8'd2;
 reg [127:0] media_heartbeat=128'h1234;
 reg [63:0] media_playback=64'h5678;

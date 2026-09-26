@@ -51,6 +51,9 @@ wire clk_12_5;
 wire clk_1_25;
 wire clk_25;
 wire udp_clk;
+wire udp_clk_generated;
+// ponytail: the fixed-peer control plane uses 50 MHz; revisit only if packet rate requires 125 MHz.
+assign udp_clk = LIGHT_UDP ? clk_50m : udp_clk_generated;
 wire sys_reset = pll_reset | ~key_reset_n;
 
 clk_gen_rst_gen #(.DEVICE("EG4")) u_clk_gen (
@@ -71,7 +74,7 @@ udp_clk_gen #(.DEVICE("EG4")) u_udp_clk_gen (
     .clk_125_in(clk_125_udp),
     .clk_12_5_in(clk_12_5),
     .clk_1_25_in(clk_1_25),
-    .udp_clk_out(udp_clk)
+    .udp_clk_out(udp_clk_generated)
 );
 
 wire rx_clk_0;
@@ -235,7 +238,8 @@ generate if (MBP1_DIAG) begin : g_mbp1
                                  {{7'd0, phy_link}, 8'd3, 8'd2,
                                     40'd0, mbp_crc_errors, mbp_drops,
                                     mbp_retries, 16'd0};
-    mbp1_main_endpoint #(.ENABLE_CONTROL(MBP1_CONTROL),
+    mbp1_main_endpoint #(.CLOCKS_PER_MS(LIGHT_UDP ? 50000 : 125000),
+                          .ENABLE_CONTROL(MBP1_CONTROL),
                           .ENABLE_PLAYBACK(MBP1_EXTERNAL_STATUS),
                           .HOLD_TX_FIELDS(!MBP1_EXTERNAL_STATUS)) u_mbp1 (
         .clk(udp_clk), .rst(udp_reset),

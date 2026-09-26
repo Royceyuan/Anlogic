@@ -94,6 +94,7 @@ reg [7:0] ack_type, ack_result;
 reg last_command_valid;
 reg [31:0] last_command_boot, last_command_seq;
 reg [7:0] last_command_type, last_command_result;
+reg hello_ack_match, playback_ack_match;
 
 wire ms_tick = (ms_divider == CLOCKS_PER_MS - 1);
 wire is_command = packet_type == 8'h13 || packet_type == 8'h14 ||
@@ -141,6 +142,8 @@ always @(posedge clk or posedge rst) begin
         last_command_seq <= 32'd0;
         last_command_type <= 8'd0;
         last_command_result <= 8'd0;
+        hello_ack_match <= 1'b0;
+        playback_ack_match <= 1'b0;
         retry_count <= 16'd0;
         send <= 1'b0;
         send_type <= 8'd0;
@@ -152,6 +155,18 @@ always @(posedge clk or posedge rst) begin
         send_payload <= 128'd0;
     end else begin
         send <= 1'b0;
+        hello_ack_match <= packet_valid && packet_type == 8'h04 &&
+                           packet_payload_length == 16'd8 &&
+                           packet_payload[23:16] == 8'd0 &&
+                           packet_payload[31:24] == 8'h01 &&
+                           packet_payload[63:32] == hello_seq;
+        playback_ack_match <= packet_valid && packet_type == 8'h04 &&
+                              packet_payload_length == 16'd8 &&
+                              packet_payload[23:16] == 8'd0 &&
+                              packet_payload[31:24] == 8'h12 &&
+                              packet_payload[63:32] == playback_seq;
+        if (hello_ack_match) hello_waiting <= 1'b0;
+        if (playback_ack_match) playback_waiting <= 1'b0;
         if (ms_tick) begin
             ms_divider <= 32'd0;
             if (tx_gap_ms != 0) tx_gap_ms <= tx_gap_ms - 2'd1;
@@ -227,12 +242,7 @@ always @(posedge clk or posedge rst) begin
             end
             if (packet_type == 8'h04 && packet_payload_length == 16'd8 &&
                 packet_payload[23:16] == 8'd0) begin
-                if (packet_payload[31:24] == 8'h01 &&
-                    packet_payload[63:32] == hello_seq)
-                    hello_waiting <= 1'b0;
-                if (packet_payload[31:24] == 8'h12 &&
-                    packet_payload[63:32] == playback_seq)
-                    playback_waiting <= 1'b0;
+                // ACK comparisons are registered above to close the 125 MHz path.
             end
             else if (packet_type == 8'h02 &&
                      packet_payload_length == 16'd16)
