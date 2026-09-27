@@ -399,23 +399,28 @@ reg [4:0] chosen_ascii;
 reg ascii_valid_s1;
 reg [3:0] slot;
 reg [10:0] local_x;
-reg [9:0] local_y;
+reg [3:0] ascii_y_s0;
+reg [2:0] ascii_col_s0;
+reg ascii_x_valid_s0;
+wire [3:0] ascii_x_low = x_i<400 ? x_i[3:0]-4'd4 :
+                        x_i<800 ? x_i[3:0]-4'd12 : x_i[3:0];
+wire [3:0] local_y = ascii_y_s0;
 always @(*) begin
     chosen_ascii=5'd31; slot=0;
-    local_x=0; local_y=0;
+    local_x=0;
     if (x_s0>=180 && x_s0<340 && y_s0>=20 && y_s0<36 && !ready_s2) begin
-        local_x=x_s0-180; local_y=y_s0-20;
+        local_x=x_s0-180;
         slot=local_x[5:4];
         case(slot)
             2:chosen_ascii={2'b00,artifact};
         endcase
     end else if (x_s0>=540 && x_s0<604 && y_s0>=20 && y_s0<36) begin
-        local_x=x_s0-540; local_y=y_s0-20;
+        local_x=x_s0-540;
         if (stage>=2 && stage<=4 && local_x[5:4]==2)
             chosen_ascii=stage-1'b1;
     end else if (x_s0>=180 && x_s0<(effect==3'd4 ? 276 : 228) &&
                  y_s0>=44 && y_s0<60) begin
-        local_x=x_s0-180; local_y=y_s0-44;
+        local_x=x_s0-180;
         if (effect==3'd4) begin
             case(local_x[6:4])
                 0:chosen_ascii=5'd22; // C
@@ -427,10 +432,10 @@ always @(*) begin
             endcase
         end
     end else if (x_s0>=540 && x_s0<684 && y_s0>=44 && y_s0<60) begin
-        local_x=x_s0-540; local_y=y_s0-44;
+        local_x=x_s0-540;
         chosen_ascii=ascii_code((x_s0-540)>>4,width_bcd,height_bcd);
     end else if (x_s0>=800 && x_s0<896 && y_s0>=44 && y_s0<60) begin
-        local_x=x_s0-800; local_y=y_s0-44;
+        local_x=x_s0-800;
         case(local_x[6:4])
             0:chosen_ascii=5'd17; // Z
             1:chosen_ascii=5'd18; // O
@@ -479,6 +484,8 @@ always @(posedge clk or negedge rst_n) begin
         glyph_s0<=0;glyph_row_s0<=0;glyph_col_s0<=0;
         glyph_row_s1<=0;glyph_col_s1<=0;
         ascii_s1<=31;ascii_row_s1<=0;ascii_col_s1<=0;ascii_valid_s1<=0;
+        ascii_y_s0<=0;
+        ascii_col_s0<=0;ascii_x_valid_s0<=0;
         glyph_hit_s2<=0;ascii_hit_s2<=0;name_rd_addr<=0;
     end else begin
         ready_s1<=name_ready; ready_s2<=ready_s1;
@@ -486,6 +493,11 @@ always @(posedge clk or negedge rst_n) begin
         glyph_col_s0<=early_col;
         hs_s0<=hs_i;vs_s0<=vs_i;de_s0<=de_i;
         x_s0<=x_i;y_s0<=y_i;rgb_s0<=rgb_i;
+        // Compute text-row coordinates in the existing s0 stage before region
+        // selection. Output latency remains three clocks.
+        ascii_y_s0<=y_i<40 ? y_i[3:0]-4'd4 : y_i[3:0]-4'd12;
+        ascii_col_s0<=(ascii_x_low-4'd3)>>1;
+        ascii_x_valid_s0<=ascii_x_low>=3 && ascii_x_low<13;
         hs_s1<=hs_s0;vs_s1<=vs_s0;de_s1<=de_s0;
         x_s1<=x_s0;y_s1<=y_s0;rgb_s1<=rgb_s0;
         panel_s1<=panel_enable && de_s0 && x_s0>=160 && x_s0<1120 &&
@@ -500,11 +512,10 @@ always @(posedge clk or negedge rst_n) begin
         glyph_row_s1<=chinese_row(glyph_s0,glyph_row_s0);
         glyph_col_s1<=glyph_col_s0;
         ascii_s1<=chosen_ascii;
-        ascii_valid_s1<=chosen_ascii!=31 && local_x[3:0]>=3 &&
-                        local_x[3:0]<13 && local_y[3:0]>=1 &&
+        ascii_valid_s1<=chosen_ascii!=31 && ascii_x_valid_s0 && local_y[3:0]>=1 &&
                         local_y[3:0]<15;
         ascii_row_s1<=(local_y[3:0]-1'b1)>>1;
-        ascii_col_s1<=(local_x[3:0]-4'd3)>>1;
+        ascii_col_s1<=ascii_col_s0;
         hs_o<=hs_s1;vs_o<=vs_s1;de_o<=de_s1;
         x_o<=x_s1;y_o<=y_s1;rgb_s2<=rgb_s1;
         panel_s2<=panel_s1;name_s2<=name_s1;

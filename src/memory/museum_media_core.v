@@ -873,17 +873,20 @@ reg [1:0] auto_speed_level_ff1, auto_speed_level_ff2;
 reg slideshow_paused_ff1, slideshow_paused_ff2;
 reg [1:0] transition_theme_ff1, transition_theme_ff2;
 reg [1:0] transition_context_ff1, transition_context_ff2;
-wire [7:0] transition_midpoint =
-    (ENABLE_MUSEUM_LECTURE && transition_mode == 3'b101) ? 8'd64 : 8'd16;
-wire [7:0] transition_end =
-    (ENABLE_MUSEUM_LECTURE && transition_mode == 3'b101) ? 8'd128 : 8'd32;
+wire museum_long_transition = ENABLE_MUSEUM_LECTURE && transition_mode == 3'b101;
+wire [7:0] transition_end = museum_long_transition ? 8'd128 : 8'd32;
+// Fixed power-of-two thresholds: avoid muxing constants into a carry compare.
+wire transition_before_midpoint = museum_long_transition ?
+    !(|transition_progress[7:6]) : !(|transition_progress[7:4]);
+wire transition_before_end = museum_long_transition ?
+    !transition_progress[7] : !(|transition_progress[7:5]);
 wire transition_midpoint_ready = (transition_mode == 3'b000) ?
                                    (fade_level == 5'd0) :
-                                   (transition_progress >= transition_midpoint);
+                                   !transition_before_midpoint;
 wire transition_active = fade_out_active ||
                          ((transition_mode == 3'b000) ?
                           (fade_level < 5'd16) :
-                          (transition_progress < transition_end));
+                          transition_before_end);
 localparam integer AUDIO_SWITCH_RESET_CYCLES = 50_000;
 
 wire audio_stream_enable = ENABLE_AUDIO_VISUALIZER && !recovery_busy &&
@@ -1358,7 +1361,8 @@ endgenerate
 generate
     if (ENABLE_SUBTITLE && ENABLE_MUSEUM_LECTURE) begin : g_museum_subtitle
         museum_subtitle_overlay #(.VIDEO_W(VIDEO_W), .VIDEO_H(VIDEO_H),
-                                  .ENABLE_NAMES(ENABLE_MAIN3))
+                                  .ENABLE_NAMES(ENABLE_MAIN3),
+                                  .PIPE_RAM_OUTPUT(ENABLE_MAIN5_REMOTE))
         u_museum_subtitle_overlay (
             .clk_50m(clk_50m), .rst_n_50m(client_rst_n),
             .start(audio_stream_enable), .restart(lecture_audio_restart),
@@ -2595,7 +2599,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
         end else if (video_run && video_frame_tick && ENABLE_FADE &&
                      !(ENABLE_MAIN3 && (lecture_paused_ff2 || recovery_video_ff2))) begin
             if (transition_mode == 3'b110 &&
-                transition_progress < transition_end) begin
+                transition_before_end) begin
                 transition_pace <= ~transition_pace;
             end else begin
                 transition_pace <= 1'b0;
@@ -2604,7 +2608,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
                 if (transition_mode == 3'b000) begin
                     if (fade_level > 5'd0)
                         fade_level <= fade_level - 1'b1;
-                end else if (transition_progress < transition_midpoint &&
+                end else if (transition_before_midpoint &&
                              (transition_mode != 3'b110 ||
                               !transition_pace)) begin
                     transition_progress <= transition_progress + 1'b1;
@@ -2612,7 +2616,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
             end else if (transition_mode == 3'b000) begin
                 if (fade_level < 5'd16)
                     fade_level <= fade_level + 1'b1;
-            end else if (transition_progress < transition_end &&
+            end else if (transition_before_end &&
                          (transition_mode != 3'b110 ||
                           !transition_pace)) begin
                 transition_progress <= transition_progress + 1'b1;

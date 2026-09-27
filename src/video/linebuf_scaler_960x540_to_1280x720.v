@@ -116,6 +116,7 @@ wire        display_epoch;
 wire        preload_epoch;
 wire        pixel_row_hit = LINEBUF_SYNC_READ ? source_row_hit_d : source_row_hit;
 reg  [6:0]  museum_move_step;
+reg signed [3:0] museum_move_factor;
 reg  [10:0] museum_panel_left;
 reg  [10:0] museum_panel_left_next;
 reg  signed [11:0] museum_source_offset;
@@ -181,37 +182,33 @@ always @(*) begin
     if (museum_move_step > 7'd64)
         museum_move_step = 7'd64;
     museum_panel_left_next = 11'd512;
-    museum_source_offset_next = 12'sd0;
+    museum_move_factor = 4'sd0;
     case (museum_recenter_origin)
         3'd0: begin
             museum_panel_left_next = {museum_move_step, 3'b000};
-            museum_source_offset_next =
-                -$signed({3'b000, museum_move_step, 2'b00} +
-                         {4'b0000, museum_move_step, 1'b0});
+            museum_move_factor = -4'sd6;
         end
         3'd1: begin
             museum_panel_left_next = 11'd256 + {museum_move_step, 2'b00};
-            museum_source_offset_next =
-                -$signed({4'b0000, museum_move_step, 1'b0} +
-                         {5'b00000, museum_move_step});
+            museum_move_factor = -4'sd3;
         end
         3'd2: begin
             museum_panel_left_next = 11'd512;
-            museum_source_offset_next = 12'sd0;
+            museum_move_factor = 4'sd0;
         end
         3'd3: begin
             museum_panel_left_next = 11'd768 - {museum_move_step, 2'b00};
-            museum_source_offset_next =
-                $signed({4'b0000, museum_move_step, 1'b0} +
-                        {5'b00000, museum_move_step});
+            museum_move_factor = 4'sd3;
         end
         default: begin
             museum_panel_left_next = 11'd1024 - {museum_move_step, 3'b000};
-            museum_source_offset_next =
-                $signed({3'b000, museum_move_step, 2'b00} +
-                        {4'b0000, museum_move_step, 1'b0});
+            museum_move_factor = 4'sd6;
         end
     endcase
+    // Variable signed factor permits a DSP instead of chained add/negate LUTs.
+    // Keep the existing single-cycle geometry latency and exact pixel mapping.
+    museum_source_offset_next = $signed({1'b0, museum_move_step}) *
+                                museum_move_factor;
 end
 
 always @(posedge clk or negedge rst_n) begin

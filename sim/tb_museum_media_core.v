@@ -30,6 +30,9 @@ module tb_museum_media_core #(
     reg [3:0] key_n = 4'b1111;
     reg [3:0] sw = 4'b0000;
     reg sd_miso = 1'b1;
+    integer mode_check, progress_check;
+    reg [2:0] saved_mode;
+    reg [7:0] saved_progress;
     reg remote_command_valid = 1'b0;
     reg [7:0] remote_command_type = 8'd0;
     reg [63:0] remote_command_payload = 64'd0;
@@ -456,6 +459,20 @@ module tb_museum_media_core #(
         end
 
         if (MAIN5_REMOTE_TEST) begin
+            saved_mode=dut.transition_mode; saved_progress=dut.transition_progress;
+            for(mode_check=0;mode_check<8;mode_check=mode_check+1)
+              for(progress_check=0;progress_check<256;progress_check=progress_check+1) begin
+                force dut.transition_mode=mode_check[2:0];
+                force dut.transition_progress=progress_check[7:0];
+                #1;
+                if(dut.transition_before_midpoint !== (progress_check<(mode_check==5 ? 64 : 16)) ||
+                   dut.transition_before_end !== (progress_check<(mode_check==5 ? 128 : 32)))
+                    $fatal(1,"transition threshold equivalence failed");
+              end
+            force dut.transition_mode=saved_mode;
+            force dut.transition_progress=saved_progress;
+            #1;
+            release dut.transition_mode; release dut.transition_progress;
             if (dut.binary_to_bcd4(16'd1920) !== 16'h1920 ||
                 dut.binary_to_bcd4(16'd1080) !== 16'h1080)
                 $fatal(1,"bounded source-size BCD conversion failed");

@@ -7,7 +7,8 @@
 module museum_subtitle_overlay #(
     parameter integer VIDEO_W = 1280,
     parameter integer VIDEO_H = 720,
-    parameter integer ENABLE_NAMES = 0
+    parameter integer ENABLE_NAMES = 0,
+    parameter integer PIPE_RAM_OUTPUT = 0
 )(
     input wire clk_50m, input wire rst_n_50m,
     input wire start, input wire restart,
@@ -84,6 +85,7 @@ reg visible_sync1, visible_sync2;
 reg paused_sync1, paused_sync2;
 reg cancel_sync1, cancel_sync2;
 reg [9:0] current_width;
+reg [11:0] current_center;
 reg [11:0] relative_x;
 reg [1:0] fade_phase;
 reg [4:0] fade_level;
@@ -520,24 +522,43 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
     end
 end
 
-subtitle_bitmap_ram #(.ADDR_WIDTH(12),.DEPTH(4096),.REGISTER_READ(0)) u_bitmap0 (
+subtitle_bitmap_ram #(.ADDR_WIDTH(12),.DEPTH(4096),.REGISTER_READ(PIPE_RAM_OUTPUT)) u_bitmap0 (
     .wr_clk(clk_50m),.wr_en(bitmap_wr_en&&!write_bank),.wr_addr(bitmap_wr_addr),
     .wr_data(bitmap_wr_data),.rd_clk(video_clk),.rd_addr(bitmap_rd_addr),.rd_data(bitmap0_q));
-subtitle_bitmap_ram #(.ADDR_WIDTH(12),.DEPTH(4096),.REGISTER_READ(0)) u_bitmap1 (
+subtitle_bitmap_ram #(.ADDR_WIDTH(12),.DEPTH(4096),.REGISTER_READ(PIPE_RAM_OUTPUT)) u_bitmap1 (
     .wr_clk(clk_50m),.wr_en(bitmap_wr_en&&write_bank),.wr_addr(bitmap_wr_addr),
     .wr_data(bitmap_wr_data),.rd_clk(video_clk),.rd_addr(bitmap_rd_addr),.rd_data(bitmap1_q));
-subtitle_bitmap_ram #(.ADDR_WIDTH(12),.DEPTH(4096),.REGISTER_READ(0)) u_outline0 (
+subtitle_bitmap_ram #(.ADDR_WIDTH(12),.DEPTH(4096),.REGISTER_READ(PIPE_RAM_OUTPUT)) u_outline0 (
     .wr_clk(clk_50m),.wr_en(outline_wr_en&&!write_bank),.wr_addr(bitmap_wr_addr),
     .wr_data(bitmap_wr_data),.rd_clk(video_clk),.rd_addr(bitmap_rd_addr),.rd_data(outline0_q));
-subtitle_bitmap_ram #(.ADDR_WIDTH(12),.DEPTH(4096),.REGISTER_READ(0)) u_outline1 (
+subtitle_bitmap_ram #(.ADDR_WIDTH(12),.DEPTH(4096),.REGISTER_READ(PIPE_RAM_OUTPUT)) u_outline1 (
     .wr_clk(clk_50m),.wr_en(outline_wr_en&&write_bank),.wr_addr(bitmap_wr_addr),
     .wr_data(bitmap_wr_data),.rd_clk(video_clk),.rd_addr(bitmap_rd_addr),.rd_data(outline1_q));
 
-wire [11:0] current_center = (VIDEO_W-current_width) >> 1;
-wire [7:0] bitmap_q = active_bank_q ? bitmap1_q : bitmap0_q;
-wire [7:0] outline_q = active_bank_q ? outline1_q : outline0_q;
 wire [1:0] fade_rank = {x_q[0]^y_q[0],y_q[0]};
 wire text_pixel_visible = fade_level[4] || fade_level[3:2] > fade_rank;
+// Align all per-pixel metadata with the optional native BRAM output register.
+wire [54:0] output_meta;
+wire out_hs,out_vs,out_de,out_mapped,out_bank,out_outline,out_visible;
+wire [10:0] out_x;
+wire [9:0] out_y;
+wire [23:0] out_rgb;
+wire [2:0] out_pixel;
+generate if (PIPE_RAM_OUTPUT) begin : g_ram_output_pipe
+    reg [54:0] meta_q;
+    always @(posedge video_clk or negedge video_rst_n)
+        if (!video_rst_n) meta_q <= {2'b11,53'd0};
+        else meta_q <= {hs_q,vs_q,de_q,x_q,y_q,rgb_q,pixel_q,mapped_q,
+                       active_bank_q,active_outline,text_pixel_visible};
+    assign output_meta = meta_q;
+end else begin : g_ram_output_direct
+    assign output_meta = {hs_q,vs_q,de_q,x_q,y_q,rgb_q,pixel_q,mapped_q,
+                          active_bank_q,active_outline,text_pixel_visible};
+end endgenerate
+assign {out_hs,out_vs,out_de,out_x,out_y,out_rgb,out_pixel,out_mapped,
+        out_bank,out_outline,out_visible} = output_meta;
+wire [7:0] bitmap_q = out_bank ? bitmap1_q : bitmap0_q;
+wire [7:0] outline_q = out_bank ? outline1_q : outline0_q;
 
 always @(*) begin
     relative_x = x_i>=current_center ? x_i-current_center : 0;
@@ -556,6 +577,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
         paused_sync1<=0; paused_sync2<=0;
         cancel_sync1<=0; cancel_sync2<=0;
         current_width<=0; fade_level<=0;
+        current_center<=VIDEO_W >> 1;
         video_has_cue<=0; fade_phase<=FADE_IDLE;
         hs_q<=1;vs_q<=1;de_q<=0;mapped_q<=0;active_bank_q<=0;
         x_q<=0;y_q<=0;rgb_q<=0;pixel_q<=0;
@@ -579,12 +601,14 @@ always @(posedge video_clk or negedge video_rst_n) begin
                 end else begin
                     active_bank<=commit_bank; active_outline<=commit_outline;
                     current_width<=commit_width;
+                    current_center<=(VIDEO_W-commit_width) >> 1;
                     fade_level<=0; video_has_cue<=1; fade_phase<=FADE_IN;
                 end
             end else if (fade_phase==FADE_OUT) begin
                 if (fade_level==0) begin
                     active_bank<=commit_bank; active_outline<=commit_outline;
                     current_width<=commit_width;
+                    current_center<=(VIDEO_W-commit_width) >> 1;
                     fade_phase<=FADE_IN;
                 end else fade_level<=fade_level-1'b1;
             end else if (fade_phase==FADE_IN) begin
@@ -594,13 +618,13 @@ always @(posedge video_clk or negedge video_rst_n) begin
                 end else fade_level<=fade_level+1'b1;
             end
         end
-        hs_o<=hs_q;vs_o<=vs_q;de_o<=de_q;x_o<=x_q;y_o<=y_q;
-        if (!de_q) rgb_o<=24'h000000;
-        else if (mapped_q && text_pixel_visible && bitmap_q[7-pixel_q])
+        hs_o<=out_hs;vs_o<=out_vs;de_o<=out_de;x_o<=out_x;y_o<=out_y;
+        if (!out_de) rgb_o<=24'h000000;
+        else if (out_mapped && out_visible && bitmap_q[7-out_pixel])
             rgb_o<=24'hffffff;
-        else if (mapped_q && text_pixel_visible && active_outline &&
-                 outline_q[7-pixel_q]) rgb_o<=24'h000000;
-        else rgb_o<=rgb_q;
+        else if (out_mapped && out_visible && out_outline &&
+                 outline_q[7-out_pixel]) rgb_o<=24'h000000;
+        else rgb_o<=out_rgb;
         hs_q<=hs_i;vs_q<=vs_i;de_q<=de_i;x_q<=x_i;y_q<=y_i;rgb_q<=rgb_i;
         pixel_q<=relative_x[2:0]; mapped_q<=mapped_valid; active_bank_q<=active_bank;
     end

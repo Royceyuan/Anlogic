@@ -1,5 +1,6 @@
 `timescale 1ns / 1ps
-module tb_museum_subtitle_overlay;
+module tb_museum_subtitle_overlay #(parameter PIPE_RAM_OUTPUT=0);
+reg test_pass=0;
 reg clk50=0,vclk=0,rst50=0,vrst=0,start=0,restart=0,active=0,finished=0;
 reg frame_tick=0,hs=1,vs=1,de=1,sd_init=1;
 reg [2:0] track=1;
@@ -19,7 +20,7 @@ wire [23:0] rgb_o;
 always #10 clk50=~clk50;
 always #6.666 vclk=~vclk;
 
-museum_subtitle_overlay dut(
+museum_subtitle_overlay #(.PIPE_RAM_OUTPUT(PIPE_RAM_OUTPUT)) dut(
  .clk_50m(clk50),.rst_n_50m(rst50),.start(start),.restart(restart),
  .lecture_active(active),.lecture_paused(1'b0),.lecture_finished(finished),.track_index(track),
  .name_wr_en(),.name_wr_addr(),.name_wr_data(),.name_ready(),
@@ -198,6 +199,7 @@ initial begin
  end
  repeat(5)@(negedge vclk);
  if(rgb_o!==24'hffffff)$fatal(1,"KEY4 recovery subtitle is not white: %h",rgb_o);
+ test_pass=1;
  $display("PASS tb_museum_subtitle_overlay");$finish;
 end
 endmodule

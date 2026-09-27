@@ -8,6 +8,7 @@ reg [23:0] rgb = 24'h4080c0;
 reg [2:0] b = 3, c = 2, s = 3, t = 3;
 wire [23:0] out;
 integer n;
+reg [23:0] expected_pipe [0:2];
 function integer contrast_ref;
     input integer value, level;
     integer d;
@@ -76,6 +77,9 @@ rgb888_adjust_main5 dut (
     .temperature_index(t), .rgb_out(out)
 );
 initial begin
+    for(n=0;n<4096;n=n+1)
+        if(dut.clip(n[11:0]) !== clip_ref($signed(n[11:0])))
+            $fatal(1,"12-bit clip mismatch: %h",n[11:0]);
     repeat (2) @(negedge clk); rst_n = 1;
     repeat (4) @(negedge clk);
     if (out !== rgb) $fatal(1, "standard preset changed source pixel");
@@ -103,7 +107,17 @@ initial begin
             $fatal(1, "color mismatch rgb=%h b=%d c=%d s=%d t=%d out=%h ref=%h",
                    rgb,b,c,s,t,out,expected(rgb,b,c,s,t));
     end
-    $display("PASS: MAIN5 color order and endpoints");
+    for (n=0;n<4000;n=n+1) begin
+        @(negedge clk);
+        rgb=$random;b=$random;c=$random;s=$random;t=$random;de=$random;
+        expected_pipe[2]=expected_pipe[1];
+        expected_pipe[1]=expected_pipe[0];
+        expected_pipe[0]=de ? expected(rgb,b,c,s,t) : 24'd0;
+        @(posedge clk);#1;
+        if(n>=2 && out!==expected_pipe[2])
+            $fatal(1,"color streaming pipeline mismatch");
+    end
+    $display("PASS: MAIN5 color, full clip domain and per-cycle pipeline");
     $finish;
 end
 endmodule

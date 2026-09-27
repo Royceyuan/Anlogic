@@ -3,6 +3,7 @@
 
 module tb_linebuf_scaler_zoom;
 reg clk=0, rst_n=0, source_start=0, zoom_2x=0;
+reg test_pass=0;
 reg signed [15:0] pan_x=0, pan_y=0;
 reg museum_active=0, museum_closing=0;
 reg [7:0] museum_progress=0;
@@ -12,6 +13,7 @@ reg [9:0] video_y=0;
 wire [20:0] source_read_base_addr, source_read_len;
 wire [10:0] source_x = dut.source_x;
 wire [9:0] source_y = dut.source_y;
+integer direction, origin, progress, step, expected_left, expected_offset;
 
 always #5 clk=~clk;
 
@@ -80,7 +82,30 @@ initial begin
     museum_closing=0; museum_progress=128;
     @(posedge clk); #1;
     check_map(768,0,576,0);
-    $display("PASS linebuf fixed-center 1x/2x and museum recenter mapping");
+    // Exhaust the full input domain, including inactive/clamped progress.
+    for (direction=0; direction<2; direction=direction+1)
+      for (origin=0; origin<8; origin=origin+1)
+        for (progress=0; progress<256; progress=progress+1) begin
+          @(negedge clk);
+          museum_closing=direction; museum_origin=origin;
+          museum_progress=progress;
+          step=(direction ? progress : 128-progress) & 127;
+          if(step>64) step=64;
+          case(origin)
+            0:begin expected_left=8*step; expected_offset=-6*step; end
+            1:begin expected_left=256+4*step; expected_offset=-3*step; end
+            2:begin expected_left=512; expected_offset=0; end
+            3:begin expected_left=768-4*step; expected_offset=3*step; end
+            default:begin expected_left=1024-8*step; expected_offset=6*step; end
+          endcase
+          @(posedge clk); #1;
+          if(dut.museum_panel_left!==expected_left[10:0] ||
+             dut.museum_source_offset!==expected_offset[11:0])
+            $fatal(1,"geometry mismatch dir=%d origin=%d progress=%d",
+                   direction,origin,progress);
+        end
+    $display("PASS linebuf 1x/2x, pan and all 4096 recenter geometries");
+    test_pass=1;
     $finish;
 end
 endmodule
