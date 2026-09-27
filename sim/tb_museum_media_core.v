@@ -456,6 +456,28 @@ module tb_museum_media_core #(
         end
 
         if (MAIN5_REMOTE_TEST) begin
+            if (dut.binary_to_bcd4(16'd1920) !== 16'h1920 ||
+                dut.binary_to_bcd4(16'd1080) !== 16'h1080)
+                $fatal(1,"bounded source-size BCD conversion failed");
+            force dut.image_source_width = 16'd1920;
+            force dut.image_source_height = 16'd1080;
+            #1;
+            if (dut.image_dimensions_ready) $fatal(1,"stale dimensions accepted");
+            repeat (20) @(negedge clk_50m);
+            if (!dut.image_dimensions_ready || dut.image_width_bcd !== 16'h1920 ||
+                dut.image_height_bcd !== 16'h1080)
+                $fatal(1,"sequential dimension conversion failed");
+            force dut.image_source_width = 16'd17;
+            repeat (5) @(negedge clk_50m);
+            force dut.image_source_width = 16'd641;
+            force dut.image_source_height = 16'd479;
+            repeat (20) @(negedge clk_50m);
+            if (!dut.image_dimensions_ready || dut.image_width_bcd !== 16'h0641 ||
+                dut.image_height_bcd !== 16'h0479)
+                $fatal(1,"dimension conversion restart failed");
+            release dut.image_source_width;
+            release dut.image_source_height;
+            repeat (20) @(negedge clk_50m);
             force dut.transition_active=1'b0;
             repeat(5) @(negedge clk_50m);
             send_remote(8'h13,{8'd1,8'd1,16'd0,32'd0},8'd0);
@@ -1324,6 +1346,7 @@ module bmp_sdram_row_writer #(
     parameter integer WORDS_PER_ROW = WIDTH / 2,
     parameter integer BURST_WORDS = WORDS_PER_ROW,
     parameter integer OVERVIEW_ENABLE = 0,
+    parameter integer OVERVIEW_BRAM = 0,
     parameter integer OVERVIEW_FRAME_COUNT = 5,
     parameter integer OVERVIEW_PANEL_WIDTH = WIDTH / 5,
     parameter integer ENABLE_ABORT = 0,

@@ -1,6 +1,7 @@
 `timescale 1ns / 1ps
 
 module tb_bmp_sdram_overview_writer;
+parameter integer OVERVIEW_BRAM = 0;
 localparam integer WIDTH = 6;
 localparam integer HEIGHT = 2;
 localparam integer FRAME_BASE = 20;
@@ -35,7 +36,7 @@ assign write_fifo_full = 1'b0;
 bmp_sdram_row_writer #(
     .WIDTH(WIDTH), .HEIGHT(HEIGHT), .ROW_BITS(2), .ADDR_BITS(8),
     .WORDS_PER_ROW(3), .BURST_WORDS(1),
-    .OVERVIEW_ENABLE(1), .OVERVIEW_FRAME_COUNT(3),
+    .OVERVIEW_ENABLE(1), .OVERVIEW_BRAM(OVERVIEW_BRAM), .OVERVIEW_FRAME_COUNT(3),
     .OVERVIEW_PANEL_WIDTH(2),
     .OVERVIEW_CROP_X0_0(0), .OVERVIEW_CROP_X0_1(2),
     .OVERVIEW_CROP_X0_2(4), .OVERVIEW_CROP_X0_3(0),

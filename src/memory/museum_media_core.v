@@ -128,6 +128,7 @@ module museum_media_core #(
     output wire [127:0] main5_heartbeat,
     output wire [63:0] main5_playback,
     output wire [95:0] main5_display,
+    output reg         main5_display_changed,
     output wire [127:0] main5_diagnostic
 );
 
@@ -253,6 +254,7 @@ reg signed [15:0] main5_pan_hold_x, main5_pan_hold_y;
 reg signed [15:0] main5_pan_report_x, main5_pan_report_y;
 reg main5_pan_status_toggle, main5_pan_status_ff1, main5_pan_status_ff2;
 reg main5_pan_status_seen, main5_zoom_ff1, main5_zoom_ff2;
+reg [7:0] main5_display_phase_q;
 reg [1:0] picture_style;
 reg [1:0] auto_speed_level;
 reg auto_mode_d;
@@ -336,11 +338,20 @@ wire [9:0] video_y_i;
 wire video_hs;
 wire video_vs;
 wire video_de;
+wire video_adjusted_hs;
+wire video_adjusted_vs;
+wire video_adjusted_de;
+wire [10:0] video_adjusted_x;
+wire [9:0] video_adjusted_y;
 wire [23:0] video_rgb;
 wire [23:0] video_adjusted_rgb;
 wire [23:0] video_osd_rgb;
 wire [23:0] video_faded_rgb;
 wire [23:0] video_transition_rgb;
+wire [23:0] video_effect_rgb;
+wire video_effect_hs, video_effect_vs, video_effect_de, video_effect_frame_tick;
+wire [10:0] video_effect_x;
+wire [9:0] video_effect_y;
 wire [23:0] video_osd_1280_rgb;
 wire [23:0] video_output_rgb;
 wire [23:0] video_overview_rgb;
@@ -370,6 +381,10 @@ wire [23:0] video_emergency_rgb;
 wire video_emergency_hs, video_emergency_vs, video_emergency_de;
 wire [10:0] video_emergency_x;
 wire [9:0] video_emergency_y;
+wire [23:0] video_audio_input_rgb;
+wire video_audio_input_hs, video_audio_input_vs, video_audio_input_de;
+wire [10:0] video_audio_input_x;
+wire [9:0] video_audio_input_y;
 wire [23:0] video_status_rgb;
 wire video_status_hs, video_status_vs, video_status_de;
 wire [10:0] video_status_x;
@@ -451,6 +466,53 @@ function [3:0] first_invalid_cached_index;
         end
     end
 endfunction
+
+// Source dimensions change once per file. Reuse one decimal conversion step
+// over 16 clocks instead of unrolling the whole conversion twice in logic.
+wire [15:0] image_width_bcd, image_height_bcd;
+wire image_dimensions_ready;
+generate if (ENABLE_MAIN5_REMOTE) begin : g_dimension_bcd
+    reg [15:0] width_seen, height_seen;
+    reg [31:0] width_shift, height_shift;
+    reg [4:0] count;
+    function [31:0] bcd_step;
+        input [31:0] value;
+        reg [31:0] adjusted;
+        integer digit;
+        begin
+            adjusted = value;
+            for (digit = 16; digit < 32; digit = digit + 4)
+                if (value[digit +: 4] >= 4'd5)
+                    adjusted[digit +: 4] = value[digit +: 4] + 4'd3;
+            bcd_step = adjusted << 1;
+        end
+    endfunction
+    always @(posedge clk_50m or negedge write_rst_n) begin
+        if (!write_rst_n) begin
+            width_seen <= 16'd0; height_seen <= 16'd0;
+            width_shift <= 32'd0; height_shift <= 32'd0;
+            count <= 5'd0;
+        end else if (width_seen != image_source_width || height_seen != image_source_height) begin
+            width_seen <= image_source_width;
+            height_seen <= image_source_height;
+            width_shift <= {16'd0, image_source_width};
+            height_shift <= {16'd0, image_source_height};
+            count <= 5'd16;
+        end else if (count != 0) begin
+            width_shift <= bcd_step(width_shift);
+            height_shift <= bcd_step(height_shift);
+            count <= count - 1'b1;
+        end
+    end
+    assign image_width_bcd = width_shift[31:16];
+    assign image_height_bcd = height_shift[31:16];
+    assign image_dimensions_ready = count == 0 && width_seen == image_source_width &&
+                                    height_seen == image_source_height;
+end else begin : g_dimension_bcd_legacy
+    assign image_width_bcd = binary_to_bcd4(image_source_width);
+    assign image_height_bcd = binary_to_bcd4(image_source_height);
+    assign image_dimensions_ready = 1'b1;
+end endgenerate
 wire [3:0] normal_load_start_image_index = ENABLE_MULTI_FRAME_PRELOAD ?
                                              first_invalid_cached_index(frame_valid) :
                                              (ENABLE_DUAL_FRAME_PRELOAD ?
@@ -498,6 +560,11 @@ reg [3:0] status_code;
 reg [230:0] video_x_pipe;
 reg [209:0] video_y_pipe;
 reg [23:0] video_right_edge_pixel;
+reg main5_hs_d1, main5_hs_d2, main5_hs_d3;
+reg main5_vs_d1, main5_vs_d2, main5_vs_d3;
+reg main5_de_d1, main5_de_d2, main5_de_d3;
+reg [10:0] main5_x_d1, main5_x_d2, main5_x_d3;
+reg [9:0] main5_y_d1, main5_y_d2, main5_y_d3;
 reg published_frame_ff1;
 reg published_frame_ff2;
 reg [3:0] published_media_ff1;
@@ -1075,8 +1142,11 @@ function [15:0] binary_to_bcd4;
     integer i;
     reg [31:0] shift;
     begin
-        shift = {16'd0, value};
-        for (i = 0; i < 16; i = i + 1) begin
+        // Accepted museum media is at most 1920x1080. Processing twelve
+        // significant bits preserves that range and shortens the load-time
+        // OSD conversion path by four double-dabble stages.
+        shift = {16'd0, value[11:0], 4'd0};
+        for (i = 0; i < 12; i = i + 1) begin
             if (shift[19:16] >= 4'd5) shift[19:16] = shift[19:16] + 4'd3;
             if (shift[23:20] >= 4'd5) shift[23:20] = shift[23:20] + 4'd3;
             if (shift[27:24] >= 4'd5) shift[27:24] = shift[27:24] + 4'd3;
@@ -1224,6 +1294,41 @@ generate
 endgenerate
 
 generate
+    if (ENABLE_MAIN5_REMOTE) begin : g_main5_emergency_pipe
+        reg hs_q, vs_q, de_q;
+        reg [10:0] x_q;
+        reg [9:0] y_q;
+        reg [23:0] rgb_q;
+        always @(posedge video_clk or negedge video_rst_n) begin
+            if (!video_rst_n) begin
+                hs_q <= 1'b1; vs_q <= 1'b1; de_q <= 1'b0;
+                x_q <= 11'd0; y_q <= 10'd0; rgb_q <= 24'd0;
+            end else begin
+                hs_q <= video_emergency_hs;
+                vs_q <= video_emergency_vs;
+                de_q <= video_emergency_de;
+                x_q <= video_emergency_x;
+                y_q <= video_emergency_y;
+                rgb_q <= video_emergency_rgb;
+            end
+        end
+        assign video_audio_input_hs = hs_q;
+        assign video_audio_input_vs = vs_q;
+        assign video_audio_input_de = de_q;
+        assign video_audio_input_x = x_q;
+        assign video_audio_input_y = y_q;
+        assign video_audio_input_rgb = rgb_q;
+    end else begin : g_legacy_emergency_direct
+        assign video_audio_input_hs = video_emergency_hs;
+        assign video_audio_input_vs = video_emergency_vs;
+        assign video_audio_input_de = video_emergency_de;
+        assign video_audio_input_x = video_emergency_x;
+        assign video_audio_input_y = video_emergency_y;
+        assign video_audio_input_rgb = video_emergency_rgb;
+    end
+endgenerate
+
+generate
     if (ENABLE_AUDIO_VISUALIZER && SHOW_AUDIO_VISUALIZER) begin : g_audio_visualizer_overlay
         audio_visualizer_overlay #(.ENABLE_EMERGENCY(ENABLE_MAIN4))
         u_audio_visualizer_overlay (
@@ -1234,19 +1339,19 @@ generate
                     (ENABLE_MAIN5_CONTROLS &&
                      (overview_enable_video || !normal_waveform_visible_ff2)))),
             .emergency(emergency_video_active),
-            .frame_tick(video_frame_tick), .hs_i(video_emergency_hs),
-            .vs_i(video_emergency_vs), .de_i(video_emergency_de), .x_i(video_emergency_x),
-            .y_i(video_emergency_y), .rgb_i(video_emergency_rgb), .hs_o(video_post_audio_hs),
+            .frame_tick(video_frame_tick), .hs_i(video_audio_input_hs),
+            .vs_i(video_audio_input_vs), .de_i(video_audio_input_de), .x_i(video_audio_input_x),
+            .y_i(video_audio_input_y), .rgb_i(video_audio_input_rgb), .hs_o(video_post_audio_hs),
             .vs_o(video_post_audio_vs), .de_o(video_post_audio_de), .x_o(video_post_audio_x),
             .y_o(video_post_audio_y), .rgb_o(video_post_audio_rgb)
         );
     end else begin : g_no_audio_visualizer_overlay
-        assign video_post_audio_hs  = video_emergency_hs;
-        assign video_post_audio_vs  = video_emergency_vs;
-        assign video_post_audio_de  = video_emergency_de;
-        assign video_post_audio_x   = video_emergency_x;
-        assign video_post_audio_y   = video_emergency_y;
-        assign video_post_audio_rgb = video_emergency_rgb;
+        assign video_post_audio_hs  = video_audio_input_hs;
+        assign video_post_audio_vs  = video_audio_input_vs;
+        assign video_post_audio_de  = video_audio_input_de;
+        assign video_post_audio_x   = video_audio_input_x;
+        assign video_post_audio_y   = video_audio_input_y;
+        assign video_post_audio_rgb = video_audio_input_rgb;
     end
 endgenerate
 
@@ -1631,6 +1736,7 @@ generate
             .WORDS_PER_ROW(SOURCE_W / 2), .BURST_WORDS(VIDEO_WRITE_BURST_WORDS),
             .ENABLE_ABORT(ENABLE_MAIN3 || ENABLE_MAIN4),
             .OVERVIEW_ENABLE(ENABLE_MUSEUM_OVERVIEW),
+            .OVERVIEW_BRAM(ENABLE_MAIN5_REMOTE),
             .OVERVIEW_FRAME_COUNT(5), .OVERVIEW_PANEL_WIDTH(SOURCE_W / 5),
             .OVERVIEW_CROP_X0_0(OVERVIEW_CROP_X0_0),
             .OVERVIEW_CROP_X0_1(OVERVIEW_CROP_X0_1),
@@ -2101,7 +2207,7 @@ always @(posedge clk_50m or negedge write_rst_n) begin
             if (loader_done_clear_seen && image_load_done)
                 loader_done_seen <= 1'b1;
 
-            if (!load_reported &&
+            if (!load_reported && image_dimensions_ready &&
                 writer_done_clear_seen && loader_done_clear_seen &&
                 (writer_done_seen || frame_done) &&
                 (loader_done_seen || image_load_done)) begin
@@ -2113,12 +2219,12 @@ always @(posedge clk_50m or negedge write_rst_n) begin
             else
                 frame_valid[load_frame_index] <= 1'b1;
             if (ENABLE_MULTI_FRAME_PRELOAD || (load_image_index < 4'd5)) begin
-                frame_source_width_bcd[load_image_index] <= binary_to_bcd4(image_source_width);
-                frame_source_height_bcd[load_image_index] <= binary_to_bcd4(image_source_height);
+                frame_source_width_bcd[load_image_index] <= image_width_bcd;
+                frame_source_height_bcd[load_image_index] <= image_height_bcd;
             end
             if (ENABLE_MAIN3 && !load_museum_asset && load_image_index < 4'd5) begin
-                overview_source_width_bcd[load_image_index] <= binary_to_bcd4(image_source_width);
-                overview_source_height_bcd[load_image_index] <= binary_to_bcd4(image_source_height);
+                overview_source_width_bcd[load_image_index] <= image_width_bcd;
+                overview_source_height_bcd[load_image_index] <= image_height_bcd;
             end
             if (!ENABLE_CACHED_PRELOAD || !initial_frame_published)
                 active_image_index <= load_image_index;
@@ -2134,8 +2240,8 @@ always @(posedge clk_50m or negedge write_rst_n) begin
             if (!ENABLE_CACHED_PRELOAD || !initial_frame_published) begin
                 published_frame_index <= load_frame_index;
                 published_media_index <= VIDEO_SEQUENCE ? load_media_index : {3'd0, load_image_index};
-                published_source_width_bcd <= binary_to_bcd4(image_source_width);
-                published_source_height_bcd <= binary_to_bcd4(image_source_height);
+                published_source_width_bcd <= image_width_bcd;
+                published_source_height_bcd <= image_height_bcd;
                 frame_ready_toggle    <= ~frame_ready_toggle;
                 initial_frame_published <= 1'b1;
             end
@@ -2579,8 +2685,8 @@ always @(posedge video_clk or negedge video_rst_n) begin
     end else begin
         video_x_pipe <= {video_x_pipe[219:0], video_x_i};
         video_y_pipe <= {video_y_pipe[199:0], video_y_i};
-        if (RIGHT_EDGE_REPLICATE_COLUMNS != 0 && video_de &&
-            (video_x_delayed == VIDEO_W - RIGHT_EDGE_REPLICATE_COLUMNS - 1))
+        if (RIGHT_EDGE_REPLICATE_COLUMNS != 0 && video_effect_de &&
+            (video_effect_x == VIDEO_W - RIGHT_EDGE_REPLICATE_COLUMNS - 1))
             video_right_edge_pixel <= video_osd_rgb;
         linebuf_pixel565_pipe <= {linebuf_pixel565_pipe[287:0], linebuf_pixel565};
         linebuf_pixel565_pipe_reg <= {linebuf_pixel565_pipe_reg[303:0], linebuf_pixel565};
@@ -2637,8 +2743,30 @@ always @(posedge video_clk or negedge video_rst_n) begin
     end
 end
 
+always @(posedge video_clk or negedge video_rst_n) begin
+    if (!video_rst_n) begin
+        main5_hs_d1 <= 1'b1; main5_hs_d2 <= 1'b1; main5_hs_d3 <= 1'b1;
+        main5_vs_d1 <= 1'b1; main5_vs_d2 <= 1'b1; main5_vs_d3 <= 1'b1;
+        main5_de_d1 <= 1'b0; main5_de_d2 <= 1'b0; main5_de_d3 <= 1'b0;
+        main5_x_d1 <= 11'd0; main5_x_d2 <= 11'd0; main5_x_d3 <= 11'd0;
+        main5_y_d1 <= 10'd0; main5_y_d2 <= 10'd0; main5_y_d3 <= 10'd0;
+    end else begin
+        main5_hs_d1 <= video_hs; main5_hs_d2 <= main5_hs_d1; main5_hs_d3 <= main5_hs_d2;
+        main5_vs_d1 <= video_vs; main5_vs_d2 <= main5_vs_d1; main5_vs_d3 <= main5_vs_d2;
+        main5_de_d1 <= video_de; main5_de_d2 <= main5_de_d1; main5_de_d3 <= main5_de_d2;
+        main5_x_d1 <= video_x_delayed; main5_x_d2 <= main5_x_d1; main5_x_d3 <= main5_x_d2;
+        main5_y_d1 <= video_y_delayed; main5_y_d2 <= main5_y_d1; main5_y_d3 <= main5_y_d2;
+    end
+end
+assign video_adjusted_hs = ENABLE_MAIN5_REMOTE ? main5_hs_d3 : video_hs;
+assign video_adjusted_vs = ENABLE_MAIN5_REMOTE ? main5_vs_d3 : video_vs;
+assign video_adjusted_de = ENABLE_MAIN5_REMOTE ? main5_de_d3 : video_de;
+assign video_adjusted_x = ENABLE_MAIN5_REMOTE ? main5_x_d3 : video_x_delayed;
+assign video_adjusted_y = ENABLE_MAIN5_REMOTE ? main5_y_d3 : video_y_delayed;
+
 generate if (ENABLE_MAIN5_REMOTE) begin : g_main5_adjust
 rgb888_adjust_main5 u_rgb888_adjust (
+    .clk(video_clk), .rst_n(video_rst_n),
     .de(video_de), .rgb_in(video_rgb),
     .brightness_index(main5_brightness_video),
     .contrast_index(main5_contrast_video),
@@ -2671,7 +2799,8 @@ generate
 endgenerate
 
 video_transition_mask #(
-    .VIDEO_W(VIDEO_W), .VIDEO_H(VIDEO_H)
+    .VIDEO_W(VIDEO_W), .VIDEO_H(VIDEO_H),
+    .PIPE_MASK_3(ENABLE_MAIN5_REMOTE)
 ) u_video_transition_mask (
     .clk           (video_clk),
     .rst_n         (video_rst_n),
@@ -2689,15 +2818,23 @@ video_transition_mask #(
     .rgb_out       (video_transition_rgb)
 );
 
+assign video_effect_hs = video_adjusted_hs;
+assign video_effect_vs = video_adjusted_vs;
+assign video_effect_de = video_adjusted_de;
+assign video_effect_frame_tick = video_frame_tick;
+assign video_effect_x = video_adjusted_x;
+assign video_effect_y = video_adjusted_y;
+assign video_effect_rgb = video_transition_rgb;
+
 generate
     if (ENABLE_OSD) begin : g_video_osd
         if (VIDEO_MODE_1280) begin : g_video_osd_1280
             osd_status_1280_pipe #(
                 .MODE0_OVERVIEW(ENABLE_MUSEUM_OVERVIEW)
             ) u_osd_status (
-                .clk(video_clk), .rst_n(video_rst_n), .de_i(video_de),
-                .x_i(video_x_delayed), .y_i(video_y_delayed),
-                .rgb_i(video_transition_rgb),
+                .clk(video_clk), .rst_n(video_rst_n), .de_i(video_effect_de),
+                .x_i(video_effect_x), .y_i(video_effect_y),
+                .rgb_i(video_effect_rgb),
                 .image_index(overview_enable_video ?
                              {1'b0, overview_selected_video} : display_media_index),
                 .auto_mode(auto_mode_ff2), .brightness_level(brightness_level_ff2),
@@ -2716,10 +2853,10 @@ generate
             assign video_osd_rgb = video_osd_1280_rgb;
         end else begin : g_video_osd_standard
             osd_status_rgb888 u_osd_status (
-                .de               (video_de),
-                .x                (video_x_delayed[9:0]),
-                .y                (video_y_delayed),
-                .rgb_in           (video_transition_rgb),
+                .de               (video_effect_de),
+                .x                (video_effect_x[9:0]),
+                .y                (video_effect_y),
+                .rgb_in           (video_effect_rgb),
                 .enable           (1'b1),
                 .image_index      (display_media_index),
                 .auto_mode        (auto_mode_ff2),
@@ -2731,7 +2868,7 @@ generate
             );
         end
     end else begin : g_video_direct
-        assign video_osd_rgb = video_transition_rgb;
+        assign video_osd_rgb = video_effect_rgb;
     end
 endgenerate
 
@@ -2762,11 +2899,11 @@ always @(posedge video_clk or negedge video_rst_n) begin
         osd1280_x_d3 <= 11'd0;
         osd1280_y_d3 <= 10'd0;
     end else begin
-        osd1280_hs_d <= video_hs;
-        osd1280_vs_d <= video_vs;
-        osd1280_de_d <= video_de;
-        osd1280_x_d <= video_x_delayed;
-        osd1280_y_d <= video_y_delayed;
+        osd1280_hs_d <= video_effect_hs;
+        osd1280_vs_d <= video_effect_vs;
+        osd1280_de_d <= video_effect_de;
+        osd1280_x_d <= video_effect_x;
+        osd1280_y_d <= video_effect_y;
         osd1280_hs_d2 <= osd1280_hs_d;
         osd1280_vs_d2 <= osd1280_vs_d;
         osd1280_de_d2 <= osd1280_de_d;
@@ -2779,11 +2916,11 @@ always @(posedge video_clk or negedge video_rst_n) begin
         osd1280_y_d3 <= osd1280_y_d2;
     end
 end
-assign video_post_osd_hs = (ENABLE_OSD && VIDEO_MODE_1280) ? osd1280_hs_d3 : video_hs;
-assign video_post_osd_vs = (ENABLE_OSD && VIDEO_MODE_1280) ? osd1280_vs_d3 : video_vs;
-assign video_post_osd_de = (ENABLE_OSD && VIDEO_MODE_1280) ? osd1280_de_d3 : video_de;
-assign video_post_osd_x  = (ENABLE_OSD && VIDEO_MODE_1280) ? osd1280_x_d3 : video_x_delayed;
-assign video_post_osd_y  = (ENABLE_OSD && VIDEO_MODE_1280) ? osd1280_y_d3 : video_y_delayed;
+assign video_post_osd_hs = (ENABLE_OSD && VIDEO_MODE_1280) ? osd1280_hs_d3 : video_effect_hs;
+assign video_post_osd_vs = (ENABLE_OSD && VIDEO_MODE_1280) ? osd1280_vs_d3 : video_effect_vs;
+assign video_post_osd_de = (ENABLE_OSD && VIDEO_MODE_1280) ? osd1280_de_d3 : video_effect_de;
+assign video_post_osd_x  = (ENABLE_OSD && VIDEO_MODE_1280) ? osd1280_x_d3 : video_effect_x;
+assign video_post_osd_y  = (ENABLE_OSD && VIDEO_MODE_1280) ? osd1280_y_d3 : video_effect_y;
 
 // Isolate the arithmetic image-adjust/transition path from the overview
 // overlay.  At 720p this register also keeps the path routable near full
@@ -2798,7 +2935,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
         overview_input_y <= 10'd0;
         overview_input_rgb <= 24'd0;
     end else begin
-        overview_input_frame_tick <= video_frame_tick;
+        overview_input_frame_tick <= video_effect_frame_tick;
         overview_input_hs <= video_post_osd_hs;
         overview_input_vs <= video_post_osd_vs;
         overview_input_de <= video_post_osd_de;
@@ -3107,11 +3244,14 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         main5_pan_report_y <= 16'sd0;
         main5_zoom_ff1 <= 1'b0;
         main5_zoom_ff2 <= 1'b0;
+        main5_display_phase_q <= 8'hff;
     end else begin
         main5_pan_status_ff1 <= main5_pan_status_toggle;
         main5_pan_status_ff2 <= main5_pan_status_ff1;
         main5_zoom_ff1 <= display_zoom_2x;
         main5_zoom_ff2 <= main5_zoom_ff1;
+        main5_display_phase_q <= lecture_active ?
+                                 {5'd0, lecture_display_frame_slot} : 8'hff;
         if (main5_pan_status_ff2 != main5_pan_status_seen) begin
             main5_pan_status_seen <= main5_pan_status_ff2;
             main5_pan_report_x <= main5_pan_hold_x;
@@ -3131,6 +3271,15 @@ wire [7:0] main5_artifact = lecture_active ? {5'd0, lecture_artifact_index} :
                             {5'd0, overview_selected_ctrl};
 wire [7:0] main5_phase = lecture_active ?
                          {5'd0, lecture_display_frame_slot} : 8'hff;
+always @(posedge clk_50m or negedge write_rst_n) begin
+    if (!write_rst_n)
+        main5_display_changed <= 1'b0;
+    else
+        main5_display_changed <= (|key_press_pulse) ||
+                                 (main5_ack_ff2 != main5_ack_seen) ||
+                                 (main5_pan_status_ff2 != main5_pan_status_seen) ||
+                                 (main5_phase != main5_display_phase_q);
+end
 wire [7:0] main5_play_state = !lecture_active ? 8'd0 :
                               transition_active_ff2_50m ? 8'd3 :
                               lecture_finished ? 8'd4 :

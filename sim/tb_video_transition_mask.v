@@ -14,6 +14,7 @@ module tb_video_transition_mask;
     reg overview_source;
     reg enable;
     wire [23:0] rgb_out;
+    wire [23:0] rgb_out_piped;
     reg [4:0] fade_level;
     wire [23:0] fade_rgb;
     integer m;
@@ -27,6 +28,14 @@ module tb_video_transition_mask;
         .origin_index(origin_index),
         .progress(progress), .closing(closing), .overview_source(overview_source),
         .enable(enable), .rgb_out(rgb_out)
+    );
+    video_transition_mask #(
+        .VIDEO_W(1280), .VIDEO_H(720), .PIPE_MASK_3(1)
+    ) u_dut_piped (
+        .clk(clk), .rst_n(rst_n), .rgb_in(rgb_in),
+        .de(de), .x(x), .y(y), .mode(mode),
+        .origin_index(origin_index), .progress(progress), .closing(closing),
+        .overview_source(overview_source), .enable(enable), .rgb_out(rgb_out_piped)
     );
     video_fade u_fade (
         .rgb_in(rgb_in), .level(fade_level), .rgb_out(fade_rgb)
@@ -139,6 +148,21 @@ module tb_video_transition_mask;
                 $fatal;
             end
         end
+
+        // MAIN-5 computes the mask from the pre-adjust raster and delays only
+        // the one-bit decision to meet the three-stage color pipeline.
+        mode = 3'b001; closing = 1'b0; overview_source = 1'b0;
+        progress = 8'd24; de = 1'b1; enable = 1'b1; y = 10'd100;
+        @(negedge clk); x = 11'd100;
+        @(posedge clk);
+        @(negedge clk); x = 11'd1000;
+        @(posedge clk);
+        @(negedge clk); x = 11'd1000;
+        @(posedge clk); #1;
+        if (rgb_out_piped !== rgb_in) $fatal(1, "pipelined reveal lost first pixel");
+        @(negedge clk); x = 11'd100;
+        @(posedge clk); #1;
+        if (rgb_out_piped !== 24'h000000) $fatal(1, "pipelined reveal latency mismatch");
         $display("PASS: phase3 transition mask close/midpoint/reveal");
         $finish;
     end

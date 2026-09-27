@@ -5,7 +5,8 @@
 // fade path or the full-brightness path before this geometry-only mask.
 module video_transition_mask #(
     parameter integer VIDEO_W = 800,
-    parameter integer VIDEO_H = 600
+    parameter integer VIDEO_H = 600,
+    parameter integer PIPE_MASK_3 = 0
 ) (
     input  wire        clk,
     input  wire        rst_n,
@@ -41,6 +42,8 @@ reg [10:0] panel_left_next;
 reg [10:0] panel_right_next;
 reg [6:0] museum_fade_level_next;
 reg [5:0] museum_fade_threshold;
+reg pass_pixel;
+wire pass_pixel_aligned;
 
 always @(*) begin
     phase_step = closing ? progress[4:0] :
@@ -129,18 +132,33 @@ always @(*) begin
         endcase
     end
 
-    if (mode == 3'b000)
-        rgb_out = rgb_in;
-    else if (!de)
-        rgb_out = rgb_in;
-    else if (!enable || reveal)
-        rgb_out = rgb_in;
-    else if (mode == 3'b101 && overview_source &&
-             ({1'b0, museum_fade_threshold} < museum_fade_level))
-        rgb_out = rgb_in;
-    else
-        rgb_out = 24'h000000;
+    pass_pixel = (mode == 3'b000) || !de || !enable || reveal ||
+                 (mode == 3'b101 && overview_source &&
+                  ({1'b0, museum_fade_threshold} < museum_fade_level));
 end
+
+generate
+    if (PIPE_MASK_3) begin : g_pipe_mask
+        reg pass_d1, pass_d2, pass_d3;
+        always @(posedge clk or negedge rst_n) begin
+            if (!rst_n) begin
+                pass_d1 <= 1'b0;
+                pass_d2 <= 1'b0;
+                pass_d3 <= 1'b0;
+            end else begin
+                pass_d1 <= pass_pixel;
+                pass_d2 <= pass_d1;
+                pass_d3 <= pass_d2;
+            end
+        end
+        assign pass_pixel_aligned = pass_d3;
+    end else begin : g_direct_mask
+        assign pass_pixel_aligned = pass_pixel;
+    end
+endgenerate
+
+always @(*)
+    rgb_out = pass_pixel_aligned ? rgb_in : 24'h000000;
 
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin

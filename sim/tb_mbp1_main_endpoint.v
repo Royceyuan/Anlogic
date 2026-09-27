@@ -6,6 +6,7 @@ parameter HOLD_TX_FIELDS = 1;
 reg clk = 0;
 always #5 clk = ~clk;
 reg rst = 1;
+reg display_changed = 0;
 reg host_send = 0;
 reg [7:0] host_type = 8'h01, host_flags = 8'h01;
 reg [4:0] host_length = 5'd12;
@@ -29,6 +30,7 @@ wire peer_alive;
 integer ack_count = 0, hello_count = 0, heartbeat_count = 0;
 integer display_count = 0, diagnostic_count = 0;
 integer command_count = 0;
+integer display_before;
 reg [7:0] last_ack_result;
 wire command_valid;
 reg command_done = 0;
@@ -58,7 +60,7 @@ mbp1_main_endpoint #(.CLOCKS_PER_MS(10), .ENABLE_CONTROL(ENABLE_CONTROL),
     .tx_valid(board_tx_valid), .tx_length(board_tx_length),
     .local_boot_id(32'ha0010001), .phy_link(1'b1), .main_mode(8'd1),
     .heartbeat_payload(128'd0), .playback_payload(64'd0),
-    .display_payload(96'd0),
+    .display_payload(96'd0), .display_changed(display_changed),
     .diagnostic_payload(128'd0), .command_valid(command_valid), .command_type(),
     .command_seq(), .command_payload(), .command_done(command_done),
     .command_result(8'd0), .peer_alive(peer_alive),
@@ -117,6 +119,10 @@ initial begin
     send_packet(8'h03, 5'd0, 128'd0);
     wait (ack_count >= 2 && display_count >= 1 && diagnostic_count >= 1);
     if (last_ack_result !== 8'd0) $fatal(1, "STATUS_QUERY rejected");
+    display_before = display_count;
+    @(negedge clk); display_changed = 1;
+    @(negedge clk); display_changed = 0;
+    wait (display_count > display_before);
     send_packet(8'h13, 5'd4, {8'd0,8'd1,16'd0,96'd0});
     wait (ack_count >= 3);
     if (last_ack_result !== (ENABLE_CONTROL ? 8'd0 : 8'd3))

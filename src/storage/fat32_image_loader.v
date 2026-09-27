@@ -255,16 +255,17 @@ wire [1:0]  bmp_row_padding;
 // regions must be mapped to the unused rows on their corresponding sides.
 // Using IMAGE_HEIGHT-1-adapt_q for every row is off by one when the centered
 // fit leaves an odd number of border rows.
-wire [31:0] adapt_dest_row = bmp_top_down ? adapt_q :
-                             ((adapt_q < adapt_off_y) ?
-                              (IMAGE_HEIGHT - 1 - adapt_q) :
-                              ((adapt_q >= adapt_off_y + adapt_fit_h) ?
-                               (((adapt_q - (adapt_off_y + adapt_fit_h)) < adapt_off_y) ?
-                                (adapt_q - (adapt_off_y + adapt_fit_h)) :
-                                (adapt_off_y + adapt_fit_h +
-                                 (adapt_q - (adapt_off_y + adapt_fit_h) - adapt_off_y))) :
-                               (adapt_off_y + adapt_fit_h - 1 -
-                                (adapt_q - adapt_off_y))));
+wire [ADAPT_COORD_BITS:0] adapt_active_end =
+    {1'b0, adapt_off_y} + {1'b0, adapt_fit_h};
+wire [ADAPT_COORD_BITS:0] adapt_bottom_offset =
+    {1'b0, adapt_q} - adapt_active_end;
+wire [ADAPT_COORD_BITS:0] adapt_reflected_row =
+    adapt_active_end + {1'b0, adapt_off_y} - 1'b1 - {1'b0, adapt_q};
+wire [ADAPT_COORD_BITS:0] adapt_dest_row = bmp_top_down ? {1'b0, adapt_q} :
+    ((adapt_q < adapt_off_y) ? (IMAGE_HEIGHT - 1 - adapt_q) :
+     (({1'b0, adapt_q} >= adapt_active_end) ?
+      ((adapt_bottom_offset < adapt_off_y) ? adapt_bottom_offset :
+       ({1'b0, adapt_q} - {1'b0, adapt_off_y})) : adapt_reflected_row));
 
 assign expected_file_size = active_bmp_mode ? file_size : BIN_IMAGE_BYTES;
 assign bmp_height_abs = bmp_height[31] ? (~bmp_height + 32'd1) : bmp_height;
@@ -273,6 +274,11 @@ assign bmp_dest_addr = mul_image_width(bmp_dest_y) + bmp_output_x;
 assign bmp_x_acc_next = bmp_x_acc + IMAGE_WIDTH;
 assign bmp_y_acc_next = bmp_y_acc + IMAGE_HEIGHT;
 assign bmp_row_padding = (4 - ((bmp_width * 3) & 32'd3)) & 32'd3;
+// Root and image requests are mutually exclusive; share the LBA datapath.
+wire [31:0] request_cluster = state == S_REQ_ROOT ? bpb_root_cluster : current_cluster;
+wire [7:0] request_sector = state == S_REQ_ROOT ? root_sector_index : sector_in_cluster;
+wire [31:0] request_data_lba = data_start +
+                             ((request_cluster - 32'd2) << cluster_shift) + request_sector;
 
 assign adapt_div_shift = {adapt_remainder[ADAPT_DIV_BITS-1:0],
                           adapt_dividend[ADAPT_DIV_BITS-1]};
@@ -280,11 +286,9 @@ assign adapt_div_ge = (adapt_div_shift >= {1'b0, adapt_divisor});
 assign adapt_div_subtracted = adapt_div_ge ?
                               (adapt_div_shift - {1'b0, adapt_divisor}) :
                               adapt_div_shift;
-assign adapt_div_quotient_next = adapt_div_ge ?
-                                  (adapt_quotient |
-                                   ({{(ADAPT_DIV_BITS-1){1'b0}},1'b1}
-                                    << adapt_calc_bit)) :
-                                  adapt_quotient;
+// Division visits bits from MSB to LSB; only the completed quotient is used.
+// Append each bit instead of decoding a variable bit position every cycle.
+assign adapt_div_quotient_next = {adapt_quotient[ADAPT_DIV_BITS-2:0], adapt_div_ge};
 assign adapt_div_remainder_next =
        adapt_div_subtracted[ADAPT_DIV_BITS-1:0];
 assign adaptive_fit_by_width = (mul_image_height(bmp_width) >=
@@ -616,9 +620,7 @@ always @(posedge clk or negedge rst_n) begin
 
             S_REQ_ROOT: begin
                 status_code       <= 4'd5;
-                sd_sec_read_addr  <= data_start +
-                                     ((bpb_root_cluster - 32'd2) << cluster_shift) +
-                                     root_sector_index;
+                sd_sec_read_addr  <= request_data_lba;
                 sector_byte_index <= 9'd0;
                 sd_sec_read       <= 1'b1;
                 state             <= S_WAIT_ROOT;
@@ -723,9 +725,7 @@ always @(posedge clk or negedge rst_n) begin
 
             S_REQ_IMAGE: begin
                 status_code       <= 4'd6;
-                sd_sec_read_addr  <= data_start +
-                                     ((current_cluster - 32'd2) << cluster_shift) +
-                                     sector_in_cluster;
+                sd_sec_read_addr  <= request_data_lba;
                 sector_byte_index <= 9'd0;
                 sd_sec_read       <= 1'b1;
                 state             <= S_WAIT_IMAGE;

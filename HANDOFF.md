@@ -1,5 +1,7 @@
 # HX4S20 多媒体工程交接
 
+> 2026-09-27 MAIN-5D 最新状态：按用户要求暂停种子搜索，优先资源优化。同一集成入口 LUT 从 17348 降至 16664（85.02%），BRAM9K 56、BRAM32K 6、DSP 11；相关回归通过。本轮未发布新 bit，MAIN-5D 尚未通过最终 STA/DRC 或板测。详见 [MAIN5D 资源优化记录](docs/MAIN5D_资源优化记录_20260927.md)。以下历史阶段记录仍供回退参考。
+
 更新时间：2026-09-24
 适用目录：`D:\VSCode\CodeFiles\Git_TD\Anlogic`
 当前分支：`Yan_Chen_Double`，跟踪 `origin/Yan_Chen_Double`。

@@ -5,7 +5,8 @@
 // The stable BIN path uses 512 entries, exactly one SD sector pair buffer.
 module al_dp_ram16 #(
     parameter integer ADDR_WIDTH = 9,
-    parameter integer DEPTH      = 512
+    parameter integer DEPTH      = 512,
+    parameter IMPLEMENT = "9K"
 )(
     input  wire                  clk,
     input  wire                  wr_en,
@@ -36,7 +37,7 @@ module al_dp_ram16 #(
         .WRITEMODE_A("NORMAL"), .WRITEMODE_B("NORMAL"),
         .RESETMODE("SYNC"), .DEBUGGABLE("NO"), .PACKABLE("NO"),
         .FORCE_KEEP("OFF"), .INIT_FILE("NONE"), .FILL_ALL("NONE"),
-        .IMPLEMENT("9K")
+        .IMPLEMENT(IMPLEMENT)
     ) u_ram (
         .doa(unused_a), .dob(rd_data), .dia(wr_data), .dib(16'd0),
         .cea(wr_en), .ocea(1'b0), .clka(clk), .wea(wr_en), .rsta(1'b0),

@@ -4,13 +4,15 @@
 // MAIN-5 image-only adjustment: contrast -> brightness -> saturation ->
 // temperature -> final clamp. OSD/subtitles/waveform are added later.
 module rgb888_adjust_main5 (
+    input  wire        clk,
+    input  wire        rst_n,
     input  wire        de,
     input  wire [23:0] rgb_in,
     input  wire [2:0]  brightness_index,
     input  wire [2:0]  contrast_index,
     input  wire [2:0]  saturation_index,
     input  wire [2:0]  temperature_index,
-    output wire [23:0] rgb_out
+    output reg  [23:0] rgb_out
 );
 
 function signed [11:0] contrast;
@@ -34,15 +36,13 @@ function signed [11:0] contrast;
     end
 endfunction
 
-function signed [11:0] saturate;
-    input signed [11:0] channel;
+function signed [11:0] saturate_delta;
+    input signed [11:0] d;
     input signed [11:0] luma;
     input [2:0] level;
-    reg signed [11:0] d;
     reg signed [15:0] product;
     reg [2:0] factor;
     begin
-        d = channel - luma;
         case (level)
             3'd0: factor = 3'd0;
             3'd1: factor = 3'd2;
@@ -52,8 +52,8 @@ function signed [11:0] saturate;
             default: factor = 3'd4;
         endcase
         product = d * $signed({1'b0, factor});
-        saturate = luma + (product >>> 2) +
-                   ((level == 3'd2) && (d[1:0] != 2'd0));
+        saturate_delta = luma + (product >>> 2) +
+                         ((level == 3'd2) && (d[1:0] != 2'd0));
     end
 endfunction
 
@@ -88,14 +88,53 @@ always @* begin
     endcase
 end
 
-wire signed [11:0] cr = contrast(rgb_in[23:16], contrast_index) + brightness_offset;
-wire signed [11:0] cg = contrast(rgb_in[15:8], contrast_index) + brightness_offset;
-wire signed [11:0] cb = contrast(rgb_in[7:0], contrast_index) + brightness_offset;
-wire signed [11:0] y = (cr >>> 2) + (cg >>> 1) + (cb >>> 2);
-wire signed [11:0] sr = saturate(cr, y, saturation_index) + temperature_offset;
-wire signed [11:0] sg = saturate(cg, y, saturation_index);
-wire signed [11:0] sb = saturate(cb, y, saturation_index) - temperature_offset;
-assign rgb_out = de ? {clip(sr), clip(sg), clip(sb)} : 24'd0;
+wire signed [11:0] cr_next = contrast(rgb_in[23:16], contrast_index) + brightness_offset;
+wire signed [11:0] cg_next = contrast(rgb_in[15:8], contrast_index) + brightness_offset;
+wire signed [11:0] cb_next = contrast(rgb_in[7:0], contrast_index) + brightness_offset;
+reg signed [11:0] cr, cg, cb, temperature_offset_q;
+reg [2:0] saturation_index_q;
+reg de_q;
+wire signed [11:0] y_next = (cr >>> 2) + (cg >>> 1) + (cb >>> 2);
+reg signed [11:0] y_q, dr_q, dg_q, db_q, temperature_offset_q2;
+reg [2:0] saturation_index_q2;
+reg de_q2;
+wire signed [11:0] sr = saturate_delta(dr_q, y_q, saturation_index_q2) + temperature_offset_q2;
+wire signed [11:0] sg = saturate_delta(dg_q, y_q, saturation_index_q2);
+wire signed [11:0] sb = saturate_delta(db_q, y_q, saturation_index_q2) - temperature_offset_q2;
+
+always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+        cr <= 12'sd0;
+        cg <= 12'sd0;
+        cb <= 12'sd0;
+        temperature_offset_q <= 12'sd0;
+        saturation_index_q <= 3'd3;
+        de_q <= 1'b0;
+        y_q <= 12'sd0;
+        dr_q <= 12'sd0;
+        dg_q <= 12'sd0;
+        db_q <= 12'sd0;
+        temperature_offset_q2 <= 12'sd0;
+        saturation_index_q2 <= 3'd3;
+        de_q2 <= 1'b0;
+        rgb_out <= 24'd0;
+    end else begin
+        cr <= cr_next;
+        cg <= cg_next;
+        cb <= cb_next;
+        temperature_offset_q <= temperature_offset;
+        saturation_index_q <= saturation_index;
+        de_q <= de;
+        y_q <= y_next;
+        dr_q <= cr - y_next;
+        dg_q <= cg - y_next;
+        db_q <= cb - y_next;
+        temperature_offset_q2 <= temperature_offset_q;
+        saturation_index_q2 <= saturation_index_q;
+        de_q2 <= de_q;
+        rgb_out <= de_q2 ? {clip(sr), clip(sg), clip(sb)} : 24'd0;
+    end
+end
 
 endmodule
 `default_nettype wire

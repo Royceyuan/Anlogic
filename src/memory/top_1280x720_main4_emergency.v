@@ -19,6 +19,7 @@ module top_1280x720_main4_emergency #(
     output wire [127:0] main5_heartbeat,
     output wire [63:0] main5_playback,
     output wire [95:0] main5_display,
+    output wire main5_display_changed,
     output wire [127:0] main5_diagnostic
 );
 
@@ -66,6 +67,7 @@ museum_media_core #(
     .remote_command_result(remote_command_result),
     .main5_mode(main5_mode), .main5_heartbeat(main5_heartbeat),
     .main5_playback(main5_playback), .main5_display(main5_display),
+    .main5_display_changed(main5_display_changed),
     .main5_diagnostic(main5_diagnostic)
 );
 endmodule

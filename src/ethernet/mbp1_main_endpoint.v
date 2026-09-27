@@ -26,11 +26,12 @@ module mbp1_main_endpoint #(
     input  wire [127:0] heartbeat_payload,
     input  wire [63:0]  playback_payload,
     input  wire [95:0]  display_payload,
+    input  wire         display_changed,
     input  wire [127:0] diagnostic_payload,
     output reg          command_valid,
     output reg  [7:0]   command_type,
     output reg  [31:0]  command_seq,
-    output reg  [63:0]  command_payload,
+    output wire [63:0]  command_payload,
     input  wire         command_done,
     input  wire [7:0]   command_result,
     output wire         peer_alive,
@@ -82,7 +83,6 @@ reg [3:0] hello_attempts;
 reg hello_pending, hello_waiting;
 reg [31:0] hello_seq;
 reg heartbeat_pending, display_pending, diagnostic_pending;
-reg [95:0] last_display_sent;
 reg playback_pending, playback_waiting;
 reg [31:0] playback_seq;
 reg [6:0] playback_wait_ms;
@@ -92,8 +92,8 @@ reg ack_pending;
 reg [31:0] ack_seq;
 reg [7:0] ack_type, ack_result;
 reg last_command_valid;
-reg [31:0] last_command_boot, last_command_seq;
-reg [7:0] last_command_type, last_command_result;
+reg [31:0] last_command_seq;
+reg [7:0] last_command_result;
 reg hello_ack_match, playback_ack_match;
 
 wire ms_tick = (ms_divider == CLOCKS_PER_MS - 1);
@@ -103,6 +103,30 @@ wire command_length_ok = (packet_type == 8'h13 &&
                           packet_payload_length == 16'd4) ||
                          ((packet_type == 8'h14 || packet_type == 8'h15) &&
                           packet_payload_length == 16'd8);
+// The decoded payload remains stable until the next complete packet. Ethernet
+// framing leaves enough cycles for the local command sink to acknowledge it,
+// so a second 64-bit holding register is unnecessary.
+assign command_payload = packet_payload;
+
+// Decode transmit priority once, then share it across all payload bits.
+wire select_ack = ack_pending;
+wire select_hello = !ack_pending && hello_pending;
+wire select_heartbeat = !(ack_pending || hello_pending) && heartbeat_pending;
+wire select_playback = !(ack_pending || hello_pending || heartbeat_pending) &&
+                       ENABLE_PLAYBACK && playback_pending;
+wire select_display = !(ack_pending || hello_pending || heartbeat_pending ||
+                        (ENABLE_PLAYBACK && playback_pending)) && display_pending;
+wire select_diagnostic = !(ack_pending || hello_pending || heartbeat_pending ||
+                           (ENABLE_PLAYBACK && playback_pending) || display_pending) &&
+                         diagnostic_pending;
+wire [127:0] selected_payload =
+    ({128{select_ack}} & {ack_seq, ack_type, ack_result, main_mode, 8'd0, 64'd0}) |
+    ({128{select_hello}} & {8'h01, 8'h01, 8'h01, 8'h01,
+                          32'h00050001, 32'h0000007f, 32'd0}) |
+    ({128{select_heartbeat}} & heartbeat_payload) |
+    ({128{select_playback}} & {playback_payload, 64'd0}) |
+    ({128{select_display}} & {display_payload, 32'd0}) |
+    ({128{select_diagnostic}} & diagnostic_payload);
 
 always @(posedge clk or posedge rst) begin
     if (rst) begin
@@ -119,7 +143,6 @@ always @(posedge clk or posedge rst) begin
         heartbeat_pending <= 1'b0;
         display_pending <= 1'b0;
         diagnostic_pending <= 1'b0;
-        last_display_sent <= {96{1'b1}};
         playback_pending <= ENABLE_PLAYBACK;
         playback_waiting <= 1'b0;
         playback_seq <= 32'd0;
@@ -136,11 +159,8 @@ always @(posedge clk or posedge rst) begin
         command_valid <= 1'b0;
         command_type <= 8'd0;
         command_seq <= 32'd0;
-        command_payload <= 64'd0;
         last_command_valid <= 1'b0;
-        last_command_boot <= 32'd0;
         last_command_seq <= 32'd0;
-        last_command_type <= 8'd0;
         last_command_result <= 8'd0;
         hello_ack_match <= 1'b0;
         playback_ack_match <= 1'b0;
@@ -214,9 +234,7 @@ always @(posedge clk or posedge rst) begin
         if (command_done && command_valid) begin
             command_valid <= 1'b0;
             last_command_valid <= 1'b1;
-            last_command_boot <= peer_boot_id;
             last_command_seq <= command_seq;
-            last_command_type <= command_type;
             last_command_result <= command_result;
             ack_pending <= 1'b1;
             ack_seq <= command_seq;
@@ -224,7 +242,7 @@ always @(posedge clk or posedge rst) begin
             ack_result <= command_result;
         end
 
-        if (display_payload != last_display_sent)
+        if (display_changed)
             display_pending <= 1'b1;
 
         if (ENABLE_PLAYBACK && playback_payload[63:32] != last_playback_header) begin
@@ -285,12 +303,9 @@ always @(posedge clk or posedge rst) begin
                         else
                             ack_result <= 8'd4;
                     end else if (last_command_valid &&
-                                 last_command_boot == packet_boot_id &&
-                                 last_command_seq == packet_seq &&
-                                 last_command_type == packet_type)
+                                 last_command_seq == packet_seq)
                         ack_result <= last_command_result;
                     else if (last_command_valid &&
-                             last_command_boot == packet_boot_id &&
                              (packet_seq - last_command_seq) > 32'h7fffffff)
                         ack_result <= 8'd5;
                     else begin
@@ -298,7 +313,6 @@ always @(posedge clk or posedge rst) begin
                         command_valid <= 1'b1;
                         command_type <= packet_type;
                         command_seq <= packet_seq;
-                        command_payload <= packet_payload;
                     end
                 end else
                     ack_result <= 8'd3;
@@ -313,14 +327,15 @@ always @(posedge clk or posedge rst) begin
             send_uptime_ms <= uptime_ms;
             send_flags <= 8'd0;
             send_seq <= next_seq;
+            if (select_ack || select_hello || select_heartbeat || select_playback ||
+                select_display || select_diagnostic)
+                send_payload <= selected_payload;
             if (ack_pending) begin
                 tx_gap_ms <= 2'd2;
                 send <= 1'b1;
                 send_type <= 8'h04;
                 send_flags <= 8'h02;
                 send_payload_length <= 5'd8;
-                send_payload <= {ack_seq, ack_type, ack_result, main_mode,
-                                 8'd0, 64'd0};
                 ack_pending <= 1'b0;
                 next_seq <= next_seq + 32'd1;
             end else if (hello_pending) begin
@@ -329,8 +344,6 @@ always @(posedge clk or posedge rst) begin
                 send_type <= 8'h01;
                 send_flags <= hello_waiting ? 8'h05 : 8'h01;
                 send_payload_length <= 5'd12;
-                send_payload <= {8'h01, 8'h01, 8'h01, 8'h01,
-                                 32'h00050001, 32'h0000007f, 32'd0};
                 if (!hello_waiting) begin
                     hello_seq <= next_seq;
                     next_seq <= next_seq + 32'd1;
@@ -348,7 +361,6 @@ always @(posedge clk or posedge rst) begin
                 send <= 1'b1;
                 send_type <= 8'h02;
                 send_payload_length <= 5'd16;
-                send_payload <= heartbeat_payload;
                 heartbeat_pending <= 1'b0;
                 next_seq <= next_seq + 32'd1;
             end else if (ENABLE_PLAYBACK && playback_pending) begin
@@ -357,7 +369,6 @@ always @(posedge clk or posedge rst) begin
                 send_type <= 8'h12;
                 send_flags <= playback_waiting ? 8'h05 : 8'h01;
                 send_payload_length <= 5'd8;
-                send_payload <= {playback_payload, 64'd0};
                 if (!playback_waiting) begin
                     playback_seq <= next_seq;
                     playback_attempts <= 4'd1;
@@ -374,8 +385,6 @@ always @(posedge clk or posedge rst) begin
                 send <= 1'b1;
                 send_type <= 8'h16;
                 send_payload_length <= 5'd12;
-                send_payload <= {display_payload, 32'd0};
-                last_display_sent <= display_payload;
                 display_pending <= 1'b0;
                 next_seq <= next_seq + 32'd1;
             end else if (diagnostic_pending) begin
@@ -383,7 +392,6 @@ always @(posedge clk or posedge rst) begin
                 send <= 1'b1;
                 send_type <= 8'h31;
                 send_payload_length <= 5'd16;
-                send_payload <= diagnostic_payload;
                 diagnostic_pending <= 1'b0;
                 next_seq <= next_seq + 32'd1;
             end

@@ -1,5 +1,8 @@
 `timescale 1ns / 1ps
 module tb_rgb888_adjust_main5;
+reg clk = 0;
+reg rst_n = 0;
+always #5 clk = ~clk;
 reg de = 1;
 reg [23:0] rgb = 24'h4080c0;
 reg [2:0] b = 3, c = 2, s = 3, t = 3;
@@ -67,33 +70,35 @@ function [23:0] expected;
     end
 endfunction
 rgb888_adjust_main5 dut (
+    .clk(clk), .rst_n(rst_n),
     .de(de), .rgb_in(rgb), .brightness_index(b),
     .contrast_index(c), .saturation_index(s),
     .temperature_index(t), .rgb_out(out)
 );
 initial begin
-    #1;
+    repeat (2) @(negedge clk); rst_n = 1;
+    repeat (4) @(negedge clk);
     if (out !== rgb) $fatal(1, "standard preset changed source pixel");
     s = 0;
-    #1;
+    repeat (4) @(negedge clk);
     if (out[23:16] !== out[15:8] || out[15:8] !== out[7:0])
         $fatal(1, "zero saturation is not grayscale");
     s = 3; t = 6;
-    #1;
+    repeat (4) @(negedge clk);
     if (out !== 24'h5880a8) $fatal(1, "warm color temperature incorrect");
     t = 3; b = 0; rgb = 24'h080810;
-    #1;
+    repeat (4) @(negedge clk);
     if (out !== 24'h000000) $fatal(1, "negative brightness did not clip");
     b = 6; rgb = 24'hf8f8f8;
-    #1;
+    repeat (4) @(negedge clk);
     if (out !== 24'hffffff) $fatal(1, "positive brightness did not clip");
     de = 0;
-    #1;
+    repeat (4) @(negedge clk);
     if (out !== 24'h000000) $fatal(1, "blanking not black");
     de = 1;
     for (n=0;n<4000;n=n+1) begin
         rgb=$random; b=$random; c=$random; s=$random; t=$random;
-        #1;
+        repeat (4) @(negedge clk);
         if (out !== expected(rgb,b,c,s,t))
             $fatal(1, "color mismatch rgb=%h b=%d c=%d s=%d t=%d out=%h ref=%h",
                    rgb,b,c,s,t,out,expected(rgb,b,c,s,t));

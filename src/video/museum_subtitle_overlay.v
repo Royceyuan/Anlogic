@@ -97,6 +97,9 @@ reg [2:0] pixel_q;
 
 localparam [1:0] FADE_IDLE=2'd0, FADE_OUT=2'd1, FADE_IN=2'd2;
 
+wire [31:0] request_data_lba = cluster_lba(current_cluster, fs_data_start,
+    state == S_REQ_ROOT ? root_sector_in_cluster : sector_in_cluster);
+
 function [31:0] cluster_lba;
     input [31:0] cluster;
     input [31:0] base;
@@ -227,8 +230,7 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
                 byte_index<=0; entry_match<=1; entry_deleted<=0; entry_attr<=0;
                 entry_cluster_hi<=0; entry_cluster_lo<=0; entry_file_size<=0;
                 file_found<=0;
-                sd_sec_read_addr<=cluster_lba(current_cluster,fs_data_start,
-                                              root_sector_in_cluster);
+                sd_sec_read_addr<=request_data_lba;
                 sd_sec_read<=1; state<=S_WAIT_ROOT;
             end
             S_WAIT_ROOT: begin
@@ -288,7 +290,7 @@ always @(posedge clk_50m or negedge rst_n_50m) begin
             end
             S_REQ_DATA: begin
                 byte_index<=0;
-                sd_sec_read_addr<=cluster_lba(current_cluster,fs_data_start,sector_in_cluster);
+                sd_sec_read_addr<=request_data_lba;
                 sd_sec_read<=1; state<=S_WAIT_DATA;
             end
             S_WAIT_DATA: begin

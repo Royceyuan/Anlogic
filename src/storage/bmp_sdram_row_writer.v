@@ -12,6 +12,7 @@ module bmp_sdram_row_writer #(
     parameter integer WORDS_PER_ROW = WIDTH / 2,
     parameter integer BURST_WORDS  = WORDS_PER_ROW,
     parameter integer OVERVIEW_ENABLE = 0,
+    parameter integer OVERVIEW_BRAM = 0,
     parameter integer ENABLE_ABORT = 0,
     parameter integer OVERVIEW_FRAME_COUNT = 5,
     parameter integer OVERVIEW_PANEL_WIDTH = WIDTH / OVERVIEW_FRAME_COUNT,
@@ -76,7 +77,7 @@ reg [3:0] active_overview_frame;
 reg [10:0] active_crop_x0;
 reg [10:0] row_pixel_index;
 reg [10:0] overview_pixel_index;
-reg [15:0] overview_line [0:OVERVIEW_PANEL_WIDTH-1];
+wire [15:0] overview_pixel;
 
 localparam integer OVERVIEW_WORDS_PER_ROW = OVERVIEW_PANEL_WIDTH / 2;
 localparam integer OVERVIEW_BURSTS_PER_ROW =
@@ -136,6 +137,28 @@ assign write_data     = pack_out_data;
 assign normal_pixel_fire = !overview_phase && pack_in_valid && pack_in_ready;
 assign overview_pixel_fire = overview_phase && pack_in_valid && pack_in_ready;
 
+wire overview_store = rst_n && !start && normal_pixel_fire && OVERVIEW_ENABLE &&
+                      active_overview_frame < OVERVIEW_FRAME_COUNT &&
+                      row_pixel_index >= active_crop_x0 &&
+                      row_pixel_index < active_crop_x0 + OVERVIEW_PANEL_WIDTH;
+localparam integer PANEL_ADDR_BITS = OVERVIEW_PANEL_WIDTH <= 1 ? 1 : $clog2(OVERVIEW_PANEL_WIDTH);
+wire [PANEL_ADDR_BITS-1:0] overview_write_index = row_pixel_index - active_crop_x0;
+generate
+if (OVERVIEW_ENABLE && OVERVIEW_BRAM) begin : g_overview_bram
+    al_dp_ram16 #(.ADDR_WIDTH(PANEL_ADDR_BITS), .DEPTH(1 << PANEL_ADDR_BITS),
+                  .IMPLEMENT("32K")) u_line (
+        .clk(clk), .wr_en(overview_store), .wr_addr(overview_write_index),
+        .wr_data(row_pixel), .rd_addr(overview_pixel_index[PANEL_ADDR_BITS-1:0]),
+        .rd_data(overview_pixel));
+end else begin : g_overview_distributed
+    reg [15:0] overview_line [0:OVERVIEW_PANEL_WIDTH-1];
+    always @(posedge clk)
+        if (rst_n && !start && overview_store)
+            overview_line[overview_write_index] <= row_pixel;
+    assign overview_pixel = overview_line[overview_pixel_index];
+end
+endgenerate
+
 rgb565_stream_packer_ready u_packer (
     .clk       (clk),
     .rst_n     (packer_rst_n),
@@ -143,7 +166,7 @@ rgb565_stream_packer_ready u_packer (
     .in_ready  (pack_in_ready),
     .in_pixel  (abort_active ? 16'd0 : overview_phase ?
                 ((overview_pixel_index < OVERVIEW_PANEL_WIDTH) ?
-                 overview_line[overview_pixel_index] : 16'd0) : row_pixel),
+                 overview_pixel : 16'd0) : row_pixel),
     .out_valid (pack_out_valid),
     .out_data  (pack_out_data),
     .out_ready (pack_out_ready)
@@ -212,11 +235,6 @@ always @(posedge clk or negedge rst_n) begin
 
             S_STREAM: begin
                 if (normal_pixel_fire) begin
-                    if (OVERVIEW_ENABLE &&
-                        active_overview_frame < OVERVIEW_FRAME_COUNT &&
-                        row_pixel_index >= active_crop_x0 &&
-                        row_pixel_index < active_crop_x0 + OVERVIEW_PANEL_WIDTH)
-                        overview_line[row_pixel_index - active_crop_x0] <= row_pixel;
                     row_pixel_index <= row_pixel_index + 1'b1;
                 end
                 if (overview_pixel_fire)

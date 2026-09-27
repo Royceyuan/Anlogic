@@ -26,6 +26,7 @@ wire [7:0] media_mode, net_mode;
 wire [127:0] media_heartbeat, net_heartbeat;
 wire [63:0] media_playback, net_playback;
 wire [95:0] media_display, net_display;
+wire media_display_changed;
 wire [127:0] media_diagnostic, net_diagnostic;
 wire net_command_valid, media_command_valid;
 wire [7:0] net_command_type, media_command_type;
@@ -55,28 +56,42 @@ top_1280x720_main4_emergency #(
     .remote_command_result(media_command_result),
     .main5_mode(media_mode), .main5_heartbeat(media_heartbeat),
     .main5_playback(media_playback), .main5_display(media_display),
+    .main5_display_changed(media_display_changed),
     .main5_diagnostic(media_diagnostic)
 );
 
-mbp1_media_bridge u_bridge (
-    .net_clk(net_clk), .media_clk(clk_50m), .rst(net_rst),
-    .media_mode(media_mode), .media_heartbeat(media_heartbeat),
-    .media_playback(media_playback), .media_display(media_display),
-    .media_diagnostic(media_diagnostic),
-    .net_mode(net_mode), .net_heartbeat(net_heartbeat),
-    .net_playback(net_playback), .net_display(net_display),
-    .net_diagnostic(net_diagnostic),
-    .net_command_valid(net_command_valid),
-    .net_command_type(net_command_type),
-    .net_command_payload(net_command_payload),
-    .net_command_done(net_command_done),
-    .net_command_result(net_command_result),
-    .media_command_valid(media_command_valid),
-    .media_command_type(media_command_type),
-    .media_command_payload(media_command_payload),
-    .media_command_done(media_command_done),
-    .media_command_result(media_command_result)
-);
+generate if (USE_LIGHT_UDP) begin : g_same_clock
+    assign net_mode = media_mode;
+    assign net_heartbeat = media_heartbeat;
+    assign net_playback = media_playback;
+    assign net_display = media_display;
+    assign net_diagnostic = media_diagnostic;
+    assign media_command_valid = net_command_valid;
+    assign media_command_type = net_command_type;
+    assign media_command_payload = net_command_payload;
+    assign net_command_done = media_command_done;
+    assign net_command_result = media_command_result;
+end else begin : g_clock_bridge
+    mbp1_media_bridge u_bridge (
+        .net_clk(net_clk), .media_clk(clk_50m), .rst(net_rst),
+        .media_mode(media_mode), .media_heartbeat(media_heartbeat),
+        .media_playback(media_playback), .media_display(media_display),
+        .media_diagnostic(media_diagnostic),
+        .net_mode(net_mode), .net_heartbeat(net_heartbeat),
+        .net_playback(net_playback), .net_display(net_display),
+        .net_diagnostic(net_diagnostic),
+        .net_command_valid(net_command_valid),
+        .net_command_type(net_command_type),
+        .net_command_payload(net_command_payload),
+        .net_command_done(net_command_done),
+        .net_command_result(net_command_result),
+        .media_command_valid(media_command_valid),
+        .media_command_type(media_command_type),
+        .media_command_payload(media_command_payload),
+        .media_command_done(media_command_done),
+        .media_command_result(media_command_result)
+    );
+end endgenerate
 
 top_main5a_ethernet_diag #(
     .MBP1_DIAG(1), .LIGHT_UDP(USE_LIGHT_UDP), .MBP1_EXTERNAL_STATUS(1),
@@ -92,6 +107,7 @@ top_main5a_ethernet_diag #(
     .main_mode(net_mode), .heartbeat_payload(net_heartbeat),
     .playback_payload(net_playback), .display_payload(net_display),
     .diagnostic_payload(net_diagnostic),
+    .display_changed(USE_LIGHT_UDP ? media_display_changed : 1'b0),
     .command_valid(net_command_valid), .command_type(net_command_type),
     .command_seq(net_command_seq), .command_payload(net_command_payload),
     .command_done(net_command_done), .command_result(net_command_result),

@@ -99,6 +99,9 @@ assign fs_fat_start            = fat_start;
 assign fs_data_start           = data_start;
 assign fs_root_cluster         = root_cluster;
 
+wire [31:0] request_data_lba = cluster_lba(current_cluster, data_start,
+    state == S_REQ_ROOT ? root_sector_in_cluster : sector_in_cluster);
+
 function [31:0] cluster_lba;
     input [31:0] cluster;
     input [31:0] base;
@@ -351,8 +354,7 @@ always @(posedge clk or negedge rst_n) begin
                 entry_cluster_lo <= 16'd0;
                 entry_file_size  <= 32'd0;
                 file_found       <= 1'b0;
-                sd_sec_read_addr <= cluster_lba(current_cluster, data_start,
-                                                root_sector_in_cluster);
+                sd_sec_read_addr <= request_data_lba;
                 sd_sec_read      <= 1'b1;
                 state            <= S_WAIT_ROOT;
             end
@@ -430,8 +432,7 @@ always @(posedge clk or negedge rst_n) begin
                 sd_sec_read <= 1'b0;
                 if (!fifo_almost_full) begin
                     byte_index       <= 9'd0;
-                    sd_sec_read_addr <= cluster_lba(current_cluster, data_start,
-                                                    sector_in_cluster);
+                    sd_sec_read_addr <= request_data_lba;
                     sd_sec_read      <= 1'b1;
                     state            <= S_WAIT_DATA;
                 end

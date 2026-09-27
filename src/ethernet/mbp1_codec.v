@@ -207,45 +207,25 @@ function [7:0] packet_byte;
     input [4:0] payload_length;
     input [31:0] seq, boot, uptime;
     input [127:0] payload;
+    reg [31:0] word_data;
     begin
-        case (index)
-            6'd0: packet_byte = 8'h4d;
-            6'd1: packet_byte = 8'h42;
-            6'd2: packet_byte = 8'h01;
-            6'd3: packet_byte = msg_type;
-            6'd4: packet_byte = flags;
-            6'd5: packet_byte = 8'h14;
-            6'd6: packet_byte = 8'h00;
-            6'd7: packet_byte = {3'd0, payload_length};
-            6'd8: packet_byte = seq[31:24];
-            6'd9: packet_byte = seq[23:16];
-            6'd10: packet_byte = seq[15:8];
-            6'd11: packet_byte = seq[7:0];
-            6'd12: packet_byte = boot[31:24];
-            6'd13: packet_byte = boot[23:16];
-            6'd14: packet_byte = boot[15:8];
-            6'd15: packet_byte = boot[7:0];
-            6'd16: packet_byte = uptime[31:24];
-            6'd17: packet_byte = uptime[23:16];
-            6'd18: packet_byte = uptime[15:8];
-            6'd19: packet_byte = uptime[7:0];
-            6'd20: packet_byte = payload[127:120];
-            6'd21: packet_byte = payload[119:112];
-            6'd22: packet_byte = payload[111:104];
-            6'd23: packet_byte = payload[103:96];
-            6'd24: packet_byte = payload[95:88];
-            6'd25: packet_byte = payload[87:80];
-            6'd26: packet_byte = payload[79:72];
-            6'd27: packet_byte = payload[71:64];
-            6'd28: packet_byte = payload[63:56];
-            6'd29: packet_byte = payload[55:48];
-            6'd30: packet_byte = payload[47:40];
-            6'd31: packet_byte = payload[39:32];
-            6'd32: packet_byte = payload[31:24];
-            6'd33: packet_byte = payload[23:16];
-            6'd34: packet_byte = payload[15:8];
-            6'd35: packet_byte = payload[7:0];
-            default: packet_byte = 8'h00;
+        case (index[5:2])
+            4'd0: word_data = {24'h4d4201, msg_type};
+            4'd1: word_data = {flags, 16'h1400, 3'd0, payload_length};
+            4'd2: word_data = seq;
+            4'd3: word_data = boot;
+            4'd4: word_data = uptime;
+            4'd5: word_data = payload[127:96];
+            4'd6: word_data = payload[95:64];
+            4'd7: word_data = payload[63:32];
+            4'd8: word_data = payload[31:0];
+            default: word_data = 32'd0;
+        endcase
+        case (index[1:0])
+            2'd0: packet_byte = word_data[31:24];
+            2'd1: packet_byte = word_data[23:16];
+            2'd2: packet_byte = word_data[15:8];
+            2'd3: packet_byte = word_data[7:0];
         endcase
     end
 endfunction
