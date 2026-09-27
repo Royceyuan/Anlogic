@@ -10,6 +10,15 @@ from mbp1_pc_peer import LOCAL, TARGET, packet, parse
 
 PRESETS = ("标准", "明亮", "高对比", "柔和")
 LIMITS = (6, 4, 5, 6)
+PERCENT = ((-19, -13, -6, 0, 6, 13, 19), (50, 75, 100, 125, 150),
+           (0, 50, 75, 100, 125, 150), (-100, -67, -33, 0, 33, 67, 100))
+
+
+def percent_text(field, index):
+    value = PERCENT[field][index]
+    return f"{value:+d}%" if field in (0, 3) and value else f"{value}%"
+
+
 RESULTS = {0: "已接收；以状态回报为准", 2: "长度错误", 3: "不支持（检查 bit）",
            4: "BUSY：请等转场/恢复结束后重新操作", 5: "状态不匹配或参数越界"}
 
@@ -23,12 +32,14 @@ class Peer:
         self.board_boot = None
         self.pending = None
         self.await_display = 0
+        self.expected_display = None
         self.connected = False
         self.connected_at = 0
         self.status = {}
         self.last_seq = {}
         self.heartbeat_at = 0
         self.message = "请点击连接 / 重连"
+        self.command_started = 0
 
     def send(self, kind, flags=0, payload=b"", seq=None):
         if seq is None:
@@ -50,6 +61,7 @@ class Peer:
         self.board_boot = None
         self.status.clear()
         self.await_display = 0
+        self.expected_display = None
         self.last_seq.clear()
         # A new PC session discards all old commands; nothing is replayed.
         self.boot = secrets.randbits(32)
@@ -65,9 +77,11 @@ class Peer:
         if not self.ready():
             raise ValueError("未连接、状态过期或上一命令未完成")
         hb = self.status[2][0]
-        if hb[0] not in (1, 2) or hb[3] == 3 or hb[4]:
+        # A subtitle error is diagnostic, not proof that the image path is busy.
+        if (hb[0] not in (1, 2) and not (hb[0] == 4 and hb[6] == 3)) or hb[3] == 3 or hb[4]:
             raise ValueError("主板正在转场、应急、启动或故障，暂不控制")
         self.request(kind, payload)
+        self.command_started = time.monotonic()
 
     def preset(self, index):
         if index not in range(4):
@@ -83,11 +97,11 @@ class Peer:
         if not self.ready():
             raise ValueError("等待连接和新状态")
         hb, display = self.status[2][0], self.status[0x16][0]
-        if hb[0] != 2 or hb[1] > 4 or hb[2] > 4 or display[5] != 2 or hb[2] != display[7]:
-            raise ValueError("先进入讲解并按主板 KEY1 切换为 2×，等待阶段状态同步")
+        if hb[1] > 4 or hb[2] > 4 or display[5] not in (1, 2) or hb[2] != display[7]:
+            raise ValueError("先进入讲解，等待文物阶段与倍率状态同步（支持 1×/2×、播放/暂停）")
         x, y = struct.unpack(">hh", display[8:12])
         x, y = (0, 0) if recenter else (max(-240, min(240, x + dx)), max(-135, min(135, y + dy)))
-        self.command(0x15, struct.pack(">BBBBhh", hb[1], hb[2], 2, int(recenter), x, y))
+        self.command(0x15, struct.pack(">BBBBhh", hb[1], hb[2], display[5], int(recenter), x, y))
 
     def poll(self):
         now = time.monotonic()
@@ -121,11 +135,12 @@ class Peer:
             if kind == 4:
                 ack_seq, ack_type, result, _, _ = struct.unpack(">IBBBB", payload)
                 if self.pending and (ack_type, ack_seq) == (self.pending[0], self.pending[2]):
+                    sent_payload = self.pending[1]
                     self.pending = None
                     self.message = f"ACK {ack_type:02X}: {RESULTS.get(result, str(result))}"
                     if ack_type in (0x13, 0x14, 0x15) and result == 0:
-                        # Wait for a later snapshot, not the pre-commit event packet.
-                        self.await_display = now + 0.1
+                        self.await_display = now + 1.5
+                        self.expected_display = (ack_type, sent_payload)
                     if ack_type == 1:
                         self.connected = result == 0
                         self.connected_at = now
@@ -142,8 +157,22 @@ class Peer:
                 continue
             self.last_seq[kind] = seq
             self.status[kind] = (payload, now)
-            if kind == 0x16 and self.await_display and now >= self.await_display:
+        # Status can arrive before its ACK. Reuse only snapshots received since
+        # this command, never a matching but stale value from a previous command.
+        display, received_at = self.status.get(0x16, (None, 0))
+        if self.await_display and received_at >= self.command_started:
+            command, sent = self.expected_display
+            matched = (display[0] == sent[0] if command == 0x13 else
+                       display[0] == 255 and display[1:5] == sent[:4] if command == 0x14 else
+                       display[5] == sent[2] and display[7] == sent[1] and
+                       display[8:] == (bytes(4) if sent[3] & 1 else sent[4:]))
+            if matched:
                 self.await_display = 0
+                elapsed_ms = (now - self.command_started) * 1000
+                self.message = f"主板已回报目标值生效（发送至回报 {elapsed_ms:.0f} ms）"
+        if self.await_display and now >= self.await_display:
+            self.await_display = 0
+            self.message = "未确认目标值生效（可能被本地操作或换图替代）；请查看实际回报后重新操作"
         if self.connected and now >= self.heartbeat_at:
             self.send(2, payload=bytes(16))
             self.heartbeat_at = now + 0.5
@@ -183,7 +212,8 @@ def main():
     pane.grid()
     status = tk.StringVar(value=peer.message)
     actual = tk.StringVar(value="尚无主板状态")
-    levels = [tk.IntVar(value=x) for x in (3, 2, 3, 3)]
+    edits = [tk.StringVar(value=percent_text(i, x)) for i, x in enumerate((3, 2, 3, 3))]
+    large_step = tk.BooleanVar(value=False)
 
     def act(fn):
         try:
@@ -201,29 +231,30 @@ def main():
         button.grid(row=2, column=i, pady=10)
         controls.append(button)
     for i, name in enumerate(("亮度", "对比度", "饱和度", "色温")):
-        ttk.Label(pane, text=f"{name}索引 (0～{LIMITS[i]})").grid(row=3, column=i)
-        ttk.Spinbox(pane, from_=0, to=LIMITS[i], width=10, textvariable=levels[i]).grid(row=4, column=i)
+        ttk.Label(pane, text=name + ("偏移" if i == 0 else "强度" if i == 3 else "")).grid(row=3, column=i)
+        ttk.Combobox(pane, values=[percent_text(i, j) for j in range(LIMITS[i]+1)],
+                     width=10, textvariable=edits[i], state="readonly").grid(row=4, column=i)
 
     def apply_levels():
         try:
-            values = [v.get() for v in levels]
-        except tk.TclError:
-            raise ValueError("请输入整数索引") from None
+            values = [[percent_text(i, j) for j in range(LIMITS[i]+1)].index(v.get()) for i, v in enumerate(edits)]
+        except (tk.TclError, ValueError):
+            raise ValueError("请选择列表中的百分比档位") from None
         peer.adjust(values)
 
     def copy_levels():
         if not peer.fresh(0x16):
             raise ValueError("尚无新状态")
-        for var, value in zip(levels, peer.status[0x16][0][1:5]):
-            var.set(value)
+        for i, value in enumerate(peer.status[0x16][0][1:5]):
+            edits[i].set(percent_text(i, value))
 
     for col, label, fn in ((0, "应用四项编辑值", apply_levels), (2, "回报值填入编辑框", copy_levels)):
         button = ttk.Button(pane, text=label, command=lambda fn=fn: act(fn))
         button.grid(row=5, column=col, columnspan=2, sticky="ew", pady=8)
         controls.append(button)
-    ttk.Label(pane, text="视口方向（每次 16 源像素）；先在主板 KEY1 切换为 2×").grid(row=6, column=0, columnspan=4)
-    for col, label, dx, dy in ((0, "← 左", -16, 0), (1, "↑ 上", 0, -16), (2, "↓ 下", 0, 16), (3, "→ 右", 16, 0)):
-        button = ttk.Button(pane, text=label, command=lambda dx=dx, dy=dy: act(lambda: peer.pan(dx, dy)))
+    ttk.Checkbutton(pane, text="大步 40 源像素（未选中：小步 20）；1×/2× 均可移动", variable=large_step).grid(row=6, column=0, columnspan=4)
+    for col, label, dx, dy in ((0, "← 左", -1, 0), (1, "↑ 上", 0, -1), (2, "↓ 下", 0, 1), (3, "→ 右", 1, 0)):
+        button = ttk.Button(pane, text=label, command=lambda dx=dx, dy=dy: act(lambda: peer.pan(dx*(40 if large_step.get() else 20), dy*(40 if large_step.get() else 20))))
         button.grid(row=7, column=col)
         controls.append(button)
     button = ttk.Button(pane, text="视口居中", command=lambda: act(lambda: peer.pan(recenter=True)))
@@ -249,10 +280,13 @@ def main():
             d = peer.status[0x16][0]
             x, y = struct.unpack(">hh", d[8:])
             name = PRESETS[d[0]] if d[0] < 4 else "自定义"
-            lines.append(f"预设={name}  亮度/对比/饱和/色温={list(d[1:5])}\n倍率={d[5]}×  视口=({x}, {y})  波形={bool(d[6]&1)}  总览OSD={bool(d[6]&2)}")
+            percentages = ' / '.join(percent_text(i, value) for i, value in enumerate(d[1:5]))
+            lines.append(f"预设={name}  亮度/对比/饱和/色温={percentages}\n倍率={d[5]}×  视口=({x}, {y})  波形={bool(d[6]&1)}  总览OSD={bool(d[6]&2)}")
         if 0x31 in peer.status:
             d = peer.status[0x31][0]
             lines.append(f"PHY={d[0]}  速度代码={d[1]}  存储状态={d[3]}  错误={d[6]}")
+            if d[7] & 3:
+                lines.append(f"字幕诊断：文件读取错误={bool(d[7]&1)}，格式错误={bool(d[7]&2)}（不锁住图片控制）")
         if not peer.ready():
             lines.append("等待 ACK / 新状态；断线时以上可能为最后一次快照")
         actual.set("\n".join(lines))

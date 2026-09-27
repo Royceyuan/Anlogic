@@ -1,5 +1,7 @@
 `timescale 1ns / 1ps
 module tb_museum_status_osd;
+reg test_pass=0;
+integer font_addr;
 reg clk=0,rst_n=0,hs=1,vs=1,de=1,name_ready=0,name_we=0,zoom_2x=0;
 reg panel_enable=1;
 reg [2:0] effect=0;
@@ -11,12 +13,14 @@ wire [10:0] x_o;
 wire [9:0] y_o;
 wire [23:0] rgb_o;
 always #5 clk=~clk;
-museum_status_osd dut(
+museum_status_osd #(.SHOW_PERCENT(1)) dut(
     .clk(clk),.rst_n(rst_n),.panel_enable(panel_enable),.hs_i(hs),.vs_i(vs),.de_i(de),
     .x_i(x),.y_i(y),.rgb_i(24'h808080),
     .artifact(3'd0),.stage(3'd0),.effect(effect),
     .width_bcd(16'h1920),.height_bcd(16'h1080),
     .zoom_2x(zoom_2x),
+    .brightness_index(3'd0),.contrast_index(3'd2),
+    .saturation_index(3'd3),.temperature_index(3'd6),
     .name_ready(name_ready),.name_wr_clk(clk),.name_wr_en(name_we),
     .name_wr_addr(name_addr),.name_wr_data(name_data),
     .hs_o(hs_o),.vs_o(vs_o),.de_o(de_o),.x_o(x_o),.y_o(y_o),.rgb_o(rgb_o)
@@ -52,8 +56,34 @@ initial begin
  effect=3'd4;
  check(11'd185,10'd45,24'hffffff); // CUSTOM first C
  check(11'd183,10'd45,24'h404040);
+ if(dut.percent_bcd(0,0)!==12'h019 || dut.percent_bcd(0,3)!==0 ||
+    dut.percent_bcd(1,2)!==12'h100 || dut.percent_bcd(2,0)!==0 ||
+    dut.percent_bcd(3,6)!==12'h100) $fatal(1,"percentage LUT");
+ check(11'd163,10'd77,24'hffffff); // B label in third row
+ check(11'd195,10'd95,24'h404040); // extended panel background
  panel_enable=0;
  check(11'd400,10'd20,24'h808080); // disabled panel stays aligned and transparent
+ // Also exercised with the vendor BRAM model: check initialization packing
+ // and every row, including unused glyph addresses, at the real read latency.
+ for(font_addr=0;font_addr<512;font_addr=font_addr+1) begin
+  @(negedge clk);
+  force dut.glyph_s0=font_addr[8:4];
+  force dut.glyph_row_s0=font_addr[3:0];
+  @(posedge clk); #1;
+  if(dut.glyph_row_s1!==dut.chinese_row(font_addr[8:4],font_addr[3:0]))
+   $fatal(1,"font ROM address %d",font_addr);
+ end
+ release dut.glyph_s0; release dut.glyph_row_s0;
+ for(font_addr=0;font_addr<256;font_addr=font_addr+1) begin
+  @(negedge clk);
+  force dut.chosen_ascii=font_addr[7:3];
+  force dut.local_y={font_addr[2:0],1'b1};
+  @(posedge clk); #1;
+  if(dut.ascii_bits!==dut.ascii_row(font_addr[7:3],font_addr[2:0]))
+   $fatal(1,"ASCII ROM address %d",font_addr);
+ end
+ release dut.chosen_ascii; release dut.local_y;
+ test_pass=1;
  $display("PASS tb_museum_status_osd enable, TF name, pixel alignment");
  $finish;
 end

@@ -1,5 +1,7 @@
 # HX4S20 多媒体工程交接
 
+> 2026-09-27 最新控制修复：新增 `release/hx4s20_main5d_control_repair.bit`，SHA-256 `6817F1F111740635EA8732DCEB8F3BFCD6BDAB895EEE28EE4EE12E979528D1B7`。修复转场竞争后远程命令卡住、暂停时不能直接缩放/平移，支持 1× 平移露底和 20/40 步长；PC/OSD 四参数显示百分比。最终 setup +0.298 ns、hold +0.023 ns，TNS 均 0；Slice 9519（97.13%），原 bit 保留。仿真通过、待用户实板验收；未改 TF 素材或音画字幕时间轴。见 [修复验证](docs/MAIN5D_控制修复验证_20260927.md) 及 [操作说明](docs/MAIN5D_PC控制面板与验收_20260927.md)。下文旧“未修改 RTL/bit”和仅 2× 视口说明为历史记录。
+
 > 2026-09-27 PC 控制工具：新增 `tools/mbp1_pc_control.py`，对接现有 MAIN-5D bit 的预设、四参数与 2× 视口控制，使用 Tkinter 和标准库 UDP。旧 5B 诊断脚本保持不变。操作及实板验收见 [MAIN5D PC 控制面板](docs/MAIN5D_PC控制面板与验收_20260927.md)。本地回环协议测试通过；PC→实板画面效果仍待用户验收，本次不改 RTL/bit。
 
 > 2026-09-27 最新：MAIN-5D 已完成固定种子 1 的完整布线与 bitgen，最终 setup +0.051 ns、hold +0.027 ns，违例均为 0。新文件 `release/hx4s20_main5d_control.bit`，SHA-256 `DEB5F7469682D2E92E8BA40FDA21C38D4A9A3D9B7F8D084873DEE0A19CBA0646`。Slice 9406/9800（95.98%）、DSP 12/29，BRAM9K 44、BRAM32K 9。通过 DSP、BRAM 输出寄存器及等价逻辑缩短关键路径，未降频或放宽约束；仍待 MAIN-5D 上板验证，旧 MAIN-5C 发布 bit 保留。详见 [时序闭合与上板检查](docs/MAIN5D_时序闭合与上板检查_20260927.md)。下列“没有新 bit”等为历史记录。

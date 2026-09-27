@@ -71,24 +71,49 @@ def main():
         assert retry[1] == 5 and retry[2:] == command[2:]
         ack(command)
         assert not peer.ready()  # ACK is not proof of applied video state.
-        peer.await_display -= 0.2
         state()
+        assert not peer.ready()  # Old values cannot acknowledge a new preset.
+        incoming(0x16, bytes([1, 5, 3, 4, 4, 2, 3, 1]) + bytes(4))
+        assert peer.ready()
+        assert "ms" in peer.message
+        peer.preset(1)
+        command = outgoing(0x13)
+        ack(command)
+        assert not peer.ready()  # Matching pre-command status is stale.
+        incoming(0x16, bytes([1, 5, 3, 4, 4, 2, 3, 1]) + bytes(4))
+        assert peer.ready()
+        peer.preset(0)
+        command = outgoing(0x13)
+        state()  # Applied status may precede ACK on the wire.
+        assert not peer.ready()
+        ack(command)
         assert peer.ready()
         peer.adjust([6, 4, 5, 6])
         command = outgoing(0x14)
         assert command[4] == bytes([6, 4, 5, 6, 1, 0, 0, 0])
         ack(command, 4)
         assert "BUSY" in peer.message and peer.pending is None
-        peer.pan(-16, 16)
+        peer.adjust([3,2,3,3])
+        ack(outgoing(0x14))
+        incoming(0x16,bytes([255,3,2,3,3,2,3,1])+bytes(4))
+        assert peer.ready()
+        peer.preset(0)
+        ack(outgoing(0x13))
+        # If local actions supersede a target, no permanent UI lock is allowed.
+        peer.await_display=time.monotonic()-1
+        peer.poll()
+        assert peer.ready() and "未确认" in peer.message
+        peer.pan(-20, 40)
         command = outgoing(0x15)
-        assert command[4] == struct.pack(">BBBBhh", 3, 1, 2, 0, -16, 16)
+        assert command[4] == struct.pack(">BBBBhh", 3, 1, 2, 0, -20, 40)
         ack(command, 5)
         incoming(0x16, bytes([0, 3, 2, 3, 3, 1, 3, 1]) + bytes(4))
-        try:
-            peer.pan(16, 0)
-            assert False, "1x pan accepted"
-        except ValueError:
-            pass
+        peer.pan(20, 0)
+        command=outgoing(0x15)
+        assert command[4] == struct.pack(">BBBBhh", 3, 1, 1, 0, 20, 0)
+        ack(command)
+        incoming(0x16, bytes([0, 3, 2, 3, 3, 1, 3, 1]) + struct.pack(">hh",20,0))
+        assert peer.ready()
         incoming(2, bytes([3, 3, 1, 1, 1, 0, 0, 0]) + bytes(8))
         try:
             peer.preset(0)
@@ -96,6 +121,19 @@ def main():
         except ValueError:
             pass
         state()
+        # A rejected transition attempt leaves no pending transaction.
+        incoming(2, bytes([2,3,1,3,0,0,0,0])+bytes(8))
+        try:
+            peer.preset(0)
+            assert False, "transition command accepted"
+        except ValueError:
+            pass
+        assert peer.pending is None
+        incoming(2, bytes([4,3,1,2,0,0,3,0])+bytes(8))
+        peer.preset(0)  # Subtitle diagnostic must not disable the image controls.
+        ack(outgoing(0x13))
+        state()
+        assert peer.ready()
         for levels in ([7, 2, 3, 3], [3, 5, 3, 3], [3, 2, 6, 3], [3, 2, 3, 7]):
             try:
                 peer.adjust(levels)

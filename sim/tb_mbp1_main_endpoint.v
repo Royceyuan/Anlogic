@@ -75,6 +75,11 @@ always @(negedge clk) begin
 end
 always @(posedge clk) if (command_done && command_valid)
     command_count <= command_count + 1;
+always @(posedge clk) if (dut.send && dut.send_type==8'h01) begin
+    if(dut.send_payload[95:64]!==32'h00050002 ||
+       dut.send_payload[63:32] !== (ENABLE_CONTROL ? 32'hff : 32'h7f))
+        $fatal(1,"HELLO version / 1x-pan capability mismatch");
+end
 always @(posedge clk) if (host_rx_valid) begin
     case (host_rx_type)
         8'h01: hello_count <= hello_count + 1;
@@ -123,6 +128,16 @@ initial begin
     @(negedge clk); display_changed = 1;
     @(negedge clk); display_changed = 0;
     wait (display_count > display_before);
+    // A second update on the exact DISPLAY_STATUS launch cycle must survive
+    // clearing the first pending flag, so the newest snapshot is sent too.
+    @(negedge clk); display_changed=1;
+    @(negedge clk); display_changed=0;
+    while (!(dut.select_display && !dut.packet_valid && !command_done &&
+             !dut.send && dut.send_ready && dut.tx_gap_ms==0)) @(negedge clk);
+    display_changed=1;
+    @(posedge clk); #1;
+    if(!dut.display_pending) $fatal(1,"display change lost on packet launch");
+    @(negedge clk); display_changed=0;
     send_packet(8'h13, 5'd4, {8'd0,8'd1,16'd0,96'd0});
     wait (ack_count >= 3);
     if (last_ack_result !== (ENABLE_CONTROL ? 8'd0 : 8'd3))

@@ -123,7 +123,7 @@ wire select_diagnostic = !(ack_pending || hello_pending || heartbeat_pending ||
 wire [127:0] selected_payload =
     ({128{select_ack}} & {ack_seq, ack_type, ack_result, main_mode, 8'd0, 64'd0}) |
     ({128{select_hello}} & {8'h01, 8'h01, 8'h01, 8'h01,
-                          32'h00050001, 32'h0000007f, 32'd0}) |
+                          32'h00050002, (ENABLE_CONTROL ? 32'h000000ff : 32'h0000007f), 32'd0}) |
     ({128{select_heartbeat}} & heartbeat_payload) |
     ({128{select_playback}} & {playback_payload, 64'd0}) |
     ({128{select_display}} & {display_payload, 32'd0}) |
@@ -243,8 +243,10 @@ always @(posedge clk or posedge rst) begin
             ack_result <= command_result;
         end
 
-        if (display_changed)
+        if (display_changed) begin
             display_pending <= 1'b1;
+            heartbeat_pending <= 1'b1;
+        end
 
         if (ENABLE_PLAYBACK && playback_payload[63:32] != last_playback_header) begin
             last_playback_header <= playback_payload[63:32];
@@ -362,7 +364,7 @@ always @(posedge clk or posedge rst) begin
                 send <= 1'b1;
                 send_type <= 8'h02;
                 send_payload_length <= 5'd16;
-                heartbeat_pending <= 1'b0;
+                heartbeat_pending <= display_changed;
                 next_seq <= next_seq + 32'd1;
             end else if (ENABLE_PLAYBACK && playback_pending) begin
                 tx_gap_ms <= 2'd2;
@@ -386,7 +388,7 @@ always @(posedge clk or posedge rst) begin
                 send <= 1'b1;
                 send_type <= 8'h16;
                 send_payload_length <= 5'd12;
-                display_pending <= 1'b0;
+                display_pending <= display_changed;
                 next_seq <= next_seq + 32'd1;
             end else if (diagnostic_pending) begin
                 tx_gap_ms <= 2'd2;

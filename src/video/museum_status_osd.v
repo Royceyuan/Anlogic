@@ -2,7 +2,9 @@
 `default_nettype none
 
 // Three-clock video overlay. Name bytes are loaded by the subtitle FAT reader.
-module museum_status_osd (
+module museum_status_osd #(
+    parameter integer SHOW_PERCENT = 0
+)(
     input wire clk, input wire rst_n,
     input wire panel_enable,
     input wire hs_i, input wire vs_i, input wire de_i,
@@ -11,6 +13,7 @@ module museum_status_osd (
     input wire [2:0] effect,
     input wire [15:0] width_bcd, input wire [15:0] height_bcd,
     input wire zoom_2x,
+    input wire [2:0] brightness_index, contrast_index, saturation_index, temperature_index,
     input wire name_ready,
     input wire name_wr_clk, input wire name_wr_en,
     input wire [10:0] name_wr_addr, input wire [7:0] name_wr_data,
@@ -36,7 +39,7 @@ reg panel_s1,panel_s2,name_s1,name_s2,static_s1,static_s2;
 reg [2:0] name_bit_s1,name_bit_s2;
 reg [4:0] glyph_s0;
 reg [3:0] glyph_row_s0,glyph_col_s0,glyph_col_s1;
-reg [15:0] glyph_row_s1;
+wire [15:0] glyph_row_s1;
 reg [4:0] ascii_s1;
 reg [2:0] ascii_row_s1,ascii_col_s1;
 reg glyph_hit_s2,ascii_hit_s2;
@@ -372,6 +375,9 @@ function [34:0] ascii_bitmap;
             23:ascii_bitmap={5'b10001,5'b10001,5'b10001,5'b10001,5'b10001,5'b10001,5'b01110}; // U
             24:ascii_bitmap={5'b01111,5'b10000,5'b10000,5'b01110,5'b00001,5'b00001,5'b11110}; // S
             25:ascii_bitmap={5'b11111,5'b00100,5'b00100,5'b00100,5'b00100,5'b00100,5'b00100}; // T
+            26:ascii_bitmap={5'b11110,5'b10001,5'b10001,5'b11110,5'b10001,5'b10001,5'b11110}; // B
+            27:ascii_bitmap={5'b11001,5'b11010,5'b00010,5'b00100,5'b01000,5'b01011,5'b10011}; // %
+            28:ascii_bitmap={5'b00000,5'b00100,5'b00100,5'b11111,5'b00100,5'b00100,5'b00000}; // +
             default:ascii_bitmap=35'd0;
         endcase
     end
@@ -393,34 +399,148 @@ function [4:0] ascii_row;
         endcase
     end
 endfunction
-wire [4:0] ascii_bits=ascii_row(ascii_s1,ascii_row_s1);
-
+wire [4:0] ascii_bits;
+wire [2:0] ascii_read_row;
 reg [4:0] chosen_ascii;
+// Keep the same one-clock font lookup; a ROM frees routing resources for
+// the MAIN-5 controls without changing any glyph or pixel latency.
+    function [255:0] font_init;
+        input [5:0] chunk;
+        integer row_index;
+        begin
+            for (row_index=0; row_index<16; row_index=row_index+1)
+                font_init[row_index*16 +: 16]=chunk<32 ?
+                    chinese_row(chunk[4:0],row_index[3:0]) :
+                    {11'd0,ascii_row({chunk[3:0],row_index[3]},row_index[2:0])};
+        end
+    endfunction
+generate if (SHOW_PERCENT) begin : g_font_rom
+`ifdef SIM
+    reg [15:0] row_q;
+    always @(posedge clk) row_q<=chinese_row(glyph_s0,glyph_row_s0);
+    assign glyph_row_s1=row_q;
+    assign ascii_bits=ascii_row(ascii_s1,ascii_row_s1);
+`else
+    wire [15:0] ascii_word;
+    assign ascii_bits=ascii_word[4:0];
+    EG_PHY_BRAM32K #(
+        .MODE("DP16K"), .DATA_WIDTH_A("16"), .DATA_WIDTH_B("16"),
+        .REGMODE_A("NOREG"), .REGMODE_B("NOREG"),
+        .INIT_00(font_init(0)), .INIT_01(font_init(1)),
+        .INIT_02(font_init(2)), .INIT_03(font_init(3)),
+        .INIT_04(font_init(4)), .INIT_05(font_init(5)),
+        .INIT_06(font_init(6)), .INIT_07(font_init(7)),
+        .INIT_08(font_init(8)), .INIT_09(font_init(9)),
+        .INIT_0A(font_init(10)), .INIT_0B(font_init(11)),
+        .INIT_0C(font_init(12)), .INIT_0D(font_init(13)),
+        .INIT_0E(font_init(14)), .INIT_0F(font_init(15)),
+        .INIT_10(font_init(16)), .INIT_11(font_init(17)),
+        .INIT_12(font_init(18)), .INIT_13(font_init(19)),
+        .INIT_20(font_init(32)), .INIT_21(font_init(33)),
+        .INIT_22(font_init(34)), .INIT_23(font_init(35)),
+        .INIT_24(font_init(36)), .INIT_25(font_init(37)),
+        .INIT_26(font_init(38)), .INIT_27(font_init(39)),
+        .INIT_28(font_init(40)), .INIT_29(font_init(41)),
+        .INIT_2A(font_init(42)), .INIT_2B(font_init(43)),
+        .INIT_2C(font_init(44)), .INIT_2D(font_init(45)),
+        .INIT_2E(font_init(46)), .INIT_2F(font_init(47))
+    ) u_rom (
+        .doa(glyph_row_s1), .dia(16'd0), .addra({2'b00,glyph_s0,glyph_row_s0}),
+        .bytea(1'b0), .bytewea(1'b0), .csa(1'b1), .wea(1'b0),
+        .clka(clk), .rsta(1'b0), .ocea(1'b1),
+        .dob(ascii_word), .dib(16'd0), .addrb({3'b010,chosen_ascii,ascii_read_row}),
+        .byteb(1'b0), .byteweb(1'b0),
+        .csb(1'b1), .web(1'b0), .clkb(clk), .rstb(1'b0), .oceb(1'b1)
+    );
+`endif
+end else begin : g_font_logic
+    reg [15:0] row_q;
+    always @(posedge clk or negedge rst_n)
+        if (!rst_n) row_q<=0;
+        else row_q<=chinese_row(glyph_s0,glyph_row_s0);
+    assign glyph_row_s1=row_q;
+    assign ascii_bits=ascii_row(ascii_s1,ascii_row_s1);
+end endgenerate
+
 reg ascii_valid_s1;
 reg [3:0] slot;
 reg [10:0] local_x;
 reg [3:0] ascii_y_s0;
+reg [6:0] ascii_name_x_s0;
+reg [7:0] ascii_size_x_s0;
 reg [2:0] ascii_col_s0;
 reg ascii_x_valid_s0;
-wire [3:0] ascii_x_low = x_i<400 ? x_i[3:0]-4'd4 :
+wire [3:0] ascii_x_low = SHOW_PERCENT && y_i>=68 ? x_i[3:0] :
+                        x_i<400 ? x_i[3:0]-4'd4 :
                         x_i<800 ? x_i[3:0]-4'd12 : x_i[3:0];
 wire [3:0] local_y = ascii_y_s0;
+assign ascii_read_row=(local_y[3:0]-4'd1)>>1;
+// Constant BCD tables: percentages are presentation only, no pixel dividers.
+function [11:0] percent_bcd;
+    input [1:0] field;
+    input [2:0] index;
+    begin
+        percent_bcd=0;
+        case(field)
+            0:case(index) 0,6:percent_bcd=12'h019; 1,5:percent_bcd=12'h013;
+                          2,4:percent_bcd=12'h006; endcase
+            1:case(index) 0:percent_bcd=12'h050; 1:percent_bcd=12'h075;
+                          2:percent_bcd=12'h100; 3:percent_bcd=12'h125;
+                          4:percent_bcd=12'h150; endcase
+            2:case(index) 1:percent_bcd=12'h050; 2:percent_bcd=12'h075;
+                          3:percent_bcd=12'h100; 4:percent_bcd=12'h125;
+                          5:percent_bcd=12'h150; endcase
+            3:case(index) 0,6:percent_bcd=12'h100; 1,5:percent_bcd=12'h067;
+                          2,4:percent_bcd=12'h033; endcase
+        endcase
+    end
+endfunction
+reg [11:0] percent_digits_s0;
+reg [4:0] percent_label_s0, percent_sign_s0;
+reg [3:0] percent_slot_s0;
+wire [10:0] percent_x = x_i-11'd160;
+wire [1:0] percent_field = percent_x[9:8];
+reg [2:0] percent_index;
+always @* begin
+    case(percent_field)
+        0:percent_index=brightness_index;
+        1:percent_index=contrast_index;
+        2:percent_index=saturation_index;
+        default:percent_index=temperature_index;
+    endcase
+end
+always @(posedge clk) begin
+    percent_digits_s0<=percent_bcd(percent_field,percent_index);
+    percent_label_s0<=percent_field==0 ? 26 : percent_field==1 ? 22 : percent_field==2 ? 24 : 25;
+    percent_sign_s0<=(percent_field==0 || percent_field==3) && percent_index!=3 ?
+                     (percent_index<3 ? 20 : 28) : 31;
+    percent_slot_s0<=percent_x[7:4];
+end
 always @(*) begin
     chosen_ascii=5'd31; slot=0;
     local_x=0;
-    if (x_s0>=180 && x_s0<340 && y_s0>=20 && y_s0<36 && !ready_s2) begin
-        local_x=x_s0-180;
+    if (SHOW_PERCENT && x_s0>=160 && x_s0<1120 && y_s0>=76 && y_s0<92) begin
+        case(percent_slot_s0)
+            0:chosen_ascii=percent_label_s0;
+            2:chosen_ascii=percent_sign_s0;
+            3:chosen_ascii=percent_digits_s0[11:8]==0 ? 31 : {1'b0,percent_digits_s0[11:8]};
+            4:chosen_ascii=percent_digits_s0[11:4]==0 ? 31 : {1'b0,percent_digits_s0[7:4]};
+            5:chosen_ascii={1'b0,percent_digits_s0[3:0]};
+            6:chosen_ascii=27;
+        endcase
+    end else if (x_s0>=180 && x_s0<340 && y_s0>=20 && y_s0<36 && !ready_s2) begin
+        local_x={4'd0,ascii_name_x_s0};
         slot=local_x[5:4];
         case(slot)
             2:chosen_ascii={2'b00,artifact};
         endcase
     end else if (x_s0>=540 && x_s0<604 && y_s0>=20 && y_s0<36) begin
-        local_x=x_s0-540;
+        local_x={3'd0,ascii_size_x_s0};
         if (stage>=2 && stage<=4 && local_x[5:4]==2)
             chosen_ascii=stage-1'b1;
     end else if (x_s0>=180 && x_s0<(effect==3'd4 ? 276 : 228) &&
                  y_s0>=44 && y_s0<60) begin
-        local_x=x_s0-180;
+        local_x={4'd0,ascii_name_x_s0};
         if (effect==3'd4) begin
             case(local_x[6:4])
                 0:chosen_ascii=5'd22; // C
@@ -432,8 +552,8 @@ always @(*) begin
             endcase
         end
     end else if (x_s0>=540 && x_s0<684 && y_s0>=44 && y_s0<60) begin
-        local_x=x_s0-540;
-        chosen_ascii=ascii_code((x_s0-540)>>4,width_bcd,height_bcd);
+        local_x={3'd0,ascii_size_x_s0};
+        chosen_ascii=ascii_code(ascii_size_x_s0[7:4],width_bcd,height_bcd);
     end else if (x_s0>=800 && x_s0<896 && y_s0>=44 && y_s0<60) begin
         local_x=x_s0-800;
         case(local_x[6:4])
@@ -482,9 +602,10 @@ always @(posedge clk or negedge rst_n) begin
         panel_s1<=0;panel_s2<=0;name_s1<=0;name_s2<=0;
         static_s1<=0;static_s2<=0;name_bit_s1<=0;name_bit_s2<=0;
         glyph_s0<=0;glyph_row_s0<=0;glyph_col_s0<=0;
-        glyph_row_s1<=0;glyph_col_s1<=0;
+        glyph_col_s1<=0;
         ascii_s1<=31;ascii_row_s1<=0;ascii_col_s1<=0;ascii_valid_s1<=0;
         ascii_y_s0<=0;
+        ascii_name_x_s0<=0;ascii_size_x_s0<=0;
         ascii_col_s0<=0;ascii_x_valid_s0<=0;
         glyph_hit_s2<=0;ascii_hit_s2<=0;name_rd_addr<=0;
     end else begin
@@ -496,12 +617,14 @@ always @(posedge clk or negedge rst_n) begin
         // Compute text-row coordinates in the existing s0 stage before region
         // selection. Output latency remains three clocks.
         ascii_y_s0<=y_i<40 ? y_i[3:0]-4'd4 : y_i[3:0]-4'd12;
+        ascii_name_x_s0<=x_i-11'd180;
+        ascii_size_x_s0<=x_i-11'd540;
         ascii_col_s0<=(ascii_x_low-4'd3)>>1;
         ascii_x_valid_s0<=ascii_x_low>=3 && ascii_x_low<13;
         hs_s1<=hs_s0;vs_s1<=vs_s0;de_s1<=de_s0;
         x_s1<=x_s0;y_s1<=y_s0;rgb_s1<=rgb_s0;
         panel_s1<=panel_enable && de_s0 && x_s0>=160 && x_s0<1120 &&
-                  y_s0>=12 && y_s0<68;
+                  y_s0>=12 && y_s0<(SHOW_PERCENT ? 100 : 68);
         name_s1<=de_s0 && ready_s2 && x_s0>=180 && x_s0<340 &&
                  y_s0>=20 && y_s0<36;
         if (x_s0>=180 && x_s0<340 && y_s0>=20 && y_s0<36)
@@ -509,7 +632,6 @@ always @(posedge clk or negedge rst_n) begin
                           ((y_s0-20)<<4)+((y_s0-20)<<2)+((x_s0-180)>>3);
         name_bit_s1<=3'd7-(x_s0-11'd180);
         static_s1<=glyph_s0!=0;
-        glyph_row_s1<=chinese_row(glyph_s0,glyph_row_s0);
         glyph_col_s1<=glyph_col_s0;
         ascii_s1<=chosen_ascii;
         ascii_valid_s1<=chosen_ascii!=31 && ascii_x_valid_s0 && local_y[3:0]>=1 &&

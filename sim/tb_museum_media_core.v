@@ -542,6 +542,61 @@ module tb_museum_media_core #(
                 dut.transition_active)
                 $fatal(1,"viewport did not move without transition");
             send_remote(8'h15,{8'd1,8'd0,8'd2,8'd0,16'sd0,16'sd0},8'd5);
+            // Pausing freezes the timeline, not direct viewport commits.
+            force dut.lecture_paused=1'b1;
+            repeat(6) @(negedge clk_50m);
+            send_remote(8'h15,{8'd0,8'd0,8'd2,8'd0,16'sd2,-16'sd2},8'd0);
+            timeout=0;
+            while ((dut.display_pan_x!=2 || dut.display_pan_y!=-2) && timeout<100000) begin
+                @(negedge clk_50m); timeout=timeout+1;
+            end
+            if (timeout==100000) $fatal(1,"paused pan commit blocked");
+            release dut.zoom_2x;
+            @(negedge clk_50m); force dut.key_press_pulse=4'b0001;
+            @(negedge clk_50m); release dut.key_press_pulse;
+            timeout=0;
+            while (dut.display_zoom_2x && timeout<100000) begin
+                @(negedge clk_50m); timeout=timeout+1;
+            end
+            if (timeout==100000) $fatal(1,"paused zoom commit blocked");
+            repeat(6) @(negedge clk_50m);
+            send_remote(8'h15,{8'd0,8'd0,8'd1,8'd0,-16'sd3,16'sd3},8'd0);
+            timeout=0;
+            while ((dut.display_pan_x!=-3 || dut.display_pan_y!=3) && timeout<100000) begin
+                @(negedge clk_50m); timeout=timeout+1;
+            end
+            if (timeout==100000) $fatal(1,"1x pan commit blocked");
+            repeat(12) @(negedge clk_50m);
+            if(dut.main5_display[31:16]!==16'hfffd || dut.main5_display[15:0]!==16'd3)
+                $fatal(1,"signed pan report lost sign extension");
+            force dut.transition_active=1'b1;
+            repeat(6) @(negedge clk_50m);
+            send_remote(8'h13,{8'd0,8'd1,16'd0,32'd0},8'd4);
+            force dut.transition_active=1'b0;
+            repeat(6) @(negedge clk_50m);
+            send_remote(8'h13,{8'd0,8'd1,16'd0,32'd0},8'd0);
+            timeout=0;
+            while (dut.main5_preset_applied!=0 && timeout<100000) begin
+                @(negedge clk_50m); timeout=timeout+1;
+            end
+            if (timeout==100000) $fatal(1,"preset after BUSY/custom did not recover");
+            // Accepted in 50 MHz domain, but transition starts before video commit.
+            // Even when paused, retire with BUSY rather than hold the request forever.
+            force dut.video_frame_tick=1'b0;
+            fork
+                send_remote(8'h13,{8'd1,8'd1,16'd0,32'd0},8'd4);
+                begin
+                    wait(dut.main5_request_busy);
+                    force dut.transition_active=1'b1;
+                    repeat(8) @(negedge clk_50m);
+                    release dut.video_frame_tick;
+                end
+            join
+            if(dut.main5_request_busy || dut.main5_preset_applied!=0)
+                $fatal(1,"transition race left busy or applied a rejected preset");
+            force dut.transition_active=1'b0;
+            repeat(6) @(negedge clk_50m);
+            send_remote(8'h13,{8'd1,8'd1,16'd0,32'd0},8'd0);
             sw[3]=1'b1;
             repeat(6) @(negedge clk_50m);
             send_remote(8'h13,{8'd0,8'd1,16'd0,32'd0},8'd4);

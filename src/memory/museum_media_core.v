@@ -232,7 +232,7 @@ reg zoom_2x;
 reg [7:0] main5_preset_shadow;
 reg [2:0] main5_brightness_shadow, main5_contrast_shadow;
 reg [2:0] main5_saturation_shadow, main5_temperature_shadow;
-reg signed [15:0] main5_pan_x_shadow, main5_pan_y_shadow;
+reg signed [8:0] main5_pan_x_shadow, main5_pan_y_shadow;
 reg main5_request_toggle, main5_request_busy;
 reg main5_ack_ff1, main5_ack_ff2, main5_ack_seen;
 reg [7:0] main5_preset_applied;
@@ -245,10 +245,11 @@ reg main5_ack_applied_ff1, main5_ack_applied_ff2;
 reg [7:0] main5_preset_video;
 reg [2:0] main5_brightness_video, main5_contrast_video;
 reg [2:0] main5_saturation_video, main5_temperature_video;
-reg signed [15:0] main5_pan_x_video, main5_pan_y_video;
+reg signed [8:0] main5_pan_x_video, main5_pan_y_video;
 reg [2:0] main5_phase_ff1, main5_phase_ff2, main5_phase_seen;
-reg signed [15:0] display_pan_x, display_pan_y;
-reg signed [15:0] pending_pan_x, pending_pan_y;
+reg signed [8:0] display_pan_x, display_pan_y;
+reg signed [8:0] pending_pan_x, pending_pan_y;
+reg main5_pan_changed;
 reg transition_active_ff1_50m, transition_active_ff2_50m;
 reg signed [15:0] main5_pan_hold_x, main5_pan_hold_y;
 reg signed [15:0] main5_pan_report_x, main5_pan_report_y;
@@ -638,6 +639,7 @@ wire signed [15:0] requested_pan_x = remote_command_payload[31:16];
 wire signed [15:0] requested_pan_y = remote_command_payload[15:0];
 wire main5_remote_busy = emergency_active_50m || recovery_busy ||
                          transition_active_ff2_50m || main5_request_busy;
+reg main5_command_seen;
 always @(posedge clk_50m or negedge write_rst_n) begin
     if (!write_rst_n) begin
         main5_preset_shadow <= 8'd0;
@@ -661,15 +663,19 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         main5_ack_applied_ff2 <= 1'b0;
         remote_command_done <= 1'b0;
         remote_command_result <= 8'd0;
+        main5_command_seen <= 1'b0;
     end else begin
         main5_ack_ff1 <= main5_video_ack_toggle;
         main5_ack_ff2 <= main5_ack_ff1;
         main5_ack_applied_ff1 <= main5_video_ack_applied;
         main5_ack_applied_ff2 <= main5_ack_applied_ff1;
         remote_command_done <= 1'b0;
+        if (!remote_command_valid) main5_command_seen <= 1'b0;
         if (main5_ack_ff2 != main5_ack_seen) begin
             main5_ack_seen <= main5_ack_ff2;
             main5_request_busy <= 1'b0;
+            remote_command_done <= 1'b1;
+            remote_command_result <= main5_ack_applied_ff2 ? 8'd0 : 8'd4;
             if (main5_ack_applied_ff2) begin
                 main5_preset_applied <= main5_preset_shadow;
                 main5_brightness_applied <= main5_brightness_shadow;
@@ -678,7 +684,8 @@ always @(posedge clk_50m or negedge write_rst_n) begin
                 main5_temperature_applied <= main5_temperature_shadow;
             end
         end
-        if (ENABLE_MAIN5_REMOTE && remote_command_valid) begin
+        if (ENABLE_MAIN5_REMOTE && remote_command_valid && !main5_command_seen) begin
+            main5_command_seen <= 1'b1;
             remote_command_done <= 1'b1;
             remote_command_result <= 8'd0;
             if (main5_remote_busy) remote_command_result <= 8'd4;
@@ -720,6 +727,7 @@ always @(posedge clk_50m or negedge write_rst_n) begin
                         main5_pan_y_shadow <= main5_pan_report_y;
                         main5_request_toggle <= ~main5_request_toggle;
                         main5_request_busy <= 1'b1;
+                        remote_command_done <= 1'b0;
                     end
                 end
                 8'h14: begin
@@ -740,13 +748,14 @@ always @(posedge clk_50m or negedge write_rst_n) begin
                         main5_pan_y_shadow <= main5_pan_report_y;
                         main5_request_toggle <= ~main5_request_toggle;
                         main5_request_busy <= 1'b1;
+                        remote_command_done <= 1'b0;
                     end
                 end
                 8'h15: begin
-                    if (!lecture_active || !zoom_2x ||
+                    if (!lecture_active ||
                         remote_command_payload[63:56] != {5'd0, lecture_artifact_index} ||
                         remote_command_payload[55:48] != {5'd0, lecture_display_frame_slot} ||
-                        remote_command_payload[47:40] != 8'd2 ||
+                        remote_command_payload[47:40] != (zoom_2x ? 8'd2 : 8'd1) ||
                         remote_command_payload[39:33] != 7'd0 ||
                         (!remote_command_payload[32] &&
                          (requested_pan_x < -16'sd240 || requested_pan_x > 16'sd240 ||
@@ -762,6 +771,7 @@ always @(posedge clk_50m or negedge write_rst_n) begin
                         main5_pan_y_shadow <= remote_command_payload[32] ? 16'sd0 : requested_pan_y;
                         main5_request_toggle <= ~main5_request_toggle;
                         main5_request_busy <= 1'b1;
+                        remote_command_done <= 1'b0;
                     end
                 end
                 default: remote_command_result <= 8'd3;
@@ -1825,7 +1835,8 @@ generate
             .clk(video_clk), .rst_n(video_rst_n),
             .source_start(linebuf_start_pulse),
             .zoom_2x(display_zoom_2x),
-            .pan_x(display_pan_x), .pan_y(display_pan_y),
+            .pan_x({{7{display_pan_x[8]}},display_pan_x}),
+            .pan_y({{7{display_pan_y[8]}},display_pan_y}),
             .museum_recenter_active(ENABLE_MUSEUM_LECTURE && transition_active &&
                                     transition_mode == 3'b101 &&
                                     display_media_index == VIDEO_FRAME_COUNT),
@@ -1908,6 +1919,25 @@ endgenerate
 // Start the first load, then reload only after SW1 requests the other image.
 // The image and SDRAM frame are latched for the whole transaction so a switch
 // moved during a load cannot redirect the writer into the active frame.
+// External signed 16-bit offsets are range-checked before the 9-bit cache.
+// While a switch is pending, clear this comparison pipeline so a completed
+// switch cannot start a duplicate read on the following clock.
+always @(posedge video_clk or negedge video_rst_n)
+    if (!video_rst_n) main5_pan_changed <= 1'b0;
+    else main5_pan_changed <= !switch_pending &&
+                             ((main5_pan_x_video != display_pan_x) ||
+                              (main5_pan_y_video != display_pan_y));
+
+wire load_finish_ready = !load_reported && image_dimensions_ready &&
+                         writer_done_clear_seen && loader_done_clear_seen &&
+                         (writer_done_seen || frame_done) &&
+                         (loader_done_seen || image_load_done);
+reg load_finish_ready_q;
+always @(posedge clk_50m or negedge write_rst_n)
+    if (!write_rst_n) load_finish_ready_q <= 1'b0;
+    else load_finish_ready_q <= load_active && load_finish_ready &&
+                                !image_load_error && !writer_error && !recovery_busy;
+
 always @(posedge clk_50m or negedge write_rst_n) begin
     if (!write_rst_n) begin
         image_load_start <= 1'b0;
@@ -2212,10 +2242,9 @@ always @(posedge clk_50m or negedge write_rst_n) begin
             if (loader_done_clear_seen && image_load_done)
                 loader_done_seen <= 1'b1;
 
-            if (!load_reported && image_dimensions_ready &&
-                writer_done_clear_seen && loader_done_clear_seen &&
-                (writer_done_seen || frame_done) &&
-                (loader_done_seen || image_load_done)) begin
+            // The completed loader holds dimensions/data stable. Register
+            // its wide completion decode before fanning out to cache metadata.
+            if (ENABLE_MAIN5_REMOTE ? load_finish_ready_q : load_finish_ready) begin
             // Do not publish or accept another switch until both sides have
             // completed: the writer may finish its last SDRAM block before
             // the SD loader reaches S_DONE for the final sector.
@@ -2450,10 +2479,9 @@ always @(posedge video_clk or negedge video_rst_n) begin
             fade_level <= 5'd16;
             transition_progress <= 8'd32;
         end else if (ENABLE_MAIN5_REMOTE && ENABLE_MULTI_FRAME_PRELOAD &&
-                     video_run && display_zoom_2x && !overview_enable_video &&
+                     video_run && !overview_enable_video &&
                      !transition_active && !switch_pending &&
-                     ((main5_pan_x_video != display_pan_x) ||
-                      (main5_pan_y_video != display_pan_y))) begin
+                     main5_pan_changed) begin
             pending_media_index <= display_media_index;
             pending_frame_index <= display_frame_index;
             pending_source_width_bcd <= display_source_width_bcd;
@@ -2490,9 +2518,10 @@ always @(posedge video_clk or negedge video_rst_n) begin
                      (desired_display_media_index == display_media_index) &&
                      (overview_enable_video ||
                       (detail_zoom_2x_ff2 == display_zoom_2x)) &&
+                     // A direct switch with unchanged zoom is a pan request;
+                     // keep it until committed instead of decoding X/Y again.
                      !(ENABLE_MAIN5_REMOTE && direct_switch_pending &&
-                       ((pending_pan_x != display_pan_x) ||
-                        (pending_pan_y != display_pan_y)))) begin
+                       (pending_zoom_2x == display_zoom_2x))) begin
             switch_pending  <= 1'b0;
             direct_switch_pending <= 1'b0;
             fade_out_active <= 1'b0;
@@ -2549,7 +2578,8 @@ always @(posedge video_clk or negedge video_rst_n) begin
         end
 
         if (video_run && switch_pending && video_vblank_start &&
-            !(ENABLE_MAIN3 && (lecture_paused_ff2 || recovery_video_ff2)) &&
+            !(ENABLE_MAIN3 && (recovery_video_ff2 ||
+              (lecture_paused_ff2 && !direct_switch_pending))) &&
             (direct_switch_pending || !ENABLE_FADE ||
              (fade_out_active && transition_midpoint_ready))) begin
             // Stop consuming at the visible-frame boundary. The FIFO is
@@ -2725,11 +2755,11 @@ always @(posedge video_clk or negedge video_rst_n) begin
         end
         if (ENABLE_MAIN5_REMOTE && main5_request_ff2 != main5_request_seen &&
             video_frame_tick) begin
-            if (emergency_video_ff2 || recovery_video_ff2 || !transition_active) begin
+            begin
                 main5_request_seen <= main5_request_ff2;
                 main5_video_ack_toggle <= ~main5_video_ack_toggle;
-                main5_video_ack_applied <= !emergency_video_ff2 && !recovery_video_ff2;
-                if (!emergency_video_ff2 && !recovery_video_ff2) begin
+                main5_video_ack_applied <= !emergency_video_ff2 && !recovery_video_ff2 && !transition_active;
+                if (!emergency_video_ff2 && !recovery_video_ff2 && !transition_active) begin
                     main5_preset_video <= main5_preset_shadow;
                     main5_brightness_video <= main5_brightness_shadow;
                     main5_contrast_video <= main5_contrast_shadow;
@@ -2740,7 +2770,8 @@ always @(posedge video_clk or negedge video_rst_n) begin
                 end
             end
         end
-        if (!detail_zoom_2x_ff2 || emergency_video_ff2 || recovery_video_ff2 ||
+        if ((detail_zoom_2x_ff2 != display_zoom_2x) ||
+            overview_enable_video || emergency_video_ff2 || recovery_video_ff2 ||
             main5_phase_ff2 != main5_phase_seen) begin
             main5_pan_x_video <= 16'sd0;
             main5_pan_y_video <= 16'sd0;
@@ -3035,14 +3066,18 @@ end
 
 generate
     if (ENABLE_MAIN3 && VIDEO_MODE_1280 && ENABLE_MUSEUM_OVERVIEW) begin : g_museum_status_osd
-        museum_status_osd u_museum_status_osd (
+        museum_status_osd #(.SHOW_PERCENT(ENABLE_MAIN5_REMOTE)) u_museum_status_osd (
             .clk(video_clk), .rst_n(video_rst_n),
             .panel_enable(!ENABLE_MAIN5_CONTROLS || !overview_enable_video ||
                           overview_osd_visible_ff2),
             .hs_i(video_overview_hs), .vs_i(video_overview_vs),
             .de_i(video_overview_de), .x_i(video_overview_x),
             .y_i(video_overview_y), .rgb_i(video_overview_rgb),
-            .artifact(osd_artifact), .stage(osd_stage), .effect(osd_effect),
+            .artifact(osd_artifact), .stage(osd_stage),
+            .effect(ENABLE_MAIN5_REMOTE ?
+                    (main5_preset_video==8'hff ? 3'd4 : main5_preset_video[2:0]) : osd_effect),
+            .brightness_index(main5_brightness_video), .contrast_index(main5_contrast_video),
+            .saturation_index(main5_saturation_video), .temperature_index(main5_temperature_video),
             .width_bcd(osd_width_bcd), .height_bcd(osd_height_bcd),
             .name_ready(osd_name_ready),
             .zoom_2x(display_zoom_2x),
@@ -3309,7 +3344,8 @@ wire [7:0] main5_storage = !sd_init_done ? 8'd0 :
                            (load_active || sd_read_active) ? 8'd2 : 8'd1;
 assign main5_diagnostic = {24'd0, main5_storage, {3'd0, frame_valid},
                            {5'd0, subtitle_ready_50m, audio_prepared,
-                            overview_cache_ready}, main5_error, 8'd0, 64'd0};
+                            overview_cache_ready}, main5_error,
+                            {6'd0, subtitle_format_error_50m, subtitle_file_error_50m}, 64'd0};
 
 endmodule
 

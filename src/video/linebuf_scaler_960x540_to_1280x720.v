@@ -66,7 +66,9 @@ reg        video_epoch;
 reg        video_started;
 reg        active_zoom_2x;
 reg signed [15:0] active_pan_x;
+reg signed [9:0] active_pan_y;
 reg [9:0] active_zoom_row_start;
+reg [9:0] active_row_end;
 reg [WORD_BITS-1:0] request_word;
 reg        load_active;
 reg        stream_active;
@@ -82,6 +84,7 @@ reg [31:0] source_data_hold;
 reg [10:0] source_x_d;
 reg [1:0]  source_row_slot_d;
 reg        source_row_hit_d;
+reg        visible_pixel_d;
 
 wire [31:0] line0_word;
 wire [31:0] line1_word;
@@ -89,17 +92,23 @@ wire [31:0] line2_word;
 wire [10:0] source_x;
 wire [10:0] normal_source_x;
 wire [9:0]  source_y;
+wire signed [10:0] mapped_y;
 wire [12:0] source_x_times3;
 wire [11:0] source_y_times3;
 wire signed [15:0] pan_x_effective = ENABLE_PAN ? pan_x : 16'sd0;
 wire signed [15:0] pan_y_effective = ENABLE_PAN ? pan_y : 16'sd0;
 wire [9:0] zoom_row_start = ZOOM_ROW_START + pan_y_effective;
+wire [9:0] first_row = zoom_2x ? zoom_row_start :
+                      pan_y_effective[15] ? 10'd0 : pan_y_effective[9:0];
+wire [9:0] row_count = zoom_2x ? SRC_H/2 :
+                      SRC_H - (pan_y_effective[15] ? -pan_y_effective : pan_y_effective);
+wire [20:0] frame_word_count = WORDS_PER_ROW * row_count;
 wire [20:0] zoom_word_offset;
 generate if (WORDS_PER_ROW == 480) begin : g_zoom_offset_480
-    assign zoom_word_offset = ({11'd0, zoom_row_start} << 9) -
-                              ({11'd0, zoom_row_start} << 5);
+    assign zoom_word_offset = ({11'd0, first_row} << 9) -
+                              ({11'd0, first_row} << 5);
 end else begin : g_zoom_offset_generic
-    assign zoom_word_offset = WORDS_PER_ROW * zoom_row_start;
+    assign zoom_word_offset = WORDS_PER_ROW * first_row;
 end endgenerate
 wire        source_row_hit;
 wire [1:0]  source_row_slot;
@@ -128,8 +137,8 @@ wire museum_panel_hit = museum_recenter_active &&
                         video_x < museum_panel_left + 11'd256;
 
 assign source_read_base_addr = source_base_addr +
-                               (zoom_2x ? zoom_word_offset : 0);
-assign source_read_len = zoom_2x ? ZOOM_FRAME_WORDS : FRAME_WORDS;
+                               zoom_word_offset;
+assign source_read_len = frame_word_count;
 // The vendor asynchronous FIFO registers dout.  empty only qualifies a pop;
 // commit the word after valid confirms it has reached read_data.
 assign source_read_en  = stream_active && load_active && !pending_valid &&
@@ -149,27 +158,32 @@ generate
         assign source_x_times3 = {2'b00, video_x} + ({2'b00, video_x} << 1);
         assign normal_source_x = active_zoom_2x ?
                                  (SRC_W / 4) + active_pan_x + (source_x_times3 >> 3) :
-                                 (source_x_times3 >> 2);
+                                 active_pan_x + (source_x_times3 >> 2);
     end else begin : g_x_generic
         assign normal_source_x = active_zoom_2x ?
                                  (SRC_W / 4) + active_pan_x +
                                  ((video_x * SRC_W) / (DST_W * 2)) :
-                                 ((video_x * SRC_W) / DST_W);
+                                 active_pan_x + ((video_x * SRC_W) / DST_W);
     end
     if ((SRC_H == 540) && (DST_H == 720)) begin : g_y_3_over_4
         // Likewise, 3*y needs 12 bits.  Without widening it wraps at y=342
         // and makes the display request rows which were already released.
         assign source_y_times3 = {2'b00, video_y} + ({2'b00, video_y} << 1);
-        assign source_y = active_zoom_2x ?
+        assign mapped_y = active_zoom_2x ?
                           active_zoom_row_start + (source_y_times3 >> 3) :
-                          (source_y_times3 >> 2);
+                          {{6{active_pan_y[9]}},active_pan_y} + (source_y_times3 >> 2);
     end else begin : g_y_generic
-        assign source_y = active_zoom_2x ?
+        assign mapped_y = active_zoom_2x ?
                           active_zoom_row_start +
                           ((video_y * SRC_H) / (DST_H * 2)) :
-                          ((video_y * SRC_H) / DST_H);
+                          {{6{active_pan_y[9]}},active_pan_y} + ((video_y * SRC_H) / DST_H);
     end
 endgenerate
+
+wire in_picture = source_x < SRC_W && !mapped_y[10] && mapped_y < SRC_H;
+// Clamp negative Y only for row-retirement comparisons; blank pixels must not
+// release row zero before it is visible. Source reads cover visible rows only.
+assign source_y = mapped_y[10] ? 10'd0 : mapped_y[9:0];
 
 // During the museum overview half of mode 5, copy the selected 192-pixel
 // source ROI into a 256-pixel destination panel which moves to/from center.
@@ -229,16 +243,16 @@ assign display_epoch = video_epoch ^
                        (video_started && video_de && video_x == 11'd0 &&
                         video_y == 10'd0);
 assign preload_epoch = video_started ? ~video_epoch : video_epoch;
-assign source_row_hit  = slot_valid[0] && slot_epoch[0] == display_epoch &&
-                         (slot_tag0 == source_y) ? 1'b1 :
+assign source_row_hit  = in_picture && (slot_valid[0] && slot_epoch[0] == display_epoch &&
+                         (slot_tag0 == mapped_y[9:0]) ? 1'b1 :
                          slot_valid[1] && slot_epoch[1] == display_epoch &&
-                         (slot_tag1 == source_y) ? 1'b1 :
+                         (slot_tag1 == mapped_y[9:0]) ? 1'b1 :
                          slot_valid[2] && slot_epoch[2] == display_epoch &&
-                         (slot_tag2 == source_y) ? 1'b1 : 1'b0;
+                         (slot_tag2 == mapped_y[9:0]) ? 1'b1 : 1'b0);
 assign source_row_slot = (slot_valid[0] && slot_epoch[0] == display_epoch &&
-                          (slot_tag0 == source_y)) ? 2'd0 :
+                          (slot_tag0 == mapped_y[9:0])) ? 2'd0 :
                          (slot_valid[1] && slot_epoch[1] == display_epoch &&
-                          (slot_tag1 == source_y)) ? 2'd1 : 2'd2;
+                          (slot_tag1 == mapped_y[9:0])) ? 2'd1 : 2'd2;
 
 assign free_slot0 = !slot_valid[0];
 assign free_slot1 = !slot_valid[1];
@@ -247,13 +261,13 @@ assign free_slot2 = !slot_valid[2];
 // Start only after three consecutive source rows have arrived.  This gives
 // the SDRAM reader enough lead time before the visible raster consumes row 1.
 assign frame_ready = slot_valid[0] &&
-                     (slot_tag0 == (active_zoom_2x ? active_zoom_row_start : 0)) &&
+                     (slot_tag0 == active_zoom_row_start) &&
                      slot_epoch[0] == preload_epoch &&
                      slot_valid[1] &&
-                     (slot_tag1 == (active_zoom_2x ? active_zoom_row_start + 1 : 1)) &&
+                     (slot_tag1 == active_zoom_row_start + 1) &&
                      slot_epoch[1] == preload_epoch &&
                      slot_valid[2] &&
-                     (slot_tag2 == (active_zoom_2x ? active_zoom_row_start + 2 : 2)) &&
+                     (slot_tag2 == active_zoom_row_start + 2) &&
                      slot_epoch[2] == preload_epoch;
 
 al_dp_ram32 #(.ADDR_WIDTH(WORD_BITS), .DEPTH(WORDS_PER_ROW),
@@ -319,6 +333,8 @@ always @(posedge clk or negedge rst_n) begin
         video_started     <= 1'b0;
         active_zoom_2x    <= 1'b0;
         active_pan_x       <= 16'sd0;
+        active_pan_y       <= 16'sd0;
+        active_row_end     <= SRC_H-1;
         active_zoom_row_start <= ZOOM_ROW_START;
         request_word      <= {WORD_BITS{1'b0}};
         pending_valid     <= 1'b0;
@@ -329,10 +345,12 @@ always @(posedge clk or negedge rst_n) begin
         source_x_d        <= 11'd0;
         source_row_slot_d <= 2'd0;
         source_row_hit_d  <= 1'b0;
+        visible_pixel_d   <= 1'b0;
     end else begin
         source_x_d        <= source_x;
         source_row_slot_d <= source_row_slot;
         source_row_hit_d  <= source_row_hit;
+        visible_pixel_d   <= video_de && in_picture && !source_start;
         read_ack_ff1 <= source_read_ack;
         read_ack_ff2 <= read_ack_ff1;
 
@@ -347,9 +365,11 @@ always @(posedge clk or negedge rst_n) begin
             slot_valid        <= 3'b000;
             slot_epoch        <= 3'b000;
             active_zoom_2x    <= zoom_2x;
-            active_pan_x       <= zoom_2x ? pan_x_effective : 16'sd0;
-            active_zoom_row_start <= zoom_2x ? zoom_row_start : ZOOM_ROW_START;
-            load_row          <= zoom_2x ? zoom_row_start : 0;
+            active_pan_x       <= pan_x_effective;
+            active_pan_y       <= pan_y_effective;
+            active_zoom_row_start <= first_row;
+            active_row_end     <= first_row + row_count - 1'b1;
+            load_row          <= first_row;
             load_slot         <= 2'd0;
             // A restarted stream preloads the epoch that the next frame-start
             // will select.  video_epoch itself changes at that frame-start.
@@ -432,13 +452,12 @@ always @(posedge clk or negedge rst_n) begin
                     end
 
                     load_active <= 1'b0;
-                    if (load_row == (active_zoom_2x ?
-                                     (active_zoom_row_start + SRC_H / 2 - 1) : SRC_H - 1)) begin
+                    if (load_row == active_row_end) begin
                         source_frame_done <= 1'b1;
                         // frame_fifo_read already loops at source_base_addr.
                         // Keep consuming it and wrap the line tag instead of
                         // asynchronously clearing the FIFO once per frame.
-                        load_row <= active_zoom_2x ? active_zoom_row_start : 0;
+                        load_row <= active_zoom_row_start;
                         load_epoch <= ~load_epoch;
                     end else begin
                         load_row <= load_row + 1'b1;
@@ -462,7 +481,7 @@ always @(posedge clk or negedge rst_n) begin
             // Keep the first missed visible pixel sticky even after the
             // three-row window loses frame_ready; otherwise a mid-frame
             // underrun is invisible to the board diagnostics.
-            if (video_de && !source_row_hit)
+            if (visible_pixel_d && !source_row_hit_d)
                 underflow <= 1'b1;
         end
     end

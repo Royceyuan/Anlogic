@@ -61,7 +61,7 @@ initial begin
         $fatal(1,"pan read range");
     check_map(0,0,272,119);
     check_map(1279,719,751,388);
-    @(negedge clk); zoom_2x=0; source_start=1;
+    @(negedge clk); zoom_2x=0; pan_x=0; pan_y=0; source_start=1;
     @(posedge clk); #1; source_start=0;
     if (source_read_base_addr !== 21'd1000 || source_read_len !== 21'd259200) begin
         $display("FAIL normal read range base=%0d len=%0d",source_read_base_addr,source_read_len);
