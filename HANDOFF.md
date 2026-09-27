@@ -1,5 +1,7 @@
 # HX4S20 多媒体工程交接
 
+> 2026-09-27 PC 控制工具：新增 `tools/mbp1_pc_control.py`，对接现有 MAIN-5D bit 的预设、四参数与 2× 视口控制，使用 Tkinter 和标准库 UDP。旧 5B 诊断脚本保持不变。操作及实板验收见 [MAIN5D PC 控制面板](docs/MAIN5D_PC控制面板与验收_20260927.md)。本地回环协议测试通过；PC→实板画面效果仍待用户验收，本次不改 RTL/bit。
+
 > 2026-09-27 最新：MAIN-5D 已完成固定种子 1 的完整布线与 bitgen，最终 setup +0.051 ns、hold +0.027 ns，违例均为 0。新文件 `release/hx4s20_main5d_control.bit`，SHA-256 `DEB5F7469682D2E92E8BA40FDA21C38D4A9A3D9B7F8D084873DEE0A19CBA0646`。Slice 9406/9800（95.98%）、DSP 12/29，BRAM9K 44、BRAM32K 9。通过 DSP、BRAM 输出寄存器及等价逻辑缩短关键路径，未降频或放宽约束；仍待 MAIN-5D 上板验证，旧 MAIN-5C 发布 bit 保留。详见 [时序闭合与上板检查](docs/MAIN5D_时序闭合与上板检查_20260927.md)。下列“没有新 bit”等为历史记录。
 
 > 2026-09-27 MBP1 优化评估：实际复测 `62ee8bf` 基线为 9287 Slice（94.77%）。发送快照/命令序号试验虽减少综合 LUT，实际 Slice 未下降，部分布局时序退步，已全部撤回 RTL。仅保留独立资源评估与逐周期等价测试，没有新 bit。最新 `_build_main5d_resource` 数据库属于撤回试验，后续必须重新综合，不能直接 bitgen。详见 [MBP1 资源评估与回退](docs/MAIN5D_MBP1资源评估_20260927.md)。下文“最新源码尚未布局”是历史状态。
