@@ -3,6 +3,7 @@
 import secrets
 import socket
 import struct
+import sys
 import time
 
 from mbp1_pc_peer import LOCAL, TARGET, packet, parse
@@ -161,19 +162,22 @@ class Peer:
 
 
 def main():
-    import tkinter as tk
-    from tkinter import ttk, messagebox
-
-    root = tk.Tk()
-    root.title("MAIN-5D 主板以太网控制")
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
         sock.bind(LOCAL)
     except OSError as exc:
-        messagebox.showerror("无法绑定 192.168.10.2:5000", f"{exc}\n检查有线网卡 IP；关闭其他 UDP 测试器。\n10013 还需检查 Windows 保留端口，勿直接关闭防火墙。")
         sock.close()
-        root.destroy()
+        print(f"无法绑定 {LOCAL[0]}:{LOCAL[1]}：{exc}\n"
+              "检查有线网卡 IP、UDP 5000 占用和 Windows 保留端口。\n"
+              "排查命令：Get-NetUDPEndpoint -LocalPort 5000\n"
+              "NI 的 NIDomainService 也可能占用此端口；请勿直接关闭防火墙。",
+              file=sys.stderr)
         return 1
+    import tkinter as tk
+    from tkinter import ttk
+
+    root = tk.Tk()
+    root.title("MAIN-5D 主板以太网控制")
     peer = Peer(sock)
     pane = ttk.Frame(root, padding=16)
     pane.grid()

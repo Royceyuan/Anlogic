@@ -2,10 +2,24 @@
 import socket
 import struct
 import time
+import io
+from contextlib import redirect_stderr
+from unittest.mock import patch
+import mbp1_pc_control
 from mbp1_pc_control import Peer, packet, parse
 
 
 def main():
+    # Binding failure must exit cleanly without creating/destroying a Tk app.
+    with patch.object(socket, "socket") as factory, patch("tkinter.Tk") as window:
+        factory.return_value.bind.side_effect = PermissionError(10013, "port unavailable")
+        output = io.StringIO()
+        with redirect_stderr(output):
+            assert mbp1_pc_control.main() == 1
+        factory.return_value.close.assert_called_once()
+        window.assert_not_called()
+        assert "10013" in output.getvalue() and "NIDomainService" in output.getvalue()
+    print("PASS: bind failure closes socket and exits without creating Tk")
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as board, socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as pc:
         board.bind(("127.0.0.1", 0))
         pc.bind(("127.0.0.1", 0))
