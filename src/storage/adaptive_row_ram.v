@@ -50,7 +50,8 @@ endmodule
 
 module adaptive_row_ram #(
     parameter integer ADDR_WIDTH = 11,
-    parameter integer DATA_DEPTH = 1280
+    parameter integer DATA_DEPTH = 1280,
+    parameter IMPLEMENT = "9K"
 ) (
     input wire                  clk,
     input wire                  wr_en,
@@ -71,7 +72,7 @@ EG_LOGIC_BRAM #(
     .WRITEMODE_A("NORMAL"), .WRITEMODE_B("NORMAL"),
     .RESETMODE("SYNC"), .DEBUGGABLE("NO"), .PACKABLE("NO"),
     .FORCE_KEEP("OFF"), .INIT_FILE("NONE"), .FILL_ALL("NONE"),
-    .IMPLEMENT("9K")
+    .IMPLEMENT(IMPLEMENT)
 ) u_row_ram (
     .doa(unused_a), .dob(rd_data), .dia(wr_data), .dib(16'd0),
     .cea(wr_en), .ocea(1'b0), .clka(clk), .wea(wr_en), .rsta(1'b0),

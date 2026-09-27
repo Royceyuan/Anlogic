@@ -19,7 +19,8 @@ module fat32_image_loader #(
     parameter [15:0] ADAPTIVE_BACKGROUND_RGB565 = 16'h0000,
     // v72: replace the fixed 960/540 products with shifts and additions.
     // Disabled by default so existing release candidates keep their netlist.
-    parameter integer RESOURCE_OPT_CONSTANT_MULT = 0
+    parameter integer RESOURCE_OPT_CONSTANT_MULT = 0,
+    parameter ADAPTIVE_RAM_IMPLEMENT = "9K"
 )(
     input  wire        clk,
     input  wire        rst_n,
@@ -315,14 +316,16 @@ assign adapt_fifo_wr_data = {sd_sec_read_data[7:3],
 
 generate
     if (ADAPTIVE_BMP) begin : g_adaptive_row_ram
-        al_dp_ram16 #(.ADDR_WIDTH(ADAPT_FIFO_ADDR_BITS), .DEPTH(ADAPT_FIFO_DEPTH))
+        al_dp_ram16 #(.ADDR_WIDTH(ADAPT_FIFO_ADDR_BITS), .DEPTH(ADAPT_FIFO_DEPTH),
+                     .IMPLEMENT(ADAPTIVE_RAM_IMPLEMENT))
         u_adaptive_fifo (
             .clk(clk), .wr_en(adapt_fifo_wr_en),
             .wr_addr(adapt_fifo_wr_ptr), .wr_data(adapt_fifo_wr_data),
             .rd_addr(adapt_fifo_rd_ptr), .rd_data(adapt_fifo_rd_data)
         );
 
-        adaptive_row_ram #(.ADDR_WIDTH(11), .DATA_DEPTH(BMP_MAX_WIDTH))
+        adaptive_row_ram #(.ADDR_WIDTH(11), .DATA_DEPTH(BMP_MAX_WIDTH),
+                           .IMPLEMENT(ADAPTIVE_RAM_IMPLEMENT))
         u_adaptive_row_ram (
             .clk(clk), .wr_en(adapt_row_mem_write),
             .wr_addr(adapt_row_mem_write_addr), .wr_data(adapt_row_mem_write_data),

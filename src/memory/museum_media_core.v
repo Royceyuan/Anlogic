@@ -1520,7 +1520,8 @@ fat32_image_loader #(
     .ADAPTIVE_BMP(ADAPTIVE_BMP),
     .ADAPTIVE_BACKGROUND_RGB565(ADAPTIVE_BACKGROUND_RGB565),
     .MULTI_IMAGE_BMP(MULTI_IMAGE_BMP),
-    .RESOURCE_OPT_CONSTANT_MULT(RESOURCE_OPT_CONSTANT_MULT)
+    .RESOURCE_OPT_CONSTANT_MULT(RESOURCE_OPT_CONSTANT_MULT),
+    .ADAPTIVE_RAM_IMPLEMENT(ENABLE_MAIN5_REMOTE ? "32K" : "9K")
 ) u_fat32_image_loader (
     .clk(clk_50m), .rst_n(client_rst_n), .load_start(image_load_start),
     // On the exact start edge load_active is still low, so use the physical

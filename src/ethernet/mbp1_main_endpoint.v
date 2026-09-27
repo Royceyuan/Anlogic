@@ -71,11 +71,12 @@ mbp1_codec #(.HOLD_TX_FIELDS(HOLD_TX_FIELDS)) u_codec (
 reg [31:0] next_seq, uptime_ms;
 reg [31:0] peer_boot_id;
 reg peer_boot_seen;
-reg [15:0] heartbeat_age_ms;
+reg [10:0] heartbeat_age_ms;
 assign peer_alive = phy_link && peer_boot_seen &&
                     (heartbeat_age_ms < 16'd2000);
 
-reg [31:0] ms_divider;
+localparam integer MS_DIVIDER_BITS = CLOCKS_PER_MS <= 1 ? 1 : $clog2(CLOCKS_PER_MS);
+reg [MS_DIVIDER_BITS-1:0] ms_divider;
 reg [1:0] tx_gap_ms;
 reg [9:0] snapshot_ms;
 reg [6:0] hello_wait_ms;

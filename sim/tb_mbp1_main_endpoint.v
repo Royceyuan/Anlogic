@@ -138,6 +138,11 @@ initial begin
     repeat (4) @(negedge clk);
     if (!peer_alive) $fatal(1, "heartbeat did not refresh peer state");
     wait (heartbeat_count >= 1);
+    send_packet(8'h02, 5'd16, 128'd0);
+    repeat (15000) @(negedge clk);
+    if (!peer_alive) $fatal(1, "heartbeat expired before two seconds");
+    repeat (5010) @(negedge clk);
+    if (peer_alive) $fatal(1, "heartbeat failed to expire after two seconds");
     if (board_crc_errors !== 0 || board_drops !== 0)
         $fatal(1, "valid messages rejected");
     $display("PASS: MBP1 HELLO, ACK, STATUS_QUERY, telemetry, dedup and heartbeat; control=%0d", ENABLE_CONTROL);

@@ -21,23 +21,23 @@ always @(posedge clk or negedge rst_n) begin
         flash_count <= flash_count + 1'b1;
 end
 
-wire [10:0] triangle_dx = (x_i >= 11'd330) ? x_i - 11'd330 : 11'd330 - x_i;
-wire [9:0] triangle_dy = (y_i >= 10'd140) ? y_i - 10'd140 : 10'd0;
+// Half-plane tests share two diagonals; avoid abs -> add -> compare chains.
+// 12 bits cover the entire input range, including blanking coordinates.
+wire [11:0] diagonal_sum = {1'b0,x_i} + {2'b00,y_i};
+wire signed [11:0] diagonal_difference = $signed({1'b0,x_i}) - $signed({2'b00,y_i});
 wire triangle_hit = y_i >= 10'd140 && y_i <= 10'd430 &&
-                    triangle_dx <= triangle_dy;
+                    diagonal_sum >= 12'd470 && diagonal_difference <= 12'sd190;
 wire triangle_inner = y_i >= 10'd176 && y_i < 10'd402 &&
-                      triangle_dx + 11'd28 < triangle_dy;
+                      diagonal_sum > 12'd498 && diagonal_difference < 12'sd162;
 wire exclamation_hit = (x_i >= 11'd315 && x_i <= 11'd345 &&
                          y_i >= 10'd225 && y_i <= 10'd340) ||
                         (x_i >= 11'd315 && x_i <= 11'd345 &&
                          y_i >= 10'd365 && y_i <= 10'd395);
 
-wire [10:0] arrow_dx = 11'd1120 - x_i;
-wire [9:0] arrow_dy = (y_i >= 10'd360) ? y_i - 10'd360 : 10'd360 - y_i;
 wire arrow_shaft = x_i >= 11'd590 && x_i < 11'd930 &&
                    y_i >= 10'd320 && y_i <= 10'd400;
 wire arrow_head = x_i >= 11'd850 && x_i <= 11'd1120 &&
-                  arrow_dy <= arrow_dx[9:0];
+                  diagonal_sum <= 12'd1480 && diagonal_difference <= 12'sd760;
 wire border = x_i < 11'd18 || x_i >= 11'd1262 ||
               y_i < 10'd18 || y_i >= 10'd702;
 wire hazard_band = y_i < 10'd82 || y_i >= 10'd638;

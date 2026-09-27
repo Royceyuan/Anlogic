@@ -70,7 +70,9 @@ reg [9:0] rows_done;
 localparam integer BURSTS_PER_ROW = (WORDS_PER_ROW + BURST_WORDS - 1) / BURST_WORDS;
 localparam integer BURST_INDEX_BITS = (BURSTS_PER_ROW <= 1) ? 1 : $clog2(BURSTS_PER_ROW);
 reg [BURST_INDEX_BITS-1:0] burst_index;
-reg [ADDR_BITS-1:0] burst_words_sent;
+// Count only within the accepted burst, never over a full frame address range.
+localparam integer BURST_COUNT_BITS = BURST_WORDS <= 1 ? 1 : $clog2(BURST_WORDS);
+reg [BURST_COUNT_BITS-1:0] burst_words_sent;
 reg [5:0] settle_count;
 reg overview_phase;
 reg [3:0] active_overview_frame;

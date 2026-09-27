@@ -1257,7 +1257,8 @@ module fat32_image_loader #(
     parameter integer BMP_MAX_HEIGHT = 768,
     parameter integer ADAPTIVE_BMP = 0,
     parameter [15:0] ADAPTIVE_BACKGROUND_RGB565 = 16'h0000,
-    parameter integer RESOURCE_OPT_CONSTANT_MULT = 0
+    parameter integer RESOURCE_OPT_CONSTANT_MULT = 0,
+    parameter ADAPTIVE_RAM_IMPLEMENT = "9K"
 ) (
     input wire clk, input wire rst_n, input wire load_start,
     input wire [3:0] image_file_index,

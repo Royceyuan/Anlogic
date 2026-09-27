@@ -25,7 +25,8 @@ module tb_fat32_bmp_adaptive_loader #(
     parameter integer MUSEUM_DETAIL = 0,
     parameter integer ARTIFACT_INDEX = 0,
     parameter integer DETAIL_INDEX = 1,
-    parameter integer RESOURCE_OPT_CONSTANT_MULT = 0
+    parameter integer RESOURCE_OPT_CONSTANT_MULT = 0,
+    parameter ADAPTIVE_RAM_IMPLEMENT = "9K"
 );
 
 localparam integer IMAGE_PIXELS = IMAGE_W * IMAGE_H;
@@ -112,6 +113,7 @@ fat32_image_loader #(
     .BMP_MAX_WIDTH(BMP_MAX_WIDTH),
     .MULTI_IMAGE_BMP(MULTI_IMAGE_BMP),
     .RESOURCE_OPT_CONSTANT_MULT(RESOURCE_OPT_CONSTANT_MULT),
+    .ADAPTIVE_RAM_IMPLEMENT(ADAPTIVE_RAM_IMPLEMENT),
     .BMP_MAX_HEIGHT(BMP_MAX_HEIGHT)
 ) dut (
     .clk                    (clk),

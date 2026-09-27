@@ -12,6 +12,8 @@ integer valid_count=0;
 integer changed_count=0;
 integer positive_count=0;
 integer negative_count=0;
+integer px,py,dx,dy,arrow_dx,arrow_dy;
+reg old_triangle,old_inner,old_arrow;
 reg signed [15:0] previous_sample=0;
 always #1 clk=~clk;
 
@@ -57,7 +59,24 @@ initial begin
  repeat(20) @(posedge clk);
  if(alarm_valid || alarm_left!==0 || alarm_right!==0)
   $fatal(1,"alarm did not stop cleanly");
- $display("PASS emergency overlay priority and exclusive 48 kHz alarm");
+ // Exhaustive equivalence over all coordinate input bits, not just HDMI DE.
+ for(py=0;py<1024;py=py+1) begin
+  for(px=0;px<2048;px=px+1) begin
+   x=px; y=py;
+   dx=px>=330 ? px-330 : 330-px;
+   dy=py>=140 ? py-140 : 0;
+   arrow_dx=(1120-px)&1023;
+   arrow_dy=py>=360 ? py-360 : 360-py;
+   old_triangle=py>=140 && py<=430 && dx<=dy;
+   old_inner=py>=176 && py<402 && dx+28<dy;
+   old_arrow=px>=850 && px<=1120 && arrow_dy<=arrow_dx;
+   #1;
+   if(dut_overlay.triangle_hit!==old_triangle ||
+      dut_overlay.triangle_inner!==old_inner || dut_overlay.arrow_head!==old_arrow)
+    $fatal(1,"emergency geometry differs at %0d,%0d",px,py);
+  end
+ end
+ $display("PASS emergency overlay priority, exclusive 48 kHz alarm and 2097152-coordinate equivalence");
  $finish;
 end
 endmodule
