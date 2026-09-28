@@ -11,8 +11,8 @@
 ## 构建和联调顺序
 
 1. 独立网口诊断工程：`hx4s20_secondary_main5e_netdiag.al`；bit 为 `release/hx4s20_secondary_main5e_netdiag_v01.bit`，SHA-256 `9FFA7F66BAA42E1063C54778770CA913946B996895AA7497C234AA92697F3F0F`。它用于先检查 RGMII、ARP、UDP 回环，不验证 SD/HDMI 媒体功能。给 PC 有线网卡设置 `192.168.10.1/24`，直连副板后运行 `python tools/udp_echo_test_secondary.py`；20/20 返回才算 PC 回环通过。当前仅生成了 bit，尚未上板运行这一测试。
-2. 完整副屏工程：运行 `python scripts/prepare_secondary_main5e_project.py --full` 生成 `hx4s20_secondary_main5e.al`，再执行 `scripts/build_secondary_main5e_pr.tcl` 和 `scripts/build_secondary_main5e_bitgen.tcl`。bit 为 `release/hx4s20_secondary_main5e_v01.bit`，SHA-256 `1AFE76C32924A91C5633D410398A4763201E27560EBC3784F1D3335E19F3B443`。它使用原有 SD 卡素材；本次没有重新生成或改写 SD 卡图片。
-3. 主副板以网线直连，先看 PHY 与工程页 LINK，再核对主板 `HELLO`、心跳及三个状态快照。主板拨码切换预载目标时，副屏继续五图轮播；主板按确认进入讲解后，副屏切简介。主板进入应急，副屏覆盖逃生图；解除应急后按当前 SW4 返回普通或工程页。
+2. 完整副屏工程：运行 `python scripts/prepare_secondary_main5e_project.py --full` 生成 `hx4s20_secondary_main5e.al`，再执行 `scripts/build_secondary_main5e_pr.tcl` 和 `scripts/build_secondary_main5e_bitgen.tcl`。bit 为 `release/hx4s20_secondary_main5e_v01.bit`，SHA-256 `1AFE76C32924A91C5633D410398A4763201E27560EBC3784F1D3335E19F3B443`。它使用原有 SD 卡素材；本次没有重新生成或改写 SD 卡图片。给 PC 有线网卡设置 `192.168.10.1/24`，网线只接 PC 与副板，在副板烧录此完整 bit 后运行 `python tools/mbp1_secondary_pc_probe.py --seconds 20`。脚本扮演主板并检查副板 HELLO、周期心跳、状态查询、ACK 和 CRC；末尾 `HELLO`、`HEARTBEAT`、`STATUS_QUERY`、`ACK` 均大于 0 且 `BAD=0` 才算基础协议通过。运行期间按副板 KEY，可查看发出的 `DISPLAY_PRESET` 或 `DISPLAY_ADJUST` 内容；若要检查 `VIEWPORT_SET`，改用 `--lecture-artifact 0` 并把副板 SW2:SW1 设为 `11`。脚本对控制请求故意回答 `BUSY`，因此不会产生实际的主板画面调节。若 Windows 提示防火墙，允许此 Python 程序使用当前有线网络的 UDP 5000。
+3. PC 协议检查完成后，再将主副板以网线直连，先看 PHY 与工程页 LINK，再核对主板 `HELLO`、心跳及三个状态快照。主板拨码切换预载目标时，副屏继续五图轮播；主板按确认进入讲解后，副屏切简介。主板进入应急，副屏覆盖逃生图；解除应急后按当前 SW4 返回普通或工程页。
 
 ## 已验证与待上板验证
 
