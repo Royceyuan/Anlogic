@@ -631,6 +631,53 @@ module tb_museum_media_core #(
             force dut.transition_active=1'b0;
             repeat(6) @(negedge clk_50m);
             send_remote(8'h13,{8'd1,8'd1,16'd0,32'd0},8'd0);
+            // Recovery must commit overview geometry with the overview cache,
+            // even when the lecture was paused with a displaced 2x viewport.
+            @(negedge clk_50m); force dut.key_press_pulse=4'b0001;
+            @(negedge clk_50m); release dut.key_press_pulse;
+            timeout=0;
+            while (!dut.display_zoom_2x && timeout<100000) begin
+                @(negedge clk_50m); timeout=timeout+1;
+            end
+            if (timeout==100000) $fatal(1,"recovery test zoom entry timeout");
+            send_remote(8'h15,{8'd0,8'd0,8'd2,8'd0,16'sd2,-16'sd2},8'd0);
+            timeout=0;
+            while (dut.display_pan_x!=2 && timeout<100000) begin
+                @(negedge clk_50m); timeout=timeout+1;
+            end
+            if (timeout==100000) $fatal(1,"recovery test pan entry timeout");
+            force dut.overview_cache_ready=1'b1;
+            force dut.sd_init_done=1'b0;
+            @(negedge clk_50m); force dut.key_press_pulse=4'b1000;
+            @(negedge clk_50m); release dut.key_press_pulse;
+            release dut.lecture_active;
+            release dut.lecture_paused;
+            release dut.overview_enable_video;
+            timeout=0;
+            while (dut.display_media_index!=5 && timeout<100000) begin
+                @(negedge clk_50m); timeout=timeout+1;
+            end
+            if (timeout==100000 || dut.display_zoom_2x ||
+                dut.display_pan_x!=0 || dut.display_pan_y!=0)
+                $fatal(1,"KEY4 overview retained lecture zoom/pan");
+            repeat(12) @(negedge clk_50m);
+            if (dut.main5_zoom_ff2 || dut.main5_display[31:0]!=0)
+                $fatal(1,"KEY4 telemetry retained lecture viewport");
+            release dut.sd_init_done;
+            timeout=0;
+            while (dut.recovery_busy && timeout<100000) begin
+                @(negedge clk_50m); timeout=timeout+1;
+            end
+            if (timeout==100000) $fatal(1,"KEY4 recovery did not finish");
+            repeat(3000) @(negedge clk_50m);
+            if (dut.display_media_index!=5 || dut.display_zoom_2x ||
+                dut.display_pan_x!=0 || dut.display_pan_y!=0 || dut.switch_pending)
+                $fatal(1,"stale lecture viewport returned after recovery");
+            if (dut.g_linebuf_scaler.u_linebuf_scaler.active_zoom_2x ||
+                dut.g_linebuf_scaler.u_linebuf_scaler.active_pan_x!=0 ||
+                dut.g_linebuf_scaler.u_linebuf_scaler.active_pan_y!=0)
+                $fatal(1,"overview line buffer retained stale source geometry");
+            $display("PASS MAIN5 KEY4 restores 1x centered overview from paused 2x pan");
             sw[3]=1'b1;
             repeat(6) @(negedge clk_50m);
             send_remote(8'h13,{8'd0,8'd1,16'd0,32'd0},8'd4);

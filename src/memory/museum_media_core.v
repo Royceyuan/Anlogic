@@ -2680,6 +2680,10 @@ always @(posedge video_clk or negedge video_rst_n) begin
             read_req_r <= 1'b1;
             linebuf_start_pending <= LINEBUF_SCALE;
             display_media_index <= VIDEO_FRAME_COUNT;
+            // Commit overview geometry together with its cache at vblank.
+            display_zoom_2x <= 1'b0;
+            display_pan_x <= 16'sd0;
+            display_pan_y <= 16'sd0;
             display_source_width_bcd <= 16'h0960;
             display_source_height_bcd <= 16'h0540;
         end
