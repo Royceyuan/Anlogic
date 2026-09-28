@@ -24,6 +24,8 @@ module secondary_page_overlay (
 
 reg emergency_frame;
 reg emergency_bitmap_frame;
+reg [4:0] highlight_frames;
+reg highlight_on;
 reg [1:0] link_ff1, link_ff2, link_frame;
 reg [2:0] artifact_ff1, artifact_ff2, artifact_frame;
 reg ready_ff1, ready_ff2, ready_frame;
@@ -35,6 +37,8 @@ always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         emergency_frame <= 1'b0;
         emergency_bitmap_frame <= 1'b0;
+        highlight_frames <= 5'd0;
+        highlight_on <= 1'b1;
         link_ff1 <= 2'd0; link_ff2 <= 2'd0; link_frame <= 2'd0;
         artifact_ff1 <= 3'd7; artifact_ff2 <= 3'd7; artifact_frame <= 3'd7;
         ready_ff1 <= 1'b0; ready_ff2 <= 1'b0; ready_frame <= 1'b0;
@@ -56,6 +60,13 @@ always @(posedge clk or negedge rst_n) begin
         if (x == 11'd0 && y == 10'd0) begin
             emergency_frame <= emergency_bitmap_video;
             emergency_bitmap_frame <= emergency_bitmap_video;
+            if (!emergency_bitmap_video || !emergency_bitmap_frame) begin
+                highlight_frames <= 5'd0;
+                highlight_on <= 1'b1;
+            end else if (highlight_frames == 5'd29) begin
+                highlight_frames <= 5'd0;
+                highlight_on <= !highlight_on;
+            end else highlight_frames <= highlight_frames + 5'd1;
             link_frame <= link_ff2;
             artifact_frame <= artifact_ff2;
             ready_frame <= ready_ff2;
@@ -200,6 +211,18 @@ always @(*) begin
         if (emergency_frame) begin
             if (emergency_bitmap_frame) begin
                 rgb = base_rgb;
+                if (highlight_on && x >= 11'd290 && x < 11'd850 &&
+                    y >= 10'd125 && y < 10'd540 &&
+                    base_rgb[23:16] < 8'd80 &&
+                    base_rgb[15:8] > 8'd105 &&
+                    base_rgb[7:0] < 8'd115)
+                    rgb = 24'h52ED79;
+                if (highlight_on && x >= 11'd610 && x < 11'd660 &&
+                    y >= 10'd285 && y < 10'd340 &&
+                    base_rgb[23:16] > 8'd150 &&
+                    base_rgb[15:8] < 8'd80 &&
+                    base_rgb[7:0] < 8'd80)
+                    rgb = 24'hFF6464;
             end else begin
                 rgb = 24'h142033;
                 if (y < 10'd128) rgb = 24'hA30F20;

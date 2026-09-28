@@ -29,6 +29,14 @@
 
 **v02 实板分项通过：**操作者 SRAM 烧录后，PC 模拟主板连续 25 秒发心跳，收到副板 HELLO 1、HEARTBEAT 50、STATUS_QUERY 1、ACK 1、BAD 0；副屏在心跳期间继续切图。发送 `preload 2` 后仍轮播；发送 `lecture 2` 后收到 PLAYBACK_STATE 成功 ACK，副屏显示金缕玉衣简介与路线图；`emergency on` 显示逃生图，`emergency off` 恢复轮播；讲解后 `overview` 返回轮播且继续切图。操作者在 S-SW2:S-SW1=`00` 按 KEY2，模拟器收到 `DISPLAY_PRESET seq=607 preset=1 -> OK`，回报参数 `[5,3,4,4]`；该轮监听统计 HELLO 1、HEARTBEAT 236、STATUS_QUERY 1、ACK 3、CONTROL 1、BAD 0。上述为 PC 模拟主板联调，不等同双板直连验证。此次 PC 直连还观察到一次 PHY 为 1 Gbps 但无 ARP/MBP1 报文，拔插网线后恢复握手；原因未确认。
 
+### 2026-09-28 应急路线动态指示 v03
+
+只改 `secondary_page_overlay.v`：显示 SD 卡原有的 1280×720 逃生 BMP 时，地图范围内的绿色路线/出口像素与红色“当前位置”标记每 30 帧增强一次，下一段 30 帧恢复原色；按 60 Hz 输出约每半秒切换。普通文物页、工程页、图例及地图底图不闪烁。不新增路线计算或协议字段，不改 SD 卡图片、时钟、SDRAM、约束。实际逃生 BMP 的颜色/坐标核验命中路线 4105 像素、三个出口区域分别 533/617/553 像素、当前位置 593 像素。
+
+ModelSim `vsim -c -do run_secondary_local.do`、`run_secondary_main5e_status_adapter.do`、`run_secondary_main5e_engineering_overlay.do` 通过；新增回归检查图上目标、图例/底图不变、30 帧明暗切换及普通页不变。布局种子 1 的首轮最终 setup WNS -271 ps，未生成 bit；同一 RTL 改用种子 2 后，独立构建目录 `_build_secondary_main5e_emergency_pulse_v03_seed2` 的最终 setup WNS +132 ps/TNS 0、hold WNS +23 ps/TNS 0，STA 覆盖率 99.79%。LUT 12473/19600、寄存器 7004/19600、BRAM9K 32/64、DSP 9/29、PLL 4/4。保留原有 SDRAM 放置和局部时钟布线警告，报告无多驱动或异常时序路径。
+
+工程根目录依次执行 `D:\Anlogic\TD5.6.2\bin\td_commands_prompt.exe ./scripts/build_secondary_main5e_emergency_pulse_v03_pr.tcl` 和同一工具的 `./scripts/build_secondary_main5e_emergency_pulse_v03_bitgen.tcl`。发布 `release/hx4s20_secondary_main5e_emergency_pulse_v03.bit`，2026-09-28 21:03 生成，629641 字节，SHA-256 `E7EA87C3646A542688A02174E9A72CE5D29761C1E8CB10F4FA5FB5333F12CC94`。**v03 硬件 = NOT TESTED**；需用户 SRAM 烧录并用主板应急开关检查进入/退出、路线闪烁及普通轮播。v02 bit 和构建证据保留可回退。
+
 实板仍须确认：主副板直连联动、其余按键模式、断线重连与长时间稳定性；独立网口诊断工程的 UDP 回环尚未单独上板。旧的 `release/hx4s20_secondary_native720_v2.bit` 是已知可用基线，不应覆盖。当前用户尚未授权自动烧录实板。
 
 ## 边界
