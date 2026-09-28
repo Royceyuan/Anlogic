@@ -12,13 +12,16 @@
 
 1. 独立网口诊断工程：`hx4s20_secondary_main5e_netdiag.al`；bit 为 `release/hx4s20_secondary_main5e_netdiag_v01.bit`，SHA-256 `9FFA7F66BAA42E1063C54778770CA913946B996895AA7497C234AA92697F3F0F`。它用于先检查 RGMII、ARP、UDP 回环，不验证 SD/HDMI 媒体功能。给 PC 有线网卡设置 `192.168.10.1/24`，直连副板后运行 `python tools/udp_echo_test_secondary.py`；20/20 返回才算 PC 回环通过。当前仅生成了 bit，尚未上板运行这一测试。
 2. 完整副屏工程：运行 `python scripts/prepare_secondary_main5e_project.py --full` 生成 `hx4s20_secondary_main5e.al`，再执行 `scripts/build_secondary_main5e_pr.tcl` 和 `scripts/build_secondary_main5e_bitgen.tcl`。bit 为 `release/hx4s20_secondary_main5e_v01.bit`，SHA-256 `1AFE76C32924A91C5633D410398A4763201E27560EBC3784F1D3335E19F3B443`。它使用原有 SD 卡素材；本次没有重新生成或改写 SD 卡图片。给 PC 有线网卡设置 `192.168.10.1/24`，网线只接 PC 与副板，在副板烧录此完整 bit 后运行 `python tools/mbp1_secondary_pc_probe.py --seconds 20`。脚本扮演主板并检查副板 HELLO、周期心跳、状态查询、ACK 和 CRC；末尾 `HELLO`、`HEARTBEAT`、`STATUS_QUERY`、`ACK` 均大于 0 且 `BAD=0` 才算基础协议通过。运行期间按副板 KEY，可查看发出的 `DISPLAY_PRESET` 或 `DISPLAY_ADJUST` 内容；若要检查 `VIEWPORT_SET`，改用 `--lecture-artifact 0` 并把副板 SW2:SW1 设为 `11`。脚本对控制请求故意回答 `BUSY`，因此不会产生实际的主板画面调节。若 Windows 提示防火墙，允许此 Python 程序使用当前有线网络的 UDP 5000。
+   交互式联调可运行 `python tools/mbp1_main_simulator.py`，在终端输入 `highlight 1`、`preload 2`、`lecture 2`、`emergency on`、`emergency off`、`overview`、`status`、`quit`。文物编号为 0～4；高亮和预载目标可独立设置，预载完成由脚本即时模拟。脚本每 500 ms 发送主板心跳和显示状态，打印副板的 HELLO、状态查询、ACK 及三类按键控制；收到有效控制后回 ACK 和更新后的 DISPLAY_STATUS。它模拟主板的协议状态，不读取主板 TF 卡，也不代替主板实际画面验证。同一时刻只能运行一个占用 PC UDP 5000 的探针或模拟器。
 3. PC 协议检查完成后，再将主副板以网线直连，先看 PHY 与工程页 LINK，再核对主板 `HELLO`、心跳及三个状态快照。主板拨码切换预载目标时，副屏继续五图轮播；主板按确认进入讲解后，副屏切简介。主板进入应急，副屏覆盖逃生图；解除应急后按当前 SW4 返回普通或工程页。
 
 ## 已验证与待上板验证
 
 本地 ModelSim 通过 MBP1 编解码、固定 UDP、端点、心跳适配、按键、工程页及旧本地控制器测试。独立网口诊断工程完成布局布线，建立 WNS +670 ps、保持 WNS +63 ps，bit 已生成。完整工程建立 WNS +125 ps、保持 WNS +24 ps、STA 覆盖率 99.79%；LUT 12523/19600、寄存器 6997/19600、BRAM9K 32/64、DSP 9/29、PLL 4/4。两份 bit 均已由对应数据库生成。完整布局布线保留工具对 SDRAM 自动放置和局部时钟布线的既有关键警告，报告未见多驱动或异常时序路径。本说明不把仿真、时序通过视为实板通信成功。
 
-实板仍须确认：直连以太网握手和 UDP 回环、五图轮播与预载独立、主板确认后切简介、应急覆盖与恢复、SW4 工程页、四键四组控制、失联及重连。旧的 `release/hx4s20_secondary_native720_v2.bit` 是已知可用基线，不应覆盖。当前用户尚未授权自动烧录实板。
+2026-09-28 PC 直连完整 bit 的协议探针实测：20 秒收到副板 HELLO 1、HEARTBEAT 40、STATUS_QUERY 1、ACK 1、BAD 0；主板模拟器又收到 HELLO 1、HEARTBEAT 54、STATUS_QUERY 1、ACK 2、BAD 0，发送 `lecture 2` 后收到副板对 PLAYBACK_STATE 的 `result=0` ACK。说明此板当前可完成基本双向 UDP/MBP1 收发；副屏实际跳页和副板按键控制包尚未由本次日志验证。PC 的 UDP 5000 曾被 NI Time Synchronization (`lkTimeSync`) 占用；测试时临时停止该服务，测试结束应恢复。
+
+实板仍须确认：独立网口诊断工程的 UDP 回环、五图轮播与预载独立、讲解切简介、应急覆盖与恢复、SW4 工程页、四键四组控制、失联及重连。旧的 `release/hx4s20_secondary_native720_v2.bit` 是已知可用基线，不应覆盖。当前用户尚未授权自动烧录实板。
 
 ## 边界
 
