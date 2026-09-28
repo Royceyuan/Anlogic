@@ -96,7 +96,10 @@ top_v66 #(
     .secondary_cmd_emergency_id(cmd_emergency_id),
     .secondary_cmd_route_id(cmd_route_id),
     .secondary_cmd_emergency_active(cmd_emergency_active),
-    .secondary_cmd_result(cmd_result)
+    .secondary_cmd_result(cmd_result),
+    .secondary_eng_enable(1'b0), .secondary_eng_link(1'b0),
+    .secondary_eng_heartbeat(128'd0), .secondary_eng_display(96'd0),
+    .secondary_eng_diagnostic(128'd0), .secondary_eng_result(8'd0)
 );
 
 endmodule

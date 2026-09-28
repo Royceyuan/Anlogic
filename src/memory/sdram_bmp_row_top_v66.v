@@ -89,6 +89,7 @@ module top_v66 #(
     ,parameter integer ENABLE_MUSEUM_LECTURE = 0
     ,parameter integer ENABLE_SECONDARY = 0
     ,parameter integer SECONDARY_STREAMING = 0
+    ,parameter integer SECONDARY_ENGINEERING = 0
     ,parameter integer LECTURE_CLOCK_HZ = 50_000_000
     ,parameter integer OVERVIEW_CROP_X0_0 = 384
     ,parameter integer OVERVIEW_CROP_X0_1 = 384
@@ -127,7 +128,13 @@ module top_v66 #(
     input  wire [15:0] secondary_cmd_emergency_id,
     input  wire [7:0]  secondary_cmd_route_id,
     input  wire        secondary_cmd_emergency_active,
-    output wire [2:0]  secondary_cmd_result
+    output wire [2:0]  secondary_cmd_result,
+    input  wire        secondary_eng_enable,
+    input  wire        secondary_eng_link,
+    input  wire [127:0] secondary_eng_heartbeat,
+    input  wire [95:0] secondary_eng_display,
+    input  wire [127:0] secondary_eng_diagnostic,
+    input  wire [7:0]  secondary_eng_result
 );
 
 localparam integer FRAME_WORDS = (SOURCE_W * SOURCE_H) / 2;
@@ -230,6 +237,7 @@ wire [2:0] secondary_resume_page_index;
 wire secondary_emergency_active;
 wire [1:0] secondary_link_state;
 wire [2:0] secondary_master_artifact;
+wire [2:0] secondary_preload_artifact;
 wire secondary_info_active;
 wire [2:0] secondary_info_artifact;
 wire [7:0] secondary_active_route_id;
@@ -283,6 +291,7 @@ generate
             .emergency_active(secondary_emergency_active),
             .link_state(secondary_link_state),
             .master_artifact(secondary_master_artifact),
+            .preload_artifact(secondary_preload_artifact),
             .info_active(secondary_info_active),
             .info_artifact(secondary_info_artifact),
             .active_route_id(secondary_active_route_id),
@@ -294,6 +303,7 @@ generate
         assign secondary_emergency_active = 1'b0;
         assign secondary_link_state = 2'd0;
         assign secondary_master_artifact = 3'd7;
+        assign secondary_preload_artifact = 3'd7;
         assign secondary_info_active = 1'b0;
         assign secondary_info_artifact = 3'd0;
         assign secondary_active_route_id = 8'd0;
@@ -323,10 +333,10 @@ wire secondary_info_display_hold = secondary_info_active &&
      preload_select_media_index == 4'd6);
 wire [2:0] secondary_info_preload_artifact =
     SECONDARY_STREAMING ?
-        (secondary_master_artifact <= 3'd4 ? secondary_master_artifact :
+        (secondary_preload_artifact <= 3'd4 ? secondary_preload_artifact :
          secondary_info_active ? secondary_info_artifact : 3'd7) :
         (secondary_info_active ? secondary_info_artifact :
-                                 secondary_master_artifact);
+                                 secondary_preload_artifact);
 wire secondary_info_preload_valid = secondary_info_preload_artifact <= 3'd4;
 wire secondary_info_preload_match = secondary_info_valid &&
     secondary_info_cached_artifact == secondary_info_preload_artifact;
@@ -2736,6 +2746,7 @@ generate
         reg        hs_q, vs_q, de_q;
         reg [23:0] rgb_q;
         wire [23:0] overlay_rgb;
+        wire [23:0] engineering_rgb;
         always @(posedge video_clk or negedge video_rst_n) begin
             if (!video_rst_n) begin
                 x_q <= 11'd0;
@@ -2754,7 +2765,7 @@ generate
                 hs_q <= video_hs_out;
                 vs_q <= video_vs_out;
                 de_q <= video_de_out;
-                rgb_q <= overlay_rgb;
+                rgb_q <= engineering_rgb;
             end
         end
         secondary_page_overlay u_secondary_page_overlay (
@@ -2772,6 +2783,21 @@ generate
             .media_error_50m(image_load_error | writer_error),
             .rgb(overlay_rgb)
         );
+        if (SECONDARY_ENGINEERING) begin : g_engineering_page
+        secondary_main5e_engineering_overlay u_engineering_overlay (
+            .clk(video_clk), .rst_n(video_rst_n),
+            .de(video_de_out), .x(x_q_d), .y(y_q_d),
+            .pre_x(x_q), .pre_y(y_q), .base_rgb(overlay_rgb),
+            .enable_50m(secondary_eng_enable && !secondary_emergency_active),
+            .link_50m(secondary_eng_link),
+            .heartbeat_50m(secondary_eng_heartbeat),
+            .display_50m(secondary_eng_display),
+            .diagnostic_50m(secondary_eng_diagnostic),
+            .result_50m(secondary_eng_result), .rgb(engineering_rgb)
+        );
+        end else begin : g_no_engineering_page
+            assign engineering_rgb = overlay_rgb;
+        end
         assign secondary_hs_out = hs_q;
         assign secondary_vs_out = vs_q;
         assign secondary_de_out = de_q;

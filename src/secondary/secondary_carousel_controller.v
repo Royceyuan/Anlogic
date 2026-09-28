@@ -29,6 +29,7 @@ module secondary_carousel_controller #(
     output wire        emergency_active,
     output reg  [1:0]  link_state,
     output reg  [2:0]  master_artifact,
+    output reg  [2:0]  preload_artifact,
     output reg         info_active,
     output reg  [2:0]  info_artifact,
     output reg  [7:0]  active_route_id,
@@ -77,6 +78,7 @@ always @(posedge clk or negedge rst_n) begin
         link_cycles <= 27'd0;
         link_state <= LINK_WAIT;
         master_artifact <= 3'd7;
+        preload_artifact <= 3'd7;
         info_active <= 1'b0;
         info_artifact <= 3'd0;
         remote_emergency <= 1'b0;
@@ -126,6 +128,8 @@ always @(posedge clk or negedge rst_n) begin
                         page_index <= STREAMING ? resume_page_index : 3'd0;
                         page_cycles <= 28'd0;
                     end else if (cmd_mode == 8'd2 && cmd_artifact_id <= 8'd4) begin
+                        if (preload_artifact > 3'd4)
+                            preload_artifact <= cmd_artifact_id[2:0];
                         if (!info_active)
                             resume_page_index <= STREAMING && displayed_artifact <= 3'd4 ?
                                                  displayed_artifact : page_index;
@@ -138,11 +142,13 @@ always @(posedge clk or negedge rst_n) begin
                         remote_emergency <= 1'b1;
                         active_emergency_id <= cmd_emergency_id;
                         active_route_id <= cmd_route_id;
-                    end else if (remote_emergency && cmd_emergency_id == active_emergency_id)
+                    end else if (remote_emergency)
                         remote_emergency <= 1'b0;
                 end
                 ARTIFACT_SELECT, LECTURE_STATE, PLAYBACK_STATE: begin
                     master_artifact <= (cmd_artifact_id <= 8'd4) ? cmd_artifact_id[2:0] : 3'd7;
+                    if (cmd_type == ARTIFACT_SELECT && cmd_artifact_id <= 8'd4)
+                        preload_artifact <= cmd_artifact_id[2:0];
                     if (cmd_type == ARTIFACT_SELECT && cmd_confirmed &&
                         cmd_artifact_id <= 8'd4) begin
                         if (!info_active)

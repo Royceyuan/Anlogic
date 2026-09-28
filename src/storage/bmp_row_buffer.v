@@ -33,8 +33,6 @@ module bmp_row_buffer #(
     output wire                  input_continue
 );
 
-reg [15:0] line_mem0 [0:HIRES_WIDTH-1];
-reg [15:0] line_mem1 [0:HIRES_WIDTH-1];
 wire [COL_BITS-1:0] active_width = hires_frame ? HIRES_WIDTH : WIDTH;
 
 reg                  in_active;
@@ -53,13 +51,32 @@ reg [COL_BITS-1:0]   out_col;
 
 wire buf0_free;
 wire buf1_free;
+wire same_row = in_row == in_row_active;
+wire mem0_write = rst_n && in_valid &&
+    ((!in_active && buf0_free) ||
+     (in_active && same_row && !in_buf) ||
+     (in_active && !same_row && in_buf && buf0_free));
+wire mem1_write = rst_n && in_valid &&
+    ((!in_active && !buf0_free && buf1_free) ||
+     (in_active && same_row && in_buf) ||
+     (in_active && !same_row && !in_buf && buf1_free));
+wire [15:0] line_pixel0, line_pixel1;
+
+adaptive_row_ram #(.ADDR_WIDTH(COL_BITS), .DATA_DEPTH(HIRES_WIDTH)) u_line0 (
+    .clk(clk), .wr_en(mem0_write), .wr_addr(in_col), .wr_data(in_pixel),
+    .rd_addr(out_col), .rd_data(line_pixel0)
+);
+adaptive_row_ram #(.ADDR_WIDTH(COL_BITS), .DATA_DEPTH(HIRES_WIDTH)) u_line1 (
+    .clk(clk), .wr_en(mem1_write), .wr_addr(in_col), .wr_data(in_pixel),
+    .rd_addr(out_col), .rd_data(line_pixel1)
+);
 
 assign buf0_free = !ready0 && !(out_active && !out_buf);
 assign buf1_free = !ready1 && !(out_active &&  out_buf);
 
 assign out_valid    = out_active;
 assign out_row      = out_buf ? row1 : row0;
-assign out_pixel    = out_buf ? line_mem1[out_col] : line_mem0[out_col];
+assign out_pixel    = out_buf ? line_pixel1 : line_pixel0;
 assign out_last     = out_active && (out_col == active_width - 1'b1);
 assign out_row_done = out_valid && out_ready && out_last;
 assign input_continue = !ready0 && !ready1 && !out_active;
@@ -110,7 +127,6 @@ always @(posedge clk or negedge rst_n) begin
                     in_buf        <= 1'b0;
                     in_row_active <= in_row;
                     in_col_last   <= in_col;
-                    line_mem0[in_col] <= in_pixel;
                     if (in_col == active_width - 1'b1) begin
                         ready0    <= 1'b1;
                         row0      <= in_row;
@@ -121,7 +137,6 @@ always @(posedge clk or negedge rst_n) begin
                     in_buf        <= 1'b1;
                     in_row_active <= in_row;
                     in_col_last   <= in_col;
-                    line_mem1[in_col] <= in_pixel;
                     if (in_col == active_width - 1'b1) begin
                         ready1    <= 1'b1;
                         row1      <= in_row;
@@ -133,10 +148,6 @@ always @(posedge clk or negedge rst_n) begin
             end else if (in_row == in_row_active) begin
                 // Pixels within one row arrive in increasing destination X.
                 in_col_last <= in_col;
-                if (!in_buf)
-                    line_mem0[in_col] <= in_pixel;
-                else
-                    line_mem1[in_col] <= in_pixel;
 
                 if (in_col == active_width - 1'b1) begin
                     in_active <= 1'b0;
@@ -156,7 +167,6 @@ always @(posedge clk or negedge rst_n) begin
                     in_buf        <= 1'b1;
                     in_row_active <= in_row;
                     in_col_last   <= in_col;
-                    line_mem1[in_col] <= in_pixel;
                     if (in_col == active_width - 1'b1) begin
                         ready1    <= 1'b1;
                         row1      <= in_row;
@@ -166,7 +176,6 @@ always @(posedge clk or negedge rst_n) begin
                     in_buf        <= 1'b0;
                     in_row_active <= in_row;
                     in_col_last   <= in_col;
-                    line_mem0[in_col] <= in_pixel;
                     if (in_col == active_width - 1'b1) begin
                         ready0    <= 1'b1;
                         row0      <= in_row;
