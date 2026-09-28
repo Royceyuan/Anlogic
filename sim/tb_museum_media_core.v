@@ -1242,7 +1242,7 @@ module tb_museum_media_core #(
 endmodule
 
 // Clock models keep the integration test independent of vendor PLL macros.
-module sys_pll(input wire refclk, input wire reset,
+module system_clock_pll(input wire refclk, input wire reset,
                 output wire clk0_out, output wire clk1_out,
                 output wire clk2_out);
     assign clk0_out = refclk;
@@ -1250,7 +1250,7 @@ module sys_pll(input wire refclk, input wire reset,
     assign clk2_out = refclk;
 endmodule
 
-module video_pll_75m(input wire refclk, input wire reset,
+module hdmi_pixel_clock_pll(input wire refclk, input wire reset,
                      output wire clk0_out, output wire clk1_out);
     assign clk0_out = refclk;
     assign clk1_out = refclk;

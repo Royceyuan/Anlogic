@@ -1248,14 +1248,14 @@ reset_sync u_video_reset_sync (
     .clk(video_clk), .arst_n(init_done), .srst_n(video_rst_n)
 );
 
-sys_pll u_sys_pll (
+    system_clock_pll u_sys_pll (
     .refclk(clk_50m), .reset(1'b0),
     .clk0_out(), .clk1_out(mem_clk), .clk2_out(mem_clk_sft)
 );
 
 generate
     if (VIDEO_MODE_1280) begin : g_video_pll_1280
-        video_pll_75m u_video_pll (
+        hdmi_pixel_clock_pll u_video_pll (
             .refclk(clk_50m), .reset(~mem_rst_n),
             .clk0_out(video_clk), .clk1_out(video_clk_5x)
         );
@@ -2808,7 +2808,7 @@ assign video_adjusted_x = ENABLE_MAIN5_REMOTE ? main5_x_d3 : video_x_delayed;
 assign video_adjusted_y = ENABLE_MAIN5_REMOTE ? main5_y_d3 : video_y_delayed;
 
 generate if (ENABLE_MAIN5_REMOTE) begin : g_main5_adjust
-rgb888_adjust_main5 u_rgb888_adjust (
+    rgb888_picture_adjust u_rgb888_adjust (
     .clk(video_clk), .rst_n(video_rst_n),
     .de(video_de), .rgb_in(video_rgb),
     .brightness_index(main5_brightness_video),
@@ -3219,7 +3219,7 @@ assign vga_d  = video_rgb_out[23:12];
 
 generate
     if (ENABLE_AUDIO_VISUALIZER) begin : g_hdmi_audio_output
-        video_rgb_to_axis_1280x720 u_video_rgb_to_axis (
+        video_rgb_to_axis u_video_rgb_to_axis (
             .clk(video_clk), .rst(~video_rst_n), .vs_i(video_vs_out), .de_i(video_de_out),
             .rgb_i(video_rgb_out), .axis_user(axis_user), .axis_valid(axis_valid),
             .axis_last(axis_last), .axis_data(axis_data)
@@ -3249,7 +3249,7 @@ generate
             .O_ch2_tmds_data(audio_tmds_ch2), .O_clk_tmds_data(audio_tmds_clk)
         );
 
-        hdmi_phy_wrapper_v73 #(.DEVICE("EG")) u_hdmi_audio_phy (
+        hdmi_audio_video_phy #(.DEVICE("EG")) u_hdmi_audio_phy (
             .I_pixel_clk(video_clk), .I_serial_clk(video_clk_5x),
             .I_pixel_rst(~video_rst_n), .I_serial_rst(~video_rst_n),
             .I_tmds_channel_0(audio_tmds_ch0), .I_tmds_channel_1(audio_tmds_ch1),
