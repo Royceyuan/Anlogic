@@ -19,9 +19,9 @@
 
 本地 ModelSim 通过 MBP1 编解码、固定 UDP、端点、心跳适配、按键、工程页及旧本地控制器测试。独立网口诊断工程完成布局布线，建立 WNS +670 ps、保持 WNS +63 ps，bit 已生成。完整工程建立 WNS +125 ps、保持 WNS +24 ps、STA 覆盖率 99.79%；LUT 12523/19600、寄存器 6997/19600、BRAM9K 32/64、DSP 9/29、PLL 4/4。两份 bit 均已由对应数据库生成。完整布局布线保留工具对 SDRAM 自动放置和局部时钟布线的既有关键警告，报告未见多驱动或异常时序路径。本说明不把仿真、时序通过视为实板通信成功。
 
-2026-09-28 PC 直连完整 bit 的协议探针实测：20 秒收到副板 HELLO 1、HEARTBEAT 40、STATUS_QUERY 1、ACK 1、BAD 0；主板模拟器又收到 HELLO 1、HEARTBEAT 54、STATUS_QUERY 1、ACK 2、BAD 0，发送 `lecture 2` 后收到副板对 PLAYBACK_STATE 的 `result=0` ACK。说明此板当前可完成基本双向 UDP/MBP1 收发；副屏实际跳页和副板按键控制包尚未由本次日志验证。PC 的 UDP 5000 曾被 NI Time Synchronization (`lkTimeSync`) 占用；测试时临时停止该服务，测试结束应恢复。
+2026-09-28 PC 直连完整 bit 的协议探针实测：20 秒收到副板 HELLO 1、HEARTBEAT 40、STATUS_QUERY 1、ACK 1、BAD 0。主板模拟器发送 `lecture 2` 后收到副板对 PLAYBACK_STATE 的 `result=0` ACK。随后约 156 秒联调中收到 HELLO 1、HEARTBEAT 313、STATUS_QUERY 1、ACK 1、CONTROL 1、BAD 0；操作者设置 S-SW2:S-SW1=`00` 并按 KEY1，模拟器收到 `DISPLAY_PRESET seq=3231 preset=0`，回复 OK ACK 和 DISPLAY_STATUS。说明此板当前可完成基本双向 UDP/MBP1 收发及一项实板按键控制；副屏实际跳页和其余三组按键尚未由本次日志验证。PC 的 UDP 5000 曾被 NI Time Synchronization (`lkTimeSync`) 占用；测试时临时停止该服务，测试结束应恢复。
 
-实板仍须确认：独立网口诊断工程的 UDP 回环、五图轮播与预载独立、讲解切简介、应急覆盖与恢复、SW4 工程页、四键四组控制、失联及重连。旧的 `release/hx4s20_secondary_native720_v2.bit` 是已知可用基线，不应覆盖。当前用户尚未授权自动烧录实板。
+实板仍须确认：独立网口诊断工程的 UDP 回环、五图轮播与预载独立、讲解切简介、应急覆盖与恢复、SW4 工程页、其余按键控制、失联及重连。旧的 `release/hx4s20_secondary_native720_v2.bit` 是已知可用基线，不应覆盖。当前用户尚未授权自动烧录实板。
 
 ## 边界
 
