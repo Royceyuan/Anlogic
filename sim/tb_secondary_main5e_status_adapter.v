@@ -51,6 +51,9 @@ initial begin
     state(8'd2,8'hff,8'd0,4'd3);
     if (info_active || preload!=3 || master!=2 || link_state!=1)
         $fatal(1,"overview must preload without switching");
+    repeat(4) state(8'd2,8'hff,8'd0,4'd3);
+    if (page==0)
+        $fatal(1,"periodic overview heartbeat stopped the carousel");
     state(8'd2,8'd0,8'd0,4'd3);
     if (!info_active || info_artifact!=2)
         $fatal(1,"confirmed lecture must show actual artifact");

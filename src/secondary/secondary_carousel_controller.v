@@ -124,9 +124,11 @@ always @(posedge clk or negedge rst_n) begin
                     link_cycles <= 27'd0;
                     master_artifact <= (cmd_artifact_id <= 8'd4) ? cmd_artifact_id[2:0] : 3'd7;
                     if (cmd_mode == 8'd1) begin
-                        info_active <= 1'b0;
-                        page_index <= STREAMING ? resume_page_index : 3'd0;
-                        page_cycles <= 28'd0;
+                        if (info_active) begin
+                            info_active <= 1'b0;
+                            page_index <= STREAMING ? resume_page_index : 3'd0;
+                            page_cycles <= 28'd0;
+                        end
                     end else if (cmd_mode == 8'd2 && cmd_artifact_id <= 8'd4) begin
                         if (preload_artifact > 3'd4)
                             preload_artifact <= cmd_artifact_id[2:0];

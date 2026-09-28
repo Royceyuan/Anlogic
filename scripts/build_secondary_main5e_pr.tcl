@@ -1,5 +1,5 @@
 import_device eagle_s20.db -package EG4S20BG256
-set secondary_root [file dirname [file dirname [file normalize [info script]]]]
+set secondary_root .
 set secondary_build [file join $secondary_root _build_secondary_main5e]
 file mkdir $secondary_build
 cd $secondary_root

@@ -21,6 +21,12 @@
 
 2026-09-28 PC 直连完整 bit 的协议探针实测：20 秒收到副板 HELLO 1、HEARTBEAT 40、STATUS_QUERY 1、ACK 1、BAD 0。主板模拟器发送 `lecture 2` 后收到副板对 PLAYBACK_STATE 的 `result=0` ACK。随后约 156 秒联调中收到 HELLO 1、HEARTBEAT 313、STATUS_QUERY 1、ACK 1、CONTROL 1、BAD 0；操作者设置 S-SW2:S-SW1=`00` 并按 KEY1，模拟器收到 `DISPLAY_PRESET seq=3231 preset=0`，回复 OK ACK 和 DISPLAY_STATUS。说明此板当前可完成基本双向 UDP/MBP1 收发及一项实板按键控制；副屏实际跳页和其余三组按键尚未由本次日志验证。PC 的 UDP 5000 曾被 NI Time Synchronization (`lkTimeSync`) 占用；测试时临时停止该服务，测试结束应恢复。
 
+### 2026-09-28 轮播心跳修复 v02
+
+完整 v01 bit 与 PC 模拟主板握手后，SW4 返回展陈页时始终停在越王勾践剑。根因由 ModelSim 复现：主板每 500 ms 发一次总览心跳，`secondary_carousel_controller` 每次都把 5 秒轮播计时清零。v02 只在从简介返回总览时重置一次。新增的周期心跳回归在修复前报 `periodic overview heartbeat stopped the carousel`，修复后通过；原有轮播、简介、应急与页面测试通过。
+
+在工程根目录执行 `D:\Anlogic\TD5.6.2\bin\td_commands_prompt.exe ./scripts/build_secondary_main5e_pr.tcl`，再执行同一工具的 `./scripts/build_secondary_main5e_carousel_fix_v02_bitgen.tcl`。构建脚本使用相对路径，运行时当前目录须为工程根目录。新 bit 为 `release/hx4s20_secondary_main5e_carousel_fix_v02.bit`，2026-09-28 12:58 生成，SHA-256 `676BE738DE57DF6288495D81BBFA0CC86083FA141FCA90FC2F2DD8F3633881E7`；最终 setup WNS +112 ps/TNS 0、hold WNS +27 ps/TNS 0，STA 覆盖率 99.79%，LUT 12408/19600、寄存器 7008/19600、BRAM9K 32/64、DSP 9/29、PLL 4/4。旧 `release/hx4s20_secondary_main5e_v01.bit` 的 SHA-256 仍为 `1AFE76C32924A91C5633D410398A4763201E27560EBC3784F1D3335E19F3B443`。**v02 硬件状态：NOT TESTED**；需由操作者 SRAM 烧录后验证持续轮播、预载不跳页、讲解切简介、应急覆盖与返回。此次 PC 直连还观察到一次 PHY 为 1 Gbps 但无 ARP/MBP1 报文，拔插网线后恢复握手；原因未确认。
+
 实板仍须确认：独立网口诊断工程的 UDP 回环、五图轮播与预载独立、讲解切简介、应急覆盖与恢复、SW4 工程页、其余按键控制、失联及重连。旧的 `release/hx4s20_secondary_native720_v2.bit` 是已知可用基线，不应覆盖。当前用户尚未授权自动烧录实板。
 
 ## 边界
