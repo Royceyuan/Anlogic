@@ -76,8 +76,8 @@ end
 always @(posedge clk) if (command_done && command_valid)
     command_count <= command_count + 1;
 always @(posedge clk) if (dut.send && dut.send_type==8'h01) begin
-    if(dut.send_payload[95:64]!==32'h00050002 ||
-       dut.send_payload[63:32] !== (ENABLE_CONTROL ? 32'hff : 32'h7f))
+    if(dut.send_payload[95:64]!==32'h00050003 ||
+       dut.send_payload[63:32] !== (ENABLE_CONTROL ? 32'h1ff : 32'h7f))
         $fatal(1,"HELLO version / 1x-pan capability mismatch");
 end
 always @(posedge clk) if (host_rx_valid) begin

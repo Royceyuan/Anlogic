@@ -435,6 +435,7 @@ wire [1:0] lecture_detail_index;
 wire [2:0] lecture_artifact_index;
 wire lecture_preloading;
 wire lecture_cache_ready;
+wire [3:0] lecture_cached_artifact;
 wire lecture_active;
 wire lecture_paused;
 wire lecture_finished;
@@ -1071,6 +1072,7 @@ generate
             .detail_index(lecture_detail_index),
             .artifact_index(lecture_artifact_index),
             .preloading(lecture_preloading), .cache_ready(lecture_cache_ready),
+            .cached_artifact(lecture_cached_artifact),
             .lecture_active(lecture_active), .lecture_paused(lecture_paused),
             .lecture_finished(lecture_finished), .audio_restart(lecture_audio_restart),
             .display_slot(lecture_display_slot),
@@ -1088,6 +1090,7 @@ generate
         assign lecture_detail_index = 2'd0;
         assign lecture_artifact_index = 3'd0;
         assign lecture_preloading = 1'b0;
+        assign lecture_cached_artifact = 4'hf;
         assign lecture_cache_ready = 1'b0;
         assign lecture_active = 1'b0;
         assign lecture_paused = 1'b0;
@@ -3307,6 +3310,30 @@ wire [7:0] main5_error = (image_load_error || writer_error || row_overflow) ? 8'
 assign main5_mode = emergency_active_50m ? 8'd3 :
                     main5_error != 0 ? 8'd4 :
                     !sd_init_done ? 8'd0 : lecture_active ? 8'd2 : 8'd1;
+reg [3:0] main5_sw_ff1, main5_sw_ff2;
+reg [23:0] main5_ui_previous;
+wire main5_entry_ready = !lecture_active && !recovery_busy && !emergency_active_50m &&
+                        overview_cache_ready && museum_preload_valid &&
+                        lecture_cache_ready && audio_prepared && subtitle_entry_ready &&
+                        lecture_artifact_index == museum_preload_index &&
+                        main5_sw_ff2[2:0] == museum_preload_index;
+wire [23:0] main5_ui = {{1'b1, recovery_busy, lecture_preloading,
+                         lecture_paused, main5_sw_ff2},
+                        1'b0, overview_selected_ctrl,
+                        (main5_sw_ff2[2:0] < 5 ? {1'b0, main5_sw_ff2[2:0]} : 4'hf),
+                        (recovery_busy ? 4'hf : lecture_cached_artifact),
+                        (main5_entry_ready ? {1'b0, lecture_artifact_index} : 4'hf)};
+always @(posedge clk_50m or negedge write_rst_n) begin
+    if (!write_rst_n) begin
+        main5_sw_ff1 <= 4'd0;
+        main5_sw_ff2 <= 4'd0;
+        main5_ui_previous <= 24'd0;
+    end else begin
+        main5_sw_ff1 <= sw;
+        main5_sw_ff2 <= main5_sw_ff1;
+        main5_ui_previous <= main5_ui;
+    end
+end
 wire [7:0] main5_artifact = lecture_active ? {5'd0, lecture_artifact_index} :
                             {5'd0, overview_selected_ctrl};
 wire [7:0] main5_phase = lecture_active ?
@@ -3315,7 +3342,7 @@ always @(posedge clk_50m or negedge write_rst_n) begin
     if (!write_rst_n)
         main5_display_changed <= 1'b0;
     else
-        main5_display_changed <= (|key_press_pulse) ||
+        main5_display_changed <= (|key_press_pulse) || (main5_ui != main5_ui_previous) ||
                                  (main5_ack_ff2 != main5_ack_seen) ||
                                  (main5_pan_status_ff2 != main5_pan_status_seen) ||
                                  (main5_phase != main5_display_phase_q);
@@ -3327,8 +3354,8 @@ wire [7:0] main5_play_state = !lecture_active ? 8'd0 :
 wire [31:0] main5_audio_frame = lecture_active ? lecture_audio_frame_index : 32'd0;
 assign main5_heartbeat = {main5_mode, main5_artifact, main5_phase,
                           main5_play_state, {7'd0, emergency_active_50m},
-                          main5_preset_applied, main5_error, 8'd0,
-                          main5_audio_frame, 15'd0, emergency_active_50m, 16'd0};
+                          main5_preset_applied, main5_error, main5_ui[23:16],
+                          main5_audio_frame, 15'd0, emergency_active_50m, main5_ui[15:0]};
 assign main5_playback = {main5_artifact, main5_play_state, main5_phase,
                          main5_preset_applied, main5_audio_frame};
 assign main5_display = {main5_preset_applied,

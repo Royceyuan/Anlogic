@@ -57,6 +57,7 @@ initial begin
  overview_ready=1;@(negedge clk);
  for(i=0;i<4;i=i+1)check_load(i,i,4);
  if(!cache_ready||preloading)$fatal(1,"initial cache not ready");
+ if(dut.cached_artifact!==4'd4)$fatal(1,"initial cached artifact telemetry");
  audio_prepared=1;confirm=1;@(negedge clk);confirm=0;
  if(!active||display_frame_slot!=0)$fatal(1,"lecture start failed");
  key_pause=1;@(negedge clk);key_pause=0;if(!paused)$fatal(1,"pause failed");
@@ -65,12 +66,15 @@ initial begin
  pulse_audio;displayed_frame_slot=1;repeat(2)@(negedge clk);
  if(load_request)$fatal(1,"detail 1 overwritten while displayed");
  pulse_audio;pulse_audio;displayed_frame_slot=2;repeat(2)@(negedge clk);check_load(1,1,2);
+ if(dut.cached_artifact!==4'hf)$fatal(1,"partially overwritten cache reported ready");
  pulse_audio;displayed_frame_slot=3;repeat(2)@(negedge clk);check_load(2,2,2);
  if(!preloading)$fatal(1,"detail 3 preload started before returning to full");
  pulse_audio;
  if(display_frame_slot!=0||!final_full_active||finished)
   $fatal(1,"final full view did not start before audio end");
  displayed_frame_slot=0;display_transition_busy=1;repeat(2)@(negedge clk);check_load(3,3,2);
+ if(dut.cached_artifact!==4'd2 || artifact!==3'd4)
+  $fatal(1,"background cache confused with playing artifact");
  display_transition_busy=0;
  audio_stream_done=0;audio_drained=0;pulse_audio;
  if(finished)$fatal(1,"finished before final PCM frame");

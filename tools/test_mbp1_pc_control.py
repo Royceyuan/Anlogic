@@ -10,6 +10,12 @@ from mbp1_pc_control import Peer, packet, parse
 
 
 def main():
+    hb = bytearray(16)
+    assert "旧固件" in mbp1_pc_control.local_status_text(hb)
+    hb[7], hb[14], hb[15] = 0xb3, 0x23, 0x3f
+    text = mbp1_pc_control.local_status_text(hb)
+    assert all(s in text for s in ("SW4～1=0011", "高亮=2", "预载目标=3",
+                                  "图片已缓存=3", "可进入讲解=无", "暂停=True", "预载中=True"))
     # Binding failure must exit cleanly without creating/destroying a Tk app.
     with patch.object(socket, "socket") as factory, patch("tkinter.Tk") as window:
         factory.return_value.bind.side_effect = PermissionError(10013, "port unavailable")

@@ -19,6 +19,17 @@ def percent_text(field, index):
     return f"{value:+d}%" if field in (0, 3) and value else f"{value}%"
 
 
+def local_status_text(hb):
+    if not hb[7] & 0x80:
+        return "本地状态扩展：旧固件未提供"
+    def artifact(value):
+        return str(value) if value < 5 else "无"
+    return (f"SW4～1={hb[7]&15:04b}  高亮={artifact(hb[14]>>4)}  "
+            f"预载目标={artifact(hb[14]&15)}\n"
+            f"图片已缓存={artifact(hb[15]>>4)}  可进入讲解={artifact(hb[15]&15)}  "
+            f"暂停={bool(hb[7]&16)}  预载中={bool(hb[7]&32)}  恢复中={bool(hb[7]&64)}")
+
+
 RESULTS = {0: "已接收；以状态回报为准", 2: "长度错误", 3: "不支持（检查 bit）",
            4: "BUSY：请等转场/恢复结束后重新操作", 5: "状态不匹配或参数越界"}
 
@@ -276,6 +287,7 @@ def main():
         if 2 in peer.status:
             hb = peer.status[2][0]
             lines.append(f"模式={hb[0]}  文物={hb[1]}  阶段={hb[2]}  播放状态={hb[3]}  应急={hb[4]}  错误={hb[6]}")
+            lines.append(local_status_text(hb))
         if 0x16 in peer.status:
             d = peer.status[0x16][0]
             x, y = struct.unpack(">hh", d[8:])

@@ -459,6 +459,40 @@ module tb_museum_media_core #(
         end
 
         if (MAIN5_REMOTE_TEST) begin
+            force dut.lecture_active=1'b0;
+            force dut.lecture_paused=1'b0;
+            force dut.recovery_busy=1'b0;
+            force dut.emergency_active_50m=1'b0;
+            force dut.overview_selected_ctrl=3'd2;
+            force dut.lecture_artifact_index=3'd3;
+            force dut.lecture_cache_ready=1'b1;
+            force dut.lecture_cached_artifact=4'd3;
+            force dut.overview_cache_ready=1'b1;
+            force dut.audio_prepared=1'b1;
+            force dut.subtitle_entry_ready=1'b1;
+            sw=4'd3;
+            repeat(5) @(negedge clk_50m);
+            if(dut.main5_heartbeat[15:0]!==16'h2333 || !dut.main5_heartbeat[71])
+                $fatal(1,"overview highlight/target/ready telemetry");
+            force dut.lecture_active=1'b1;
+            force dut.lecture_paused=1'b1;
+            force dut.transition_active_ff2_50m=1'b1;
+            force dut.lecture_artifact_index=3'd1;
+            #1;
+            if(dut.main5_heartbeat[119:112]!==8'd1 || dut.main5_heartbeat[103:96]!==8'd3 ||
+               !dut.main5_heartbeat[68] || dut.main5_heartbeat[15:0]!==16'h233f)
+                $fatal(1,"paused transition/current lecture/background cache telemetry");
+            sw=4'd7;
+            repeat(5) @(negedge clk_50m);
+            if(dut.main5_heartbeat[11:8]!==4'hf || dut.main5_heartbeat[3:0]!==4'hf)
+                $fatal(1,"invalid switches reported ready");
+            release dut.lecture_active; release dut.lecture_paused;
+            release dut.recovery_busy; release dut.emergency_active_50m;
+            release dut.overview_selected_ctrl; release dut.lecture_artifact_index;
+            release dut.lecture_cache_ready; release dut.lecture_cached_artifact;
+            release dut.overview_cache_ready; release dut.audio_prepared;
+            release dut.subtitle_entry_ready; release dut.transition_active_ff2_50m;
+            sw=0;
             saved_mode=dut.transition_mode; saved_progress=dut.transition_progress;
             for(mode_check=0;mode_check<8;mode_check=mode_check+1)
               for(progress_check=0;progress_check<256;progress_check=progress_check+1) begin

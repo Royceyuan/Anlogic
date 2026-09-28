@@ -1,5 +1,7 @@
 # HX4S20 多媒体工程交接
 
+> 2026-09-28 最新：主板状态补齐已生成 `release/hx4s20_main5d_status.bit`，SHA-256 `7DCD47FB70A3E53DAFA34B6095AC2D06F781216E9E6F53A1CC08BB10FFD82D8A`。HEARTBEAT 保留字节扩展独立高亮、四拨码、预载目标、完整图片缓存/可进入讲解文物、暂停/预载/恢复标志；无需按键事件或次数。协议长和原字段不变，PC 面板和联调计划已更新。仿真及完整构建通过，setup +0.065 ns、hold +0.027 ns；Slice 97.64%，待用户实板验收。旧 bit 保留；未改媒体控制行为或 TF 素材。见 [状态补齐验证](docs/MAIN5D_状态补齐验证_20260928.md)。
+
 > 2026-09-27 最新控制修复：新增 `release/hx4s20_main5d_control_repair.bit`，SHA-256 `6817F1F111740635EA8732DCEB8F3BFCD6BDAB895EEE28EE4EE12E979528D1B7`。修复转场竞争后远程命令卡住、暂停时不能直接缩放/平移，支持 1× 平移露底和 20/40 步长；PC/OSD 四参数显示百分比。最终 setup +0.298 ns、hold +0.023 ns，TNS 均 0；Slice 9519（97.13%），原 bit 保留。仿真通过、待用户实板验收；未改 TF 素材或音画字幕时间轴。见 [修复验证](docs/MAIN5D_控制修复验证_20260927.md) 及 [操作说明](docs/MAIN5D_PC控制面板与验收_20260927.md)。下文旧“未修改 RTL/bit”和仅 2× 视口说明为历史记录。
 
 > 2026-09-27 PC 控制工具：新增 `tools/mbp1_pc_control.py`，对接现有 MAIN-5D bit 的预设、四参数与 2× 视口控制，使用 Tkinter 和标准库 UDP。旧 5B 诊断脚本保持不变。操作及实板验收见 [MAIN5D PC 控制面板](docs/MAIN5D_PC控制面板与验收_20260927.md)。本地回环协议测试通过；PC→实板画面效果仍待用户验收，本次不改 RTL/bit。

@@ -23,7 +23,8 @@ module museum_lecture_controller #(
     output reg lecture_active, output reg lecture_paused, output reg lecture_finished,
     output reg audio_restart, output reg [1:0] display_slot,
     output wire [2:0] display_frame_slot, output reg media_error,
-    output wire [31:0] audio_frame_index, output reg final_full_active
+    output wire [31:0] audio_frame_index, output reg final_full_active,
+    output wire [3:0] cached_artifact
 );
 
 localparam [31:0] END_HOLD_CYCLES = (CLOCK_HZ * 6) / 5;
@@ -48,6 +49,9 @@ assign detail_index = load_slot;
 assign display_frame_slot = (display_slot == 2'd0) ? current_full_slot :
                                                     {1'b0, display_slot};
 assign audio_frame_index = audio_frames_played;
+// Image cache only: background audio/subtitles may still need preparation.
+assign cached_artifact = queued_ready ? {1'b0, queued_artifact} :
+                         cache_ready && current_cache_intact ? {1'b0, artifact_index} : 4'hf;
 
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
