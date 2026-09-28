@@ -25,9 +25,11 @@
 
 完整 v01 bit 与 PC 模拟主板握手后，SW4 返回展陈页时始终停在越王勾践剑。根因由 ModelSim 复现：主板每 500 ms 发一次总览心跳，`secondary_carousel_controller` 每次都把 5 秒轮播计时清零。v02 只在从简介返回总览时重置一次。新增的周期心跳回归在修复前报 `periodic overview heartbeat stopped the carousel`，修复后通过；原有轮播、简介、应急与页面测试通过。
 
-在工程根目录执行 `D:\Anlogic\TD5.6.2\bin\td_commands_prompt.exe ./scripts/build_secondary_main5e_pr.tcl`，再执行同一工具的 `./scripts/build_secondary_main5e_carousel_fix_v02_bitgen.tcl`。构建脚本使用相对路径，运行时当前目录须为工程根目录。新 bit 为 `release/hx4s20_secondary_main5e_carousel_fix_v02.bit`，2026-09-28 12:58 生成，SHA-256 `676BE738DE57DF6288495D81BBFA0CC86083FA141FCA90FC2F2DD8F3633881E7`；最终 setup WNS +112 ps/TNS 0、hold WNS +27 ps/TNS 0，STA 覆盖率 99.79%，LUT 12408/19600、寄存器 7008/19600、BRAM9K 32/64、DSP 9/29、PLL 4/4。旧 `release/hx4s20_secondary_main5e_v01.bit` 的 SHA-256 仍为 `1AFE76C32924A91C5633D410398A4763201E27560EBC3784F1D3335E19F3B443`。**v02 硬件状态：NOT TESTED**；需由操作者 SRAM 烧录后验证持续轮播、预载不跳页、讲解切简介、应急覆盖与返回。此次 PC 直连还观察到一次 PHY 为 1 Gbps 但无 ARP/MBP1 报文，拔插网线后恢复握手；原因未确认。
+在工程根目录执行 `D:\Anlogic\TD5.6.2\bin\td_commands_prompt.exe ./scripts/build_secondary_main5e_pr.tcl`，再执行同一工具的 `./scripts/build_secondary_main5e_carousel_fix_v02_bitgen.tcl`。构建脚本使用相对路径，运行时当前目录须为工程根目录。新 bit 为 `release/hx4s20_secondary_main5e_carousel_fix_v02.bit`，2026-09-28 12:58 生成，提交 `db42c7c`，SHA-256 `676BE738DE57DF6288495D81BBFA0CC86083FA141FCA90FC2F2DD8F3633881E7`；最终 setup WNS +112 ps/TNS 0、hold WNS +27 ps/TNS 0，STA 覆盖率 99.79%，LUT 12408/19600、寄存器 7008/19600、BRAM9K 32/64、DSP 9/29、PLL 4/4。旧 `release/hx4s20_secondary_main5e_v01.bit` 的 SHA-256 仍为 `1AFE76C32924A91C5633D410398A4763201E27560EBC3784F1D3335E19F3B443`。
 
-实板仍须确认：独立网口诊断工程的 UDP 回环、五图轮播与预载独立、讲解切简介、应急覆盖与恢复、SW4 工程页、其余按键控制、失联及重连。旧的 `release/hx4s20_secondary_native720_v2.bit` 是已知可用基线，不应覆盖。当前用户尚未授权自动烧录实板。
+**v02 实板分项通过：**操作者 SRAM 烧录后，PC 模拟主板连续 25 秒发心跳，收到副板 HELLO 1、HEARTBEAT 50、STATUS_QUERY 1、ACK 1、BAD 0；副屏在心跳期间继续切图。发送 `preload 2` 后仍轮播；发送 `lecture 2` 后收到 PLAYBACK_STATE 成功 ACK，副屏显示金缕玉衣简介与路线图；`emergency on` 显示逃生图，`emergency off` 恢复轮播；讲解后 `overview` 返回轮播且继续切图。操作者在 S-SW2:S-SW1=`00` 按 KEY2，模拟器收到 `DISPLAY_PRESET seq=607 preset=1 -> OK`，回报参数 `[5,3,4,4]`；该轮监听统计 HELLO 1、HEARTBEAT 236、STATUS_QUERY 1、ACK 3、CONTROL 1、BAD 0。上述为 PC 模拟主板联调，不等同双板直连验证。此次 PC 直连还观察到一次 PHY 为 1 Gbps 但无 ARP/MBP1 报文，拔插网线后恢复握手；原因未确认。
+
+实板仍须确认：主副板直连联动、其余按键模式、断线重连与长时间稳定性；独立网口诊断工程的 UDP 回环尚未单独上板。旧的 `release/hx4s20_secondary_native720_v2.bit` 是已知可用基线，不应覆盖。当前用户尚未授权自动烧录实板。
 
 ## 边界
 
