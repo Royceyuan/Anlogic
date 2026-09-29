@@ -470,7 +470,7 @@ reg [6:0] ascii_name_x_s0;
 reg [7:0] ascii_size_x_s0;
 reg [2:0] ascii_col_s0;
 reg ascii_x_valid_s0;
-wire [2:0] ascii_x_low = SHOW_PERCENT && y_i>=40 ? x_i-11'd12 :
+wire [2:0] ascii_x_low = SHOW_PERCENT && y_i>=56 ? x_i-11'd12 :
                          x_i<202 ? x_i-11'd22 :
                          x_i<332 ? x_i-11'd202 : x_i-11'd332;
 wire [3:0] local_y = ascii_y_s0;
@@ -519,7 +519,7 @@ end
 always @(*) begin
     chosen_ascii=5'd31; slot=0;
     local_x=0;
-    if (SHOW_PERCENT && x_s0>=12 && x_s0<492 && y_s0>=40 && y_s0<48) begin
+    if (SHOW_PERCENT && x_s0>=12 && x_s0<492 && y_s0>=56 && y_s0<64) begin
         case(percent_slot_s0)
             0:chosen_ascii=percent_label_s0;
             2:chosen_ascii=percent_sign_s0;
@@ -528,18 +528,18 @@ always @(*) begin
             5:chosen_ascii={1'b0,percent_digits_s0[3:0]};
             6:chosen_ascii=27;
         endcase
-    end else if (x_s0>=22 && x_s0<102 && y_s0>=12 && y_s0<20 && !ready_s2) begin
+    end else if (x_s0>=22 && x_s0<182 && y_s0>=12 && y_s0<28 && !ready_s2) begin
         local_x={4'd0,ascii_name_x_s0};
-        slot=local_x[4:3];
+        slot=local_x[6:3];
         case(slot)
-            2:chosen_ascii={2'b00,artifact};
+            4:chosen_ascii={2'b00,artifact};
         endcase
-    end else if (x_s0>=202 && x_s0<234 && y_s0>=12 && y_s0<20) begin
+    end else if (x_s0>=202 && x_s0<266 && y_s0>=12 && y_s0<28) begin
         local_x={3'd0,ascii_size_x_s0};
-        if (stage>=2 && stage<=4 && local_x[4:3]==2)
+        if (stage>=2 && stage<=4 && local_x[6:3]==4)
             chosen_ascii=stage-1'b1;
-    end else if (x_s0>=22 && x_s0<(effect==3'd4 ? 70 : 46) &&
-                 y_s0>=24 && y_s0<32) begin
+    end else if (x_s0>=22 && x_s0<70 &&
+                 y_s0>=32 && y_s0<48) begin
         local_x={4'd0,ascii_name_x_s0};
         if (effect==3'd4) begin
             case(local_x[5:3])
@@ -551,10 +551,10 @@ always @(*) begin
                 5:chosen_ascii=5'd19; // M
             endcase
         end
-    end else if (x_s0>=202 && x_s0<274 && y_s0>=24 && y_s0<32) begin
+    end else if (x_s0>=202 && x_s0<274 && y_s0>=32 && y_s0<40) begin
         local_x={3'd0,ascii_size_x_s0};
         chosen_ascii=ascii_code(ascii_size_x_s0[6:3],width_bcd,height_bcd);
-    end else if (x_s0>=332 && x_s0<380 && y_s0>=24 && y_s0<32) begin
+    end else if (x_s0>=332 && x_s0<380 && y_s0>=32 && y_s0<40) begin
         local_x=x_s0-332;
         case(local_x[5:3])
             0:chosen_ascii=5'd17; // Z
@@ -573,23 +573,24 @@ always @(*) begin
     early_glyph=0;
     early_row=0;
     early_col=0;
-    if (x_i>=22 && x_i<102 && y_i>=12 && y_i<20 && !ready_s2) begin
-        early_glyph=(x_i<30) ? 5'd18 : (x_i<38) ? 5'd19 : 5'd0;
-        early_row=(y_i-12)<<1;
-        early_col=(x_i-22)<<1;
-    end else if (x_i>=202 && x_i<234 && y_i>=12 && y_i<20) begin
-        early_glyph=stage_glyph(stage,(x_i-202)>>3);
-        early_row=(y_i-12)<<1;
-        early_col=(x_i-202)<<1;
-    end else if (x_i>=22 && x_i<46 && y_i>=24 && y_i<32) begin
+    // Chinese and TF names retain every source pixel: 8x8 decimation loses strokes.
+    if (x_i>=22 && x_i<182 && y_i>=12 && y_i<28 && !ready_s2) begin
+        early_glyph=(x_i<38) ? 5'd18 : (x_i<54) ? 5'd19 : 5'd0;
+        early_row=y_i-12;
+        early_col=x_i-22;
+    end else if (x_i>=202 && x_i<266 && y_i>=12 && y_i<28) begin
+        early_glyph=stage_glyph(stage,(x_i-202)>>4);
+        early_row=y_i-12;
+        early_col=x_i-202;
+    end else if (x_i>=22 && x_i<70 && y_i>=32 && y_i<48) begin
         case(effect)
-            0:early_glyph=(x_i<30) ? 5'd9 : (x_i<38) ? 5'd10 : 5'd0; // 标准
-            1:early_glyph=(x_i<30) ? 5'd11 : (x_i<38) ? 5'd12 : 5'd0; // 明亮
-            2:early_glyph=(x_i<30) ? 5'd13 : (x_i<38) ? 5'd14 : 5'd15; // 高对比
-            3:early_glyph=(x_i<30) ? 5'd16 : (x_i<38) ? 5'd17 : 5'd0; // 柔和
+            0:early_glyph=(x_i<38) ? 5'd9 : (x_i<54) ? 5'd10 : 5'd0; // 标准
+            1:early_glyph=(x_i<38) ? 5'd11 : (x_i<54) ? 5'd12 : 5'd0; // 明亮
+            2:early_glyph=(x_i<38) ? 5'd13 : (x_i<54) ? 5'd14 : 5'd15; // 高对比
+            3:early_glyph=(x_i<38) ? 5'd16 : (x_i<54) ? 5'd17 : 5'd0; // 柔和
         endcase
-        early_row=(y_i-24)<<1;
-        early_col=(x_i-22)<<1;
+        early_row=y_i-32;
+        early_col=x_i-22;
     end
 end
 
@@ -616,7 +617,7 @@ always @(posedge clk or negedge rst_n) begin
         x_s0<=x_i;y_s0<=y_i;rgb_s0<=rgb_i;
         // Compute text-row coordinates in the existing s0 stage before region
         // selection. Output latency remains three clocks.
-        ascii_y_s0<=y_i<20 ? y_i-10'd12 : y_i<32 ? y_i-10'd24 : y_i-10'd40;
+        ascii_y_s0<=y_i<28 ? y_i-10'd12 : y_i<48 ? y_i-10'd32 : y_i-10'd56;
         ascii_name_x_s0<=x_i-11'd22;
         ascii_size_x_s0<=x_i-11'd202;
         ascii_col_s0<=ascii_x_low-3'd1;
@@ -624,13 +625,13 @@ always @(posedge clk or negedge rst_n) begin
         hs_s1<=hs_s0;vs_s1<=vs_s0;de_s1<=de_s0;
         x_s1<=x_s0;y_s1<=y_s0;rgb_s1<=rgb_s0;
         panel_s1<=panel_enable && de_s0 && x_s0>=12 && x_s0<492 &&
-                  y_s0>=8 && y_s0<(SHOW_PERCENT ? 52 : 36);
-        name_s1<=de_s0 && ready_s2 && x_s0>=22 && x_s0<102 &&
-                 y_s0>=12 && y_s0<20;
-        if (x_s0>=22 && x_s0<102 && y_s0>=12 && y_s0<20)
+                  y_s0>=8 && y_s0<(SHOW_PERCENT ? 68 : 52);
+        name_s1<=de_s0 && ready_s2 && x_s0>=22 && x_s0<182 &&
+                 y_s0>=12 && y_s0<28;
+        if (x_s0>=22 && x_s0<182 && y_s0>=12 && y_s0<28)
             name_rd_addr<=({artifact,8'd0}+{artifact,6'd0})+
-                          ((y_s0-12)<<5)+((y_s0-12)<<3)+((x_s0-22)>>2);
-        name_bit_s1<=3'd7-((x_s0-11'd22)<<1);
+                          ((y_s0-12)<<4)+((y_s0-12)<<2)+((x_s0-22)>>3);
+        name_bit_s1<=3'd7-(x_s0-11'd22);
         static_s1<=glyph_s0!=0;
         glyph_col_s1<=glyph_col_s0;
         ascii_s1<=chosen_ascii;
@@ -641,13 +642,11 @@ always @(posedge clk or negedge rst_n) begin
         x_o<=x_s1;y_o<=y_s1;rgb_s2<=rgb_s1;
         panel_s2<=panel_s1;name_s2<=name_s1;
         static_s2<=static_s1;name_bit_s2<=name_bit_s1;
-        glyph_hit_s2<=glyph_row_s1[15-glyph_col_s1] |
-                      glyph_row_s1[14-glyph_col_s1];
+        glyph_hit_s2<=glyph_row_s1[15-glyph_col_s1];
         ascii_hit_s2<=ascii_valid_s1 && ascii_bits[4-ascii_col_s1];
     end
 end
-wire text_hit = (name_s2 && (name_q[name_bit_s2] |
-                             name_q[name_bit_s2-1'b1])) ||
+wire text_hit = (name_s2 && name_q[name_bit_s2]) ||
                 (static_s2 && glyph_hit_s2) || ascii_hit_s2;
 assign rgb_o=!de_o ? 24'd0 :
              !panel_s2 ? rgb_s2 :
