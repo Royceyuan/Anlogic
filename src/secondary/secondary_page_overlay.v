@@ -211,18 +211,18 @@ always @(*) begin
         if (emergency_frame) begin
             if (emergency_bitmap_frame) begin
                 rgb = base_rgb;
-                if (highlight_on && x >= 11'd290 && x < 11'd850 &&
-                    y >= 10'd125 && y < 10'd540 &&
+                if (highlight_on && x >= 11'd410 && x < 11'd830 &&
+                    y >= 10'd260 && y < 10'd615 &&
+                    base_rgb[23:16] > 8'd150 &&
+                    base_rgb[15:8] < 8'd110 &&
+                    base_rgb[7:0] < 8'd90)
+                    rgb = 24'hFF7350;
+                if (highlight_on && x >= 11'd735 && x < 11'd850 &&
+                    y >= 10'd545 && y < 10'd615 &&
                     base_rgb[23:16] < 8'd80 &&
-                    base_rgb[15:8] > 8'd105 &&
+                    base_rgb[15:8] > 8'd80 &&
                     base_rgb[7:0] < 8'd115)
                     rgb = 24'h52ED79;
-                if (highlight_on && x >= 11'd610 && x < 11'd660 &&
-                    y >= 10'd285 && y < 10'd340 &&
-                    base_rgb[23:16] > 8'd150 &&
-                    base_rgb[15:8] < 8'd80 &&
-                    base_rgb[7:0] < 8'd80)
-                    rgb = 24'hFF6464;
             end else begin
                 rgb = 24'h142033;
                 if (y < 10'd128) rgb = 24'hA30F20;

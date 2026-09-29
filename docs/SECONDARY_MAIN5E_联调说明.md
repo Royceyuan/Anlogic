@@ -35,7 +35,15 @@
 
 ModelSim `vsim -c -do run_secondary_local.do`、`run_secondary_main5e_status_adapter.do`、`run_secondary_main5e_engineering_overlay.do` 通过；新增回归检查图上目标、图例/底图不变、30 帧明暗切换及普通页不变。布局种子 1 的首轮最终 setup WNS -271 ps，未生成 bit；同一 RTL 改用种子 2 后，独立构建目录 `_build_secondary_main5e_emergency_pulse_v03_seed2` 的最终 setup WNS +132 ps/TNS 0、hold WNS +23 ps/TNS 0，STA 覆盖率 99.79%。LUT 12473/19600、寄存器 7004/19600、BRAM9K 32/64、DSP 9/29、PLL 4/4。保留原有 SDRAM 放置和局部时钟布线警告，报告无多驱动或异常时序路径。
 
-工程根目录依次执行 `D:\Anlogic\TD5.6.2\bin\td_commands_prompt.exe ./scripts/build_secondary_main5e_emergency_pulse_v03_pr.tcl` 和同一工具的 `./scripts/build_secondary_main5e_emergency_pulse_v03_bitgen.tcl`。发布 `release/hx4s20_secondary_main5e_emergency_pulse_v03.bit`，2026-09-28 21:03 生成，629641 字节，SHA-256 `E7EA87C3646A542688A02174E9A72CE5D29761C1E8CB10F4FA5FB5333F12CC94`。**v03 硬件 = NOT TESTED**；需用户 SRAM 烧录并用主板应急开关检查进入/退出、路线闪烁及普通轮播。v02 bit 和构建证据保留可回退。
+工程根目录依次执行 `D:\Anlogic\TD5.6.2\bin\td_commands_prompt.exe ./scripts/build_secondary_main5e_emergency_pulse_v03_pr.tcl` 和同一工具的 `./scripts/build_secondary_main5e_emergency_pulse_v03_bitgen.tcl`。发布 `release/hx4s20_secondary_main5e_emergency_pulse_v03.bit`，2026-09-28 21:03 生成，629641 字节，SHA-256 `E7EA87C3646A542688A02174E9A72CE5D29761C1E8CB10F4FA5FB5333F12CC94`。随后 PC 模拟主板发送应急与解除应急命令，操作者确认副屏显示逃生图，原图的绿色路线、红点与三个出口周期闪烁，解除后恢复轮播。这是 PC 模拟主板与实板的观察，尚非双板直连验证；未从板上回读 bit 身份。v02 bit 和构建证据保留可回退。
+
+### 2026-09-28 替换逃生图 v04
+
+用户提供新逃生图 `assets/secondary_emergency_720p_v2/source.png`（1448×1086，SHA-256 `00ED9CBEE12E205E4B4B5E42FA356573FECA580B90355D1A367C8BA1369499ED`）。`tools/prepare_secondary_emergency_720p_v2.py` 按原比例缩放并居中到 1280×720；两侧以深绿色补齐，不裁剪图上的路线、出口和文字。生成 24 位无压缩 BMP `assets/secondary_emergency_720p_v2/IMAGEA.BMP`，2764854 字节，SHA-256 `8199AB4D95C93683654109133D7FA0B017B6A45A364506F3919E589C4211ADE2`。仅替换 FAT32 TF 卡根目录 `F:\IMAGEA.BMP`，写入后读回 SHA-256 一致；其余十张文物素材未改。原逃生图仍保存在 `assets/secondary_emergency_720p/IMAGEA.BMP`。
+
+新图的路线和当前位置为红色，出口在右下方为绿色。v04 只更新应急页增强像素的颜色与坐标范围；30 帧增强、30 帧原色的节奏及其他页面、协议、时钟、SDRAM 均沿用 v03。实际新 BMP 的目标区域检查命中红色像素 5836 个、绿色出口像素 2694 个。ModelSim `vsim -c -do run_secondary_local.do` 通过，覆盖新图目标位置、非目标区域和 30 帧切换；原有测试台的 `preload_artifact` 未连接警告仍存在，与本次修改无关。
+
+使用 `scripts/build_secondary_main5e_emergency_redroute_v04_pr.tcl` 的布局种子 6 和 `scripts/build_secondary_main5e_emergency_redroute_v04_bitgen.tcl` 构建，独立目录 `_build_secondary_main5e_emergency_redroute_v04_seed6` 的最终 setup WNS +67 ps/TNS 0、hold WNS +21 ps/TNS 0，STA 覆盖率 99.80%；LUT 12593/19600、寄存器 7005/19600、BRAM9K 32/64、DSP 9/29、PLL 4/4。种子 2/3/4/5 分别为 setup WNS -78/-6/-608/-353 ps，均未生成 bit。种子 6 的报告未见多驱动或异常时序路径；仍有原工程 SDRAM 自动放置和局部时钟布线警告。发布 `release/hx4s20_secondary_main5e_emergency_redroute_v04.bit`，629641 字节，SHA-256 `4EC1503537003F23180DFDB6EF9E5B5007F85AB290C1B442BBF791F6BA4FE559`。**v04 实板效果尚未验证**；将 TF 卡插回副板后 SRAM 烧录此 bit，再由主板或 PC 模拟器发送应急/解除命令，检查新图、红色路线与标记、右下绿色出口的周期增强以及恢复轮播。旧 v03 bit 和旧图片均保留可回退。
 
 实板仍须确认：主副板直连联动、其余按键模式、断线重连与长时间稳定性；独立网口诊断工程的 UDP 回环尚未单独上板。旧的 `release/hx4s20_secondary_native720_v2.bit` 是已知可用基线，不应覆盖。当前用户尚未授权自动烧录实板。
 
