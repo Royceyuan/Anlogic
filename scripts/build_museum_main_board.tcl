@@ -14,7 +14,7 @@ set_param gate pack_effort high
 optimize_gate -packarea [file join $build_root museum_main_board_gate.area]
 export_db [file join $build_root museum_main_board_gate.db]
 legalize_phy_inst
-set_param place seed 1
+set_param place seed 2
 set_param place effort high
 set_param place opt_timing high
 set_param place logic_level_opt on

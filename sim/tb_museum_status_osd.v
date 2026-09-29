@@ -40,27 +40,28 @@ task check;
 endtask
 initial begin
  repeat(3) @(negedge clk);rst_n=1;
- check(11'd187,10'd20,24'hffffff); // fallback 文 glyph from shared BRAM
+ check(11'd25,10'd12,24'hffffff); // compact fallback 文 glyph
  @(negedge clk);name_addr=0;name_data=8'h80;name_we=1;
  @(negedge clk);name_we=0;name_ready=1;
  repeat(3) @(negedge clk);
- check(11'd150,10'd20,24'h808080);
- check(11'd400,10'd20,24'h404040);
- check(11'd180,10'd20,24'hffffff);
- check(11'd181,10'd20,24'h404040);
- check(11'd544,10'd20,24'hffffff); // 总览 glyph
- check(11'd183,10'd44,24'hffffff); // 标准 glyph
- check(11'd869,10'd45,24'h404040); // ZOOM1x digit
+ check(11'd11,10'd20,24'h808080);  // left of compact panel
+ check(11'd400,10'd20,24'h404040); // compact panel background
+ check(11'd22,10'd12,24'hffffff);  // downsampled TF name bit pair
+ check(11'd23,10'd12,24'h404040);
+ check(11'd204,10'd12,24'hffffff); // 总览 glyph
+ check(11'd23,10'd24,24'hffffff);  // 标准 glyph
+ check(11'd365,10'd25,24'h404040); // ZOOM1x digit
  zoom_2x=1;
- check(11'd869,10'd45,24'hffffff); // ZOOM2x digit
+ check(11'd365,10'd25,24'hffffff); // ZOOM2x digit
  effect=3'd4;
- check(11'd185,10'd45,24'hffffff); // CUSTOM first C
- check(11'd183,10'd45,24'h404040);
+ check(11'd24,10'd24,24'hffffff); // CUSTOM first C
+ check(11'd23,10'd24,24'h404040);
  if(dut.percent_bcd(0,0)!==12'h019 || dut.percent_bcd(0,3)!==0 ||
     dut.percent_bcd(1,2)!==12'h100 || dut.percent_bcd(2,0)!==0 ||
     dut.percent_bcd(3,6)!==12'h100) $fatal(1,"percentage LUT");
- check(11'd163,10'd77,24'hffffff); // B label in third row
- check(11'd195,10'd95,24'h404040); // extended panel background
+ check(11'd13,10'd40,24'hffffff); // B label in third row
+ check(11'd30,10'd50,24'h404040); // compact extended panel background
+ check(11'd492,10'd20,24'h808080); // right edge is outside panel
  panel_enable=0;
  check(11'd400,10'd20,24'h808080); // disabled panel stays aligned and transparent
  // Also exercised with the vendor BRAM model: check initialization packing
@@ -77,7 +78,7 @@ initial begin
  for(font_addr=0;font_addr<256;font_addr=font_addr+1) begin
   @(negedge clk);
   force dut.chosen_ascii=font_addr[7:3];
-  force dut.local_y={font_addr[2:0],1'b1};
+  force dut.local_y={1'b0,font_addr[2:0]};
   @(posedge clk); #1;
   if(dut.ascii_bits!==dut.ascii_row(font_addr[7:3],font_addr[2:0]))
    $fatal(1,"ASCII ROM address %d",font_addr);
