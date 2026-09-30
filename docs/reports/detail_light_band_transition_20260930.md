@@ -39,7 +39,7 @@
 
 对照包含新转场之前的`625f455`和含亮线的`9a5a488`。纯黑边版本比`9a5a488`减少86个LUT、15个寄存器及40个Slice，含布局布线产生的缓冲差异。当前Slice仍比`625f455`高4个，不应视为已经解决布局拥挤。
 
-| 项目 | 原发布版625f455 | 含亮线9a5a488 | 当前纯黑边版 |
+| 项目 | 原发布版625f455 | 含亮线9a5a488 | 当时纯黑边版a0a6832 |
 |---|---:|---:|---:|
 | LUT / 19600 | 16748（85.45%） | 16823（85.83%） | 16737（85.39%） |
 | 寄存器 / 19600 | 11331（57.81%） | 11386（58.09%） | 11371（58.02%） |
@@ -52,7 +52,7 @@
 
 - setup/hold TNS均为0；最终STA、DRC和bitgen完成。保留原有SDRAM相移时钟使用本地布线资源及`derive_pll_clocks`过时提示，不新增时序豁免。
 - 工具：TD 6.2.168116、ModelSim；构建入口与管脚/时序约束不变。
-- 当前原始报告：`museum_main_board_area.rpt`、`museum_main_board_timing.rpt`、`museum_main_board_drc_bitgen.rpt`。
+- 本节资源及校验值对应 `a0a6832`；公共原始报告随发布更新，最新资源优化结果见 `resource_optimization_20261001.md`。
 - 新bit：`release/dual_fpga_museum_terminal_main_board.bit`。
 - SHA-256：`4C695F6CE48BD9826AD18A7A1A8E21EE4324630A89A2F4C05FFE7687F5B9DBF4`，同目录`.bit.sha256`已同步。
 - `release/dual_fpga_museum_terminal_main_board_last_verified.bit`保持不变；无需更新TF媒体或副板协议。

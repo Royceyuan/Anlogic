@@ -165,15 +165,12 @@ reg [10:0] bin_y;
 reg        active_bmp_mode;
 reg        bmp_header_valid;
 reg        bmp_top_down;
-reg [7:0]  bmp_signature0;
-reg [7:0]  bmp_signature1;
+// Fixed-format fields are only compared, never reported or used as numbers.
+// Accumulate exact byte matches instead of retaining 112 header bits.
+reg        bmp_format_ok;
 reg [31:0] bmp_data_offset;
-reg [31:0] bmp_dib_size;
 reg [31:0] bmp_width;
 reg [31:0] bmp_height;
-reg [15:0] bmp_planes;
-reg [15:0] bmp_bits_per_pixel;
-reg [31:0] bmp_compression;
 reg [31:0] bmp_x;
 reg [31:0] bmp_y;
 reg [1:0]  bmp_component;
@@ -461,15 +458,10 @@ always @(posedge clk or negedge rst_n) begin
         active_bmp_mode      <= 1'b0;
         bmp_header_valid     <= 1'b0;
         bmp_top_down         <= 1'b0;
-        bmp_signature0       <= 8'd0;
-        bmp_signature1       <= 8'd0;
+        bmp_format_ok        <= 1'b0;
         bmp_data_offset      <= 32'd0;
-        bmp_dib_size         <= 32'd0;
         bmp_width            <= 32'd0;
         bmp_height           <= 32'd0;
-        bmp_planes           <= 16'd0;
-        bmp_bits_per_pixel   <= 16'd0;
-        bmp_compression      <= 32'd0;
         bmp_x                <= 32'd0;
         bmp_y                <= 32'd0;
         bmp_component        <= 2'd0;
@@ -686,6 +678,7 @@ always @(posedge clk or negedge rst_n) begin
                             bin_x             <= 11'd0;
                             bin_y             <= 11'd0;
                             bmp_header_valid  <= 1'b0;
+                            bmp_format_ok     <= 1'b1;
                             bmp_top_down      <= 1'b0;
                             bmp_x             <= 32'd0;
                             bmp_y             <= 32'd0;
@@ -739,16 +732,13 @@ always @(posedge clk or negedge rst_n) begin
                     if (active_bmp_mode) begin
                         if (file_bytes_seen < BMP_HEADER_BYTES) begin
                             case (file_bytes_seen)
-                                32'd0:  bmp_signature0 <= sd_sec_read_data;
-                                32'd1:  bmp_signature1 <= sd_sec_read_data;
+                                32'd0:  bmp_format_ok <= bmp_format_ok && sd_sec_read_data == "B";
+                                32'd1:  bmp_format_ok <= bmp_format_ok && sd_sec_read_data == "M";
                                 32'd10: bmp_data_offset[7:0] <= sd_sec_read_data;
                                 32'd11: bmp_data_offset[15:8] <= sd_sec_read_data;
                                 32'd12: bmp_data_offset[23:16] <= sd_sec_read_data;
                                 32'd13: bmp_data_offset[31:24] <= sd_sec_read_data;
-                                32'd14: bmp_dib_size[7:0] <= sd_sec_read_data;
-                                32'd15: bmp_dib_size[15:8] <= sd_sec_read_data;
-                                32'd16: bmp_dib_size[23:16] <= sd_sec_read_data;
-                                32'd17: bmp_dib_size[31:24] <= sd_sec_read_data;
+                                32'd14: bmp_format_ok <= bmp_format_ok && sd_sec_read_data == 8'd40;
                                 32'd18: bmp_width[7:0] <= sd_sec_read_data;
                                 32'd19: bmp_width[15:8] <= sd_sec_read_data;
                                 32'd20: bmp_width[23:16] <= sd_sec_read_data;
@@ -757,32 +747,24 @@ always @(posedge clk or negedge rst_n) begin
                                 32'd23: bmp_height[15:8] <= sd_sec_read_data;
                                 32'd24: bmp_height[23:16] <= sd_sec_read_data;
                                 32'd25: bmp_height[31:24] <= sd_sec_read_data;
-                                32'd26: bmp_planes[7:0] <= sd_sec_read_data;
-                                32'd27: bmp_planes[15:8] <= sd_sec_read_data;
-                                32'd28: bmp_bits_per_pixel[7:0] <= sd_sec_read_data;
-                                32'd29: bmp_bits_per_pixel[15:8] <= sd_sec_read_data;
-                                32'd30: bmp_compression[7:0] <= sd_sec_read_data;
-                                32'd31: bmp_compression[15:8] <= sd_sec_read_data;
-                                32'd32: bmp_compression[23:16] <= sd_sec_read_data;
-                                32'd33: bmp_compression[31:24] <= sd_sec_read_data;
+                                32'd26: bmp_format_ok <= bmp_format_ok && sd_sec_read_data == 8'd1;
+                                32'd28: bmp_format_ok <= bmp_format_ok && sd_sec_read_data == 8'd24;
+                                32'd15,32'd16,32'd17,32'd27,32'd29,
+                                32'd30,32'd31,32'd32,32'd33:
+                                    bmp_format_ok <= bmp_format_ok && sd_sec_read_data == 8'd0;
                                 default: begin end
                             endcase
 
                             if (file_bytes_seen == BMP_HEADER_BYTES - 1) begin
                                 bmp_header_valid <=
-                                    (bmp_signature0 == "B") &&
-                                    (bmp_signature1 == "M") &&
+                                    bmp_format_ok &&
                                     (bmp_data_offset >= BMP_HEADER_BYTES) &&
-                                    (bmp_dib_size == 32'd40) &&
                                     ((ADAPTIVE_BMP && bmp_width >= 32'd16) ||
                                      (!ADAPTIVE_BMP && bmp_width >= IMAGE_WIDTH)) &&
                                     (bmp_width <= BMP_MAX_WIDTH) &&
                                     ((ADAPTIVE_BMP && bmp_height_abs >= 32'd16) ||
                                      (!ADAPTIVE_BMP && bmp_height_abs >= IMAGE_HEIGHT)) &&
-                                    (bmp_height_abs <= BMP_MAX_HEIGHT) &&
-                                    (bmp_planes == 16'd1) &&
-                                    (bmp_bits_per_pixel == 16'd24) &&
-                                    (bmp_compression == 32'd0);
+                                    (bmp_height_abs <= BMP_MAX_HEIGHT);
                                 bmp_top_down <= bmp_height[31];
                                 bmp_source_width  <= bmp_width[15:0];
                                 bmp_source_height <= bmp_height_abs[15:0];
