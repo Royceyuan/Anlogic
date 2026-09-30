@@ -28,8 +28,6 @@ module tb_video_light_band;
             expected=rgb;
             if(enable && de && mode==7) begin
                 if(step==32) expected=rgb;
-                else if(d==radius) expected=24'hD8D8D8;
-                else if(d==radius+1) expected=24'h606060;
                 else expected=d<radius ? rgb : 0;
             end else if(enable && de && mode==6) begin
                 phase=closing ? (progress & 31) :
@@ -84,16 +82,17 @@ module tb_video_light_band;
             check;
         end
         mode=7; de=1; enable=1;
-        // With no source pixels, the midpoint must still emit its light line.
-        // Flush the expected RGB pipeline before changing the source color.
+        // The midpoint and adjacent boundary pixels must be black, even with
+        // a nonblack source. Flush before testing a missing source RGB.
         repeat(3) begin @(negedge clk); progress=32; y=360; check; end
+        for(r=359;r<=361;r=r+1) begin @(negedge clk); y=r; check; end
         @(negedge clk); rgb=0;
         repeat(20) begin check; @(negedge clk); end
         enable=0;
         repeat(4) begin check; @(negedge clk); end
         enable=1; de=0;
         repeat(4) begin check; @(negedge clk); end
-        $display("PASS light-band/diamond geometry, midpoint without source RGB, blanking and 3-cycle alignment");
+        $display("PASS black-edge/diamond geometry, no midpoint light, blanking and 3-cycle alignment");
         passed=1;
         $finish;
     end

@@ -6,7 +6,7 @@
 - 顶层模块：`dual_fpga_museum_terminal_main_board`
 - 器件：安路 `EG4S20BG256`
 - 当前 bit：`release/dual_fpga_museum_terminal_main_board.bit`
-- SHA-256：`1F8C1DC8FF17CAACE8D69CA3C3344DEAF770D43316DAE781AF8F721E9F9220A9`
+- SHA-256：`4C695F6CE48BD9826AD18A7A1A8E21EE4324630A89A2F4C05FFE7687F5B9DBF4`
 - 已验收回退 bit：`release/dual_fpga_museum_terminal_main_board_last_verified.bit`
 
 当前产品入口集成 TF 图片/音频/字幕、总览与讲解流程、转场、自适应显示、OSD、画面参数、应急模式、应用恢复，以及主副板 UDP/MBP1 通信。旧阶段入口、诊断工程和历史报告已移入 `D:\VSCode\CodeFiles\Git_TD\rubbish`，不参与当前构建。
@@ -24,7 +24,7 @@ Get-Content scripts/build_museum_main_board_bitgen.tcl | & D:\TD_6.2.1\bin\td_co
 - 当前版本验证：`docs/reports/detail_light_band_transition_20260930.md`
 - 资源/时序/DRC：`docs/reports/museum_main_board_*.rpt`
 
-最终时序为 setup `+0.495 ns`、hold `+0.030 ns`，TNS 均为 0。SDRAM 相移时钟单负载使用本地时钟资源是当前保留的工具警告；该路径已闭合，并沿用实板验证通过的媒体链。
+最终时序为 setup `+0.147 ns`、hold `+0.021 ns`，TNS 均为 0。SDRAM 相移时钟单负载使用本地时钟资源是当前保留的工具警告；该路径已闭合，并沿用实板验证通过的媒体链。
 
 ## 主副板联调
 
@@ -49,6 +49,6 @@ KEY4 已修复 2× 讲解恢复时倍率与视口残留：恢复发布时会在�
 
 - TF 素材格式、音画字幕时间轴和图片顺序未因本轮工程整理而改变。
 - `release/media/OSDNAME.BIN` 为可替换的 OSD 名称媒体。
-- 当前最新 bit 新增细节图2→3的64帧水平光带收拢/展开，读图中点保留独立亮线；其余图片顺序、转场、音画字幕时间轴和协议不变。
-- 等效优化应急颜色选择、菱形遮罩流水线、波形高度计算及行缓冲水平起点计算；像素延迟与映射保持原样。当前 LUT 85.83%、Slice 96.70%，没有实现整机资源占用下降，不应视为已经解决布局拥挤。
+- 当前最新 bit 新增细节图2→3的64帧上下收拢/展开，边缘为纯黑，不叠加光带或亮线；中点如需等待读图就绪，图像区域保持黑底。其余图片顺序、转场、音画字幕时间轴和协议不变。
+- 等效优化应急颜色选择、菱形遮罩流水线、波形高度计算及行缓冲水平起点计算；像素延迟与映射保持原样。当前 LUT 85.39%、Slice 96.30%，比含亮线版减少86 LUT和40 Slice，但不应视为已经解决布局拥挤。
 - 当前最新 bit 由最终产品命名入口重新生成，离线仿真、综合、布局布线、STA、DRC 和 bitgen 均通过，待上板验收；上一版实板验收 bit 独立保留以便回退。
