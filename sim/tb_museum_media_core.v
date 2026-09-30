@@ -24,7 +24,8 @@ module tb_museum_media_core #(
     parameter integer MAIN3_ZOOM_TEST = 0,
     parameter integer MAIN4_EMERGENCY_TEST = 0,
     parameter integer MAIN5_CONTROLS_TEST = 0,
-    parameter integer MAIN5_REMOTE_TEST = 0
+    parameter integer MAIN5_REMOTE_TEST = 0,
+    parameter integer LIGHT_BAND_TEST = 0
 );
     reg clk_50m = 1'b0;
     reg [3:0] key_n = 4'b1111;
@@ -33,6 +34,7 @@ module tb_museum_media_core #(
     integer mode_check, progress_check;
     reg [2:0] saved_mode;
     reg [7:0] saved_progress;
+    reg light_band_pass=0;
     reg remote_command_valid = 1'b0;
     reg [7:0] remote_command_type = 8'd0;
     reg [63:0] remote_command_payload = 64'd0;
@@ -60,7 +62,7 @@ module tb_museum_media_core #(
         .VIDEO_W(TB_VIDEO_W), .VIDEO_H(TB_VIDEO_H), .VIDEO_BURST_WORDS(4),
         .VIDEO_MODE_1280(1),
         .ENABLE_OSD(PHASE1_TEST || PHASE2_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST),
-        .ENABLE_FADE(PHASE3_TEST || PHASE4_TEST || PHASE5_TEST),
+        .ENABLE_FADE(PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || LIGHT_BAND_TEST),
         .VIDEO_SEQUENCE(0), .VIDEO_BIN(0), .ADAPTIVE_BMP(1),
         .PRELOAD_BOTH_IMAGES(PRELOAD_TEST || MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || MAIN3_ZOOM_TEST || MAIN5_CONTROLS_TEST || MAIN5_REMOTE_TEST),
         .MULTI_IMAGE_BMP(MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || MAIN3_ZOOM_TEST || MAIN5_CONTROLS_TEST || MAIN5_REMOTE_TEST),
@@ -458,6 +460,86 @@ module tb_museum_media_core #(
             $finish;
         end
 
+        if (LIGHT_BAND_TEST) begin
+            force dut.lecture_active=1'b1;
+            force dut.lecture_paused_ff2=1'b0;
+            force dut.recovery_video_ff2=1'b0;
+            force dut.overview_enable_video=1'b0;
+            force dut.lecture_final_full_active=1'b0;
+            force dut.lecture_display_slot=2'd2;
+            #1;
+            if(dut.lecture_transition_mode!=0) $fatal(1,"detail1-to-2 fade changed");
+            force dut.lecture_display_slot=2'd3;
+            #1;
+            if(dut.lecture_transition_mode!=7) $fatal(1,"detail2-to-3 selection");
+            force dut.lecture_display_slot=2'd0;
+            force dut.lecture_final_full_active=1'b1;
+            #1;
+            if(dut.lecture_transition_mode!=6) $fatal(1,"final-full diamond changed");
+            force dut.lecture_display_slot=2'd3;
+            force dut.desired_display_media_index=4'd3;
+            force dut.detail_zoom_2x_ff2=1'b0;
+            force dut.video_frame_tick=1'b0;
+            force dut.video_vblank_start=1'b0;
+            force dut.video_frame_start=1'b0;
+            force dut.linebuf_frame_ready=1'b0;
+            @(negedge clk_50m);
+            dut.display_media_index=2;
+            dut.display_zoom_2x=0;
+            dut.video_run=1;
+            dut.switch_pending=0;
+            repeat(4) @(negedge clk_50m);
+            if(!dut.switch_pending || dut.transition_mode!=7) $fatal(1,"band did not start");
+            force dut.video_frame_tick=1'b1;
+            repeat(8) @(negedge clk_50m);
+            force dut.lecture_paused_ff2=1'b1;
+            repeat(5) @(negedge clk_50m);
+            if(dut.transition_progress!=8) $fatal(1,"paused closing advanced");
+            force dut.lecture_paused_ff2=1'b0;
+            repeat(24) @(negedge clk_50m);
+            force dut.video_frame_tick=1'b0;
+            if(dut.transition_progress!=32 || !dut.transition_midpoint_ready)
+                $fatal(1,"band close duration");
+            force dut.lecture_paused_ff2=1'b1;
+            force dut.video_frame_tick=1'b1;
+            force dut.video_vblank_start=1'b1;
+            repeat(5) @(negedge clk_50m);
+            if(dut.transition_progress!=32 || dut.display_media_index!=2)
+                $fatal(1,"pause allowed source switch");
+            force dut.lecture_paused_ff2=1'b0;
+            force dut.video_frame_tick=1'b0;
+            @(negedge clk_50m);
+            force dut.video_vblank_start=1'b0;
+            if(dut.video_run || dut.display_media_index!=3) $fatal(1,"unsafe switch");
+            force dut.video_frame_tick=1'b1;
+            force dut.video_frame_start=1'b1;
+            // Deliberately deny row-prefetch readiness for many frame ticks.
+            repeat(80) @(negedge clk_50m);
+            if(dut.transition_progress!=32 || dut.video_run || !dut.transition_active)
+                $fatal(1,"band opened before new image ready");
+            force dut.video_frame_tick=1'b0;
+            force dut.linebuf_frame_ready=1'b1;
+            @(negedge clk_50m);
+            force dut.video_frame_start=1'b0;
+            if(!dut.video_run) $fatal(1,"ready image not resumed at frame start");
+            force dut.lecture_paused_ff2=1'b1;
+            force dut.video_frame_tick=1'b1;
+            repeat(7) @(negedge clk_50m);
+            if(dut.transition_progress!=32) $fatal(1,"paused opening advanced");
+            force dut.lecture_paused_ff2=1'b0;
+            repeat(32) @(negedge clk_50m);
+            force dut.video_frame_tick=1'b0;
+            if(dut.transition_progress!=64 || dut.transition_active)
+                $fatal(1,"band open duration/end");
+            // Recovery in the middle of an active band must clear busy too.
+            dut.transition_progress=8'd40;
+            force dut.recovery_video_ff2=1'b1;
+            @(negedge clk_50m);
+            if(dut.transition_active) $fatal(1,"recovery left band active");
+            $display("PASS light-band selection, 64-frame duration, pause, delayed prefetch and recovery");
+            light_band_pass=1;
+            $finish;
+        end
         if (MAIN5_REMOTE_TEST) begin
             force dut.lecture_active=1'b0;
             force dut.lecture_paused=1'b0;
@@ -499,8 +581,8 @@ module tb_museum_media_core #(
                 force dut.transition_mode=mode_check[2:0];
                 force dut.transition_progress=progress_check[7:0];
                 #1;
-                if(dut.transition_before_midpoint !== (progress_check<(mode_check==5 ? 64 : 16)) ||
-                   dut.transition_before_end !== (progress_check<(mode_check==5 ? 128 : 32)))
+                if(dut.transition_before_midpoint !== (progress_check<(mode_check==5 ? 64 : mode_check==7 ? 32 : 16)) ||
+                   dut.transition_before_end !== (progress_check<(mode_check==5 ? 128 : mode_check==7 ? 64 : 32)))
                     $fatal(1,"transition threshold equivalence failed");
               end
             force dut.transition_mode=saved_mode;
@@ -674,7 +756,7 @@ module tb_museum_media_core #(
                 dut.display_pan_x!=0 || dut.display_pan_y!=0 || dut.switch_pending)
                 $fatal(1,"stale lecture viewport returned after recovery");
             if (dut.g_linebuf_scaler.u_linebuf_scaler.active_zoom_2x ||
-                dut.g_linebuf_scaler.u_linebuf_scaler.active_pan_x!=0 ||
+                dut.g_linebuf_scaler.u_linebuf_scaler.active_source_x_start!=0 ||
                 dut.g_linebuf_scaler.u_linebuf_scaler.active_pan_y!=0)
                 $fatal(1,"overview line buffer retained stale source geometry");
             $display("PASS MAIN5 KEY4 restores 1x centered overview from paused 2x pan");

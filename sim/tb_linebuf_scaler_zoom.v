@@ -14,6 +14,7 @@ wire [20:0] source_read_base_addr, source_read_len;
 wire [10:0] source_x = dut.source_x;
 wire [9:0] source_y = dut.source_y;
 integer direction, origin, progress, step, expected_left, expected_offset;
+integer zoom_case, pan_case, column, expected_column;
 
 always #5 clk=~clk;
 
@@ -104,7 +105,22 @@ initial begin
             $fatal(1,"geometry mismatch dir=%d origin=%d progress=%d",
                    direction,origin,progress);
         end
-    $display("PASS linebuf 1x/2x, pan and all 4096 recenter geometries");
+    museum_active=0;
+    // All encoded columns and every legal horizontal pan position. Capture
+    // the origin once; per-pixel results must match the previous expression.
+    for (zoom_case=0; zoom_case<2; zoom_case=zoom_case+1)
+      for (pan_case=-(zoom_case ? 240 : 480);
+           pan_case<=(zoom_case ? 240 : 480); pan_case=pan_case+1) begin
+        @(negedge clk); zoom_2x=zoom_case; pan_x=pan_case; source_start=1;
+        @(posedge clk); #1; source_start=0;
+        for (column=0; column<2048; column=column+1) begin
+          video_x=column; #1;
+          expected_column=pan_case+(zoom_case ? 240+column*3/8 : column*3/4);
+          if (source_x!==expected_column[10:0])
+            $fatal(1,"X origin mismatch zoom=%d pan=%d x=%d",zoom_case,pan_case,column);
+        end
+      end
+    $display("PASS linebuf 1x/2x, all legal X pan/columns and 4096 recenter geometries");
     test_pass=1;
     $finish;
 end

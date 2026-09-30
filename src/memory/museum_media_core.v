@@ -856,7 +856,8 @@ wire [1:0] product_show_demo_step;
 wire [2:0] lecture_transition_mode =
     (lecture_display_slot == 2'd0) ?
         (lecture_final_full_active ? 3'd6 : 3'd5) :
-    (lecture_display_slot == 2'd1) ? 3'd2 : 3'd0;
+    (lecture_display_slot == 2'd1) ? 3'd2 :
+    (lecture_display_slot == 2'd3) ? 3'd7 : 3'd0;
 wire [2:0] selected_transition_mode =
     ENABLE_MUSEUM_LECTURE ? lecture_transition_mode :
     (ui_mode == MODE_PRODUCT_SHOW) ? product_theme_transition_mode :
@@ -885,12 +886,16 @@ reg slideshow_paused_ff1, slideshow_paused_ff2;
 reg [1:0] transition_theme_ff1, transition_theme_ff2;
 reg [1:0] transition_context_ff1, transition_context_ff2;
 wire museum_long_transition = ENABLE_MUSEUM_LECTURE && transition_mode == 3'b101;
-wire [7:0] transition_end = museum_long_transition ? 8'd128 : 8'd32;
+wire light_band_transition = transition_mode == 3'd7;
+wire [7:0] transition_end = museum_long_transition ? 8'd128 :
+                           light_band_transition ? 8'd64 : 8'd32;
 // Fixed power-of-two thresholds: avoid muxing constants into a carry compare.
 wire transition_before_midpoint = museum_long_transition ?
-    !(|transition_progress[7:6]) : !(|transition_progress[7:4]);
+    !(|transition_progress[7:6]) : light_band_transition ?
+    !(|transition_progress[7:5]) : !(|transition_progress[7:4]);
 wire transition_before_end = museum_long_transition ?
-    !transition_progress[7] : !(|transition_progress[7:5]);
+    !transition_progress[7] : light_band_transition ?
+    !(|transition_progress[7:6]) : !(|transition_progress[7:5]);
 wire transition_midpoint_ready = (transition_mode == 3'b000) ?
                                    (fade_level == 5'd0) :
                                    !transition_before_midpoint;
@@ -2529,7 +2534,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
             direct_switch_pending <= 1'b0;
             fade_out_active <= 1'b0;
             fade_level      <= 5'd16;
-            transition_progress <= 8'd32;
+            transition_progress <= light_band_transition ? 8'd64 : 8'd32;
         end else if (ENABLE_DUAL_FRAME_PRELOAD && video_run && switch_pending &&
                      (preload_select_ff2 == display_frame_index)) begin
             // A second key press before the boundary cancels the obsolete
@@ -2538,7 +2543,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
             direct_switch_pending <= 1'b0;
             fade_out_active <= 1'b0;
             fade_level      <= 5'd16;
-            transition_progress <= 8'd32;
+            transition_progress <= light_band_transition ? 8'd64 : 8'd32;
         end else if (video_run && (ready_ff2 != ready_seen)) begin
             ready_seen <= ready_ff2;
             pending_frame_index <= overview_enable_video ?
@@ -2670,7 +2675,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
         direct_switch_pending <= 1'b0;
         fade_out_active <= 1'b0;
         fade_level <= 5'd16;
-        transition_progress <= 8'd32;
+        transition_progress <= light_band_transition ? 8'd64 : 8'd32;
         transition_pace <= 1'b0;
         if (video_vblank_start && display_media_index != VIDEO_FRAME_COUNT &&
             overview_cache_ready_ff2) begin

@@ -14,6 +14,7 @@ integer positive_count=0;
 integer negative_count=0;
 integer px,py,dx,dy,arrow_dx,arrow_dy;
 reg old_triangle,old_inner,old_arrow;
+reg [23:0] expected_color;
 reg signed [15:0] previous_sample=0;
 always #1 clk=~clk;
 
@@ -60,6 +61,7 @@ initial begin
  if(alarm_valid || alarm_left!==0 || alarm_right!==0)
   $fatal(1,"alarm did not stop cleanly");
  // Exhaustive equivalence over all coordinate input bits, not just HDMI DE.
+ emergency=1;
  for(py=0;py<1024;py=py+1) begin
   for(px=0;px<2048;px=px+1) begin
    x=px; y=py;
@@ -74,8 +76,22 @@ initial begin
    if(dut_overlay.triangle_hit!==old_triangle ||
       dut_overlay.triangle_inner!==old_inner || dut_overlay.arrow_head!==old_arrow)
     $fatal(1,"emergency geometry differs at %0d,%0d",px,py);
+   if(px<18 || px>=1262 || py<18 || py>=702) expected_color=24'hffffff;
+   else if(py<82 || py>=638) expected_color=(x[6]^y[5]) ? 24'hffd000 : 24'h111111;
+   else if((old_triangle && !old_inner) ||
+           (px>=315 && px<=345 && ((py>=225 && py<=340)||(py>=365 && py<=395))))
+     expected_color=24'hffd000;
+   else if((px>=590 && px<930 && py>=320 && py<=400)||old_arrow)
+     expected_color=24'hffffff;
+   else expected_color=dut_overlay.flash_count[4] ? 24'h780000 : 24'h500000;
+   if(out!==expected_color) $fatal(1,"emergency palette differs at %0d,%0d",px,py);
   end
+  // Exercise both background shades without changing geometry.
+  @(negedge clk); frame_tick=1;
+  @(negedge clk); frame_tick=0;
  end
+ de=0; #1;
+ if(out!==0) $fatal(1,"emergency blanking leaked color");
  $display("PASS emergency overlay priority, exclusive 48 kHz alarm and 2097152-coordinate equivalence");
  $finish;
 end

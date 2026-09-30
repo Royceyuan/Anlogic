@@ -23,11 +23,15 @@ reg display_bank, frame_pending, display_valid;
 reg sample_valid_q;
 reg [7:0] sample_height_q;
 
-wire [15:0] left_magnitude = sample_left[15] ? (~sample_left + 1'b1) : sample_left;
-wire [15:0] right_magnitude = sample_right[15] ? (~sample_right + 1'b1) : sample_right;
-wire [15:0] magnitude = (left_magnitude > right_magnitude) ? left_magnitude : right_magnitude;
-wire [8:0] scaled_height = {1'b0, magnitude[15:7]};
-wire [7:0] sample_height = (scaled_height > MAX_HEIGHT) ? MAX_HEIGHT : scaled_height[7:0];
+// Only abs(PCM)>>7 contributes to height. Preserve the carry from the discarded
+// low bits, then clamp each channel before the much narrower stereo comparison.
+wire [8:0] left_scaled = sample_left[15] ?
+    (~sample_left[15:7] + (sample_left[6:0] == 0)) : sample_left[15:7];
+wire [8:0] right_scaled = sample_right[15] ?
+    (~sample_right[15:7] + (sample_right[6:0] == 0)) : sample_right[15:7];
+wire [5:0] left_height = left_scaled > MAX_HEIGHT ? MAX_HEIGHT[5:0] : left_scaled[5:0];
+wire [5:0] right_height = right_scaled > MAX_HEIGHT ? MAX_HEIGHT[5:0] : right_scaled[5:0];
+wire [7:0] sample_height = {2'd0, left_height > right_height ? left_height : right_height};
 wire [7:0] peak_next = (sample_height_q > peak_height) ? sample_height_q : peak_height;
 // Alternating 12 and 13 samples makes 64 bars cover exactly 800 samples.
 wire [3:0] final_sample_count = bar_index[0] ? 4'd12 : 4'd11;

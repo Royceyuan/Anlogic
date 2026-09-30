@@ -65,7 +65,7 @@ reg        load_epoch;
 reg        video_epoch;
 reg        video_started;
 reg        active_zoom_2x;
-reg signed [15:0] active_pan_x;
+reg [10:0] active_source_x_start;
 reg signed [9:0] active_pan_y;
 reg [9:0] active_zoom_row_start;
 reg [9:0] active_row_end;
@@ -156,14 +156,13 @@ generate
         // wraps at x=683, so the second half of a scan line addresses the
         // wrong source pixels.
         assign source_x_times3 = {2'b00, video_x} + ({2'b00, video_x} << 1);
-        assign normal_source_x = active_zoom_2x ?
-                                 (SRC_W / 4) + active_pan_x + (source_x_times3 >> 3) :
-                                 active_pan_x + (source_x_times3 >> 2);
+        assign normal_source_x = active_source_x_start +
+                                 (active_zoom_2x ? (source_x_times3 >> 3) :
+                                                   (source_x_times3 >> 2));
     end else begin : g_x_generic
-        assign normal_source_x = active_zoom_2x ?
-                                 (SRC_W / 4) + active_pan_x +
-                                 ((video_x * SRC_W) / (DST_W * 2)) :
-                                 active_pan_x + ((video_x * SRC_W) / DST_W);
+        assign normal_source_x = active_source_x_start +
+                                 (active_zoom_2x ? ((video_x * SRC_W) / (DST_W * 2)) :
+                                                   ((video_x * SRC_W) / DST_W));
     end
     if ((SRC_H == 540) && (DST_H == 720)) begin : g_y_3_over_4
         // Likewise, 3*y needs 12 bits.  Without widening it wraps at y=342
@@ -332,7 +331,7 @@ always @(posedge clk or negedge rst_n) begin
         video_epoch       <= 1'b0;
         video_started     <= 1'b0;
         active_zoom_2x    <= 1'b0;
-        active_pan_x       <= 16'sd0;
+        active_source_x_start <= 11'd0;
         active_pan_y       <= 16'sd0;
         active_row_end     <= SRC_H-1;
         active_zoom_row_start <= ZOOM_ROW_START;
@@ -365,7 +364,9 @@ always @(posedge clk or negedge rst_n) begin
             slot_valid        <= 3'b000;
             slot_epoch        <= 3'b000;
             active_zoom_2x    <= zoom_2x;
-            active_pan_x       <= pan_x_effective;
+            // Zoom origin is constant for this source transaction: add it
+            // here, not in every pixel's mapping chain. The output is 11 bits.
+            active_source_x_start <= pan_x_effective + (zoom_2x ? SRC_W/4 : 0);
             active_pan_y       <= pan_y_effective;
             active_zoom_row_start <= first_row;
             active_row_end     <= first_row + row_count - 1'b1;

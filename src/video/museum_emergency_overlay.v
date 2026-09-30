@@ -42,25 +42,24 @@ wire border = x_i < 11'd18 || x_i >= 11'd1262 ||
               y_i < 10'd18 || y_i >= 10'd702;
 wire hazard_band = y_i < 10'd82 || y_i >= 10'd638;
 wire hazard_yellow = x_i[6] ^ y_i[5];
+// Parallel palette enables preserve layer priority without cascading wide
+// RGB muxes after the diagonal comparisons (a video-clock timing bottleneck).
+wire symbol_yellow = (triangle_hit && !triangle_inner) || exclamation_hit;
+wire select_white = de_i && (border ||
+                    (!hazard_band && !symbol_yellow && (arrow_shaft || arrow_head)));
+wire select_yellow = de_i && !border &&
+                     (hazard_band ? hazard_yellow : symbol_yellow);
+wire select_dark = de_i && !border && hazard_band && !hazard_yellow;
+wire select_red = de_i && !border && !hazard_band && !symbol_yellow &&
+                  !arrow_shaft && !arrow_head;
 
 always @(*) begin
     rgb_o = rgb_i;
-    if (emergency) begin
-        if (!de_i)
-            rgb_o = 24'h000000;
-        else if (border)
-            rgb_o = 24'hffffff;
-        else if (hazard_band)
-            rgb_o = hazard_yellow ? 24'hffd000 : 24'h111111;
-        else if (triangle_hit && !triangle_inner)
-            rgb_o = 24'hffd000;
-        else if (exclamation_hit)
-            rgb_o = 24'hffd000;
-        else if (arrow_shaft || arrow_head)
-            rgb_o = 24'hffffff;
-        else
-            rgb_o = flash_count[4] ? 24'h780000 : 24'h500000;
-    end
+    if (emergency)
+        rgb_o = ({24{select_white}} & 24'hffffff) |
+                ({24{select_yellow}} & 24'hffd000) |
+                ({24{select_dark}} & 24'h111111) |
+                ({24{select_red}} & (flash_count[4] ? 24'h780000 : 24'h500000));
 end
 
 assign hs_o = hs_i;

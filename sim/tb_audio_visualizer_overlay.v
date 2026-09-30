@@ -4,6 +4,7 @@
 module tb_audio_visualizer_overlay;
 reg clk = 0, rst_n = 0, sample_valid = 0, frame_tick = 0;
 reg pause = 0;
+reg test_pass = 0;
 reg emergency = 0;
 reg signed [15:0] sample_left = 0, sample_right = 0;
 reg de_i = 0;
@@ -32,7 +33,27 @@ task play;
     end
 endtask
 integer i;
+integer sample_code, channel_case, left_abs, right_abs, expected_height;
 initial begin
+    // Full signed PCM domain, both stereo orderings, including -32768 and
+    // every discarded-low-bit carry boundary. Independent 16-bit reference.
+    for (channel_case=0; channel_case<3; channel_case=channel_case+1)
+        for (sample_code=0; sample_code<65536; sample_code=sample_code+1) begin
+            sample_left=sample_code;
+            sample_right=channel_case==0 ? 0 :
+                         channel_case==1 ? -sample_left : 16'sd6400;
+            #1;
+            left_abs=$signed(sample_left);
+            right_abs=$signed(sample_right);
+            if (left_abs<0) left_abs=-left_abs;
+            if (right_abs<0) right_abs=-right_abs;
+            expected_height=(left_abs>right_abs ? left_abs : right_abs)>>7;
+            if (expected_height>50) expected_height=50;
+            if (dut.sample_height!==expected_height[7:0])
+                $fatal(1,"PCM height mismatch L=%d R=%d got=%d expected=%d",
+                       sample_left,sample_right,dut.sample_height,expected_height);
+        end
+    sample_left=0; sample_right=0;
     repeat (2) @(posedge clk); rst_n = 1;
     // Bar 0 is a 12-sample peak group.  8192 is capped at 50 pixels.
     for (i=0; i<11; i=i+1) play(16'sd1024);
@@ -62,6 +83,7 @@ initial begin
     repeat (3) @(posedge clk);
     if (rgb_o != 24'h123456) $fatal(1, "stale visualizer frame reappeared");
     $display("PASS tb_audio_visualizer_overlay");
+    test_pass = 1;
     $finish;
 end
 endmodule

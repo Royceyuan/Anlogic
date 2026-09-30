@@ -4,7 +4,7 @@
    Executable = D:/TD_6.2.1/bin/td_commands_prompt.exe
    Built at =   16:32:07 Jun 12 2025
    Run by =     Administrator
-   Run Date =   Mon Sep 28 21:56:15 2026
+   Run Date =   Wed Sep 30 23:38:10 2026
 
    Run on =     LAPTOP-SFUE3P04
 ============================================================
@@ -28,9 +28,9 @@ RUN-1001 : Database version number 46207
 RUN-1001 : Import flow parameters
 RUN-1001 : Import netlist
 PHY-1001 : Generate detailed routing grids ...
-PHY-1001 : End build routing graph; 2.653528s wall, 2.421875s user + 0.156250s system = 2.578125s CPU (97.2%)
+PHY-1001 : End build routing graph; 2.701954s wall, 2.562500s user + 0.078125s system = 2.640625s CPU (97.7%)
 
-PHY-1001 : Build lut bridge;  0.048393s wall, 0.046875s user + 0.000000s system = 0.046875s CPU (96.9%)
+PHY-1001 : Build lut bridge;  0.051926s wall, 0.046875s user + 0.000000s system = 0.046875s CPU (90.3%)
 
 PHY-1001 : Generate nets ...
 PHY-1001 : net eth_rgmii_rx_clk_dup_1 will be routed on clock mesh
@@ -46,7 +46,7 @@ PHY-1001 : net u_system/u_media/u_media_core/u_frame_store/u_frame_read_write/fr
 PHY-1001 : net u_system/u_media/u_media_core/u_frame_store/u_sdram/u2_ram/SDRAM_CLK will be routed on clock mesh
 PHY-1001 : eco open net = 0
 PHY-5014 WARNING: Detail route doesn't find pib for u_system/u_media/u_media_core/u_sys_pll/pll_inst.fbclk[0]
-PHY-1001 : 389 feed throughs used by 337 nets
+PHY-1001 : 192 feed throughs used by 164 nets
 RUN-1001 : Import phy database
 RUN-1001 : Import timing constraints
 RUN-1001 : Import IO constraints
@@ -68,16 +68,16 @@ USR-1002 : Derived clock:  create_generated_clock -name {u_system/u_net/u_clk_ge
 USR-1002 : Derived clock:  create_generated_clock -name {u_system/u_net/u_clk_gen/u_pll_0/pll_inst.clkc[4]} -source [get_ports {clk_50m}] -master_clock {clk_50m} -multiply_by 2.5000 -phase 90 -duty_cycle 50.0000 [get_pins {u_system/u_net/u_clk_gen/u_pll_0/pll_inst.clkc[4]}]
 USR-1002 : Derived clock:  create_generated_clock -name {u_system/u_net/u_rx_pll/pll_inst.clkc[0]} -source [get_ports {eth_rgmii_rx_clk}] -master_clock {eth_rgmii_rx_clk} -multiply_by 1.0000 -duty_cycle 50.0000 [get_pins {u_system/u_net/u_rx_pll/pll_inst.clkc[0]}]
 USR-1002 : Derived clock:  create_generated_clock -name {u_system/u_net/u_rx_pll/pll_inst.clkc[1]} -source [get_ports {eth_rgmii_rx_clk}] -master_clock {eth_rgmii_rx_clk} -multiply_by 1.0000 -duty_cycle 50.0000 [get_pins {u_system/u_net/u_rx_pll/pll_inst.clkc[1]}]
-RUN-1003 : finish command "start_timer -keep_rs" in  1.344253s wall, 1.312500s user + 0.031250s system = 1.343750s CPU (100.0%)
+RUN-1003 : finish command "start_timer -keep_rs" in  1.388008s wall, 1.343750s user + 0.031250s system = 1.375000s CPU (99.1%)
 
-RUN-1004 : used memory is 832 MB, reserved memory is 833 MB, peak memory is 832 MB
+RUN-1004 : used memory is 829 MB, reserved memory is 824 MB, peak memory is 829 MB
 TMR-2502 : Net delay update with mode: Routed
 PHY-1001 : No abnormal timing path.
-PHY-1001 : End Stage 1 | Abnormal Timing Path check; Time: 2.875473s wall, 2.750000s user + 0.078125s system = 2.828125s CPU (98.4%); Memory(MB): used = 903, reserved = 902, peak = 903;
+PHY-1001 : End Stage 1 | Abnormal Timing Path check; Time: 3.051855s wall, 2.953125s user + 0.062500s system = 3.015625s CPU (98.8%); Memory(MB): used = 899, reserved = 893, peak = 899;
 
-RUN-1003 : finish command "import_db ./_build_museum_main_board/museum_main_board_pr.db -check_drc" in  11.886898s wall, 10.890625s user + 0.531250s system = 11.421875s CPU (96.1%)
+RUN-1003 : finish command "import_db ./_build_museum_main_board/museum_main_board_pr.db -check_drc" in  12.440132s wall, 11.531250s user + 0.359375s system = 11.890625s CPU (95.6%)
 
-RUN-1004 : used memory is 903 MB, reserved memory is 902 MB, peak memory is 903 MB
+RUN-1004 : used memory is 899 MB, reserved memory is 893 MB, peak memory is 899 MB
 td > RUN-1002 : start command "drc_check -all -verbose"
 PHY-1001 : Start multi-drive drc check......
 PHY-1001 : No multi-drive.
@@ -90,11 +90,11 @@ RUN-1001 :                           ClockName                          |  Drive
 RUN-1001 : --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 RUN-1001 :   u_system/u_media/u_media_core/u_sys_pll/pll_inst.clkc[2]   |  AL_PHY_PLL  |      0/1       |       1        |  u_system/u_media/u_media_core/u_frame_store/u_sdram/u2_ram/SDRAM_CLK  |   true   
 RUN-1001 : --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-PHY-1001 : End Stage 1 | Clock Net Status Check; Time: 0.003516s wall, 0.015625s user + 0.000000s system = 0.015625s CPU (444.4%); Memory(MB): used = 905, reserved = 905, peak = 905;
+PHY-1001 : End Stage 1 | Clock Net Status Check; Time: 0.003646s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 901, reserved = 895, peak = 901;
 
 PHY-1001 : Stage 2 | Abnormal Timing Path check
 PHY-1001 : No abnormal timing path.
-PHY-1001 : End Stage 2 | Abnormal Timing Path check; Time: 0.118826s wall, 0.109375s user + 0.000000s system = 0.109375s CPU (92.0%); Memory(MB): used = 905, reserved = 905, peak = 905;
+PHY-1001 : End Stage 2 | Abnormal Timing Path check; Time: 0.161098s wall, 0.156250s user + 0.000000s system = 0.156250s CPU (97.0%); Memory(MB): used = 901, reserved = 895, peak = 901;
 
 td > RUN-1002 : start command "report_route_status -drc"
 PHY-1001 : Start multi-drive drc check......
@@ -108,32 +108,32 @@ RUN-1001 :                           ClockName                          |  Drive
 RUN-1001 : --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 RUN-1001 :   u_system/u_media/u_media_core/u_sys_pll/pll_inst.clkc[2]   |  AL_PHY_PLL  |      0/1       |       1        |  u_system/u_media/u_media_core/u_frame_store/u_sdram/u2_ram/SDRAM_CLK  |   true   
 RUN-1001 : --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-PHY-1001 : End Stage 3 | Clock Net Status Check; Time: 0.003237s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 905, reserved = 905, peak = 905;
+PHY-1001 : End Stage 3 | Clock Net Status Check; Time: 0.002745s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 901, reserved = 895, peak = 901;
 
 PHY-1001 : Stage 4 | Abnormal Timing Path check
 PHY-1001 : No abnormal timing path.
-PHY-1001 : End Stage 4 | Abnormal Timing Path check; Time: 0.122575s wall, 0.125000s user + 0.000000s system = 0.125000s CPU (102.0%); Memory(MB): used = 905, reserved = 905, peak = 905;
+PHY-1001 : End Stage 4 | Abnormal Timing Path check; Time: 0.159117s wall, 0.140625s user + 0.000000s system = 0.140625s CPU (88.4%); Memory(MB): used = 901, reserved = 895, peak = 901;
 
-td > file2035f14faf0
-td > SWNS: 0.117ns, STNS: 0.000ns.
-HWNS: 0.024ns, HTNS: 0.000ns.
+td > file1d38a2b8690
+td > SWNS: 0.495ns, STNS: 0.000ns.
+HWNS: 0.030ns, HTNS: 0.000ns.
 
 td > 
 td > RUN-1002 : start command "bitgen -bit ./release/dual_fpga_museum_terminal_main_board.bit"
 RUN-1002 : start command "export_bid dual_fpga_museum_terminal_main_board_inst.bid"
 BIT-1003 : Start to generate bitstream. 
 BIT-1002 : Init instances with 24 threads.
-BIT-1002 : Init instances completely, inst num: 9609
+BIT-1002 : Init instances completely, inst num: 9681
 BIT-1002 : Init pips with 24 threads.
-BIT-1002 : Init pips completely, net num: 21663, pip num: 228753
+BIT-1002 : Init pips completely, net num: 21575, pip num: 223346
 BIT-1002 : Init feedthrough with 24 threads.
-BIT-1002 : Init feedthrough completely, num: 389
+BIT-1002 : Init feedthrough completely, num: 192
 BIT-1003 : Multithreading accelaration with 24 threads.
-BIT-1003 : Generate bitstream completely, there are 647306 bits set as '1'.
+BIT-1003 : Generate bitstream completely, there are 635709 bits set as '1'.
 BIT-1004 : PLL setting string = 1111
 BIT-1004 : Generate bits file ./release/dual_fpga_museum_terminal_main_board.bit.
-RUN-1003 : finish command "bitgen -bit ./release/dual_fpga_museum_terminal_main_board.bit" in  8.103589s wall, 163.390625s user + 3.906250s system = 167.296875s CPU (2064.5%)
+RUN-1003 : finish command "bitgen -bit ./release/dual_fpga_museum_terminal_main_board.bit" in  7.114004s wall, 136.046875s user + 3.062500s system = 139.109375s CPU (1955.4%)
 
-RUN-1004 : used memory is 973 MB, reserved memory is 971 MB, peak memory is 973 MB
+RUN-1004 : used memory is 969 MB, reserved memory is 961 MB, peak memory is 969 MB
 
 td > 

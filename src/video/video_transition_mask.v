@@ -44,6 +44,11 @@ reg [6:0] museum_fade_level_next;
 reg [5:0] museum_fade_threshold;
 reg pass_pixel;
 wire pass_pixel_aligned;
+reg [5:0] band_step;
+reg [13:0] band_scaled;
+reg [9:0] band_limit;
+reg [1:0] band_light;
+wire [1:0] band_light_aligned;
 
 always @(*) begin
     phase_step = closing ? progress[4:0] :
@@ -76,6 +81,24 @@ always @(*) begin
     else
         dy = (VIDEO_H / 2) - y;
     diamond_distance = {1'b0, dx} + {2'b0, dy};
+    // Mode 7: 32 frames close, then 32 frames open. At the midpoint the
+    // independent light line remains visible even while RGB waits for SDRAM.
+    band_step = closing ? ((progress < 32) ? 6'd32 - progress[5:0] : 6'd0) :
+                          ((progress >= 64) ? 6'd32 :
+                           (progress >= 32) ? progress[5:0] - 6'd32 : 6'd0);
+    if (VIDEO_H == 720)
+        band_scaled = {band_step, 5'b0} + {band_step, 3'b0} +
+                      {band_step, 2'b0} + band_step; // radius = step * 45 / 4
+    else
+        band_scaled = (band_step * VIDEO_H) >> 4;
+    band_limit = band_scaled >> 2;
+    band_light = 2'd0;
+    if (enable && de && mode == 3'd7 && band_step < 32) begin
+        if (dy == band_limit)
+            band_light = 2'd2;
+        else if (dy == band_limit + 10'd1)
+            band_light = 2'd1;
+    end
     if (VIDEO_W == 1280 && VIDEO_H == 720)
         diamond_limit = {shape_step, 6'b0} - shape_step - (shape_step >> 1);
     else
@@ -114,7 +137,9 @@ always @(*) begin
         panel_right_next = 11'd768 + {museum_step, 3'b000};
     end
 
-    if (mode == 3'b101)
+    if (mode == 3'd7)
+        reveal = (band_step == 32) || (dy < band_limit);
+    else if (mode == 3'b101)
         reveal = (x >= panel_left) && (x < panel_right);
     else if (shape_step == 0)
         reveal = 1'b0;
@@ -127,7 +152,9 @@ always @(*) begin
             3'b011: reveal = (dx < center_half_w) &&
                             (dy < center_half_h);                 // zoom reveal
             3'b101: reveal = (x >= panel_left) && (x < panel_right);
-            3'b110: reveal = (diamond_distance < diamond_limit); // diamond burst
+            // The pipelined path spreads abs/add/compare across its existing
+            // three clocks; the direct path retains the original geometry.
+            3'b110: reveal = !PIPE_MASK_3 && (diamond_distance < diamond_limit);
             default: reveal = 1'b1;                               // fade
         endcase
     end
@@ -140,25 +167,61 @@ end
 generate
     if (PIPE_MASK_3) begin : g_pipe_mask
         reg pass_d1, pass_d2, pass_d3;
+        reg [1:0] light_d1, light_d2, light_d3;
+        reg [10:0] dx_d1, diamond_limit_d1, diamond_limit_d2;
+        reg [9:0] dy_d1;
+        reg [11:0] diamond_distance_d2;
+        reg diamond_mode_d1, diamond_mode_d2;
+        reg diamond_bypass_d1, diamond_bypass_d2;
         always @(posedge clk or negedge rst_n) begin
             if (!rst_n) begin
                 pass_d1 <= 1'b0;
                 pass_d2 <= 1'b0;
                 pass_d3 <= 1'b0;
+                light_d1 <= 2'd0;
+                light_d2 <= 2'd0;
+                light_d3 <= 2'd0;
+                dx_d1 <= 11'd0;
+                dy_d1 <= 10'd0;
+                diamond_limit_d1 <= 11'd0;
+                diamond_limit_d2 <= 11'd0;
+                diamond_distance_d2 <= 12'd0;
+                diamond_mode_d1 <= 1'b0;
+                diamond_mode_d2 <= 1'b0;
+                diamond_bypass_d1 <= 1'b0;
+                diamond_bypass_d2 <= 1'b0;
             end else begin
                 pass_d1 <= pass_pixel;
                 pass_d2 <= pass_d1;
-                pass_d3 <= pass_d2;
+                pass_d3 <= diamond_mode_d2 ?
+                           (diamond_bypass_d2 || diamond_distance_d2 < diamond_limit_d2) :
+                           pass_d2;
+                light_d1 <= band_light;
+                light_d2 <= light_d1;
+                light_d3 <= light_d2;
+                dx_d1 <= dx;
+                dy_d1 <= dy;
+                diamond_limit_d1 <= diamond_limit;
+                diamond_limit_d2 <= diamond_limit_d1;
+                diamond_distance_d2 <= {1'b0, dx_d1} + {2'b0, dy_d1};
+                diamond_mode_d1 <= mode == 3'd6;
+                diamond_mode_d2 <= diamond_mode_d1;
+                diamond_bypass_d1 <= !de || !enable || shape_step >= 16;
+                diamond_bypass_d2 <= diamond_bypass_d1;
             end
         end
         assign pass_pixel_aligned = pass_d3;
+        assign band_light_aligned = light_d3;
     end else begin : g_direct_mask
         assign pass_pixel_aligned = pass_pixel;
+        assign band_light_aligned = band_light;
     end
 endgenerate
 
 always @(*)
-    rgb_out = pass_pixel_aligned ? rgb_in : 24'h000000;
+    rgb_out = band_light_aligned[1] ? 24'hD8D8D8 :
+              band_light_aligned[0] ? 24'h606060 :
+              pass_pixel_aligned ? rgb_in : 24'h000000;
 
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
