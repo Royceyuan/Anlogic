@@ -52,10 +52,14 @@ end
 
 reg [8:0] rx_index;
 reg [47:0] rx_src_mac;
-reg [15:0] rx_ether_type, rx_arp_op;
-reg [7:0] rx_ip_version, rx_ip_flags_hi, rx_ip_flags_lo, rx_ip_proto;
-reg [31:0] rx_src_ip, rx_dst_ip, rx_arp_target_ip;
-reg [15:0] rx_src_port, rx_dst_port, rx_udp_length;
+// These fixed header fields are only compared, never forwarded. Retain
+// per-byte matches rather than entire addresses/ports; MAC and length stay data.
+reg ether_hi_ok, ether_ip_ok, ether_arp_ok;
+reg [1:0] arp_op_ok, src_port_ok, dst_port_ok;
+reg ip_version_ok, ip_flags_hi_ok, ip_flags_lo_ok, ip_proto_ok;
+reg [3:0] src_ip_ok, dst_ip_ok;
+reg [2:0] arp_target_prefix_ok;
+reg [15:0] rx_udp_length;
 reg rx_udp_accepted, arp_reply_pending, peer_mac_seen;
 reg arp_reply_taken;
 reg [47:0] peer_mac;
@@ -71,17 +75,12 @@ always @(posedge clk or posedge rst) begin
     if (rst) begin
         rx_index <= 9'd0;
         rx_src_mac <= 48'd0;
-        rx_ether_type <= 16'd0;
-        rx_arp_op <= 16'd0;
-        rx_ip_version <= 8'd0;
-        rx_ip_flags_hi <= 8'd0;
-        rx_ip_flags_lo <= 8'd0;
-        rx_ip_proto <= 8'd0;
-        rx_src_ip <= 32'd0;
-        rx_dst_ip <= 32'd0;
-        rx_arp_target_ip <= 32'd0;
-        rx_src_port <= 16'd0;
-        rx_dst_port <= 16'd0;
+        ether_hi_ok <= 0; ether_ip_ok <= 1; ether_arp_ok <= 0;
+        arp_op_ok <= 2'b10;
+        ip_version_ok <= 0; ip_flags_hi_ok <= 1;
+        ip_flags_lo_ok <= 1; ip_proto_ok <= 0;
+        src_ip_ok <= 0; dst_ip_ok <= 0; arp_target_prefix_ok <= 0;
+        src_port_ok <= 0; dst_port_ok <= 0;
         rx_udp_length <= 16'd0;
         rx_udp_accepted <= 1'b0;
         arp_reply_pending <= 1'b0;
@@ -95,40 +94,53 @@ always @(posedge clk or posedge rst) begin
         case (rx_position)
             9'd6, 9'd7, 9'd8, 9'd9, 9'd10, 9'd11:
                 rx_src_mac <= {rx_src_mac[39:0], rx_data_q};
-            9'd12, 9'd13: rx_ether_type <= {rx_ether_type[7:0], rx_data_q};
-            9'd14: rx_ip_version <= rx_data_q;
+            9'd12: ether_hi_ok <= rx_data_q == 8'h08;
+            9'd13: begin
+                ether_ip_ok <= rx_data_q == 8'h00;
+                ether_arp_ok <= rx_data_q == 8'h06;
+            end
+            9'd14: ip_version_ok <= rx_data_q == 8'h45;
             9'd20: begin
-                rx_arp_op <= {rx_arp_op[7:0], rx_data_q};
-                rx_ip_flags_hi <= rx_data_q;
+                arp_op_ok[1] <= rx_data_q == 8'h00;
+                ip_flags_hi_ok <= rx_data_q[5:0] == 6'd0;
             end
             9'd21: begin
-                rx_arp_op <= {rx_arp_op[7:0], rx_data_q};
-                rx_ip_flags_lo <= rx_data_q;
+                arp_op_ok[0] <= rx_data_q == 8'h01;
+                ip_flags_lo_ok <= rx_data_q == 8'd0;
             end
-            9'd23: rx_ip_proto <= rx_data_q;
-            9'd26, 9'd27, 9'd28, 9'd29:
-                rx_src_ip <= {rx_src_ip[23:0], rx_data_q};
-            9'd30, 9'd31, 9'd32, 9'd33:
-                rx_dst_ip <= {rx_dst_ip[23:0], rx_data_q};
-            9'd34, 9'd35: rx_src_port <= {rx_src_port[7:0], rx_data_q};
-            9'd36, 9'd37: rx_dst_port <= {rx_dst_port[7:0], rx_data_q};
+            9'd23: ip_proto_ok <= rx_data_q == 8'd17;
+            9'd26: src_ip_ok[3] <= rx_data_q == PEER_IP[31:24];
+            9'd27: src_ip_ok[2] <= rx_data_q == PEER_IP[23:16];
+            9'd28: src_ip_ok[1] <= rx_data_q == PEER_IP[15:8];
+            9'd29: src_ip_ok[0] <= rx_data_q == PEER_IP[7:0];
+            9'd30: dst_ip_ok[3] <= rx_data_q == OUR_IP[31:24];
+            9'd31: dst_ip_ok[2] <= rx_data_q == OUR_IP[23:16];
+            9'd32: dst_ip_ok[1] <= rx_data_q == OUR_IP[15:8];
+            9'd33: dst_ip_ok[0] <= rx_data_q == OUR_IP[7:0];
+            9'd34: src_port_ok[1] <= rx_data_q == PORT[15:8];
+            9'd35: src_port_ok[0] <= rx_data_q == PORT[7:0];
+            9'd36: dst_port_ok[1] <= rx_data_q == PORT[15:8];
+            9'd37: dst_port_ok[0] <= rx_data_q == PORT[7:0];
             9'd38, 9'd39: rx_udp_length <= {rx_udp_length[7:0], rx_data_q};
             default: begin end
         endcase
-        if (rx_position >= 9'd38 && rx_position <= 9'd41)
-            rx_arp_target_ip <= {rx_arp_target_ip[23:0], rx_data_q};
+        case (rx_position)
+            9'd38: arp_target_prefix_ok[2] <= rx_data_q == OUR_IP[31:24];
+            9'd39: arp_target_prefix_ok[1] <= rx_data_q == OUR_IP[23:16];
+            9'd40: arp_target_prefix_ok[0] <= rx_data_q == OUR_IP[15:8];
+            default: begin end
+        endcase
         if (rx_position == 9'd41) begin
-            if (rx_ether_type == 16'h0800 && rx_ip_version == 8'h45 &&
-                rx_ip_flags_hi[5:0] == 6'd0 && rx_ip_flags_lo == 8'd0 &&
-                rx_ip_proto == 8'd17 && rx_src_ip == PEER_IP &&
-                rx_dst_ip == OUR_IP && rx_src_port == PORT &&
-                rx_dst_port == PORT && rx_udp_length >= 16'd8 &&
+            if (ether_hi_ok && ether_ip_ok && ip_version_ok &&
+                ip_flags_hi_ok && ip_flags_lo_ok && ip_proto_ok &&
+                (&src_ip_ok) && (&dst_ip_ok) && (&src_port_ok) &&
+                (&dst_port_ok) && rx_udp_length >= 16'd8 &&
                 rx_udp_length <= 16'd286) begin
                 rx_udp_accepted <= 1'b1;
                 peer_mac <= rx_src_mac;
                 peer_mac_seen <= 1'b1;
-            end else if (rx_ether_type == 16'h0806 && rx_arp_op == 16'h0001 &&
-                         {rx_arp_target_ip[23:0], rx_data_q} == OUR_IP) begin
+            end else if (ether_hi_ok && ether_arp_ok && (&arp_op_ok) &&
+                         (&arp_target_prefix_ok) && rx_data_q == OUR_IP[7:0]) begin
                 peer_mac <= rx_src_mac;
                 peer_mac_seen <= 1'b1;
                 arp_reply_pending <= 1'b1;

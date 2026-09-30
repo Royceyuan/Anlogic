@@ -19,6 +19,9 @@ reg [15:0] app_tx_length=22;
 wire app_tx_ack;
 integer i, received=0, sent=0, frames=0;
 reg [7:0] frame [0:127];
+reg [7:0] input_frame [0:59];
+reg capture_header=1;
+integer input_index=0, field, bit_number, pos;
 
 mbp1_fixed_udp dut (
     .clk(clk), .rst(rst), .mac_rx_data(rx_data), .mac_rx_valid(rx_valid),
@@ -39,6 +42,11 @@ task byte_in;
     begin
         @(negedge clk);
         rx_data=b; rx_valid=1; rx_sof_n=!start_byte; rx_eof_n=!end_byte;
+        if(capture_header) begin
+            if(start_byte) input_index=0;
+            input_frame[input_index]=b;
+            input_index=input_index+1;
+        end
     end
 endtask
 
@@ -83,6 +91,17 @@ initial begin
     wait(frames==1);
     if (sent!=60 || frame[20]!=0 || frame[21]!=2 || frame[0]!=8'h02 ||
         frame[1]!=8'h11 || frame[41]!=8'h02) $fatal(1,"ARP reply");
+    capture_header=0;
+    for(field=12;field<42;field=field+1)
+        if(field==12 || field==13 || field==20 || field==21 || field>=38)
+            for(bit_number=0;bit_number<8;bit_number=bit_number+1) begin
+                for(pos=0;pos<60;pos=pos+1)
+                    byte_in(input_frame[pos] ^ (pos==field ? (8'd1<<bit_number) : 0),pos==0,pos==59);
+                @(negedge clk);rx_valid=0;rx_sof_n=1;rx_eof_n=1;
+                repeat(100) @(negedge clk);
+                if(frames!=1) $fatal(1,"bad ARP header accepted field=%d bit=%d",field,bit_number);
+            end
+    capture_header=1;
     // IPv4/UDP: source 192.168.10.2:5000, dest 192.168.10.1:5000.
     for(i=0;i<46;i=i+1) begin
         case(i)
@@ -106,6 +125,23 @@ initial begin
     @(negedge clk); rx_valid=0; rx_sof_n=1; rx_eof_n=1;
     repeat(3) @(negedge clk);
     if(received!=4) $fatal(1,"RX count %d",received);
+    capture_header=0;
+    for(field=12;field<38;field=field+1)
+        if(field==12 || field==13 || field==14 || field==20 || field==21 || field==23 || field>=26)
+            for(bit_number=0;bit_number<8;bit_number=bit_number+1)
+                if(field!=20 || bit_number<6) begin
+                    for(pos=0;pos<46;pos=pos+1)
+                        byte_in(input_frame[pos] ^ (pos==field ? (8'd1<<bit_number) : 0),pos==0,pos==45);
+                    @(negedge clk);rx_valid=0;rx_sof_n=1;rx_eof_n=1;
+                    repeat(3) @(negedge clk);
+                    if(received!=4) $fatal(1,"bad UDP header accepted");
+                end
+    // A valid packet must recover immediately after all rejected headers.
+    received=0;
+    for(pos=0;pos<46;pos=pos+1) byte_in(input_frame[pos],pos==0,pos==45);
+    @(negedge clk);rx_valid=0;rx_sof_n=1;rx_eof_n=1;
+    repeat(3) @(negedge clk);
+    if(received!=4) $fatal(1,"valid UDP after rejected headers");
     wait(app_tx_ready);
     @(negedge clk); app_tx_request=1;
     wait(app_tx_ack);
@@ -135,5 +171,5 @@ initial begin
     $display("PASS tb_mbp1_fixed_udp");
     $finish;
 end
-initial begin #50000; $fatal(1,"timeout"); end
+initial begin #1000000; $fatal(1,"timeout"); end
 endmodule
