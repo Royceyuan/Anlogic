@@ -1,25 +1,25 @@
 {
-  "release": "manual_browse_20261001",
+  "release": "manual_browse_reconnect_20261001",
   "branch": "secondary-main5e",
-  "base_commit": "ac0af1114be933ec2fa424fa24648eda56150a65",
+  "base_commit": "2bd32653f3e7bdfcc8a0814274f7bfb8ac8ecf8a",
   "project": "hx4s20_secondary_main5e.al",
   "top": "top_secondary_main5e",
   "bit": "release/hx4s20_secondary_main5e_manual_browse.bit",
-  "bit_sha256": "fd19782ea3ac24d1f59918f6f08c054e20832b40ddd4ed9c44ff088fe1bf151a",
+  "bit_sha256": "41b81e033e6f282aac9e572d982bf8e145504fa38111cdc5f22f86021956ca58",
   "bytes": 629641,
-  "timestamp_local": "2026-10-01T21:02:12",
+  "timestamp_local": "2026-10-01",
   "tool": "Tang Dynasty 6.2.168116",
   "seed": 6,
   "timing_ps": {
     "hold_tns": 0,
-    "setup_tns": 0,
-    "hold_wns": 21,
-    "setup_wns": 213
+    "hold_wns": 24,
+    "setup_wns": 596,
+    "setup_tns": 0
   },
-  "sta_coverage_percent": 99.76,
+  "sta_coverage_percent": 99.75,
   "gate_resource": {
     "PLL": 4,
-    "LUT": 10608,
+    "LUT": 10545,
     "BRAM32K": 0,
     "DSP": 9,
     "registers": 6676,
@@ -27,18 +27,11 @@
   },
   "placed_resource": {
     "PLL": 4,
-    "LUT": 10726,
+    "LUT": 10653,
     "BRAM32K": 0,
     "DSP": 9,
     "registers": 6714,
     "BRAM9K": 32
-  },
-  "gate_delta_from_v06": {
-    "BRAM9K": 0,
-    "LUT": 49,
-    "DSP": 0,
-    "PLL": 0,
-    "registers": 0
   },
   "drc": "PASS No multi-drive; No abnormal timing path",
   "known_critical_warnings": [
@@ -46,7 +39,7 @@
     "PHY-5079 one local SDRAM clock net, unchanged topology"
   ],
   "bitgen_gate": "PASS setup/hold, warning whitelist, DRC and project-input freshness",
-  "hardware": "PENDING dual-board manual-browse acceptance; simulations do not replace board validation",
+  "hardware": "PENDING same-boot reconnect board acceptance; previous paired manual version was confirmed by user",
   "preserved_baseline": {
     "bit": "release/hx4s20_secondary_main5e_return_align_v06.bit",
     "sha256": "77997bd0f08ba70b1fad4f8dd483575ebec49d181baff73fb0f277c1da3f6987"
@@ -69,7 +62,7 @@
     "src/common/seg_hex_display.v": "534c1bcca5da859c7018bfa93a72bbd85a0803538edcf9b0d4af0cef27be3be7",
     "src/ethernet/mbp1_codec.v": "0d05a817427ee8643b4e16efc2e5e7879609ddcafb4658f0334c1c710a1f44d6",
     "src/ethernet/mbp1_fixed_udp.v": "e63b9c0216cd68ee7b89581526ecca8448cb061083ab8590ff6721fd4ac5902c",
-    "src/ethernet/mbp1_secondary_endpoint.v": "47f94a3cfa8e2ddcb6d4dc1678dc6820a0c87b9f520236aad922d3e87bac252b",
+    "src/ethernet/mbp1_secondary_endpoint.v": "e4e6750aca71e4be813db1f39574b49f8faf562c97b2c18ec12413bac9ce04e5",
     "src/ethernet/mdio_clause22_monitor.v": "4935feed29863fe6a70a7b276f6f6c7174980e4f9a753a0b98ba2414beabb5ac",
     "src/input/key_debounce.v": "c498915acde5c365fd94bee384da6dff78ef4fa59c1ce8191b537357c2949e23",
     "src/memory/anlogic_frame_store.v": "9c190fec86f5fcc358e0225f6e676457323eafd1b55750e8ab720c538ebbcbe1",
@@ -130,53 +123,75 @@
   },
   "build_directory": "_build_secondary_main5e_manual_browse_seed6",
   "report_sha256": {
-    "console.log": "3c2fb925b0c1be81354d8b158d9588264d65583307c1eb517865cf944458d5e6",
-    "bitgen.log": "ce5761f2ffb23ee06ba5306f861c92dbc4abd0a8b419c54f9c5092ce6c450358",
-    "secondary_main5e_gate.area": "fa453e7803811ca772ec790c6e33b667308fb2a3ad618b4d6d7fc58a4e228e4a",
-    "secondary_main5e_place.area": "9c55a12d7a6a868da7d66aa32096b8c6af22ef914dbdde3057070582b0d9e6e7",
-    "secondary_main5e_final.ts": "8ee7a0c36dde4d537edaad573688c3ef214238e9c1df53a75a385c4aa1ccc350",
-    "secondary_main5e_final.timing": "f502a48876effd254b99234855486a55b6faed0e8f9ef0eada50aeba1f91f83a",
-    "secondary_main5e_exception.timing": "41b859cf8234dc685fc977455834e744db40322a1c6b1589fec598872f6643cd",
-    "secondary_main5e_pr.status": "112f0c7955c173fb19662926c2eab9babd9a22240a2c840b502cfc6b9ce8935a"
+    "console.log": "2f32baf9ed5fb571a16a9a1ceca66c2146bcf0d6b82d35b26c9664bce9ad9418",
+    "bitgen.log": "4864065cf71b773ac0ee9d500b0f5ff05221a4c01580071c07b24cc3513f7a64",
+    "secondary_main5e_gate.area": "31def4d262a24d7a71e4694f438a89ac947359c9faf9185caa198e175ae2bdd6",
+    "secondary_main5e_place.area": "bcd63d0baee47fa5dcfa5227ff7d79bd8ff7c1d21665d58afd27ca1cd493463e",
+    "secondary_main5e_final.ts": "bc84340f7036b74fdd37a3865adef5f705c49c1c3b7074b6fc3b6ad1789d9cc3",
+    "secondary_main5e_final.timing": "3a8c33da77793b4d97537443cd528232404f3980ec676a59d7b35de9e0d6d740",
+    "secondary_main5e_exception.timing": "fe4b601159f71fe88d67fac8ded69e9382112730e7bdb07a6fabb328c315e656",
+    "secondary_main5e_pr.status": "5a877c60c6accaf2483a82ee112d2adee2600e0051c1b2722b07eee835d9cbce"
   },
   "simulation": {
-    "sim/regression_alignment.log": {
-      "sha256": "f88b278f8edf5490be3a31a30af7a47bd92665ccc411334ecd0cfcc8e33f32de",
+    "sim/reconnect_run_secondary_transition.log": {
+      "sha256": "bb39aeb7eb5f61cc4ba4768cba853d76f4748893e6debd6de4b97b238c0f192a",
       "passes": 2
     },
-    "sim/regression_codec.log": {
-      "sha256": "80bcf9df469827dbdfa302a939237d036990668f738fb871f3f275ef34f737f3",
-      "passes": 1
-    },
-    "sim/regression_endpoint.log": {
-      "sha256": "f44bf6542cca0bead00d7fd7368aba9393991778e8ee2bc2b2d73a0ed86350ee",
-      "passes": 1
-    },
-    "sim/regression_fixed_udp.log": {
-      "sha256": "635fa096faf140a2f0ca2f98ceec93b8f9ff9163dd1fe8995d6ab4861178bab3",
+    "sim/reconnect_run_secondary_main5e_fixed_udp.log": {
+      "sha256": "377c6ce7b6dd49741f796c032632a60a014e4f65048f81a73f923811446ee180",
       "passes": 2
     },
-    "sim/regression_keys.log": {
-      "sha256": "3d6910d70de334f141b9fb6ce98d473704158988a172835be392bc91aed87201",
+    "sim/reconnect_run_secondary_native720_media.log": {
+      "sha256": "78e0e230bc3e362d9b1dc00c45220d03a3e97adebc3675f3407d0e8cbcc8a238",
+      "passes": 2
+    },
+    "sim/reconnect_run_secondary_main5e_status_adapter.log": {
+      "sha256": "4b2ca9c8e781576641b9126e2e11fe68cd7a2d066176f3a2494176a4d9ff2f3d",
       "passes": 1
     },
-    "sim/regression_status.log": {
-      "sha256": "52750d477312c1291996b070291d84ec8961cf296b83e2b413f5f7c13c65facd",
+    "sim/reconnect_run_secondary_main5e_codec.log": {
+      "sha256": "c7e922eb855927b8a71546359513057c66a0a1d3a078524996c21a9421673e8d",
       "passes": 1
     },
-    "sim/run_secondary_local_regression.log": {
-      "sha256": "c32e5e02f08fb0767574dfcc86c31d6464f216858d3b7003e3c279ae19eff36a",
+    "sim/reconnect_alignment.log": {
+      "sha256": "a9a57e12e3417e438d62f19dcd9a6b1810f2fd723395dd299c040f35ca382b5a",
+      "passes": 2
+    },
+    "sim/reconnect_run_secondary_main5e_keys.log": {
+      "sha256": "813b687f492d5e6b94fb3615245eb39d732cf05cb9cf96335cc751cbb93a7944",
+      "passes": 1
+    },
+    "sim/reconnect_run_mbp1_reconnect.log": {
+      "sha256": "65374e9153c851480179462a4d2d15b13eb1a41d933e1b5d7ab66fb9682412d1",
+      "passes": 1
+    },
+    "sim/reconnect_run_secondary_local.log": {
+      "sha256": "3a0c6cf7b05fd163f397ae94f2ba7594d1d7f6fcb5d4d1cbfbda409348ff1f27",
       "passes": 3
     },
-    "sim/run_secondary_transition_regression.log": {
-      "sha256": "e9d78ea66e2315f71fd04a2545e9c66a25ffcf70ec2b42f5fe294b7fb2f5e479",
-      "passes": 2
-    },
-    "sim/run_secondary_native720_media_regression.log": {
-      "sha256": "f3e4244f48fa062aba5131eea0a2810d74471013f09da2e2705ddf68d33e4774",
-      "passes": 2
+    "sim/reconnect_run_secondary_main5e_endpoint.log": {
+      "sha256": "08259e136c98d8a334ed69699043ed52b7a43bc408ae51790b3a8470f75b41ca",
+      "passes": 1
     }
   },
   "offline_python": "PASS both tools --self-test, no physical NIC",
-  "media_clock_constraints": "unchanged against ac0af11"
+  "media_clock_constraints": "unchanged against ac0af11",
+  "gate_delta_from_previous_manual": {
+    "registers": 0,
+    "LUT": -63,
+    "PLL": 0,
+    "BRAM9K": 0,
+    "BRAM32K": 0,
+    "DSP": 0
+  },
+  "verification_sources_sha256": {
+    "sim/tb_mbp1_reconnect.v": "0e7e164f42eaba900d99312ace2eef13476e983d6268768f923abfe80fbdf538",
+    "../Anlogic/src/ethernet/mbp1_codec.v": "ea1957b9a292fc04eccbf67a1c29be33042040bab874946de3077f77f67306d0",
+    "../Anlogic/src/ethernet/mbp1_main_endpoint.v": "05fbf1fbe42f3e863d7d2fccaaa0bfee92f1099e919c627f956b572bcfc3fdbe",
+    "sim/run_mbp1_reconnect.do": "445c71213309e48338508fff289f735ab7a8e3ffbc3df3afef81ee4be541c84d"
+  },
+  "previous_manual_board_pass": {
+    "sha256": "fd19782ea3ac24d1f59918f6f08c054e20832b40ddd4ed9c44ff088fe1bf151a",
+    "bit": "_build_secondary_main5e_manual_browse_seed6/board_pass_before_reconnect/hx4s20_secondary_main5e_manual_browse.bit"
+  }
 }

@@ -231,9 +231,11 @@ always @(posedge clk or posedge rst) begin
 
         if ((phy_link_d && !phy_link) ||
             (ms_tick && heartbeat_age_ms == 11'd1999)) begin
-            peer_boot_seen <= 0;
-            hello_seen <= 0;
-            peer_manual_cap <= 0;
+            // Capability belongs to boot_id, not to a cable connection. The
+            // same main session does not resend HELLO after unplugging. Keep
+            // its verified capability, but require fresh HB/display before
+            // controls resume; a different boot still invalidates it below.
+            heartbeat_age_ms <= 11'd2000;
             hb_seen <= 0; display_seen <= 0; diag_seen <= 0;
             hello_pending <= 1; hello_waiting <= 0;
             query_pending <= 0; query_waiting <= 0;

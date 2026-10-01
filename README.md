@@ -4,6 +4,8 @@
 
 保留已上板版本 `release/hx4s20_secondary_main5e_return_align_v06.bit` 及其 `release/manifest.json`。当前 `release/hx4s20_secondary_main5e_manual_browse.bit` 接入主板静音手动浏览，保留原生 720p 显示、SW4 本地轮播及 SDRAM 返回对齐修复；用户已反馈配对主板/副板版本可用。
 
+最新 bit 增加同 boot_id 拔插网线后 SW3 恢复修复，SHA256 开头 `41B81E03`，本次修复仍待实板确认；仅重烧副板，主板和TF卡保持不变。[修复依据、回归及验收步骤](docs/网线重连模式恢复_20261001.md)。修复前已通过的手动浏览 bit 及 manifest 备份在当前构建目录的 `board_pass_before_reconnect/`。
+
 ## 使用
 
 1. TF 卡使用 FAT32，根目录放 `IMAGE0.BMP`～`IMAGE9.BMP`、`IMAGEA.BMP`。全部为 1280×720、24 位未压缩 BMP。插入读卡器后，在工程根目录执行：
