@@ -11,6 +11,7 @@ Runs/
 *.log
 *.logw
 *.err
+*.dmp
 /final_timing.rpt
 /*.qor
 transcript

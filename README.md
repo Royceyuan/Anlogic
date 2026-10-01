@@ -2,7 +2,7 @@
 
 正式分支：`secondary-main5e`。唯一 TD 工程入口：`hx4s20_secondary_main5e.al`，顶层 `top_secondary_main5e`。
 
-保留已上板版本 `release/hx4s20_secondary_main5e_return_align_v06.bit` 及其 `release/manifest.json`。新增 `release/hx4s20_secondary_main5e_manual_browse.bit`，接入主板静音手动浏览，保留原生 720p 显示、SW4 本地轮播及 SDRAM 返回对齐修复；新功能仍需双板上板验收，不能视为 v06 的验收结论。
+保留已上板版本 `release/hx4s20_secondary_main5e_return_align_v06.bit` 及其 `release/manifest.json`。当前 `release/hx4s20_secondary_main5e_manual_browse.bit` 接入主板静音手动浏览，保留原生 720p 显示、SW4 本地轮播及 SDRAM 返回对齐修复；用户已反馈配对主板/副板版本可用。
 
 ## 使用
 
@@ -29,3 +29,5 @@ powershell -ExecutionPolicy Bypass -File scripts/build.ps1
 默认调用 `D:/TD_6.2.1/bin/td_commands_prompt.exe`（6.2.168116）。其他安装位置使用 `-TD` 参数。脚本先布局布线，再检查时序、警告和输入文件新鲜度，符合条件才生成位流；报告位于 `_build_secondary_main5e_manual_browse_seed6/`。重建仅覆盖新手动浏览 bit，不覆盖已上板 v06 bit。
 
 回归命令见 [sim/README.md](sim/README.md)。清理后 9 组仿真、15 个用例通过。目录只保留正式工程依赖、素材、必要工具、说明和回归；构建与仿真缓存可重新生成。
+
+2026-10-01本次残留归档见 [工程整理记录](docs/工程残留整理_20261001.md)。当前bit、工程源码、构建脚本及manifest哈希未改变；当前bitgen与发布校验依赖继续保留。
