@@ -52,7 +52,7 @@
 
 - setup/hold TNS均为0；最终STA、DRC和bitgen完成。保留原有SDRAM相移时钟使用本地布线资源及`derive_pll_clocks`过时提示，不新增时序豁免。
 - 工具：TD 6.2.168116、ModelSim；构建入口与管脚/时序约束不变。
-- 本节资源及校验值对应 `a0a6832`；公共原始报告随发布更新，最新资源优化结果见 `resource_optimization_20261001.md`。
+- 本节资源及校验值对应 `a0a6832`；2026-10-01用户对照上板确认正常，公共原始报告和发布bit已恢复至本版本。其后的BMP优化板测失败及撤回记录见 `resource_optimization_20261001.md`。
 - 新bit：`release/dual_fpga_museum_terminal_main_board.bit`。
 - SHA-256：`4C695F6CE48BD9826AD18A7A1A8E21EE4324630A89A2F4C05FFE7687F5B9DBF4`，同目录`.bit.sha256`已同步。
 - `release/dual_fpga_museum_terminal_main_board_last_verified.bit`保持不变；无需更新TF媒体或副板协议。
