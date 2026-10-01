@@ -47,6 +47,7 @@ module top_secondary_main5e_netdiag #(
     input wire [7:0] client_control_type,
     input wire [63:0] client_control_payload,
     output wire client_control_ready,
+    output wire client_manual_supported,
     output wire client_control_done,
     output wire [7:0] client_control_result
 );
@@ -293,6 +294,7 @@ end else if (SECONDARY_CLIENT) begin : g_secondary_client
         .tx_request(app_tx_request), .tx_data(app_tx_data),
         .tx_valid(app_tx_valid), .tx_length(app_tx_length),
         .peer_alive(peer_alive),
+        .manual_supported(client_manual_supported),
         .heartbeat_pulse(client_heartbeat_pulse),
         .heartbeat_data(client_heartbeat_data),
         .display_pulse(client_display_pulse),
@@ -331,6 +333,7 @@ generate if (!SECONDARY_CLIENT) begin : g_no_client_outputs
     assign client_diagnostic_pulse = 1'b0;
     assign client_diagnostic_data = 128'd0;
     assign client_control_ready = 1'b0;
+    assign client_manual_supported = 1'b0;
     assign client_control_done = 1'b0;
     assign client_control_result = 8'd0;
 end endgenerate

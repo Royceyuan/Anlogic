@@ -1,6 +1,6 @@
 import_device eagle_s20.db -package EG4S20BG256
 set secondary_root .
-set secondary_build [file join $secondary_root _build_secondary_main5e_return_align_v06_seed6]
+set secondary_build [file join $secondary_root _build_secondary_main5e_manual_browse_seed6]
 file mkdir $secondary_build
 cd $secondary_root
 open_project [file join $secondary_root hx4s20_secondary_main5e.al] -single_run

@@ -38,6 +38,7 @@ wire [7:0] cmd_type, cmd_artifact_id, cmd_mode, cmd_lecture_phase;
 wire cmd_emergency_active;
 wire [2:0] cmd_result;
 wire control_request, control_ready, control_done;
+wire peer_alive, manual_supported;
 wire [7:0] control_type, control_result;
 wire [63:0] control_payload;
 wire manual_mode, manual_next;
@@ -58,7 +59,7 @@ top_secondary_main5e_netdiag #(.SECONDARY_CLIENT(1)) u_network (
     .display_changed(1'b0), .diagnostic_payload(128'd0),
     .command_done(1'b0), .command_result(8'd0),
     .command_valid(), .command_type(), .command_seq(),
-    .command_payload(), .peer_alive(), .network_clk(),
+    .command_payload(), .peer_alive(peer_alive), .network_clk(),
     .network_reset(network_reset),
     .client_heartbeat_pulse(heartbeat_pulse),
     .client_heartbeat_data(heartbeat_data),
@@ -70,6 +71,7 @@ top_secondary_main5e_netdiag #(.SECONDARY_CLIENT(1)) u_network (
     .client_control_type(control_type),
     .client_control_payload(control_payload),
     .client_control_ready(control_ready),
+    .client_manual_supported(manual_supported),
     .client_control_done(control_done),
     .client_control_result(control_result)
 );
@@ -78,6 +80,7 @@ secondary_main5e_keys u_keys (
     .heartbeat_pulse(heartbeat_pulse), .heartbeat_data(heartbeat_data),
     .display_pulse(display_pulse), .display_data(display_data),
     .control_ready(control_ready), .control_request(control_request),
+    .peer_alive(peer_alive), .manual_supported(manual_supported),
     .control_type(control_type), .control_payload(control_payload),
     .manual_mode(manual_mode), .manual_next(manual_next)
 );

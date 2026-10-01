@@ -1,0 +1,182 @@
+{
+  "release": "manual_browse_20261001",
+  "branch": "secondary-main5e",
+  "base_commit": "ac0af1114be933ec2fa424fa24648eda56150a65",
+  "project": "hx4s20_secondary_main5e.al",
+  "top": "top_secondary_main5e",
+  "bit": "release/hx4s20_secondary_main5e_manual_browse.bit",
+  "bit_sha256": "8ba0aea6d4cee450c58e74ba10dd5dd401785f93dc7e6cdc6a2bf51a5b02f5fb",
+  "bytes": 629641,
+  "timestamp_local": "2026-10-01T20:32:45",
+  "tool": "Tang Dynasty 6.2.168116",
+  "seed": 6,
+  "timing_ps": {
+    "hold_tns": 0,
+    "setup_tns": 0,
+    "hold_wns": 23,
+    "setup_wns": 313
+  },
+  "sta_coverage_percent": 99.76,
+  "gate_resource": {
+    "PLL": 4,
+    "LUT": 10612,
+    "BRAM32K": 0,
+    "DSP": 9,
+    "registers": 6679,
+    "BRAM9K": 32
+  },
+  "placed_resource": {
+    "PLL": 4,
+    "LUT": 10731,
+    "BRAM32K": 0,
+    "DSP": 9,
+    "registers": 6724,
+    "BRAM9K": 32
+  },
+  "gate_delta_from_v06": {
+    "BRAM9K": 0,
+    "LUT": 53,
+    "DSP": 0,
+    "PLL": 0,
+    "registers": 3
+  },
+  "drc": "PASS No multi-drive; No abnormal timing path",
+  "known_critical_warnings": [
+    "PHY-7002 SDRAM macro automatic placement",
+    "PHY-5079 one local SDRAM clock net, unchanged topology"
+  ],
+  "bitgen_gate": "PASS setup/hold, warning whitelist, DRC and project-input freshness",
+  "hardware": "PENDING dual-board manual-browse acceptance; simulations do not replace board validation",
+  "preserved_baseline": {
+    "bit": "release/hx4s20_secondary_main5e_return_align_v06.bit",
+    "sha256": "77997bd0f08ba70b1fad4f8dd483575ebec49d181baff73fb0f277c1da3f6987"
+  },
+  "required_main_bit": {
+    "path": "Anlogic/release/dual_fpga_museum_terminal_main_board.bit",
+    "sha256": "14d503535ca033a01ce2f5ac5805e97fd7e3a994d0a3e8866d67419d75076a14",
+    "hello": "0101010100050004000003ff"
+  },
+  "inputs_sha256": {
+    "constraints/top_secondary_main5e.adc": "e36490a3eecc10dc52f0b4ea02fad1f8ab39b5223ed106d29962e94dc59b0d90",
+    "constraints/top_secondary_main5e.sdc": "9ecec6c1235c2e86d45ddb619c41d9b98d258524b5293763495c835f6f1482e0",
+    "hx4s20_secondary_main5e.al": "ce581bcc6389f8652f27dd756a29d2cb778f64791a8d06807af993e4ec785089",
+    "scripts/build_secondary_main5e_bitgen.tcl": "974d7f0c5ed877df0093edad71751f8baf611ec4a213329e69555baa0e54bea4",
+    "scripts/build_secondary_main5e_pr.tcl": "7c46a7610eab25690854c64766d07d65cd865cb1fa3f62873adce718d3f6fda5",
+    "scripts/build.ps1": "ab3948dce6996088aba89480e1f0363359d8b4682dfaa1c355c8f4d6372cd8da",
+    "src/clock/sys_pll_50m_phase144_native720.v": "c6959af1bf5528105159c5049a573c20eaf7d459a9d4d3fc5f99563205d7f4ae",
+    "src/clock/video_pll_75m.v": "0d27232ffddced7159f5af5379ab7620f25098d218619729a4209b207ddafecb",
+    "src/common/reset_sync.v": "0a50ef656a0417f8dff61cea48bd353f1fc3147667c4c1984eb4c5fdd2cdc737",
+    "src/common/seg_hex_display.v": "534c1bcca5da859c7018bfa93a72bbd85a0803538edcf9b0d4af0cef27be3be7",
+    "src/ethernet/mbp1_codec.v": "0d05a817427ee8643b4e16efc2e5e7879609ddcafb4658f0334c1c710a1f44d6",
+    "src/ethernet/mbp1_fixed_udp.v": "e63b9c0216cd68ee7b89581526ecca8448cb061083ab8590ff6721fd4ac5902c",
+    "src/ethernet/mbp1_secondary_endpoint.v": "cc8359791fb606a465077da9a8cd1ed6825d74b488deac459706a8a1b628355b",
+    "src/ethernet/mdio_clause22_monitor.v": "4935feed29863fe6a70a7b276f6f6c7174980e4f9a753a0b98ba2414beabb5ac",
+    "src/input/key_debounce.v": "c498915acde5c365fd94bee384da6dff78ef4fa59c1ce8191b537357c2949e23",
+    "src/memory/anlogic_frame_store.v": "9c190fec86f5fcc358e0225f6e676457323eafd1b55750e8ab720c538ebbcbe1",
+    "src/memory/sdram_bmp_row_top_v66.v": "1d5989c6b6a344ddeb5bd401dbc4088a46b871b29b1f7267e7c192cd57ea233f",
+    "src/secondary/secondary_carousel_controller.v": "9582864472ec079ed1dc2fb1d3b7addc3a3cd3ebab8b7e3998095a38e9ef1369",
+    "src/secondary/secondary_main5e_keys.v": "497e6df915341d94b5b6af2a8b014e7072e74d1de0528fc971768ddca01c4b11",
+    "src/secondary/secondary_main5e_status_adapter.v": "7c99191d6b900b9a7307f619177e8f373ddabb67684c2ef694c59a3df439ed1f",
+    "src/secondary/secondary_page_overlay.v": "c7fb36f980e60edd9c30b087164e70bcbd46ad05da8d3d38a439bc846dc3e9ec",
+    "src/secondary/top_secondary_main5e_netdiag.v": "f47be72870cf0eafb11f1cc8b849667338cf6de0df3bf5f69dd2154c8918245b",
+    "src/secondary/top_secondary_main5e.v": "e37654ef7447b68a3ff7fd84f0f4516e2e54ffd5c02f4232e797aa8cb236b8cd",
+    "src/storage/adaptive_row_ram.v": "48c9752f3aa9eca96fe4e9878479ffd0e7f85640ea64aa125bd6f9e78cba8235",
+    "src/storage/al_dp_ram16.v": "a57c09b252e697e932cccf9396cdcf3e216bea986b89430a728bb01e2a31e435",
+    "src/storage/bmp_row_buffer.v": "3bd05c950c0e8812276cec5a63f9c120ad596455af24d165023b2650cc0a6701",
+    "src/storage/bmp_sdram_row_writer.v": "ed168ae3723f29b7b6e6368a0a11de912142723671bcb0d7c0ac0fb008da9e8b",
+    "src/storage/fat32_image_loader.v": "f090791e3afa6409ffd91ba32382eaad6d000ba80945f9eb97dd7e6a39793a2f",
+    "src/storage/rgb565_stream_packer_ready.v": "dd9ddf2273bf8f8d313683dfb1fcfe55857ebad2251bccb4e171e4643c59fd05",
+    "src/video/product_show_controller.v": "897fd3ecd8817b3bc190e732c6cfe1661893e6dc74d114e51046df1ad5bc1a75",
+    "src/video/rgb888_adjust.v": "929b4558be593dac7ce52075ad3b419fc7f3a39e35c91e45af739825dae5a010",
+    "src/video/transition_theme_controller.v": "6d716cc7f7b0ac8e7b5df25d2aef53eab34d221b945dbb2f5e5f04b2bd1d7a8a",
+    "src/video/video_fade.v": "196d4917e1685b5a00c58f202f9320053676bf34577c4d4cc2f19aec9963a290",
+    "src/video/video_timing_640x480_pclk.v": "49de1e6e28617fb829df973e2ed9fb7e47f878712f0ac899f58df7bece366695",
+    "src/video/video_transition_mask.v": "3d600032950bcde2fed6f62f715b449b1a0f6d62244ba6427273125abf320f94",
+    "vendor/anlogic_hx4s20_udp/par_ph1demo/al_ip/pll_gen.v": "83acf5d318070806d0ed0986f04f0d5a37bd98735728f1ac4be7b0cc982455c0",
+    "vendor/anlogic_hx4s20_udp/par_ph1demo/al_ip/rx_pll.v": "0c5fcdc0e921f076884f90f0e188e4b0e632bbea8266026b1a174bfb8dd7ab24",
+    "vendor/anlogic_hx4s20_udp/par_ph1demo/al_ip/TEMAC_CORE_gate.v": "96167779d09373cf3ac131ecfa8a2b5d25ec28e4a7fbc446b0b1c5fe01036eeb",
+    "vendor/anlogic_hx4s20_udp/par_ph1demo/al_ip/TEMAC_CORE.ipc": "80a8b8daffa2c465edc80df2143013c3b399d762f08e5501b0a2431537cbf6d8",
+    "vendor/anlogic_hx4s20_udp/src/clk_gen_rst_gen.v": "22394cf13ef897e679ef3d72b91150eeea0ff53474ac3fa73d292231d8f74577",
+    "vendor/anlogic_hx4s20_udp/src/div_clk_gen.v": "d33d57f0d70d8d05a9e7b81fb5b56690505c6127d119a24f8dcb49c96e2afe7a",
+    "vendor/anlogic_hx4s20_udp/src/IDDR.v": "cbf4c3c34dafe672aa7ccc010440e01fc7dbddf428bde868319d8d0580208f53",
+    "vendor/anlogic_hx4s20_udp/src/ODDR.v": "d3edb14daebdcb028e1cb3a8c6c944556fa28568c04e8a0193c868f654ad3a84",
+    "vendor/anlogic_hx4s20_udp/src/RAMB16_S9_S9.v": "457278a570cf5a9f6e8280a4c2860154a785e7e110d46f5e6f9c2aa263fe4287",
+    "vendor/anlogic_hx4s20_udp/src/rgmii_interface.v": "cfe987991204ff5d307fbe9043dc0c42f3b9d9cf4f5bccfd6f9e8a3d8ea7c5d4",
+    "vendor/anlogic_hx4s20_udp/src/rx_client_fifo.v": "ff1be590e136905cd36b19b99869eab8596cadddb820ebfa63abd6bc2674c04b",
+    "vendor/anlogic_hx4s20_udp/src/temac_block.v": "cbb801f21ab7db5312f1bdc6b107c3480e709309bc7377b9d85678519d34cd78",
+    "vendor/anlogic_hx4s20_udp/src/temac_clk_gen.v": "b1b3474b1a97cc96a73297be56c4d3fc8322891cd3d6f83b3560d2fe95c126d3",
+    "vendor/anlogic_hx4s20_udp/src/tx_client_fifo.v": "f4a118ba55c737b26b1a1498402a5ce5e710e30ab4fb34ca8feb49f23c2333bc",
+    "vendor/anlogic_hx4s20_udp/src/tx_clk_en_gen.v": "da8c09e5308e8bebbfdfacaad7d83f5f9371811f54a8f6203e452e40649b02e9",
+    "vendor/anlogic_lab6/al_ip/afifo_16_32_256.v": "32c86a05d74f05c19e38ad87d73040530f6430fee6acbf9b4d4df8900152b4ed",
+    "vendor/anlogic_lab6/al_ip/afifo_32_16_256.v": "3f0119e1b1bcecd5af05cdfdb3a56dc336efcbc2eea9f9dd3af8b98a205ded75",
+    "vendor/anlogic_lab6/frame_fifo_read.v": "9620c3151b0a905b7defaff8048af2938368737b9ce27696e3021e495dbcfc1d",
+    "vendor/anlogic_lab6/frame_fifo_write.v": "202042f62448cc1bc8b73f2ec70ff4a012969bb5e8f4226a9e8e0cca7e9d37f0",
+    "vendor/anlogic_lab6/frame_read_write.v": "118d27a3aefbd3fa241cce1491015d7f54161acd523a526fd4cff5ea66ef3c96",
+    "vendor/anlogic_lab6/sdram/enc_file/global_def.v": "398a6f849990f421c65d3d65db4a2e09824811b61d027cc375c99bd3d2f2e896",
+    "vendor/anlogic_lab6/sdram/enc_file/sdr_as_ram.enc.v": "3fc0299e910b80fca5eb5d644f6c62232e0b7e40f01701084c2d98b044f07aff",
+    "vendor/anlogic_lab6/sdram/enc_file/sdr_init_ref.enc.v": "101157ca6b08281a3bf7746af36fa69fc3521b560a960cad4bf7fbcb3bd16e44",
+    "vendor/anlogic_lab6/sdram/enc_file/sdr_wrrd.enc.v": "c7d7fe07d75f66aa88d9f986b3006319c995162434f104f9990664b374cdfdd2",
+    "vendor/anlogic_lab6/sdram/sdram.v": "e3859f8e09180ef2dd36365143134a081b91f7a133ba2870f9106d03e0225e2c",
+    "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/DVITransmitter.enc.vhd": "fa009e816fc717374679dba8096c518dc6f3ffbc2389d440a1724d9487ec1674",
+    "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/SerializerN_1_lvds_dat.enc.vhd": "2215e28372d39d6cb155f5b87feb39fa578cca39223cedb9e712ca7413d7783e",
+    "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/SerializerN_1_lvds.enc.vhd": "d5fb9b03e33a0e43398e1e963036bbd87fd386c23af1b79f23e3d32e87b1dd63",
+    "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/TMDSEncoder.enc.vhd": "f87572d7ce8539276e280c411fe46f42f3282210d7c53601cfd6c8ecb8c71beb",
+    "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/hdmi_tx.vhd": "dc91fe383c0001b1ce71b91bbd8deee2ff3c6fc14e5b973cb33e168653264aa5",
+    "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/sd_card/sd_card_cmd.v": "0220af147042e24f2da4a56dd8c22909d1ff5b3fa2b86aca86b3c52291ade7c3",
+    "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/sd_card/sd_card_sec_read_write.v": "562ff43e6544728d09143fed377dfc67af37ace1ce3351fdcc56306b3b8a00ec",
+    "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/sd_card/sd_card_top.v": "9875d2603c55dbd66c961cb26d23834f525242ba6e5209abf5bdeee44e8a4426",
+    "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/sd_card/spi_master.v": "a8c1cce7d22a6bd32d2cf08d441723858085eb05424e462487844c571ec102f2",
+    "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/video_delay.v": "f47c4b63f8baa6d8874c87dca5b72dfdadd19f4a107403da98752bce98936433"
+  },
+  "build_directory": "_build_secondary_main5e_manual_browse_seed6",
+  "report_sha256": {
+    "console.log": "b7364d962fa247c294e45e611f4fdef25fc3628a8f8ec29a06350deeb9e6ffd4",
+    "bitgen.log": "a5e8aa70363195be6b249b931ff5d21b29eea50931fbfa6aa565484cd17af6e2",
+    "secondary_main5e_gate.area": "17e9297f2857dbf0c92f1c5fa2a4baf1c4116335ce8534635e417c73490f896e",
+    "secondary_main5e_place.area": "4e83ebca16c0fc5d04af38002d25e21e987d21db5fd1186f29c1b16df8b3b201",
+    "secondary_main5e_final.ts": "fc7e17b66c99fa3e029568b39fc950babcd59ca9974d0ce301d5bd22b884cb44",
+    "secondary_main5e_final.timing": "571fbe3104cce32c775b5a28eb069c301c93b4c270265adde0b4cd2130cec91a",
+    "secondary_main5e_exception.timing": "91c89dafe06ba87cda2ba0e03428435b5b468c8db5813e78c6ee7f50de81d5c6",
+    "secondary_main5e_pr.status": "5d3c3e8efc44f7c6042237789d49227438beb7bf8220336fbf5a3e46ed37d17d"
+  },
+  "simulation": {
+    "sim/regression_alignment.log": {
+      "sha256": "c01ea5eb0b1abd319d8ae65af76b65426aebffe6f83e486a8fe09024e8748f71",
+      "passes": 2
+    },
+    "sim/regression_codec.log": {
+      "sha256": "c5ffdab60f1d43af3c8f9484b7a41b4aa1ee4c9b57d5f6507f288794c3a3ee8b",
+      "passes": 1
+    },
+    "sim/regression_endpoint.log": {
+      "sha256": "7c5207494b44a8ffd327fbc1301367450234c5d667ed9cb4434afe8c58a914e0",
+      "passes": 1
+    },
+    "sim/regression_fixed_udp.log": {
+      "sha256": "da08b7769de80ca020f6f8c279349413bb1050376f17361afdbc89b58d4fc0d3",
+      "passes": 2
+    },
+    "sim/regression_keys.log": {
+      "sha256": "00751654dab017c31db888fbc01e3f0c87a270f05211998316d3dbb10229e1f3",
+      "passes": 1
+    },
+    "sim/regression_status.log": {
+      "sha256": "6fcf316d9bfd5b61f2fba06bd4be44afb184c7590f24d333a8accf2a9def8cb8",
+      "passes": 1
+    },
+    "sim/run_secondary_local_regression.log": {
+      "sha256": "c6301d145b62e02533602285c3bf2ed466f91d6b4f62a05851d8861eaae2898e",
+      "passes": 3
+    },
+    "sim/run_secondary_transition_regression.log": {
+      "sha256": "3b39147756ea19a6e977f60df3d7ae9e847ff8f77cd60ca1125bb69afe44ff90",
+      "passes": 2
+    },
+    "sim/run_secondary_native720_media_regression.log": {
+      "sha256": "517094f682c8eeca8a5c47e5803e62330b7be2692a86fbc15071a1ffa4283a98",
+      "passes": 2
+    }
+  },
+  "offline_python": "PASS both tools --self-test, no physical NIC",
+  "media_clock_constraints": "unchanged against ac0af11"
+}

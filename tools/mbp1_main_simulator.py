@@ -16,7 +16,8 @@ from mbp1_secondary_pc_probe import LOCAL, MAIN_HELLO, SECONDARY, check_control,
 PRESETS = ((3, 2, 3, 3), (5, 3, 4, 4), (3, 4, 4, 3), (2, 1, 2, 4))
 NAMES = {1: "HELLO", 2: "HEARTBEAT", 3: "STATUS_QUERY", 4: "ACK",
          0x12: "PLAYBACK_STATE", 0x13: "DISPLAY_PRESET",
-         0x14: "DISPLAY_ADJUST", 0x15: "VIEWPORT_SET"}
+         0x14: "DISPLAY_ADJUST", 0x15: "VIEWPORT_SET",
+         0x17: "BROWSE_MODE_SET", 0x18: "BROWSE_IMAGE_SET"}
 
 
 class Main:
@@ -28,6 +29,8 @@ class Main:
         self.highlight = 0
         self.preload = None
         self.lecture = None
+        self.manual = False
+        self.phase = 0
         self.emergency = False
         self.preset = 0
         self.indices = list(PRESETS[0])
@@ -48,18 +51,19 @@ class Main:
     def heartbeat(self):
         mode = 3 if self.emergency else 2 if self.lecture is not None else 1
         artifact = self.lecture if self.lecture is not None else self.highlight
-        phase = 0 if self.lecture is not None else 255
+        phase = self.phase if self.lecture is not None else 255
         preload = self.preload if self.preload is not None else 15
         ready = preload if self.lecture is None and not self.emergency else 15
-        data = bytearray((mode, artifact, phase, int(self.lecture is not None),
+        play_state = (5 if self.manual else 1) if self.lecture is not None else 0
+        data = bytearray((mode, artifact, phase, play_state,
                           int(self.emergency), self.preset, 0, 0x80))
         data += bytes(4) + int(self.emergency).to_bytes(2, "big")
         data += bytes(((self.highlight << 4) | preload, (preload << 4) | ready))
         return bytes(data)
 
     def display(self):
-        return bytes((self.preset, *self.indices, self.zoom, 3,
-                      0 if self.lecture is not None else 255)) + \
+        return bytes((self.preset, *self.indices, self.zoom, 6 if self.manual else 3,
+                      self.phase if self.lecture is not None else 255)) + \
             self.pan[0].to_bytes(2, "big", signed=True) + \
             self.pan[1].to_bytes(2, "big", signed=True)
 
@@ -71,8 +75,9 @@ class Main:
 
     def playback(self):
         artifact = self.lecture if self.lecture is not None else self.highlight
-        payload = bytes((artifact, int(self.lecture is not None),
-                         0 if self.lecture is not None else 255, self.preset)) + bytes(4)
+        play_state = (5 if self.manual else 1) if self.lecture is not None else 0
+        payload = bytes((artifact, play_state,
+                         self.phase if self.lecture is not None else 255, self.preset)) + bytes(4)
         seq = self.send(0x12, 1, payload)
         self.playback_wait = (seq, payload, time.monotonic(), 1)
         print(f"TX PLAYBACK_STATE seq={seq} artifact={artifact} lecture={self.lecture is not None}")
@@ -86,11 +91,13 @@ class Main:
             valid, detail = check_control(kind, payload, self.lecture)
             if kind == 0x15:
                 valid = (len(payload) == 8 and self.lecture is not None and
-                         payload[0] == self.lecture and payload[1] == 0 and
+                         payload[0] == self.lecture and payload[1] == self.phase and
                          payload[2] == self.zoom and payload[3] == 0 and
                          -240 <= int.from_bytes(payload[4:6], "big", signed=True) <= 240 and
                          -135 <= int.from_bytes(payload[6:8], "big", signed=True) <= 135)
             result = 5 if not valid or flags not in (1, 5) else 4 if self.emergency else 0
+            if kind == 0x18 and not self.manual:
+                result = 5
             if result == 0:
                 if kind == 0x13:
                     self.preset = payload[0]
@@ -98,16 +105,24 @@ class Main:
                 elif kind == 0x14:
                     self.preset = 255
                     self.indices = list(payload[:4])
-                else:
+                elif kind == 0x15:
                     self.pan = (int.from_bytes(payload[4:6], "big", signed=True),
                                 int.from_bytes(payload[6:8], "big", signed=True))
+                elif kind == 0x17:
+                    if self.manual and payload[0] == 0:
+                        self.lecture = None
+                        self.phase = 0
+                        self.pan = (0, 0)
+                    self.manual = bool(payload[0])
+                elif kind == 0x18:
+                    self.phase = payload[1]
             self.last_control = (*key, result)
             self.counts["CONTROL"] += 1
             print(f"RX {NAMES[kind]} seq={seq} {detail} -> "
                   f"{'OK' if result == 0 else 'BUSY' if result == 4 else 'INVALID_STATE'}")
         self.send(4, 2, seq.to_bytes(4, "big") + bytes((kind, result, 0, 0)))
         if result == 0:
-            self.send(0x16, payload=self.display())
+            self.snapshot()
 
     def receive(self):
         data, source = self.sock.recvfrom(512)
@@ -140,7 +155,7 @@ class Main:
                   f"seq={ack_seq} result={payload[5]}")
             if self.playback_wait and ack_seq == self.playback_wait[0] and payload[4] == 0x12:
                 self.playback_wait = None
-        elif kind in (0x13, 0x14, 0x15):
+        elif kind in (0x13, 0x14, 0x15, 0x17, 0x18):
             self.control(kind, flags, seq, int.from_bytes(data[12:16], "big"), payload)
         else:
             self.counts["BAD"] += 1
@@ -169,11 +184,14 @@ class Main:
                 self.preload = artifact
             if parts[0] == "lecture":
                 self.lecture = artifact
+                self.phase = 0
                 self.highlight = artifact
                 self.pan = (0, 0)
                 self.playback()
         elif parts[0] == "emergency" and len(parts) == 2 and parts[1] in ("on", "off"):
             self.emergency = parts[1] == "on"
+            if self.emergency:
+                self.manual = False
         else:
             print("Commands: highlight/preload/lecture 0..4 | overview | "
                   "emergency on/off | status | quit")
@@ -256,6 +274,15 @@ if __name__ == "__main__":
         main.command("emergency off")
         main.control(0x13, 1, 7, 9, b"\x01\x01\0\0")
         assert main.preset == 1 and main.indices == list(PRESETS[1])
+        main.control(0x17, 1, 8, 9, b"\x01\0\0\0")
+        assert main.manual and main.heartbeat()[3] == 5 and main.display()[6] == 6
+        main.control(0x18, 1, 9, 9, b"\x02\x03\0\0")
+        assert main.phase == 3 and main.heartbeat()[2] == 3
+        main.control(0x17, 1, 10, 9, bytes(4))
+        assert main.lecture is None and not main.manual and main.heartbeat()[2:4] == b"\xff\0"
+        main.command("lecture 2")
+        main.control(0x17, 1, 11, 9, bytes(4))
+        assert main.lecture == 2, "idempotent normal mode must not stop a lecture"
         assert all(decode(data) for data, peer in test_sock.sent if peer == SECONDARY)
         print("PASS status payloads, control ACK and CRC")
     else:

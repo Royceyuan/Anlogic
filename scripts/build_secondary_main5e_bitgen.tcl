@@ -1,6 +1,6 @@
 import_device eagle_s20.db -package EG4S20BG256
 set root .
-set build [file join $root _build_secondary_main5e_return_align_v06_seed6]
+set build [file join $root _build_secondary_main5e_manual_browse_seed6]
 set status [file join $build secondary_main5e_pr.status]
 set log [file join $build console.log]
 set db [file join $build secondary_main5e_pr.db]
@@ -16,5 +16,5 @@ foreach file $required_files {if {![file exists [file join $root $file]] || [fil
 if {!$good} {puts "REFUSED: stale P&R, warnings, or failed timing"; exit}
 cd $root
 import_db $db
-bitgen -bit [file join $root release hx4s20_secondary_main5e_return_align_v06.bit]
+bitgen -bit [file join $root release hx4s20_secondary_main5e_manual_browse.bit]
 exit

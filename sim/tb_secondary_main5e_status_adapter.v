@@ -58,6 +58,11 @@ initial begin
     state(8'd2,8'd0,8'd0,4'd3);
     if (!info_active || info_artifact!=2)
         $fatal(1,"confirmed lecture must show actual artifact");
+    @(negedge clk); hb[103:96]=8'd5; hb[111:104]=8'd3; hb_pulse=1;
+    @(negedge clk); hb_pulse=0;
+    repeat(5) @(negedge clk);
+    if (!info_active || info_artifact!=2 || preload!=3)
+        $fatal(1,"silent detail3 must retain actual artifact intro, not preload target");
     state(8'd2,8'd0,8'd1,4'd4);
     if (!emergency || preload!=4)
         $fatal(1,"emergency must override lecture");

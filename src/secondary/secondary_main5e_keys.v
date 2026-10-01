@@ -13,6 +13,8 @@ module secondary_main5e_keys (
     input wire display_pulse,
     input wire [95:0] display_data,
     input wire control_ready,
+    input wire peer_alive,
+    input wire manual_supported,
     output reg control_request,
     output reg [7:0] control_type,
     output reg [63:0] control_payload,
@@ -28,17 +30,26 @@ key_debounce u_keys (
 reg [3:0] sw_ff1, sw_ff2, sw_stable;
 reg [19:0] sw_settle;
 assign manual_mode = sw_stable[3];
-assign manual_next = manual_mode && key_press[0];
 reg [127:0] hb;
 reg [95:0] display;
 reg hb_seen, display_seen;
+reg desired_manual_d, mode_retry_ready;
+reg [3:0] mode_attempts;
 wire [7:0] hb_artifact = hb[119:112];
 wire [7:0] hb_phase = hb[111:104];
+// SW4 is the secondary's local carousel, not main-board silent browsing.
+assign manual_next = manual_mode && !sw_stable[2] && !display[42] &&
+                     hb_phase == 8'hff && key_press[0];
 wire hb_emergency = hb[95:88] != 0;
 wire hb_restoring = hb[70];
 wire [1:0] mode = sw_stable[1:0];
-wire [7:0] step = sw_stable[2] ? 8'd2 : 8'd1;
-wire signed [16:0] pan_step = sw_stable[2] ? 17'sd40 : 17'sd20;
+wire [7:0] step = 8'd1;
+wire signed [16:0] pan_step = 17'sd20;
+wire mode_matches = display[42] == sw_stable[2];
+wire main_safe = !hb_emergency && !hb_restoring &&
+                 (hb[127:120] == 1 || hb[127:120] == 2) &&
+                 (hb[103:96] == 0 || hb[103:96] == 1 ||
+                  hb[103:96] == 2 || hb[103:96] == 5);
 wire [7:0] key_code = key_press[0] ? 8'd0 :
                       key_press[1] ? 8'd1 :
                       key_press[2] ? 8'd2 : 8'd3;
@@ -102,6 +113,7 @@ always @(posedge clk or posedge rst) begin
     if (rst) begin
         sw_ff1 <= 0; sw_ff2 <= 0; sw_stable <= 0; sw_settle <= 0;
         hb <= 0; display <= 0; hb_seen <= 0; display_seen <= 0;
+        desired_manual_d <= 0; mode_retry_ready <= 1; mode_attempts <= 0;
         control_request <= 0; control_type <= 0; control_payload <= 0;
     end else begin
         sw_ff1 <= sw; sw_ff2 <= sw_ff1;
@@ -113,10 +125,32 @@ always @(posedge clk or posedge rst) begin
         end else sw_settle <= 0;
         if (heartbeat_pulse) begin hb <= heartbeat_data; hb_seen <= 1; end
         if (display_pulse) begin display <= display_data; display_seen <= 1; end
+        desired_manual_d <= sw_stable[2];
+        if (!peer_alive) begin
+            hb_seen <= 0; display_seen <= 0;
+            mode_retry_ready <= 1; mode_attempts <= 0;
+        end else if (desired_manual_d != sw_stable[2] || mode_matches ||
+                     hb_restoring || hb_emergency) begin
+            mode_retry_ready <= 1; mode_attempts <= 0;
+        end else if (heartbeat_pulse && control_ready) mode_retry_ready <= 1;
         control_request <= 0;
-        if ((|key_press) && control_ready && hb_seen && display_seen &&
-            !hb_emergency && !hb_restoring &&
-            !(manual_next && hb_phase == 8'hff)) begin
+        if (!control_request && control_ready && peer_alive && hb_seen &&
+            display_seen && main_safe) begin
+            // Reconcile the switch with applied state after recovery/reconnection.
+            // BUSY gets a new sequence only after a fresh heartbeat, at most 10 times.
+            if (manual_supported && !mode_matches && mode_retry_ready && mode_attempts < 10) begin
+                control_type <= 8'h17;
+                control_payload <= {7'd0,sw_stable[2],56'd0};
+                control_request <= 1;
+                mode_retry_ready <= 0; mode_attempts <= mode_attempts + 1'b1;
+            end else if ((|key_press) && mode_matches && sw_stable[2] &&
+                         manual_supported && hb[103:96] == 5 && hb_artifact <= 4 &&
+                         hb_phase <= 4 && display[39:32] == hb_phase) begin
+                control_type <= 8'h18;
+                control_payload <= {hb_artifact,key_code,48'd0};
+                control_request <= 1;
+            end else if ((|key_press) && !sw_stable[2] && !display[42] &&
+                         !(manual_next && hb_phase == 8'hff)) begin
             if (mode == 2'b00) begin
                 control_type <= 8'h13;
                 control_payload <= {6'd0,key_code[1:0],8'd1,16'd0,32'd0};
@@ -133,6 +167,7 @@ always @(posedge clk or posedge rst) begin
                 control_payload <= {hb_artifact,hb_phase,display[55:48],8'd0,
                                     pan_x,pan_y};
                 control_request <= 1;
+            end
             end
         end
     end

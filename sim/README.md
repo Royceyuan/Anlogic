@@ -29,7 +29,7 @@ Pop-Location
 | regression_codec.log | 1 | MBP1 CRC、编解码及错误包拒绝 |
 | regression_endpoint.log | 1 | 副板协议端点 |
 | regression_udp.log | 2 | 固定地址 UDP 两个方向 |
-| regression_keys.log | 1 | 按键及手动轮播控制 |
+| regression_keys.log | 1 | 正常控制、SW3 静音浏览、SW4 本地轮播隔离 |
 | regression_status.log | 1 | 主板状态与副屏页面适配 |
 | regression_local.log | 3 | 轮播、后台缓存、简介和应急页面 |
 | regression_transition.log | 2 | 转场控制和遮罩 |
@@ -38,3 +38,12 @@ Pop-Location
 2026-10-01 清理后以上 9 项、15 个用例已通过。对齐回归使用实际帧控制器和 FIFO，SDRAM 返回由测试替身产生；它不能替代真实板卡验证。官方 FIFO 的未连接可选端口可能产生既有警告。
 
 `work*`、日志和 `transcript` 均为可重新生成的仿真缓存，不提交到 Git。
+
+2026-10-01 手动浏览增量：端点测试新增 capability bit9、0x17/0x18 四字节、状态5、ACK/状态先后到达、转场超过1.5秒仍等待、8秒超时释放、全貌物理槽4、退出至少100ms的新心跳、BUSY、断线及新会话取消。按键测试新增拨码意图重同步、转场按键丢弃、旧主板兼容、恢复及应急后重同步；状态适配测试确认静音详情仍显示实际文物简介，不被预载目标污染。
+
+离线协议工具自检（不绑定网卡、不占用 UDP 5000）：
+
+```powershell
+py -3 tools/mbp1_secondary_pc_probe.py --self-test
+py -3 tools/mbp1_main_simulator.py --self-test
+```

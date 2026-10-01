@@ -9,9 +9,10 @@ import time
 
 LOCAL = ("192.168.10.1", 5000)
 SECONDARY = ("192.168.10.2", 5000)
-MAIN_HELLO = bytes.fromhex("0101010100050003000001ff")
+MAIN_HELLO = bytes.fromhex("0101010100050004000003ff")
 TYPES = {1: "HELLO", 2: "HEARTBEAT", 3: "STATUS_QUERY", 4: "ACK",
-         0x13: "DISPLAY_PRESET", 0x14: "DISPLAY_ADJUST", 0x15: "VIEWPORT_SET"}
+         0x13: "DISPLAY_PRESET", 0x14: "DISPLAY_ADJUST", 0x15: "VIEWPORT_SET",
+         0x17: "BROWSE_MODE_SET", 0x18: "BROWSE_IMAGE_SET"}
 
 
 def crc16(data):
@@ -50,7 +51,14 @@ def check_control(kind, payload, lecture):
                  and payload[2] <= 5 and payload[3] <= 6
                  and payload[4:] == b"\x01\0\0\0")
         detail = f"indices={list(payload[:4])}"
-    else:
+    elif kind == 0x17:
+        valid = len(payload) == 4 and payload[0] <= 1 and payload[1:] == bytes(3)
+        detail = f"manual={payload[0]}" if payload else "empty"
+    elif kind == 0x18:
+        valid = (len(payload) == 4 and lecture is not None and payload[0] == lecture
+                 and payload[1] <= 3 and payload[2:] == bytes(2))
+        detail = f"artifact/image={list(payload[:2])}"
+    elif kind == 0x15:
         valid = (len(payload) == 8 and lecture is not None and payload[0] == lecture
                  and payload[1] == 0 and payload[2] == 1 and payload[3] == 0
                  and -240 <= int.from_bytes(payload[4:6], "big", signed=True) <= 240
@@ -58,6 +66,8 @@ def check_control(kind, payload, lecture):
         detail = (f"artifact={payload[0]} phase={payload[1]} zoom={payload[2]} "
                   f"pan=({int.from_bytes(payload[4:6], 'big', signed=True)},"
                   f"{int.from_bytes(payload[6:8], 'big', signed=True)})") if len(payload) == 8 else "bad length"
+    else:
+        valid, detail = False, "unsupported control"
     return valid, detail
 
 
@@ -126,7 +136,7 @@ def run(seconds, lecture):
                 snapshot()
             elif kind == 4:
                 seen["ACK" if len(payload) == 8 and flags == 2 else "BAD"] += 1
-            elif kind in (0x13, 0x14, 0x15):
+            elif kind in (0x13, 0x14, 0x15, 0x17, 0x18):
                 valid, detail = check_control(kind, payload, lecture)
                 valid = valid and flags in (1, 5)
                 seen["CONTROL" if valid else "BAD"] += 1
@@ -158,6 +168,9 @@ if __name__ == "__main__":
             raise AssertionError("corrupt CRC accepted")
         assert check_control(0x13, b"\x02\x01\0\0", None)[0]
         assert not check_control(0x14, b"\x07\x02\x03\x03\x01\0\0\0", None)[0]
+        assert check_control(0x17, b"\x01\0\0\0", None)[0]
+        assert check_control(0x18, b"\x02\x03\0\0", 2)[0]
+        assert not check_control(0x18, b"\x01\x03\0\0", 2)[0]
         print("PASS CRC, packet, control parser")
     else:
         raise SystemExit(run(args.seconds, args.lecture_artifact))

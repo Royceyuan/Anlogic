@@ -20,6 +20,7 @@ module mbp1_secondary_endpoint #(
     output wire tx_valid,
     output wire [15:0] tx_length,
     output wire peer_alive,
+    output wire manual_supported,
     output reg heartbeat_pulse,
     output reg [127:0] heartbeat_data,
     output reg display_pulse,
@@ -84,6 +85,7 @@ reg phy_link_d;
 reg [31:0] peer_boot_id;
 reg peer_boot_seen;
 reg hello_seen;
+reg peer_manual_cap;
 reg [31:0] last_hello_seq;
 reg hb_seen, display_seen, diag_seen;
 reg [31:0] hb_seq, display_seq, diag_seq;
@@ -99,7 +101,7 @@ wire new_boot = !peer_boot_seen || peer_boot_id != packet_boot_id;
 wire heartbeat_fields_ok =
     (packet_payload[119:112] <= 8'd4 || packet_payload[119:112] == 8'hff) &&
     (packet_payload[111:104] <= 8'd4 || packet_payload[111:104] == 8'hff) &&
-    packet_payload[103:96] <= 8'd4 && packet_payload[95:88] <= 8'd1 &&
+    packet_payload[103:96] <= 8'd5 && packet_payload[95:88] <= 8'd1 &&
     (packet_payload[11:8] <= 4'd4 || packet_payload[11:8] == 4'hf);
 wire display_fields_ok =
     (packet_payload[127:120] <= 8'd3 || packet_payload[127:120] == 8'hff) &&
@@ -108,13 +110,32 @@ wire display_fields_ok =
     (packet_payload[87:80] == 8'd1 || packet_payload[87:80] == 8'd2) &&
     (packet_payload[71:64] <= 8'd4 || packet_payload[71:64] == 8'hff);
 assign peer_alive = phy_link && peer_boot_seen && heartbeat_age_ms < 11'd2000;
+assign manual_supported = peer_alive && hello_seen && peer_manual_cap;
 reg control_pending, control_waiting, control_sent;
 reg control_ack_ok, control_status_ok;
 reg [7:0] active_control_type;
 reg [63:0] active_control_payload;
 reg [31:0] active_control_seq;
 reg [3:0] control_attempts;
-reg [10:0] control_age_ms;
+reg [12:0] control_age_ms;
+reg control_hb_fresh, control_display_fresh;
+wire manual_control = active_control_type == 8'h17 || active_control_type == 8'h18;
+wire [12:0] status_timeout_ms = manual_control ? 13'd8000 : 13'd1500;
+wire manual_status_match = control_hb_fresh && control_display_fresh &&
+    heartbeat_data[95:88] == 0 && !heartbeat_data[70] &&
+    display_data[39:32] == heartbeat_data[111:104] &&
+    ((active_control_type == 8'h17 &&
+      display_data[42] == active_control_payload[56] &&
+      ((active_control_payload[56] &&
+        ((heartbeat_data[103:96] == 0 && heartbeat_data[111:104] == 8'hff) ||
+         (heartbeat_data[103:96] == 5 && heartbeat_data[111:104] <= 4))) ||
+       (!active_control_payload[56] && heartbeat_data[103:96] == 0 &&
+        heartbeat_data[111:104] == 8'hff))) ||
+     (active_control_type == 8'h18 && display_data[42] &&
+      heartbeat_data[103:96] == 5 &&
+      heartbeat_data[119:112] == active_control_payload[63:56] &&
+      (heartbeat_data[111:104] == active_control_payload[55:48] ||
+       (active_control_payload[55:48] == 0 && heartbeat_data[111:104] == 4))));
 wire control_status_match =
     (active_control_type == 8'h13 &&
      packet_payload[127:120] == active_control_payload[63:56]) ||
@@ -135,6 +156,7 @@ always @(posedge clk or posedge rst) begin
         tx_gap_ms <= 0; phy_link_d <= 0;
         peer_boot_id <= 0; peer_boot_seen <= 0;
         hello_seen <= 0; last_hello_seq <= 0;
+        peer_manual_cap <= 0;
         hb_seen <= 0; display_seen <= 0; diag_seen <= 0;
         hb_seq <= 0; display_seq <= 0; diag_seq <= 0;
         hello_pending <= 1; hello_waiting <= 0;
@@ -149,6 +171,7 @@ always @(posedge clk or posedge rst) begin
         active_control_type <= 0; active_control_payload <= 0;
         active_control_seq <= 0; control_attempts <= 0;
         control_age_ms <= 0; control_done <= 0; control_result <= 0;
+        control_hb_fresh <= 0; control_display_fresh <= 0;
         heartbeat_pulse <= 0; heartbeat_data <= 0;
         display_pulse <= 0; display_data <= 0;
         diagnostic_pulse <= 0; diagnostic_data <= 0;
@@ -162,6 +185,12 @@ always @(posedge clk or posedge rst) begin
         diagnostic_pulse <= 0;
         send <= 0;
         control_done <= 0;
+        // ACK accepts the request; only fresh applied telemetry completes it.
+        if (control_waiting && control_ack_ok &&
+            (manual_control ? manual_status_match : control_status_ok)) begin
+            control_waiting <= 0; control_pending <= 0;
+            control_done <= 1; control_result <= 0;
+        end
         if (ms_tick) begin
             ms_divider <= 0;
             uptime_ms <= uptime_ms + 32'd1;
@@ -183,17 +212,17 @@ always @(posedge clk or posedge rst) begin
                 else query_waiting <= 0;
             end else if (query_waiting) query_wait_ms <= query_wait_ms + 7'd1;
             if (control_waiting && control_sent) begin
-                if (control_age_ms < 11'd1500)
-                    control_age_ms <= control_age_ms + 11'd1;
-                if (!control_ack_ok && control_age_ms == 11'd99) begin
+                if (control_age_ms < status_timeout_ms)
+                    control_age_ms <= control_age_ms + 13'd1;
+                if (!control_ack_ok && control_age_ms == 13'd99) begin
                     if (control_attempts < 4'd10) control_pending <= 1;
                     else begin
-                        control_waiting <= 0;
+                        control_waiting <= 0; control_pending <= 0;
                         control_done <= 1; control_result <= 8'hfe;
                         query_pending <= 1;
                     end
-                end else if (control_ack_ok && control_age_ms == 11'd1499) begin
-                    control_waiting <= 0;
+                end else if (control_ack_ok && control_age_ms == status_timeout_ms - 1'b1) begin
+                    control_waiting <= 0; control_pending <= 0;
                     control_done <= 1; control_result <= 8'hfd;
                     query_pending <= 1;
                 end
@@ -204,21 +233,25 @@ always @(posedge clk or posedge rst) begin
             (ms_tick && heartbeat_age_ms == 11'd1999)) begin
             peer_boot_seen <= 0;
             hello_seen <= 0;
+            peer_manual_cap <= 0;
             hb_seen <= 0; display_seen <= 0; diag_seen <= 0;
             hello_pending <= 1; hello_waiting <= 0;
             query_pending <= 0; query_waiting <= 0;
             control_waiting <= 0; control_pending <= 0;
+            if (control_waiting) begin control_done <= 1; control_result <= 8'hfc; end
         end
         if (packet_valid) begin
             if (new_boot) begin
                 peer_boot_seen <= 1;
                 peer_boot_id <= packet_boot_id;
                 hello_seen <= 0;
+                peer_manual_cap <= 0;
                 hb_seen <= 0; display_seen <= 0; diag_seen <= 0;
                 heartbeat_age_ms <= 11'd2000;
                 hello_pending <= 1; hello_waiting <= 0;
                 query_pending <= 1; query_waiting <= 0;
                 control_waiting <= 0; control_pending <= 0;
+                if (control_waiting) begin control_done <= 1; control_result <= 8'hfc; end
             end
             case (packet_type)
                 8'h01: if (packet_flags[0]) begin
@@ -228,6 +261,7 @@ always @(posedge clk or posedge rst) begin
                                    packet_payload[127:96] == 32'h01010101) ? 8'd0 : 8'd5;
                     if (packet_payload_length == 16'd12 &&
                         packet_payload[127:96] == 32'h01010101) begin
+                        peer_manual_cap <= packet_payload[41];
                         query_pending <= 1;
                         if (new_boot || !hello_seen ||
                             last_hello_seq != packet_seq) begin
@@ -235,6 +269,7 @@ always @(posedge clk or posedge rst) begin
                             last_hello_seq <= packet_seq;
                             hb_seen <= 0; display_seen <= 0; diag_seen <= 0;
                             control_waiting <= 0; control_pending <= 0;
+                            if (control_waiting) begin control_done <= 1; control_result <= 8'hfc; end
                             hello_pending <= 1; hello_waiting <= 0;
                             heartbeat_age_ms <= 11'd2000;
                         end
@@ -246,11 +281,17 @@ always @(posedge clk or posedge rst) begin
                     heartbeat_data <= packet_payload;
                     hb_seq <= packet_seq; hb_seen <= 1;
                     heartbeat_age_ms <= 0;
+                    if (!new_boot && control_waiting && control_sent)
+                        control_hb_fresh <= !(active_control_type == 8'h17 &&
+                            !active_control_payload[56] && control_age_ms < 13'd100);
                     if (control_waiting &&
                         (packet_payload[95:88] != 8'd0 || packet_payload[70] ||
                          (active_control_type == 8'h15 &&
                           (packet_payload[119:112] != active_control_payload[63:56] ||
-                           packet_payload[111:104] != active_control_payload[55:48])))) begin
+                           packet_payload[111:104] != active_control_payload[55:48])) ||
+                         (active_control_type == 8'h18 &&
+                          (packet_payload[119:112] != active_control_payload[63:56] ||
+                           packet_payload[111:104] == 8'hff)))) begin
                         control_waiting <= 0; control_pending <= 0;
                         control_done <= 1; control_result <= 8'hfc;
                     end
@@ -271,8 +312,9 @@ always @(posedge clk or posedge rst) begin
                         packet_payload[127:96] == active_control_seq) begin
                         if (packet_payload[87:80] == 8'd0) begin
                             control_ack_ok <= 1;
-                            if (control_status_ok) begin
-                                control_waiting <= 0;
+                            control_pending <= 0;
+                            if (!manual_control && control_status_ok) begin
+                                control_waiting <= 0; control_pending <= 0;
                                 control_done <= 1; control_result <= 0;
                             end
                         end else begin
@@ -293,11 +335,13 @@ always @(posedge clk or posedge rst) begin
                     display_pulse <= 1;
                     display_data <= packet_payload[127:32];
                     display_seq <= packet_seq; display_seen <= 1;
+                    if (control_waiting && control_sent && !new_boot)
+                        control_display_fresh <= 1;
                     if (control_waiting && control_sent &&
                         !new_boot && control_status_match) begin
                         control_status_ok <= 1;
                         if (control_ack_ok) begin
-                            control_waiting <= 0;
+                            control_waiting <= 0; control_pending <= 0;
                             control_done <= 1; control_result <= 0;
                         end
                     end
@@ -316,7 +360,8 @@ always @(posedge clk or posedge rst) begin
         end
         if (control_request && control_ready &&
             (control_type == 8'h13 || control_type == 8'h14 ||
-             control_type == 8'h15)) begin
+             control_type == 8'h15 ||
+             (manual_supported && (control_type == 8'h17 || control_type == 8'h18)))) begin
             active_control_type <= control_type;
             active_control_payload <= control_payload;
             active_control_seq <= next_seq;
@@ -325,8 +370,10 @@ always @(posedge clk or posedge rst) begin
             control_sent <= 0; control_ack_ok <= 0;
             control_status_ok <= 0; control_attempts <= 0;
             control_age_ms <= 0;
+            control_hb_fresh <= 0; control_display_fresh <= 0;
         end
-        if (!packet_valid && !control_request && !send && send_ready && tx_ready &&
+        if (phy_link && !(ms_tick && heartbeat_age_ms == 11'd1999) &&
+            !packet_valid && !control_request && !send && send_ready && tx_ready &&
             tx_gap_ms == 0 && (ack_pending || hello_pending ||
                                query_pending || heartbeat_pending ||
                                control_pending)) begin
@@ -345,7 +392,7 @@ always @(posedge clk or posedge rst) begin
                 send_type <= 8'h01;
                 send_flags <= hello_waiting ? 8'h05 : 8'h01;
                 send_payload_length <= 5'd12;
-                send_payload <= {32'h02020101, 32'h00050001, 32'd0, 32'd0};
+                send_payload <= {32'h02020101, 32'h00050002, 32'h00000200, 32'd0};
                 if (hello_waiting) begin
                     send_seq <= hello_seq;
                     hello_attempts <= hello_attempts + 4'd1;
@@ -371,7 +418,7 @@ always @(posedge clk or posedge rst) begin
             end else if (control_pending) begin
                 send_type <= active_control_type;
                 send_flags <= control_attempts == 0 ? 8'h01 : 8'h05;
-                send_payload_length <= active_control_type == 8'h13 ? 5'd4 : 5'd8;
+                send_payload_length <= (active_control_type == 8'h13 || manual_control) ? 5'd4 : 5'd8;
                 send_payload <= {active_control_payload, 64'd0};
                 send_seq <= active_control_seq;
                 control_pending <= 0; control_sent <= 1;
