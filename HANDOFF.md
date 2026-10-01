@@ -2,6 +2,8 @@
 
 ## 当前基线
 
+2026-10-01新增独立单板手动验收入口，操作见`docs/主板手动浏览单板验收_20261001.md`。只有`*_manual_test.bit`启用SW3:SW2:SW1的101/110及手动KEY3切图；下面正式产品bit及正式按键保持不变。没有修改副板或TF媒体。
+
 - 唯一 TD 工程：`dual_fpga_museum_terminal_main_board.al`
 - 顶层模块：`dual_fpga_museum_terminal_main_board`
 - 器件：安路 `EG4S20BG256`

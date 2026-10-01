@@ -25,6 +25,7 @@ module tb_museum_media_core #(
     parameter integer MAIN4_EMERGENCY_TEST = 0,
     parameter integer MAIN5_CONTROLS_TEST = 0,
     parameter integer MAIN5_REMOTE_TEST = 0,
+    parameter integer LOCAL_MANUAL_TEST = 0,
     parameter integer LIGHT_BAND_TEST = 0
 );
     reg clk_50m = 1'b0;
@@ -77,6 +78,8 @@ module tb_museum_media_core #(
         .ENABLE_MAIN4(MAIN4_EMERGENCY_TEST || MAIN5_REMOTE_TEST),
         .ENABLE_MAIN5_CONTROLS(MAIN5_CONTROLS_TEST || MAIN5_REMOTE_TEST),
         .ENABLE_MAIN5_REMOTE(MAIN5_REMOTE_TEST),
+        .ENABLE_LOCAL_MANUAL_TEST(LOCAL_MANUAL_TEST),
+        .KEY_DEBOUNCE_BITS(LOCAL_MANUAL_TEST ? 2 : 19),
         .ENABLE_MUSEUM_OVERVIEW(MAIN3_ZOOM_TEST || MAIN5_CONTROLS_TEST || MAIN5_REMOTE_TEST),
         .ENABLE_MUSEUM_LECTURE(MAIN3_ZOOM_TEST || MAIN5_CONTROLS_TEST || MAIN5_REMOTE_TEST),
 `endif
@@ -640,6 +643,76 @@ module tb_museum_media_core #(
             release dut.lecture_finished; release dut.lecture_artifact_index;
             release dut.manual_cache_ready;
             $display("PASS MAIN5 manual mode/command validation/silent state report");
+            // Diagnostic-only switch/key inputs share the production manual dispatcher.
+            force dut.overview_cache_ready=1'b1;
+            force dut.lecture_active=1'b0;
+            force dut.lecture_finished=1'b0;
+            force dut.recovery_busy=1'b0;
+            force dut.manual_cache_ready=1'b1;
+            sw=5;
+            repeat(60) @(negedge clk_50m);
+            if(dut.manual_mode !== (LOCAL_MANUAL_TEST!=0))
+                $fatal(1,"local diagnostic gate/101 enter");
+            if(LOCAL_MANUAL_TEST) begin
+                sw=0;
+                repeat(60) @(negedge clk_50m);
+                force dut.lecture_active=1'b1;
+                force dut.lecture_display_slot=2'd0;
+                force dut.key_press_pulse=4'b0100;
+                @(negedge clk_50m);
+                if(!dut.manual_image_pulse || dut.browse_image_index!=1)
+                    $fatal(1,"local KEY3 full->detail1 dispatch");
+                release dut.key_press_pulse;
+                force dut.lecture_display_slot=2'd3;
+                force dut.key_press_pulse=4'b0100;
+                @(negedge clk_50m);
+                if(!dut.manual_image_pulse || dut.browse_image_index!=0)
+                    $fatal(1,"local KEY3 detail3->full wrap");
+                release dut.key_press_pulse;
+                force dut.transition_active_ff2_50m=1'b1;
+                force dut.key_press_pulse=4'b0100;
+                @(negedge clk_50m);
+                if(dut.manual_image_pulse)$fatal(1,"local key accepted during transition");
+                release dut.key_press_pulse;
+                release dut.transition_active_ff2_50m;
+                force dut.manual_cache_ready=1'b0;
+                force dut.key_press_pulse=4'b0100;
+                @(negedge clk_50m);
+                if(dut.manual_image_pulse)$fatal(1,"local key accepted with incomplete cache");
+                release dut.key_press_pulse;
+                force dut.manual_cache_ready=1'b1;
+                // A short intermediate switch code must not leave manual mode.
+                sw=6; repeat(5) @(negedge clk_50m);
+                sw=0; repeat(60) @(negedge clk_50m);
+                if(!dut.manual_mode)$fatal(1,"switch bounce accepted");
+                sw=6; repeat(60) @(negedge clk_50m);
+                if(dut.manual_mode)$fatal(1,"110 did not leave manual mode");
+                force dut.lecture_active=1'b0;
+                sw=5; repeat(60) @(negedge clk_50m);
+                if(!dut.manual_mode)$fatal(1,"second manual entry failed");
+                force dut.client_rst_n=1'b0;
+                repeat(3) @(negedge clk_50m);
+                release dut.client_rst_n;
+                repeat(60) @(negedge clk_50m);
+                if(dut.manual_mode)$fatal(1,"recovery reissued held 101 code");
+                sw=0; repeat(60) @(negedge clk_50m);
+                force dut.main5_remote_busy=1'b1;
+                sw=5; repeat(60) @(negedge clk_50m);
+                if(dut.manual_mode)$fatal(1,"busy mode request accepted");
+                release dut.main5_remote_busy;
+                repeat(60) @(negedge clk_50m);
+                if(dut.manual_mode)$fatal(1,"rejected mode request replayed later");
+                sw=0; repeat(60) @(negedge clk_50m);
+                sw=5; repeat(60) @(negedge clk_50m);
+                if(!dut.manual_mode)$fatal(1,"fresh mode request after busy failed");
+                sw=6; repeat(60) @(negedge clk_50m);
+                release dut.lecture_display_slot;
+                $display("PASS local manual enter/cycle/wrap/busy/cache/bounce/exit/recovery");
+            end
+            sw=0; repeat(60) @(negedge clk_50m);
+            release dut.overview_cache_ready; release dut.lecture_active;
+            release dut.lecture_finished; release dut.recovery_busy;
+            release dut.manual_cache_ready;
             send_remote(8'h13,{8'd1,8'd1,16'd0,32'd0},8'd0);
             timeout=0;
             while (dut.main5_preset_applied!=8'd1 && timeout<100000) begin

@@ -91,6 +91,7 @@ module museum_media_core #(
     ,parameter integer ENABLE_MAIN4 = 0
     ,parameter integer ENABLE_MAIN5_CONTROLS = 0
     ,parameter integer ENABLE_MAIN5_REMOTE = 0
+    ,parameter integer ENABLE_LOCAL_MANUAL_TEST = 0
     ,parameter integer LECTURE_CLOCK_HZ = 50_000_000
     ,parameter integer OVERVIEW_CROP_X0_0 = 384
     ,parameter integer OVERVIEW_CROP_X0_1 = 384
@@ -645,6 +646,42 @@ reg manual_set_pulse, manual_image_pulse;
 reg manual_value;
 reg [1:0] browse_image_index;
 wire manual_mode, manual_cache_ready;
+reg [3:0] main5_sw_ff1, main5_sw_ff2;
+wire local_manual_changed;
+wire [2:0] local_manual_switch;
+generate if (ENABLE_LOCAL_MANUAL_TEST) begin : g_local_manual_test
+    reg [2:0] candidate, stable;
+    reg [KEY_DEBOUNCE_BITS+2:0] count;
+    reg changed;
+    // Reuse the existing two-flop switch synchronizer; accept a whole code
+    // only after ~21 ms on the board. Recovery does not reissue a held code.
+    always @(posedge clk_50m or negedge write_rst_n) begin
+        if (!write_rst_n) begin
+            candidate<=0; stable<=0; count<=0; changed<=0;
+        end else begin
+            changed<=0;
+            if (main5_sw_ff2[2:0] != candidate) begin
+                candidate<=main5_sw_ff2[2:0]; count<=0;
+            end else if (candidate != stable) begin
+                if (&count) begin stable<=candidate; changed<=1; count<=0; end
+                else count<=count+1'b1;
+            end else count<=0;
+        end
+    end
+    assign local_manual_changed=changed;
+    assign local_manual_switch=stable;
+end else begin : g_no_local_manual_test
+    assign local_manual_changed=1'b0;
+    assign local_manual_switch=3'd0;
+end endgenerate
+wire local_manual_set = local_manual_changed &&
+    (local_manual_switch==3'd5 || local_manual_switch==3'd6) &&
+    !main5_remote_busy && !key_press_pulse[3] && !remote_command_valid &&
+    overview_cache_ready && !lecture_finished &&
+    (local_manual_switch==3'd6 || !lecture_active || manual_cache_ready);
+wire local_manual_next = ENABLE_LOCAL_MANUAL_TEST && key_press_pulse[2] &&
+    manual_mode && lecture_active && !lecture_finished && manual_cache_ready &&
+    !main5_remote_busy && !key_press_pulse[3] && !remote_command_valid;
 always @(posedge clk_50m or negedge write_rst_n) begin
     if (!write_rst_n) begin
         main5_preset_shadow <= 8'd0;
@@ -695,7 +732,13 @@ always @(posedge clk_50m or negedge write_rst_n) begin
                 main5_temperature_applied <= main5_temperature_shadow;
             end
         end
-        if (ENABLE_MAIN5_REMOTE && remote_command_valid && !main5_command_seen) begin
+        if (local_manual_set) begin
+            manual_value <= local_manual_switch==3'd5;
+            manual_set_pulse <= 1'b1;
+        end else if (local_manual_next) begin
+            browse_image_index <= lecture_display_slot + 2'd1;
+            manual_image_pulse <= 1'b1;
+        end else if (ENABLE_MAIN5_REMOTE && remote_command_valid && !main5_command_seen) begin
             main5_command_seen <= 1'b1;
             remote_command_done <= 1'b1;
             remote_command_result <= 8'd0;
@@ -1097,6 +1140,7 @@ generate
             // Do not start a background overwrite between mode validation and acceptance.
             // An already accepted read still completes normally (mode command returns BUSY).
             .preload_valid(museum_preload_valid &&
+                !(local_manual_set && local_manual_switch==3'd5) &&
                 !(ENABLE_MAIN5_REMOTE && !lecture_preloading && remote_command_valid &&
                   remote_command_type == 8'h17 && remote_command_payload[63:56] == 8'd1)),
             .preload_index(museum_preload_index),
@@ -2117,7 +2161,8 @@ always @(posedge clk_50m or negedge write_rst_n) begin
                 osd_panel_enable <= ~osd_panel_enable;
         end
 
-        if (ENABLE_MAIN5_CONTROLS && key_press_pulse[2]) begin
+        if (ENABLE_MAIN5_CONTROLS && key_press_pulse[2] &&
+            !(ENABLE_LOCAL_MANUAL_TEST && manual_mode && lecture_active)) begin
             if (overview_mode)
                 overview_osd_visible <= ~overview_osd_visible;
             else if (lecture_active)
@@ -3364,7 +3409,6 @@ wire [7:0] main5_error = (image_load_error || writer_error || row_overflow) ? 8'
 assign main5_mode = emergency_active_50m ? 8'd3 :
                     main5_error != 0 ? 8'd4 :
                     !sd_init_done ? 8'd0 : lecture_active ? 8'd2 : 8'd1;
-reg [3:0] main5_sw_ff1, main5_sw_ff2;
 reg [23:0] main5_ui_previous;
 wire main5_entry_ready = !lecture_active && !recovery_busy && !emergency_active_50m &&
                         overview_cache_ready && museum_preload_valid &&

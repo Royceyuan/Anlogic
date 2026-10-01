@@ -1,0 +1,35 @@
+import_device eagle_s20.db -package EG4S20BG256
+file mkdir ./_build_local_manual_test
+open_project ./dual_fpga_museum_terminal_main_board.al -single_run
+load_run_param -run syn_1
+reanalyze -file ./src/memory/museum_display_subsystem.v -define MUSEUM_LOCAL_MANUAL_TEST
+elaborate -top dual_fpga_museum_terminal_main_board
+read_adc ./constraints/museum_main_board_pins.adc
+clear_sdc -user
+read_sdc ./constraints/museum_main_board_timing.sdc
+optimize_rtl
+set_param gate pack_effort high
+optimize_gate -packarea ./_build_local_manual_test/gate.area
+export_db ./_build_local_manual_test/gate.db
+legalize_phy_inst
+set_param place seed 2
+set_param place effort high
+set_param place opt_timing high
+set_param place logic_level_opt on
+place
+update_timing -mode manhattan
+report_area -io_info -file ./_build_local_manual_test/place.area
+report_timing_summary -file ./_build_local_manual_test/place.timing
+export_db ./_build_local_manual_test/place.db
+set_param route fix_hold off
+set_param route effort routability
+route
+fix_hold
+set_param route fix_hold on
+update_timing -mode final
+drc_check -all
+report_area -io_info -file ./_build_local_manual_test/final.area
+report_timing_status -file ./_build_local_manual_test/final.ts
+report_timing_summary -file ./_build_local_manual_test/final.timing
+export_db ./_build_local_manual_test/pr.db
+exit
