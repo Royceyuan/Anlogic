@@ -28,6 +28,8 @@ Get-Content scripts/build_museum_main_board_bitgen.tcl | & D:\TD_6.2.1\bin\td_co
 - `release/dual_fpga_museum_terminal_main_board_last_verified.bit`：上一版实板验收回退 bit。
 - `release/media/OSDNAME.BIN`：TF 卡 OSD 名称媒体。
 
-最终资源、时序和 DRC 报告位于 `docs/reports/museum_main_board_*.rpt`，验证摘要见 `docs/主板最终产品工程验证_20260928.md`。
+最终资源、时序和 DRC 报告位于 `docs/reports/museum_main_board_*.rpt`，本次双板验证摘要见 `docs/reports/manual_mode_controls_rearm_20261001.md`。
 
 操作、协议和板测记录以 `HANDOFF.md` 及 `docs/副板实施与双板通信协议.md` 为准。
+
+历史产物归档及保留范围见 `docs/工程残留整理_20261001.md`。正式源码、当前构建数据库、回归入口、素材打包工具及回退位流均保留；清理不改变当前 bit。

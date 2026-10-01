@@ -15,7 +15,7 @@
 | bitgen | `scripts/build_museum_main_board_bitgen.tcl` |
 | 当前发布 | `release/dual_fpga_museum_terminal_main_board.bit` |
 | 已验收回退 | `release/dual_fpga_museum_terminal_main_board_last_verified.bit` |
-| 最终验证摘要 | `docs/主板最终产品工程验证_20260928.md` |
+| 当前验证摘要 | `docs/reports/manual_mode_controls_rearm_20261001.md` |
 
 独立 MAIN-5A/5B 诊断工程、旧分辨率顶层、阶段包装器和历史构建脚本均不是最终产品入口，已移至 `D:\VSCode\CodeFiles\Git_TD\rubbish\Anlogic_历史源码与阶段入口_20260928`。
 

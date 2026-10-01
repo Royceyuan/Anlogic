@@ -7,7 +7,7 @@
 - 主板：`release/dual_fpga_museum_terminal_main_board.bit`，634313字节，SHA-256 `36D9BB7C74E23C047BEC15A5E128A8540852B8C4B7ECD11F504E25CDB107A6EC`；同目录 `.bit.sha256` 同步更新。
 - 副板：`Anlogic2/release/hx4s20_secondary_main5e_manual_browse.bit`，629641 字节，SHA-256 `FD19782EA3AC24D1F59918F6F08C054E20832B40DDD4ED9C44FF088FE1BF151A`。
 - 副板 `release/manifest_manual_browse.json` 记录配对主板校验值以及副板源码、报告和仿真日志校验值。不能只根据 capability bit9 判断是否已经烧录本次修改版。
-- 主板上一版 `14D50353...` 保存在 `_build_museum_main_board/museum_manual_pre_osd_14d50353.bit`。副板旧 v06 位流及原 `manifest.json` 未覆盖。
+- 主板上一版 `14D50353...` 额外备份已归档至仓库外 rubbish；恢复位置见 `../工程残留整理_20261001.md`。主板 release 的已验收回退 bit、副板旧 v06 位流及原 `manifest.json` 未覆盖。
 
 ## 2. 实际行为与修复依据
 
@@ -46,7 +46,7 @@ OSD 在 ZOOM 上方显示实际“自动/手动”；状态经同步和帧边界
 
 ## 4. 可重复离线检查
 
-在各工程 `sim` 目录调用 `D:\Modelsim\win64\vsim.exe -c -do <脚本>`；日志为 `registered_*.log`，本轮不提交临时日志和仿真工作库。
+在各工程 `sim` 目录调用 `D:\Modelsim\win64\vsim.exe -c -do <脚本>`；本次原始主板日志 `registered_*.log` 已随历史产物移入仓库外 rubbish，归档清单可定位。回归脚本与测试源码保留，可重新生成工作库及日志。副板 manifest 引用的9份日志保留。
 
 | 主板检查入口 | 覆盖内容 |
 |---|---|
@@ -73,4 +73,4 @@ OSD 在 ZOOM 上方显示实际“自动/手动”；状态经同步和帧边界
 4. 手动展示中 SW3=0，应先回全貌、收拢总览；WAV 和首条字幕重新就绪后确认进入自动讲解，字幕应正常出现。重复至少三轮；原图缓存保留，但音频和字幕需要有限读盘等待。
 5. 分别测试所有文物、后台切换预载目标、转场中快速按键、暂停/缩放/平移、KEY4、应急开关、断线和双方独立复位。正在恢复/转场时拒绝新控制，恢复后必须重新可用，不能回放旧按键。
 
-本轮构建交付不代表已实板通过；请回报双板实测结果后再标记验收。
+上述验证描述为构建当时证据。后续用户反馈这对 bit “可以了”，并要求分别 push；本次仅整理文件，位流和硬件功能未修改。

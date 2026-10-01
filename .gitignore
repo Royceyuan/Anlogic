@@ -14,6 +14,8 @@ tmp/
 *.dmp
 *.bid
 *.qor
+/final_timing.rpt
+*.wlf
 transcript
 
 # ModelSim generated libraries and local configuration
