@@ -613,6 +613,33 @@ module tb_museum_media_core #(
             repeat (20) @(negedge clk_50m);
             force dut.transition_active=1'b0;
             repeat(5) @(negedge clk_50m);
+            force dut.overview_cache_ready=1'b1;
+            force dut.lecture_active=1'b1;
+            force dut.lecture_finished=1'b0;
+            force dut.lecture_artifact_index=3'd1;
+            force dut.manual_cache_ready=1'b0;
+            send_remote(8'h17,{8'd1,24'd0,32'd0},8'd4);
+            if(dut.manual_mode)$fatal(1,"unsafe overwritten cache entered manual mode");
+            force dut.manual_cache_ready=1'b1;
+            send_remote(8'h17,{8'd2,24'd0,32'd0},8'd5);
+            send_remote(8'h17,{8'd1,24'd0,32'd0},8'd0);
+            repeat(5) @(negedge clk_50m);
+            if(!dut.manual_mode || dut.audio_stream_enable || !dut.audio_paused ||
+               !main5_display[42] || main5_display[40] ||
+               dut.main5_heartbeat[103:96]!=8'd5)
+                $fatal(1,"manual mode did not silence media/report actual state");
+            send_remote(8'h18,{8'd2,8'd3,16'd0,32'd0},8'd5);
+            send_remote(8'h18,{8'd1,8'd4,16'd0,32'd0},8'd5);
+            send_remote(8'h18,{8'd1,8'd3,16'd0,32'd0},8'd0);
+            repeat(3) @(negedge clk_50m);
+            if(dut.browse_image_index!=3)$fatal(1,"manual image command not dispatched");
+            send_remote(8'h17,64'd0,8'd0);
+            repeat(3) @(negedge clk_50m);
+            if(dut.manual_mode)$fatal(1,"manual mode did not exit");
+            release dut.overview_cache_ready; release dut.lecture_active;
+            release dut.lecture_finished; release dut.lecture_artifact_index;
+            release dut.manual_cache_ready;
+            $display("PASS MAIN5 manual mode/command validation/silent state report");
             send_remote(8'h13,{8'd1,8'd1,16'd0,32'd0},8'd0);
             timeout=0;
             while (dut.main5_preset_applied!=8'd1 && timeout<100000) begin

@@ -140,6 +140,38 @@ def main():
         ack(outgoing(0x13))
         state()
         assert peer.ready()
+        incoming(2,bytes([4,3,1,2,0,0,2,0])+bytes(8))
+        peer.browse_mode(True)  # Silent browsing tolerates an unavailable WAV.
+        command=outgoing(0x17)
+        assert command[4] == bytes([1,0,0,0])
+        ack(command)
+        incoming(0x16,bytes([0,3,2,3,3,2,7,1])+bytes(4))
+        incoming(2,bytes([2,3,1,5,0,0,0,0])+bytes(8))
+        assert peer.ready()
+        peer.image(3)
+        command=outgoing(0x18)
+        assert command[4] == bytes([3,3,0,0])
+        ack(command)
+        incoming(0x16,bytes([0,3,2,3,3,2,7,3])+bytes(4))
+        incoming(2,bytes([2,3,3,3,0,0,0,0])+bytes(8))
+        assert not peer.ready()  # Target phase alone is not transition completion.
+        incoming(2,bytes([2,3,3,5,0,0,0,0])+bytes(8))
+        assert peer.ready()
+        peer.browse_mode(False)
+        command=outgoing(0x17)
+        ack(command)
+        incoming(0x16,bytes([0,3,2,3,3,2,3,0])+bytes(4))
+        incoming(2,bytes([2,3,0,4,0,0,0,0])+bytes(8))
+        assert not peer.ready()  # Exiting must finish the return to overview.
+        incoming(0x16,bytes([0,3,2,3,3,1,3,255])+bytes(4))
+        incoming(2,bytes([1,3,255,0,0,0,0,0])+bytes(8))
+        assert not peer.ready()  # Logical stop precedes the video-frame boundary.
+        peer.command_started -= 0.11
+        incoming(2,bytes([1,3,255,0,0,0,0,0])+bytes(8))
+        assert peer.ready()
+        peer.browse_mode(False)
+        assert peer.pending is None
+        state()
         for levels in ([7, 2, 3, 3], [3, 5, 3, 3], [3, 2, 6, 3], [3, 2, 3, 7]):
             try:
                 peer.adjust(levels)

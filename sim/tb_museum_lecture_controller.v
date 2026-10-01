@@ -1,6 +1,10 @@
 `timescale 1ns / 1ps
 `default_nettype none
 module tb_museum_lecture_controller;
+parameter MANUAL_TEST=0;
+reg manual_set=0,manual_value=0,manual_image_set=0;
+reg [1:0] manual_image=0;
+wire manual_mode,manual_cache_ready;
 reg clk=0,rst_n=0,enable=1,overview_ready=0,confirm=0,key_pause=0,key_return=0;
 reg preload_valid=0,audio_prepared=0,audio_frame_pulse=0,audio_stream_done=0;
 reg audio_drained=0,load_accept=0,load_complete=0,load_error=0;
@@ -16,9 +20,12 @@ wire [31:0] audio_frame_index;
 wire [1:0] load_slot,detail_index,display_slot;
 wire [2:0] load_frame_slot,load_artifact,artifact,display_frame_slot;
 always #5 clk=~clk;
-museum_lecture_controller #(.CLOCK_HZ(2)) dut(
+museum_lecture_controller #(.CLOCK_HZ(2),.ENABLE_MANUAL(MANUAL_TEST)) dut(
  .clk(clk),.rst_n(rst_n),.enable(enable),.overview_ready(overview_ready),
  .confirm_pulse(confirm),.key_pause(key_pause),.key_return(key_return),
+ .manual_set(manual_set),.manual_value(manual_value),
+ .manual_image_set(manual_image_set),.manual_image(manual_image),
+ .manual_mode(manual_mode),.manual_cache_ready(manual_cache_ready),
  .selected_index(selected),.preload_valid(preload_valid),.preload_index(preload_index),
  .audio_prepared(audio_prepared),.audio_frame_pulse(audio_frame_pulse),
  .audio_total_frames(audio_total_frames),.audio_stream_done(audio_stream_done),
@@ -58,6 +65,51 @@ initial begin
  for(i=0;i<4;i=i+1)check_load(i,i,4);
  if(!cache_ready||preloading)$fatal(1,"initial cache not ready");
  if(dut.cached_artifact!==4'd4)$fatal(1,"initial cached artifact telemetry");
+ if(MANUAL_TEST) begin
+  // Arm in overview: silent entry must not require a prepared WAV.
+  manual_value=1;manual_set=1;@(negedge clk);manual_set=0;
+  // Simultaneous KEY2 + mode-off cannot start normal playback without a WAV.
+  manual_value=0;manual_set=1;confirm=1;@(negedge clk);manual_set=0;confirm=0;
+  if(active||manual_mode)$fatal(1,"mode-off/confirm race started unprepared audio");
+  manual_value=1;manual_set=1;@(negedge clk);manual_set=0;
+  confirm=1;@(negedge clk);confirm=0;
+  if(!active||!manual_mode||!manual_cache_ready||paused)
+   $fatal(1,"silent manual entry failed");
+  preload_index=2;
+  for(i=3;i>=0;i=i-1) begin
+   manual_image=i;manual_image_set=1;@(negedge clk);manual_image_set=0;
+   pulse_audio;
+   if(display_slot!=i || audio_frame_index!=0 || finished || preloading)
+    $fatal(1,"manual image/timeline/cache protection failed");
+  end
+  key_pause=1;@(negedge clk);key_pause=0;
+  if(paused)$fatal(1,"manual pause froze transitions");
+  // Exit via the existing full-view return; do not resurrect the old audio.
+  displayed_frame_slot=3;manual_value=0;manual_set=1;
+  @(negedge clk);manual_set=0;
+  if(manual_mode||!finished||display_slot!=0||!audio_restart)
+   $fatal(1,"manual exit failed");
+  display_transition_busy=1;displayed_frame_slot=0;
+  repeat(3)@(negedge clk);
+  if(!active)$fatal(1,"manual return skipped full transition");
+  display_transition_busy=0;@(negedge clk);
+  if(active||audio_frame_index!=0)$fatal(1,"manual exit resumed audio");
+  // Rebuild after switch changes, then enter manual from a paused lecture.
+  repeat(3)@(negedge clk);
+  check_load(0,4,2);
+  for(i=1;i<4;i=i+1)begin
+   repeat(2)@(negedge clk);check_load(i,i,2);
+  end
+  selected=2;audio_prepared=1;confirm=1;@(negedge clk);confirm=0;
+  pulse_audio;key_pause=1;@(negedge clk);key_pause=0;
+  manual_value=1;manual_set=1;@(negedge clk);manual_set=0;
+  if(!manual_mode||paused||display_slot!=1||audio_frame_index!=0||!audio_restart)
+   $fatal(1,"paused-to-manual did not retain image and silence audio");
+  rst_n=0;@(negedge clk);rst_n=1;
+  if(manual_mode||active)$fatal(1,"recovery retained manual session");
+  $display("PASS tb_museum_lecture_controller manual: silent entry, four images, cache protection, exit, paused entry, reset");
+  $finish;
+ end
  audio_prepared=1;confirm=1;@(negedge clk);confirm=0;
  if(!active||display_frame_slot!=0)$fatal(1,"lecture start failed");
  key_pause=1;@(negedge clk);key_pause=0;if(!paused)$fatal(1,"pause failed");

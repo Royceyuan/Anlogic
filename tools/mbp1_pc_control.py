@@ -88,8 +88,10 @@ class Peer:
         if not self.ready():
             raise ValueError("未连接、状态过期或上一命令未完成")
         hb = self.status[2][0]
-        # A subtitle error is diagnostic, not proof that the image path is busy.
-        if (hb[0] not in (1, 2) and not (hb[0] == 4 and hb[6] == 3)) or hb[3] == 3 or hb[4]:
+        # Silent browsing does not require a usable WAV; image errors still block it.
+        media_optional = hb[0] == 4 and (hb[6] == 3 or
+                         (kind in (0x17, 0x18) and hb[6] == 2))
+        if (hb[0] not in (1, 2) and not media_optional) or hb[3] == 3 or hb[4]:
             raise ValueError("主板正在转场、应急、启动或故障，暂不控制")
         self.request(kind, payload)
         self.command_started = time.monotonic()
@@ -113,6 +115,20 @@ class Peer:
         x, y = struct.unpack(">hh", display[8:12])
         x, y = (0, 0) if recenter else (max(-240, min(240, x + dx)), max(-135, min(135, y + dy)))
         self.command(0x15, struct.pack(">BBBBhh", hb[1], hb[2], display[5], int(recenter), x, y))
+
+    def browse_mode(self, manual):
+        if not manual and self.ready() and not self.status[0x16][0][6] & 4:
+            self.message = "已处于正常模式，不中断当前讲解"
+            return
+        self.command(0x17, bytes([int(manual), 0, 0, 0]))
+
+    def image(self, index):
+        if index not in range(4) or not self.ready() or not self.status[0x16][0][6] & 4:
+            raise ValueError("请先进入静音手动浏览，图号范围为 0～3")
+        hb = self.status[2][0]
+        if hb[2] > 4:
+            raise ValueError("请先在主板按 KEY2 进入浏览")
+        self.command(0x18, bytes([hb[1], index, 0, 0]))
 
     def poll(self):
         now = time.monotonic()
@@ -149,8 +165,8 @@ class Peer:
                     sent_payload = self.pending[1]
                     self.pending = None
                     self.message = f"ACK {ack_type:02X}: {RESULTS.get(result, str(result))}"
-                    if ack_type in (0x13, 0x14, 0x15) and result == 0:
-                        self.await_display = now + 1.5
+                    if ack_type in (0x13, 0x14, 0x15, 0x17, 0x18) and result == 0:
+                        self.await_display = now + (8 if ack_type in (0x17, 0x18) else 1.5)
                         self.expected_display = (ack_type, sent_payload)
                     if ack_type == 1:
                         self.connected = result == 0
@@ -175,8 +191,21 @@ class Peer:
             command, sent = self.expected_display
             matched = (display[0] == sent[0] if command == 0x13 else
                        display[0] == 255 and display[1:5] == sent[:4] if command == 0x14 else
+                       bool(display[6] & 4) == bool(sent[0]) if command == 0x17 else
+                       bool(display[6] & 4) and
+                       (display[7] in (0, 4) if sent[1] == 0 else display[7] == sent[1])
+                       if command == 0x18 else
                        display[5] == sent[2] and display[7] == sent[1] and
                        display[8:] == (bytes(4) if sent[3] & 1 else sent[4:]))
+            if command in (0x17, 0x18):
+                hb, hb_at = self.status.get(2, (bytes(16), 0))
+                matched = matched and hb_at >= self.command_started and hb[3] != 3
+                if command == 0x17 and not sent[0]:
+                    # Overview enable is published at a frame boundary; do not
+                    # mistake the immediate logical stop for completed closing.
+                    matched = matched and hb[2] == 255 and hb_at >= self.command_started + 0.1
+                if command == 0x18:
+                    matched = matched and hb[1] == sent[0] and hb[2] == display[7]
             if matched:
                 self.await_display = 0
                 elapsed_ms = (now - self.command_started) * 1000
@@ -271,8 +300,16 @@ def main():
     button = ttk.Button(pane, text="视口居中", command=lambda: act(lambda: peer.pan(recenter=True)))
     button.grid(row=8, column=0, columnspan=4, pady=8)
     controls.append(button)
-    ttk.Label(pane, textvariable=actual, justify="left").grid(row=9, column=0, columnspan=4, sticky="w")
-    ttk.Label(pane, textvariable=status, wraplength=600).grid(row=10, column=0, columnspan=4, pady=10)
+    for col, label, manual in ((0, "正常模式（退出浏览回总览）", False), (2, "静音手动浏览", True)):
+        button = ttk.Button(pane, text=label, command=lambda manual=manual: act(lambda: peer.browse_mode(manual)))
+        button.grid(row=9, column=col, columnspan=2, sticky="ew")
+        controls.append(button)
+    for i, label in enumerate(("全貌", "细节 1", "细节 2", "细节 3")):
+        button = ttk.Button(pane, text=label, command=lambda i=i: act(lambda: peer.image(i)))
+        button.grid(row=10, column=i, pady=8)
+        controls.append(button)
+    ttk.Label(pane, textvariable=actual, justify="left").grid(row=11, column=0, columnspan=4, sticky="w")
+    ttk.Label(pane, textvariable=status, wraplength=600).grid(row=12, column=0, columnspan=4, pady=10)
 
     def tick():
         try:
@@ -294,6 +331,7 @@ def main():
             name = PRESETS[d[0]] if d[0] < 4 else "自定义"
             percentages = ' / '.join(percent_text(i, value) for i, value in enumerate(d[1:5]))
             lines.append(f"预设={name}  亮度/对比/饱和/色温={percentages}\n倍率={d[5]}×  视口=({x}, {y})  波形={bool(d[6]&1)}  总览OSD={bool(d[6]&2)}")
+            lines.append("浏览模式=" + ("静音手动" if d[6]&4 else "正常自动"))
         if 0x31 in peer.status:
             d = peer.status[0x31][0]
             lines.append(f"PHY={d[0]}  速度代码={d[1]}  存储状态={d[3]}  错误={d[6]}")

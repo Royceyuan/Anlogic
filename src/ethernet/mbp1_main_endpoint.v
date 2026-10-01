@@ -99,8 +99,9 @@ reg hello_ack_match, playback_ack_match;
 
 wire ms_tick = (ms_divider == CLOCKS_PER_MS - 1);
 wire is_command = packet_type == 8'h13 || packet_type == 8'h14 ||
-                  packet_type == 8'h15;
-wire command_length_ok = (packet_type == 8'h13 &&
+                  packet_type == 8'h15 || packet_type == 8'h17 || packet_type == 8'h18;
+wire command_length_ok = ((packet_type == 8'h13 || packet_type == 8'h17 ||
+                           packet_type == 8'h18) &&
                           packet_payload_length == 16'd4) ||
                          ((packet_type == 8'h14 || packet_type == 8'h15) &&
                           packet_payload_length == 16'd8);
@@ -123,7 +124,7 @@ wire select_diagnostic = !(ack_pending || hello_pending || heartbeat_pending ||
 wire [127:0] selected_payload =
     ({128{select_ack}} & {ack_seq, ack_type, ack_result, main_mode, 8'd0, 64'd0}) |
     ({128{select_hello}} & {8'h01, 8'h01, 8'h01, 8'h01,
-                          32'h00050003, (ENABLE_CONTROL ? 32'h000001ff : 32'h0000007f), 32'd0}) |
+                          32'h00050004, (ENABLE_CONTROL ? 32'h000003ff : 32'h0000007f), 32'd0}) |
     ({128{select_heartbeat}} & heartbeat_payload) |
     ({128{select_playback}} & {playback_payload, 64'd0}) |
     ({128{select_display}} & {display_payload, 32'd0}) |

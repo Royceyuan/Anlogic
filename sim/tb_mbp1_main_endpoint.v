@@ -76,8 +76,8 @@ end
 always @(posedge clk) if (command_done && command_valid)
     command_count <= command_count + 1;
 always @(posedge clk) if (dut.send && dut.send_type==8'h01) begin
-    if(dut.send_payload[95:64]!==32'h00050003 ||
-       dut.send_payload[63:32] !== (ENABLE_CONTROL ? 32'h1ff : 32'h7f))
+    if(dut.send_payload[95:64]!==32'h00050004 ||
+       dut.send_payload[63:32] !== (ENABLE_CONTROL ? 32'h3ff : 32'h7f))
         $fatal(1,"HELLO version / 1x-pan capability mismatch");
 end
 always @(posedge clk) if (host_rx_valid) begin
@@ -149,6 +149,28 @@ initial begin
         if (last_ack_result !== 8'd0 || command_count != 1)
             $fatal(1, "duplicate command was replayed");
     end
+    display_before=ack_count;
+    send_packet(8'h17, 5'd4, {8'd1,24'd0,96'd0});
+    wait(ack_count>display_before);
+    if(last_ack_result !== (ENABLE_CONTROL ? 8'd0 : 8'd3))
+        $fatal(1,"manual-mode command was not dispatched");
+    display_before=ack_count;
+    send_packet(8'h18, 5'd4, {8'd0,8'd3,16'd0,96'd0});
+    wait(ack_count>display_before);
+    if(last_ack_result !== (ENABLE_CONTROL ? 8'd0 : 8'd3))
+        $fatal(1,"manual-image command was not dispatched");
+    if(ENABLE_CONTROL) begin
+        display_before=ack_count;
+        host_seq=host_seq-32'd1;
+        send_packet(8'h18,5'd4,{8'd0,8'd3,16'd0,96'd0});
+        wait(ack_count>display_before);
+        if(last_ack_result!==0 || command_count!=3)
+            $fatal(1,"duplicate manual image replayed");
+    end
+    display_before=ack_count;
+    send_packet(8'h17, 5'd8, 128'd0);
+    wait(ack_count>display_before);
+    if(last_ack_result !== 8'd2)$fatal(1,"invalid manual length accepted");
     send_packet(8'h02, 5'd16, 128'd0);
     repeat (4) @(negedge clk);
     if (!peer_alive) $fatal(1, "heartbeat did not refresh peer state");
