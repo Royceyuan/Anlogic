@@ -8,13 +8,14 @@ reg hb_pulse=0, display_pulse=0;
 wire request;
 wire [7:0] request_type;
 wire [63:0] request_payload;
+wire manual_mode, manual_next;
 secondary_main5e_keys dut (
     .clk(clk), .rst(rst), .sw(4'd0), .key_n(4'hf),
     .heartbeat_pulse(hb_pulse), .heartbeat_data(hb),
     .display_pulse(display_pulse), .display_data(display),
     .control_ready(1'b1), .control_request(request),
     .control_type(request_type), .control_payload(request_payload),
-    .engineering_page()
+    .manual_mode(manual_mode), .manual_next(manual_next)
 );
 task press;
     input [3:0] keys;
@@ -48,6 +49,23 @@ initial begin
     if (!request || request_type!=8'h15 ||
         request_payload!=64'h02000100ff100000)
         $fatal(1,"viewport clamping to -240");
+    release dut.sw_stable;
+    hb[111:104]=8'hff;
+    hb_pulse=1;
+    @(negedge clk); hb_pulse=0;
+    force dut.sw_stable=4'b1000;
+    force dut.key_press=4'b0001;
+    #1;
+    if (!manual_mode || !manual_next) $fatal(1,"manual KEY1 pulse");
+    @(negedge clk);
+    if (request) $fatal(1,"manual KEY1 sent a main-board preset");
+    release dut.key_press;
+    hb[111:104]=8'd0;
+    hb_pulse=1;
+    @(negedge clk); hb_pulse=0;
+    press(4'b0001);
+    if (!request || request_type!=8'h13)
+        $fatal(1,"lecture KEY1 lost its original preset function");
     release dut.sw_stable;
     $display("PASS tb_secondary_main5e_keys");
     $finish;

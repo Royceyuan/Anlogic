@@ -1,12 +1,11 @@
-# Vendor Intake Placeholder
+# 复用的安路参考代码
 
-这个目录专门放官方参考工程里准备复用的原始代码，不在这里直接改逻辑。
+这里只保留副板正式工程使用的参考代码和 IP：
 
-优先候选来源：
+- `anlogic_lab6/`：Lab6 SDRAM 控制器、FIFO 和帧读写控制。帧读写封装已适配本工程的突发长度、有限帧传输与 FIFO 状态接口，不能视为未修改的原始副本。
+- `official_ref/lab_ex_6_tf_sdram_hdmi/`：TF 卡 SPI 读取、视频延迟和 HDMI 发送代码。
+- `anlogic_hx4s20_udp/`：官方千兆以太网示例中的 TEMAC、RGMII、收发 FIFO 与时钟模块，来源见该目录的 README。
 
-- `lab_ex_6_tf_sdram_hdmi/src/sd_card`
-- `lab_ex_6_tf_sdram_hdmi/src/hdmi`
-- `lab_ex_6_tf_sdram_hdmi/src/frame_read_write.v`
-- `7_teacher_Training/project_file/4_hdmi/*`
+本工程的固定对端 UDP、MBP1 协议、媒体加载和显示控制位于 `src/`。各参考文件的版权声明保留在原文件中。
 
-自己的改造逻辑放回 `src/`，这样后面答辩时容易解释“参考了什么、自己改了什么”。
+请保持这些目录路径：SDRAM 源码通过相对路径引用 `global_def.v`，TEMAC 的 `.ipc` 配置引用同目录的 `TEMAC_CORE_gate.v`。

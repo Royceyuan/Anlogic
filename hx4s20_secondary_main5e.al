@@ -1,5 +1,5 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<Project Version="3" Minor="2" Path="D:/Anlogic_information/hx4s20_secondary">
+<?xml version='1.0' encoding='utf-8'?>
+<Project Version="3" Minor="2" Path=".">
     <Project_Created_Time />
     <TD_Version>6.2.168116</TD_Version>
     <Name>hx4s20_secondary_main5e</Name>
@@ -74,14 +74,6 @@
                     <Attr Name="CompileOrder" Val="8" />
                 </FileInfo>
             </File>
-            <File Path="src/storage/al_dp_ram32.v">
-                <FileInfo>
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="9" />
-                </FileInfo>
-            </File>
             <File Path="src/storage/bmp_row_buffer.v">
                 <FileInfo>
                     <Attr Name="UsedInSyn" Val="true" />
@@ -98,15 +90,6 @@
                     <Attr Name="CompileOrder" Val="11" />
                 </FileInfo>
             </File>
-            <File Path="src/storage/bmp_sdram_block_writer.v">
-                <FileInfo>
-                    <Attr Name="AutoExcluded" Val="true" />
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="12" />
-                </FileInfo>
-            </File>
             <File Path="src/storage/bmp_sdram_row_writer.v">
                 <FileInfo>
                     <Attr Name="UsedInSyn" Val="true" />
@@ -115,46 +98,12 @@
                     <Attr Name="CompileOrder" Val="13" />
                 </FileInfo>
             </File>
-            <File Path="src/video/linebuf_scaler_960x540_to_1280x720.v">
-                <FileInfo>
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="14" />
-                </FileInfo>
-            </File>
             <File Path="src/video/rgb888_adjust.v">
                 <FileInfo>
                     <Attr Name="UsedInSyn" Val="true" />
                     <Attr Name="UsedInP&amp;R" Val="true" />
                     <Attr Name="BelongTo" Val="design_1" />
                     <Attr Name="CompileOrder" Val="15" />
-                </FileInfo>
-            </File>
-            <File Path="src/video/osd_status.v">
-                <FileInfo>
-                    <Attr Name="AutoExcluded" Val="true" />
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="16" />
-                </FileInfo>
-            </File>
-            <File Path="src/video/osd_status_rgb888.v">
-                <FileInfo>
-                    <Attr Name="AutoExcluded" Val="true" />
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="17" />
-                </FileInfo>
-            </File>
-            <File Path="src/video/osd_status_1280_pipe.v">
-                <FileInfo>
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="18" />
                 </FileInfo>
             </File>
             <File Path="src/video/video_fade.v">
@@ -253,15 +202,6 @@
                     <Attr Name="CompileOrder" Val="30" />
                 </FileInfo>
             </File>
-            <File Path="src/clock/video_pll.v">
-                <FileInfo>
-                    <Attr Name="AutoExcluded" Val="true" />
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="31" />
-                </FileInfo>
-            </File>
             <File Path="vendor/anlogic_lab6/sdram/sdram.v">
                 <FileInfo>
                     <Attr Name="UsedInSyn" Val="true" />
@@ -303,24 +243,6 @@
                     <Attr Name="CompileOrder" Val="36" />
                 </FileInfo>
             </File>
-            <File Path="src/clock/video_pll_40m.v">
-                <FileInfo>
-                    <Attr Name="AutoExcluded" Val="true" />
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="37" />
-                </FileInfo>
-            </File>
-            <File Path="src/memory/sdram_bmp_row_top.v">
-                <FileInfo>
-                    <Attr Name="AutoExcluded" Val="true" />
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="39" />
-                </FileInfo>
-            </File>
             <File Path="src/memory/sdram_bmp_row_top_v66.v">
                 <FileInfo>
                     <Attr Name="UsedInSyn" Val="true" />
@@ -337,182 +259,12 @@
                     <Attr Name="CompileOrder" Val="40" />
                 </FileInfo>
             </File>
-            <File Path="src/video/uart_subtitle_overlay.v">
-                <FileInfo>
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="42" />
-                </FileInfo>
-            </File>
-            <File Path="src/memory/top_800x600_v66_uart_subtitle.v">
-                <FileInfo>
-                    <Attr Name="AutoExcluded" Val="true" />
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="45" />
-                </FileInfo>
-            </File>
-            <File Path="src/memory/top_800x600.v">
-                <FileInfo>
-                    <Attr Name="AutoExcluded" Val="true" />
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="44" />
-                </FileInfo>
-            </File>
-            <File Path="src/memory/top_800x600_v67_antialias_subtitle.v">
-                <FileInfo>
-                    <Attr Name="AutoExcluded" Val="true" />
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="47" />
-                </FileInfo>
-            </File>
-            <File Path="src/memory/top_800x600_v68_subtitle_bram_sync.v">
-                <FileInfo>
-                    <Attr Name="AutoExcluded" Val="true" />
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="49" />
-                </FileInfo>
-            </File>
-            <File Path="src/memory/top_800x600_v69_subtitle_bram_aligned.v">
-                <FileInfo>
-                    <Attr Name="AutoExcluded" Val="true" />
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="51" />
-                </FileInfo>
-            </File>
             <File Path="src/clock/video_pll_75m.v">
                 <FileInfo>
                     <Attr Name="UsedInSyn" Val="true" />
                     <Attr Name="UsedInP&amp;R" Val="true" />
                     <Attr Name="BelongTo" Val="design_1" />
                     <Attr Name="CompileOrder" Val="52" />
-                </FileInfo>
-            </File>
-            <File Path="src/memory/top_1280x720_feature_v71_full_features.v">
-                <FileInfo>
-                    <Attr Name="AutoExcluded" Val="true" />
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="53" />
-                </FileInfo>
-            </File>
-            <File Path="src/memory/top_1280x720_feature_v72_resource_optimized.v">
-                <FileInfo>
-                    <Attr Name="AutoExcluded" Val="true" />
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="54" />
-                </FileInfo>
-            </File>
-            <File Path="vendor/official_ref/lab_ex5_i2s_audio_hdmi/lane_lvds_10_1.v">
-                <FileInfo>
-                    <Attr Name="AutoExcluded" Val="true" />
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="55" />
-                </FileInfo>
-            </File>
-            <File Path="vendor/official_ref/lab_ex5_i2s_audio_hdmi/hdmi_phy_warpper.v">
-                <FileInfo>
-                    <Attr Name="AutoExcluded" Val="true" />
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="56" />
-                </FileInfo>
-            </File>
-            <File Path="vendor/official_ref/lab_ex5_i2s_audio_hdmi/hdmi_1_4b_transmitter_core_wrapper.enc.v">
-                <FileInfo>
-                    <Attr Name="AutoExcluded" Val="true" />
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="57" />
-                </FileInfo>
-            </File>
-            <File Path="src/audio/audio_arc_calculate.v">
-                <FileInfo>
-                    <Attr Name="AutoExcluded" Val="true" />
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="58" />
-                </FileInfo>
-            </File>
-            <File Path="src/audio/audio_pcm_player_48k.v">
-                <FileInfo>
-                    <Attr Name="AutoExcluded" Val="true" />
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="59" />
-                </FileInfo>
-            </File>
-            <File Path="src/audio/audio_goertzel8.v">
-                <FileInfo>
-                    <Attr Name="AutoExcluded" Val="true" />
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="60" />
-                </FileInfo>
-            </File>
-            <File Path="src/audio/fat32_wav_streamer.v">
-                <FileInfo>
-                    <Attr Name="AutoExcluded" Val="true" />
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="61" />
-                </FileInfo>
-            </File>
-            <File Path="src/video/audio_visualizer_overlay.v">
-                <FileInfo>
-                    <Attr Name="AutoExcluded" Val="true" />
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="62" />
-                </FileInfo>
-            </File>
-            <File Path="src/video/video_rgb_to_axis_1280x720.v">
-                <FileInfo>
-                    <Attr Name="AutoExcluded" Val="true" />
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="63" />
-                </FileInfo>
-            </File>
-            <File Path="src/video/lane_lvds_10_1_v73.v">
-                <FileInfo>
-                    <Attr Name="AutoExcluded" Val="true" />
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="64" />
-                </FileInfo>
-            </File>
-            <File Path="src/video/hdmi_phy_wrapper_v73.v">
-                <FileInfo>
-                    <Attr Name="AutoExcluded" Val="true" />
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="65" />
                 </FileInfo>
             </File>
             <File Path="src/video/transition_theme_controller.v">
@@ -531,87 +283,6 @@
                     <Attr Name="CompileOrder" Val="67" />
                 </FileInfo>
             </File>
-            <File Path="src/memory/top_1280x720_feature_v73_audio_visualizer.v">
-                <FileInfo>
-                    <Attr Name="AutoExcluded" Val="true" />
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="68" />
-                </FileInfo>
-            </File>
-            <File Path="src/video/museum_overview_controller.v">
-                <FileInfo>
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="69" />
-                </FileInfo>
-            </File>
-            <File Path="src/video/museum_overview_overlay.v">
-                <FileInfo>
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="70" />
-                </FileInfo>
-            </File>
-            <File Path="src/video/museum_lecture_controller.v">
-                <FileInfo>
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="71" />
-                </FileInfo>
-            </File>
-            <File Path="src/video/museum_subtitle_overlay.v">
-                <FileInfo>
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="74" />
-                </FileInfo>
-            </File>
-            <File Path="src/memory/top_1280x720_main1_overview.v">
-                <FileInfo>
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="72" />
-                </FileInfo>
-            </File>
-            <File Path="src/memory/top_1280x720_main2_lecture.v">
-                <FileInfo>
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="73" />
-                </FileInfo>
-            </File>
-            <File Path="src/secondary/top_1280x720_secondary.v">
-                <FileInfo>
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="75" />
-                </FileInfo>
-            </File>
-            <File Path="src/video/video_timing_1280x720_pclk.v">
-                <FileInfo>
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="76" />
-                </FileInfo>
-            </File>
-            <File Path="src/video/hdmi_1280x720_pattern.v">
-                <FileInfo>
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="77" />
-                </FileInfo>
-            </File>
             <File Path="src/secondary/secondary_carousel_controller.v">
                 <FileInfo>
                     <Attr Name="UsedInSyn" Val="true" />
@@ -626,22 +297,6 @@
                     <Attr Name="UsedInP&amp;R" Val="true" />
                     <Attr Name="BelongTo" Val="design_1" />
                     <Attr Name="CompileOrder" Val="79" />
-                </FileInfo>
-            </File>
-            <File Path="src/secondary/top_1280x720_secondary_local.v">
-                <FileInfo>
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="80" />
-                </FileInfo>
-            </File>
-            <File Path="vendor/anlogic_hx4s20_udp/src/BUFGMUX.v">
-                <FileInfo>
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="100" />
                 </FileInfo>
             </File>
             <File Path="vendor/anlogic_hx4s20_udp/src/clk_gen_rst_gen.v">
@@ -732,14 +387,6 @@
                     <Attr Name="CompileOrder" Val="111" />
                 </FileInfo>
             </File>
-            <File Path="vendor/anlogic_hx4s20_udp/src/udp_ip_protocol_stack_merge.enc.v">
-                <FileInfo>
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="112" />
-                </FileInfo>
-            </File>
             <File Path="vendor/anlogic_hx4s20_udp/par_ph1demo/al_ip/rx_pll.v">
                 <FileInfo>
                     <Attr Name="UsedInSyn" Val="true" />
@@ -764,14 +411,6 @@
                     <Attr Name="CompileOrder" Val="115" />
                 </FileInfo>
             </File>
-            <File Path="src/ethernet/udp_echo_buffer.v">
-                <FileInfo>
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="116" />
-                </FileInfo>
-            </File>
             <File Path="src/ethernet/mbp1_fixed_udp.v">
                 <FileInfo>
                     <Attr Name="UsedInSyn" Val="true" />
@@ -786,14 +425,6 @@
                     <Attr Name="UsedInP&amp;R" Val="true" />
                     <Attr Name="BelongTo" Val="design_1" />
                     <Attr Name="CompileOrder" Val="118" />
-                </FileInfo>
-            </File>
-            <File Path="src/ethernet/mbp1_main_endpoint.v">
-                <FileInfo>
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="119" />
                 </FileInfo>
             </File>
             <File Path="src/ethernet/mbp1_secondary_endpoint.v">
@@ -820,28 +451,12 @@
                     <Attr Name="CompileOrder" Val="122" />
                 </FileInfo>
             </File>
-            <File Path="src/secondary/top_secondary_main5e_readonly.v">
-                <FileInfo>
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="123" />
-                </FileInfo>
-            </File>
             <File Path="src/secondary/secondary_main5e_keys.v">
                 <FileInfo>
                     <Attr Name="UsedInSyn" Val="true" />
                     <Attr Name="UsedInP&amp;R" Val="true" />
                     <Attr Name="BelongTo" Val="design_1" />
                     <Attr Name="CompileOrder" Val="124" />
-                </FileInfo>
-            </File>
-            <File Path="src/secondary/secondary_main5e_engineering_overlay.v">
-                <FileInfo>
-                    <Attr Name="UsedInSyn" Val="true" />
-                    <Attr Name="UsedInP&amp;R" Val="true" />
-                    <Attr Name="BelongTo" Val="design_1" />
-                    <Attr Name="CompileOrder" Val="125" />
                 </FileInfo>
             </File>
             <File Path="src/secondary/top_secondary_main5e.v">

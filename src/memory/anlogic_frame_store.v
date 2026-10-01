@@ -53,6 +53,13 @@ wire [ADDR_BITS-1:0]     app_wr_addr;
 wire [MEM_DATA_BITS-1:0] app_wr_din;
 wire [3:0]               app_wr_dm;
 
+// Native-720 D126/D127 board tests: data precedes Sdr_rd_en by one mem_clk.
+// Capture every cycle, including invalid cycles, to retain each burst's first word.
+reg [MEM_DATA_BITS-1:0] sdr_rd_dout_q;
+always @(posedge mem_clk or negedge rst_n)
+    if (!rst_n) sdr_rd_dout_q <= {MEM_DATA_BITS{1'b0}};
+    else sdr_rd_dout_q <= sdr_rd_dout;
+
 assign mem_busy = sdr_busy;
 
 frame_read_write #(
@@ -75,7 +82,7 @@ frame_read_write #(
     .App_rd_en       (app_rd_en),
     .App_rd_addr     (app_rd_addr),
     .Sdr_rd_en       (sdr_rd_en),
-    .Sdr_rd_dout     (sdr_rd_dout),
+    .Sdr_rd_dout     (sdr_rd_dout_q),
 
     .read_clk        (read_clk),
     .read_req        (read_req),

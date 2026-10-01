@@ -13,7 +13,7 @@ if ($volume.FileSystem -ne 'FAT32') {
 }
 
 $images = Join-Path $PSScriptRoot '..\assets\secondary_exhibit_720p_tf'
-$emergency = Join-Path $PSScriptRoot '..\assets\secondary_emergency_720p\IMAGEA.BMP'
+$emergency = Join-Path $PSScriptRoot '..\assets\secondary_emergency_720p_v2\IMAGEA.BMP'
 $target = "${DriveLetter}:\"
 foreach ($name in @((0..9 | ForEach-Object { "IMAGE$_.BMP" }) + 'IMAGEA.BMP')) {
     $from = if ($name -eq 'IMAGEA.BMP') { $emergency } else { Join-Path $images $name }

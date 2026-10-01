@@ -19,6 +19,7 @@ transcript
 sim/work*/
 sim/modelsim.ini
 sim/transcript
+*.wlf
 **/__pycache__/
 *.pyc
 

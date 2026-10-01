@@ -1,71 +1,31 @@
-# HX4S20 图片显示工程
+# HX4S20 副屏工程
 
-唯一安路 TD 工程入口：
+正式分支：`secondary-main5e`。唯一 TD 工程入口：`hx4s20_secondary_main5e.al`，顶层 `top_secondary_main5e`。
 
-`hx4s20_800x600_multimedia.al`
+当前完整版为 `release/hx4s20_secondary_main5e_return_align_v06.bit`，包含以太网控制、原生 720p 显示、自动/手动轮播及 SDRAM 返回对齐修复。2026-10-01 用户确认当前板上效果正常；构建与验证记录见 `release/manifest.json`。
 
-双击该文件即可在 Anlogic TD 中打开统一工程。当前顶层模块为
-`top_1280x720_feature_v72_resource_optimized`，目标器件为 `EG4S20BG256`。
+## 使用
 
-## 当前交付
+1. TF 卡使用 FAT32，根目录放 `IMAGE0.BMP`～`IMAGE9.BMP`、`IMAGEA.BMP`。全部为 1280×720、24 位未压缩 BMP。插入读卡器后，在工程根目录执行：
 
-- 下载文件：`release/hx4s20_1280x720_v72_resource_optimized.bit`
-- 图片：TF 卡根目录放 `IMAGE0.BMP` 至 `IMAGE4.BMP`（支持自适应 24 位 BMP）
-- 手动切图：`SW4=0`，按 `KEY2` 在五张图片间切换
-- 自动切图：`SW4=1`
-- 亮度/对比度：`KEY3` / `KEY4`
-- 复位：`KEY1`
-- 中文字幕：使用 `tools/字幕发送器.vbs` 打开字幕控制台，通过 COM8 发送
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File tools/copy_secondary_native720_to_sd.ps1 -DriveLetter F
+   ```
 
-## 可复现构建
+   这会写入 11 张图片并逐文件核对 SHA256。盘符按实际情况修改。
+2. 将 TF 卡插回副板，SRAM 烧录上述 v06 bit。SW4 向下自动轮播五张文物大图；向上停用自动轮播，用 KEY1 切下一张。
+3. 主板预载命令只在后台缓存简介；确认讲解后显示对应简介与路线图。应急命令优先显示逃生图，红色路线、当前位置及绿色出口周期增强。简介页按键保持主板画面控制功能。
+
+以太网地址、按键表及电脑模拟主板的操作见 [联调说明](docs/SECONDARY_MAIN5E_联调说明.md)。原始素材保存在 `assets/`，可用 `tools/prepare_secondary_exhibit_720p.py` 和 `tools/prepare_secondary_emergency_720p_v2.py` 重新生成 BMP（需要 Pillow）。
+
+## 重建和验证
 
 在工程根目录执行：
 
-```text
-td_commands_prompt.exe scripts/run_media_1280x720_v72_resource_optimized_syn.tcl
-td_commands_prompt.exe scripts/run_media_1280x720_v72_resource_optimized_pr.tcl
-td_commands_prompt.exe scripts/run_media_1280x720_v72_resource_optimized_bitgen.tcl
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/build.ps1
 ```
 
-当前 v72 的构建证据若需追溯，见工程外的
-`D:/Anlogic_information/_hx4s20_multimedia_main_cleanup_20260904/build_dirs`；本目录不再携带 TD 生成的构建目录。硬件状态仍需以实际板测为准。
+默认调用 `D:/Anlogic/TD5.6.2/bin/td_commands_prompt.exe`（实际工具版本 6.2.168116）。其他安装位置使用 `-TD` 参数。脚本先布局布线，再检查时序、警告和输入文件新鲜度，符合条件才生成位流；报告位于 `_build_secondary_main5e_return_align_v06_seed6/`。重建会覆盖 release 中的 bit，manifest 记录的是本次发布位流。
 
-## 1280×720 独立候选 v70c
-
-v70 的完整 1280×720 SDRAM 帧在 25 MHz SDRAM 用户时钟下需要约
-27.93 Mword/s，板测出现花屏、`8008` 且 LED4 灭，证实持续读欠载。v70b 保持
-官方 `31_hdmi_tx_display_B` HDMI TX 和真实 1280×720 输出，将 SDRAM 工作帧
-改为 960×540，再用已验证的线缓冲放大到 1280×720，平均读需求降为约
-15.71 Mword/s。v70b 板测又暴露了物理 BRAM 多一拍和 KEY2 epoch 自锁；v70c
-改用硬件匹配的 NOREG 单拍路径并修复重启。统一 v69 工程不变；v70c 首轮仍关闭
-OSD、字幕和转场。
-
-构建顺序：
-
-```text
-td_commands_prompt.exe scripts/run_media_1280x720_v70c_bram_restart_fix_syn.tcl
-td_commands_prompt.exe scripts/run_media_1280x720_v70c_bram_restart_fix_pr.tcl
-td_commands_prompt.exe scripts/run_media_1280x720_v70c_bram_restart_fix_bitgen.tcl
-```
-
-v70c 路由后 setup WNS `+0.761 ns`、hold WNS `+0.032 ns`，TNS 均为 0；bit 为
-`release/hx4s20_1280x720_v70c_bram_restart_fix.bit`。这些是实现报告，不代表硬件
-已验证。当前只预加载 IMAGE0/IMAGE1 两帧，便于先验收 720P 基础链路。
-
-## 1280×720 当前版本 v72
-
-v72 在 v70c 链路上恢复五图缓存、快速切图、七种转场、自动轮播、亮度/对比度、
-顶部 OSD、原图 DIM 和 UART 中文字幕，并将 DSP 占用保持为 5/29。当前推荐 bit：
-
-- `hx4s20_1280x720_v72_resource_optimized.bit`
-
-详细 SHA256、资源、时序和操作说明见
-`docs/media_1280x720_v71_v72_full_features_20260902.md`。当前修正版尚未上板验证。
-
-## 自适应 BMP
-
-加载期间按比例缩放并居中到 800×600，超出部分用黑色填充；不需要提前把图片改成
-800×600。输入格式为 24 位、未压缩 Windows BMP（BI_RGB）。
-
-工程目录只保留统一 TD 入口、活动/回退源码、约束、构建脚本、源级仿真、工具、必要测试数据、官方 vendor 源和少量发布 bit。历史构建、日志和仿真 work 目录没有丢失，而是移至工程外的
-`D:/Anlogic_information/_hx4s20_multimedia_main_cleanup_20260904`，清单见其中的 `MANIFEST.csv`。当前统一工程的版本索引见 `PROJECT_INDEX.md`。
+回归命令见 [sim/README.md](sim/README.md)。清理后 9 组仿真、15 个用例通过。目录只保留正式工程依赖、素材、必要工具、说明和回归；构建与仿真缓存可重新生成。

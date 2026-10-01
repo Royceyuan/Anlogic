@@ -14,6 +14,8 @@ module secondary_carousel_controller #(
     input  wire        page_ready,
     input  wire [2:0]  displayed_artifact,
     input  wire        local_emergency,
+    input  wire        manual_mode,
+    input  wire        manual_next,
     input  wire        cmd_valid,
     input  wire [7:0]  cmd_type,
     input  wire [7:0]  cmd_artifact_id,
@@ -99,6 +101,10 @@ always @(posedge clk or negedge rst_n) begin
         end else if (info_active) begin
             page_index <= info_artifact;
             page_cycles <= 28'd0;
+        end else if (manual_mode) begin
+            page_cycles <= 28'd0;
+            if (manual_next)
+                page_index <= (page_index == 3'd4) ? 3'd0 : page_index + 1'b1;
         end else if (STREAMING && !page_ready) begin
             page_cycles <= 28'd0;
         end else if (page_cycles == PAGE_CYCLES - 1) begin

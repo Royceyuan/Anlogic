@@ -1,0 +1,21 @@
+param([string]$TD = 'D:\Anlogic\TD5.6.2\bin\td_commands_prompt.exe')
+
+$ErrorActionPreference = 'Stop'
+$projectRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
+Set-Location -LiteralPath $projectRoot
+$buildDir = Join-Path $projectRoot '_build_secondary_main5e_return_align_v06_seed6'
+New-Item -ItemType Directory -Path $buildDir -Force | Out-Null
+Write-Host "Building secondary board; reports: $buildDir"
+& $TD './scripts/build_secondary_main5e_return_align_v06_pr.tcl' 2>&1 |
+    Out-File -FilePath (Join-Path $buildDir 'console.log') -Encoding utf8
+if ($LASTEXITCODE -ne 0) { throw 'P&R failed' }
+& $TD './scripts/build_secondary_main5e_return_align_v06_bitgen.tcl' 2>&1 |
+    Out-File -FilePath (Join-Path $buildDir 'bitgen.log') -Encoding utf8
+if ($LASTEXITCODE -ne 0) { throw 'Bit generation failed' }
+if (Select-String -LiteralPath (Join-Path $buildDir 'bitgen.log') -Pattern 'REFUSED:') {
+    throw 'Bit generation gate rejected the build; inspect reports'
+}
+if (-not (Select-String -LiteralPath (Join-Path $buildDir 'bitgen.log') -Pattern 'Generate bits file')) {
+    throw 'Bit generation did not confirm an output; inspect bitgen.log'
+}
+Get-FileHash -LiteralPath 'release\hx4s20_secondary_main5e_return_align_v06.bit' -Algorithm SHA256

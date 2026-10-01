@@ -3,6 +3,7 @@
 
 module tb_secondary_stream_carousel;
 reg clk = 0, rst_n = 0, page_ready = 0, local_emergency = 0;
+reg manual_mode = 0, manual_next = 0;
 reg [2:0] displayed_artifact = 0;
 reg cmd_valid = 0, cmd_confirmed = 0;
 reg [7:0] cmd_type = 0, cmd_artifact_id = 0, cmd_lecture_phase = 0;
@@ -14,7 +15,8 @@ always #5 clk = ~clk;
 secondary_carousel_controller #(.PAGE_CYCLES(4), .STREAMING(1)) dut (
     .clk(clk), .rst_n(rst_n), .frame_valid(5'b00000),
     .page_ready(page_ready), .displayed_artifact(displayed_artifact),
-    .local_emergency(local_emergency),
+    .local_emergency(local_emergency), .manual_mode(manual_mode),
+    .manual_next(manual_next),
     .cmd_valid(cmd_valid), .cmd_type(cmd_type),
     .cmd_artifact_id(cmd_artifact_id), .cmd_confirmed(cmd_confirmed),
     .cmd_mode(8'd1), .cmd_lecture_phase(cmd_lecture_phase),
@@ -22,7 +24,8 @@ secondary_carousel_controller #(.PAGE_CYCLES(4), .STREAMING(1)) dut (
     .cmd_route_id(8'd0), .cmd_emergency_active(1'b0),
     .page_index(page_index), .resume_page_index(),
     .emergency_active(), .link_state(),
-    .master_artifact(master_artifact), .info_active(info_active), .info_artifact(),
+    .master_artifact(master_artifact), .preload_artifact(),
+    .info_active(info_active), .info_artifact(),
     .active_route_id(), .cmd_result()
 );
 
@@ -63,6 +66,10 @@ initial begin
     step(1);
     if (master_artifact != 3 || !info_active || page_index != 4)
         $fatal(1, "new preload selection interrupted the active introduction");
+    @(negedge clk); manual_mode = 1; manual_next = 1;
+    step(1);
+    @(negedge clk); manual_next = 0;
+    if (page_index != 4) $fatal(1, "manual key changed the introduction");
     @(negedge clk); local_emergency = 1;
     step(4);
     if (!info_active || page_index != 4) $fatal(1, "emergency lost the lecture page");
@@ -75,6 +82,21 @@ initial begin
     step(1);
     if (info_active || page_index != 1)
         $fatal(1, "KEY3 did not return to the displayed carousel artifact");
+    step(10);
+    if (page_index != 1) $fatal(1, "manual mode did not stop automatic rotation");
+    @(negedge clk); manual_next = 1;
+    step(1);
+    @(negedge clk); manual_next = 0;
+    if (page_index != 2) $fatal(1, "manual KEY1 did not advance one artifact");
+    page_ready = 0;
+    @(negedge clk); manual_next = 1;
+    step(1);
+    @(negedge clk); manual_next = 0;
+    if (page_index != 3) $fatal(1, "manual selection was lost during media loading");
+    manual_mode = 0;
+    page_ready = 1;
+    step(4);
+    if (page_index != 4) $fatal(1, "automatic rotation did not resume");
     $display("PASS: streaming carousel waits for cached pages and holds information page");
     $finish;
 end

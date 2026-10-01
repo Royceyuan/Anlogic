@@ -16,7 +16,8 @@ module secondary_main5e_keys (
     output reg control_request,
     output reg [7:0] control_type,
     output reg [63:0] control_payload,
-    output wire engineering_page
+    output wire manual_mode,
+    output wire manual_next
 );
 wire [3:0] key_press;
 key_debounce u_keys (
@@ -26,7 +27,8 @@ key_debounce u_keys (
 );
 reg [3:0] sw_ff1, sw_ff2, sw_stable;
 reg [19:0] sw_settle;
-assign engineering_page = sw_stable[3];
+assign manual_mode = sw_stable[3];
+assign manual_next = manual_mode && key_press[0];
 reg [127:0] hb;
 reg [95:0] display;
 reg hb_seen, display_seen;
@@ -113,7 +115,8 @@ always @(posedge clk or posedge rst) begin
         if (display_pulse) begin display <= display_data; display_seen <= 1; end
         control_request <= 0;
         if ((|key_press) && control_ready && hb_seen && display_seen &&
-            !hb_emergency && !hb_restoring) begin
+            !hb_emergency && !hb_restoring &&
+            !(manual_next && hb_phase == 8'hff)) begin
             if (mode == 2'b00) begin
                 control_type <= 8'h13;
                 control_payload <= {6'd0,key_code[1:0],8'd1,16'd0,32'd0};

@@ -13,7 +13,6 @@ with Image.open(OUT / "source.png") as source:
     fitted = ImageOps.contain(source.convert("RGB"), (1280, 720), Image.Resampling.LANCZOS)
     page = Image.new("RGB", (1280, 720), (24, 82, 68))
     page.paste(fitted, ((1280 - fitted.width) // 2, 0))
-    page.save(OUT / "preview.png")
     page.save(OUT / "IMAGEA.BMP")
 
 data = (OUT / "IMAGEA.BMP").read_bytes()

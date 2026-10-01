@@ -40,20 +40,10 @@ wire [2:0] cmd_result;
 wire control_request, control_ready, control_done;
 wire [7:0] control_type, control_result;
 wire [63:0] control_payload;
-wire engineering_page;
-wire network_alive;
+wire manual_mode, manual_next;
 wire [7:0] media_seg_data, media_seg_sel;
-wire [7:0] engineering_seg_data, engineering_seg_sel;
-wire [15:0] engineering_value = {4'he, network_alive, 3'd0,
-                                 heartbeat_data[115:112],
-                                 heartbeat_data[107:104]};
-assign seg_data = engineering_page ? engineering_seg_data : media_seg_data;
-assign seg_sel = engineering_page ? engineering_seg_sel : media_seg_sel;
-seg_hex_display u_engineering_digits (
-    .clk(clk_50m), .rst_n(!network_reset),
-    .value(engineering_value), .seg_data(engineering_seg_data),
-    .seg_sel(engineering_seg_sel)
-);
+assign seg_data = media_seg_data;
+assign seg_sel = media_seg_sel;
 
 top_secondary_main5e_netdiag #(.SECONDARY_CLIENT(1)) u_network (
     .clk_50m(clk_50m), .key_reset_n(1'b1), .debug_sel(2'b11),
@@ -68,7 +58,7 @@ top_secondary_main5e_netdiag #(.SECONDARY_CLIENT(1)) u_network (
     .display_changed(1'b0), .diagnostic_payload(128'd0),
     .command_done(1'b0), .command_result(8'd0),
     .command_valid(), .command_type(), .command_seq(),
-    .command_payload(), .peer_alive(network_alive), .network_clk(),
+    .command_payload(), .peer_alive(), .network_clk(),
     .network_reset(network_reset),
     .client_heartbeat_pulse(heartbeat_pulse),
     .client_heartbeat_data(heartbeat_data),
@@ -89,7 +79,7 @@ secondary_main5e_keys u_keys (
     .display_pulse(display_pulse), .display_data(display_data),
     .control_ready(control_ready), .control_request(control_request),
     .control_type(control_type), .control_payload(control_payload),
-    .engineering_page(engineering_page)
+    .manual_mode(manual_mode), .manual_next(manual_next)
 );
 secondary_main5e_status_adapter u_status_adapter (
     .clk(clk_50m), .rst(network_reset),
@@ -111,7 +101,7 @@ top_v66 #(
     .MULTI_IMAGE_BMP(1), .MULTI_FRAME_PRELOAD(1), .VIDEO_FRAME_COUNT(5),
     .FORCE_SEQUENCE_AUTO(1), .AUTO_PERIOD_CYCLES(250_000_000),
     .LINEBUF_SCALE(0), .SECONDARY_STREAMING(1),
-    .SECONDARY_ENGINEERING(1),
+    .SECONDARY_ENGINEERING(0),
     .RESOURCE_OPT_CONSTANT_MULT(1),
     .ENABLE_SUBTITLE(0), .ENABLE_AUDIO_VISUALIZER(0),
     .ENABLE_MUSEUM_OVERVIEW(0), .ENABLE_MUSEUM_LECTURE(0),
@@ -136,8 +126,10 @@ top_v66 #(
     .secondary_cmd_route_id(8'd0),
     .secondary_cmd_emergency_active(cmd_emergency_active),
     .secondary_cmd_result(cmd_result),
-    .secondary_eng_enable(engineering_page),
-    .secondary_eng_link(network_alive),
+    .secondary_manual_mode(manual_mode),
+    .secondary_manual_next(manual_next),
+    .secondary_eng_enable(1'b0),
+    .secondary_eng_link(1'b0),
     .secondary_eng_heartbeat(heartbeat_data),
     .secondary_eng_display(display_data),
     .secondary_eng_diagnostic(diagnostic_data),

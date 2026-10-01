@@ -1,14 +1,40 @@
-# Simulation Notes
+# 副屏回归测试
 
-当前 `sim/` 先放最小冒烟仿真入口，后续按模块扩展：
+需要 ModelSim，`vsim`、`vlog` 已加入 PATH。先在工程根目录打开 PowerShell，再执行：
 
-- `tb_top_smoke.v`：顶层骨架冒烟测试
-- `run_top_smoke.do`：ModelSim 命令脚本
+```powershell
+vsim -c -do sim/run_secondary_frame_store_alignment.do -l sim/regression_alignment.log
 
-后续建议继续添加：
+Push-Location sim
+vsim -c -do run_secondary_main5e_codec.do -l regression_codec.log
+vsim -c -do run_secondary_main5e_endpoint.do -l regression_endpoint.log
+vsim -c -do run_secondary_main5e_fixed_udp.do -l regression_udp.log
+vsim -c -do run_secondary_main5e_keys.do -l regression_keys.log
+vsim -c -do run_secondary_main5e_status_adapter.do -l regression_status.log
+vsim -c -do run_secondary_local.do -l regression_local.log
+vsim -c -do run_secondary_transition.do -l regression_transition.log
+vsim -c -do run_secondary_native720_media.do -l regression_native720.log
+Pop-Location
+```
 
-- `tb_key_debounce.v`
-- `tb_video_timing_640x480.v`
-- `tb_scaler_fit.v`
-- `tb_transition_engine.v`
-- `tb_audio_meter.v`
+`run_secondary_frame_store_alignment.do` 必须从工程根目录运行；其余八项从 `sim` 目录运行。
+
+## 验收
+
+每次命令退出后检查 `$LASTEXITCODE` 为 0，并核对对应日志的 PASS 数量；仅退出码为 0 不能证明测试通过。日志不得有 `** Fatal:`、`** Error:`、`FAIL` 或非零 `Errors:` 汇总。
+
+| 日志 | 预期 PASS 数 | 检查内容 |
+| --- | ---: | --- |
+| regression_alignment.log | 2 | 旧连接能复现错误，当前一拍对齐连接零错误；4 帧、2560 字 |
+| regression_codec.log | 1 | MBP1 CRC、编解码及错误包拒绝 |
+| regression_endpoint.log | 1 | 副板协议端点 |
+| regression_udp.log | 2 | 固定地址 UDP 两个方向 |
+| regression_keys.log | 1 | 按键及手动轮播控制 |
+| regression_status.log | 1 | 主板状态与副屏页面适配 |
+| regression_local.log | 3 | 轮播、后台缓存、简介和应急页面 |
+| regression_transition.log | 2 | 转场控制和遮罩 |
+| regression_native720.log | 2 | IMAGE0、IMAGEA 原生 1280×720 BMP 读取 |
+
+2026-10-01 清理后以上 9 项、15 个用例已通过。对齐回归使用实际帧控制器和 FIFO，SDRAM 返回由测试替身产生；它不能替代真实板卡验证。官方 FIFO 的未连接可选端口可能产生既有警告。
+
+`work*`、日志和 `transcript` 均为可重新生成的仿真缓存，不提交到 Git。
