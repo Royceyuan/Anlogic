@@ -29,10 +29,12 @@ module hdmi_audio_video_phy #(
     wire serial_rst_n_clk;
 
     // Release reset beside each ODDR lane to avoid a 375 MHz global reset fanout.
-    reset_sync u_serial_reset_ch0 (.clk(I_serial_clk), .arst_n(~I_serial_rst), .srst_n(serial_rst_n_ch0));
-    reset_sync u_serial_reset_ch1 (.clk(I_serial_clk), .arst_n(~I_serial_rst), .srst_n(serial_rst_n_ch1));
-    reset_sync u_serial_reset_ch2 (.clk(I_serial_clk), .arst_n(~I_serial_rst), .srst_n(serial_rst_n_ch2));
-    reset_sync u_serial_reset_clk (.clk(I_serial_clk), .arst_n(~I_serial_rst), .srst_n(serial_rst_n_clk));
+    // Preserve equivalent flops: otherwise synthesis merges the four local
+    // releases back into one long reset net across the serializer lanes.
+    reset_sync #(.PRESERVE("true")) u_serial_reset_ch0 (.clk(I_serial_clk), .arst_n(~I_serial_rst), .srst_n(serial_rst_n_ch0));
+    reset_sync #(.PRESERVE("true")) u_serial_reset_ch1 (.clk(I_serial_clk), .arst_n(~I_serial_rst), .srst_n(serial_rst_n_ch1));
+    reset_sync #(.PRESERVE("true")) u_serial_reset_ch2 (.clk(I_serial_clk), .arst_n(~I_serial_rst), .srst_n(serial_rst_n_ch2));
+    reset_sync #(.PRESERVE("true")) u_serial_reset_clk (.clk(I_serial_clk), .arst_n(~I_serial_rst), .srst_n(serial_rst_n_clk));
 
     assign S_tmds_data_ch0 = {I_tmds_channel_0[0],
                               I_tmds_channel_0[1],

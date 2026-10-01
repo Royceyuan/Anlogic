@@ -6,6 +6,12 @@ reg [10:0] x=0;
 reg [9:0] y=0;
 reg [23:0] rgb=24'h123456;
 wire [23:0] out;
+wire [23:0] piped_out;
+wire piped_hs,piped_vs,piped_de;
+wire [10:0] piped_x;
+wire [9:0] piped_y;
+reg [47:0] expected_pipe;
+reg test_pass=0;
 wire alarm_valid;
 wire signed [15:0] alarm_left,alarm_right;
 integer valid_count=0;
@@ -22,6 +28,18 @@ museum_emergency_overlay dut_overlay(
  .clk(clk),.rst_n(rst_n),.emergency(emergency),.frame_tick(frame_tick),
  .hs_i(1'b1),.vs_i(1'b1),.de_i(de),.x_i(x),.y_i(y),.rgb_i(rgb),
  .hs_o(),.vs_o(),.de_o(),.x_o(),.y_o(),.rgb_o(out));
+museum_emergency_overlay #(.PIPELINED(1)) dut_piped(
+ .clk(clk),.rst_n(rst_n),.emergency(emergency),.frame_tick(frame_tick),
+ .hs_i(1'b1),.vs_i(1'b1),.de_i(de),.x_i(x),.y_i(y),.rgb_i(rgb),
+ .hs_o(piped_hs),.vs_o(piped_vs),.de_o(piped_de),
+ .x_o(piped_x),.y_o(piped_y),.rgb_o(piped_out));
+// The production boundary moves, but keeps the original one-cycle latency.
+always @(posedge clk) if(rst_n) begin
+ expected_pipe={2'b11,de,x,y,out};
+ #0.001;
+ if({piped_hs,piped_vs,piped_de,piped_x,piped_y,piped_out}!==expected_pipe)
+  $fatal(1,"emergency geometry pipeline changed pixel or raster alignment");
+end
 emergency_alarm_48k #(.CLK_HZ(480_000)) dut_alarm(
  .clk(clk),.rst_n(rst_n),.enable(emergency),.sample_valid(alarm_valid),
  .sample_left(alarm_left),.sample_right(alarm_right));
@@ -38,7 +56,7 @@ end
 
 task check_pixel;
  input [10:0] px; input [9:0] py; input [23:0] expected;
- begin x=px;y=py;#1;if(out!==expected)$fatal(1,"pixel %0d,%0d=%h expected=%h",px,py,out,expected);end
+ begin @(negedge clk);x=px;y=py;#0.1;if(out!==expected)$fatal(1,"pixel %0d,%0d=%h expected=%h",px,py,out,expected);end
 endtask
 
 initial begin
@@ -55,7 +73,7 @@ initial begin
  if(changed_count<100 || positive_count==0 || negative_count==0)
   $fatal(1,"alarm PCM did not vary with tone changed=%0d pos=%0d neg=%0d",
          changed_count,positive_count,negative_count);
- emergency=0;#2;
+ @(negedge clk); emergency=0;#0.1;
  check_pixel(11'd600,10'd360,24'h123456);
  repeat(20) @(posedge clk);
  if(alarm_valid || alarm_left!==0 || alarm_right!==0)
@@ -88,10 +106,11 @@ initial begin
   end
   // Exercise both background shades without changing geometry.
   @(negedge clk); frame_tick=1;
-  @(negedge clk); frame_tick=0;
+  @(negedge clk); frame_tick=0;#0.1;
  end
  de=0; #1;
  if(out!==0) $fatal(1,"emergency blanking leaked color");
+ test_pass=1;
  $display("PASS emergency overlay priority, exclusive 48 kHz alarm and 2097152-coordinate equivalence");
  $finish;
 end

@@ -1,13 +1,15 @@
 `timescale 1ns / 1ps
 `default_nettype none
 
-module reset_sync (
+module reset_sync #(
+    parameter PRESERVE = "false"
+) (
     input  wire clk,
     input  wire arst_n,
     output wire srst_n
 );
 
-reg [1:0] rst_ff = 2'b00;
+(* preserve = PRESERVE *) reg [1:0] rst_ff = 2'b00;
 
 always @(posedge clk or negedge arst_n) begin
     if (!arst_n) begin

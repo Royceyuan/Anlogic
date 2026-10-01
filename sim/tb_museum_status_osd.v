@@ -6,6 +6,7 @@ integer row,col;
 reg [15:0] expected_row;
 reg clk=0,rst_n=0,hs=1,vs=1,de=1,name_ready=0,name_we=0,zoom_2x=0;
 reg panel_enable=1;
+reg manual_mode=0;
 reg [2:0] effect=0;
 reg [10:0] x=0,name_addr=0;
 reg [9:0] y=0;
@@ -21,6 +22,7 @@ museum_status_osd #(.SHOW_PERCENT(1)) dut(
     .artifact(3'd0),.stage(3'd0),.effect(effect),
     .width_bcd(16'h1920),.height_bcd(16'h1080),
     .zoom_2x(zoom_2x),
+    .manual_mode(manual_mode),
     .brightness_index(3'd0),.contrast_index(3'd2),
     .saturation_index(3'd3),.temperature_index(3'd6),
     .name_ready(name_ready),.name_wr_clk(clk),.name_wr_en(name_we),
@@ -54,6 +56,18 @@ initial begin
    check(22+col,32+row,expected_row[15-col] ? 24'hffffff : 24'h404040);
  end
  // Exercise every name byte and row through the actual RAM/output pipeline.
+ for(font_addr=0;font_addr<2;font_addr=font_addr+1) begin
+  manual_mode=font_addr;
+  for(row=0;row<16;row=row+1) begin
+   expected_row=dut.chinese_row(manual_mode ? 22 : 20,row);
+   for(col=0;col<16;col=col+1)
+    check(332+col,12+row,expected_row[15-col] ? 24'hffffff : 24'h404040);
+   expected_row=dut.chinese_row(21,row);
+   for(col=0;col<16;col=col+1)
+    check(348+col,12+row,expected_row[15-col] ? 24'hffffff : 24'h404040);
+  end
+ end
+ manual_mode=0;
  for(font_addr=0;font_addr<320;font_addr=font_addr+1) begin
   @(negedge clk);name_addr=font_addr;name_data=8'ha5 ^ font_addr;name_we=1;
  end

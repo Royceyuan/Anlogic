@@ -42,6 +42,12 @@ module tb_museum_media_core #(
     wire remote_command_done;
     wire [7:0] remote_command_result;
     wire [95:0] main5_display;
+    wire manual_key_return;
+    generate if (MAIN5_REMOTE_TEST) begin : g_manual_return_check
+        assign manual_key_return = dut.g_museum_lecture_controller.u_museum_lecture_controller.key_return;
+    end else begin : g_no_manual_return_check
+        assign manual_key_return = 1'b0;
+    end endgenerate
 
     wire [3:0] led;
     wire [7:0] seg_data, seg_sel;
@@ -636,9 +642,80 @@ module tb_museum_media_core #(
             send_remote(8'h18,{8'd1,8'd3,16'd0,32'd0},8'd0);
             repeat(3) @(negedge clk_50m);
             if(dut.browse_image_index!=3)$fatal(1,"manual image command not dispatched");
+            force dut.lecture_display_slot=2'd0;
+            force dut.key_press_pulse=4'b0100;
+            @(negedge clk_50m);
+            if(!dut.manual_image_pulse || dut.browse_image_index!=1 || !dut.normal_waveform_visible)
+                $fatal(1,"production KEY3 must select detail1, not toggle waveform");
+            release dut.key_press_pulse;
+            force dut.lecture_display_slot=2'd3;
+            force dut.key_press_pulse=4'b0100;
+            @(negedge clk_50m);
+            if(!dut.manual_image_pulse || dut.browse_image_index!=0)
+                $fatal(1,"production KEY3 must wrap detail3 to full");
+            release dut.key_press_pulse; release dut.lecture_display_slot;
+            send_remote(8'h13,{8'd1,8'd1,16'd0,32'd0},8'd0);
+            send_remote(8'h14,{8'd3,8'd2,8'd3,8'd3,8'd1,24'd0},8'd0);
+            if(!dut.manual_mode)$fatal(1,"manual parameter control changed mode");
+            force dut.key_press_pulse=4'b0010;
+            #1;
+            if(!manual_key_return)
+                $fatal(1,"manual KEY2 not wired to cached-image return");
+            @(negedge clk_50m); release dut.key_press_pulse;
+            if(dut.manual_reload_pending || dut.recovery_state!=0 || !dut.manual_mode)
+                $fatal(1,"manual KEY2 must not trigger application reset or mode-off");
             send_remote(8'h17,64'd0,8'd0);
             repeat(3) @(negedge clk_50m);
             if(dut.manual_mode)$fatal(1,"manual mode did not exit");
+            if(!dut.manual_reload_pending || !dut.main5_heartbeat[70])
+                $fatal(1,"manual exit must advertise pending reload");
+            force dut.display_media_index=4'd0;
+            repeat(5) @(negedge clk_50m);
+            if(dut.recovery_state!=0)$fatal(1,"manual exit skipped return transition");
+            force dut.lecture_active=1'b0;
+            send_remote(8'h13,{8'd0,8'd1,16'd0,32'd0},8'd4);
+            force dut.sd_read_active=1'b1;
+            force dut.switch_pending=1'b0;
+            force dut.display_media_index=4'd5;
+            repeat(5) @(negedge clk_50m);
+            if(dut.recovery_state!=0 || !dut.manual_reload_pending || dut.media_session_start)
+                $fatal(1,"manual rearm must wait for the old sector, not reset images/SD");
+            force dut.sd_read_active=1'b0;
+            timeout=0;
+            while(dut.manual_reload_pending && timeout<20) begin
+                @(negedge clk_50m); timeout=timeout+1;
+            end
+            if(!dut.manual_media_restart || dut.manual_reload_pending || dut.recovery_state!=0 ||
+               !dut.client_rst_n || !dut.overview_cache_ready)
+                $fatal(1,"manual light rearm restart=%b pending=%b state=%d client=%b cache=%b overview=%b switch=%b",
+                       dut.manual_media_restart,dut.manual_reload_pending,dut.recovery_state,
+                       dut.client_rst_n,dut.overview_cache_ready,dut.manual_overview_ff2,dut.switch_pending);
+            release dut.sd_read_active; release dut.switch_pending;
+            repeat(5) @(negedge clk_50m);
+            send_remote(8'h17,64'd0,8'd0);
+            repeat(5) @(negedge clk_50m);
+            if(dut.manual_reload_pending || dut.recovery_state!=0)
+                $fatal(1,"repeated normal mode caused another reload");
+            force dut.audio_stream_enable=1'b1;
+            force dut.audio_switch_reset=1'b0;
+            force dut.sd_read_abandoned=1'b0;
+            force dut.media_session_restart=1'b0;
+            repeat(2) @(negedge clk_50m);
+            if(!dut.media_session_start)$fatal(1,"registered media session did not start");
+            force dut.sd_read_abandoned=1'b1;
+            @(negedge clk_50m);
+            if(dut.media_session_start)$fatal(1,"abandoned sector allowed fresh media session");
+            force dut.sd_read_abandoned=1'b0;
+            force dut.audio_switch_reset=1'b1;
+            @(negedge clk_50m);
+            if(dut.media_session_start)$fatal(1,"resetting PCM FIFO allowed fresh media session");
+            force dut.audio_switch_reset=1'b0;
+            force dut.media_session_restart=1'b1;
+            @(negedge clk_50m);
+            if(dut.media_session_start)$fatal(1,"session restart failed to cancel registered start");
+            release dut.audio_stream_enable; release dut.audio_switch_reset;
+            release dut.sd_read_abandoned; release dut.media_session_restart;
+            release dut.display_media_index;
             release dut.overview_cache_ready; release dut.lecture_active;
             release dut.lecture_finished; release dut.lecture_artifact_index;
             release dut.manual_cache_ready;
@@ -688,6 +765,13 @@ module tb_museum_media_core #(
                 sw=6; repeat(60) @(negedge clk_50m);
                 if(dut.manual_mode)$fatal(1,"110 did not leave manual mode");
                 force dut.lecture_active=1'b0;
+                force dut.display_media_index=4'd5;
+                force dut.switch_pending=1'b0;
+                force dut.sd_read_active=1'b0;
+                repeat(8) @(negedge clk_50m);
+                if(dut.manual_reload_pending)$fatal(1,"local mode-off did not rearm at overview");
+                release dut.display_media_index; release dut.switch_pending;
+                release dut.sd_read_active;
                 sw=5; repeat(60) @(negedge clk_50m);
                 if(!dut.manual_mode)$fatal(1,"second manual entry failed");
                 force dut.client_rst_n=1'b0;
@@ -706,6 +790,13 @@ module tb_museum_media_core #(
                 sw=5; repeat(60) @(negedge clk_50m);
                 if(!dut.manual_mode)$fatal(1,"fresh mode request after busy failed");
                 sw=6; repeat(60) @(negedge clk_50m);
+                force dut.display_media_index=4'd5;
+                force dut.switch_pending=1'b0;
+                force dut.sd_read_active=1'b0;
+                repeat(8) @(negedge clk_50m);
+                if(dut.manual_reload_pending)$fatal(1,"local final mode-off did not rearm");
+                release dut.display_media_index; release dut.switch_pending;
+                release dut.sd_read_active;
                 release dut.lecture_display_slot;
                 $display("PASS local manual enter/cycle/wrap/busy/cache/bounce/exit/recovery");
             end

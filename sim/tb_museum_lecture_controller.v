@@ -75,6 +75,21 @@ initial begin
   confirm=1;@(negedge clk);confirm=0;
   if(!active||!manual_mode||!manual_cache_ready||paused)
    $fatal(1,"silent manual entry failed");
+  // Manual KEY2 uses the existing return, preserving mode and cached images.
+  manual_image=3;manual_image_set=1;@(negedge clk);manual_image_set=0;
+  displayed_frame_slot=3;key_return=1;@(negedge clk);key_return=0;
+  if(!manual_mode||!finished||display_slot!=0||!cache_ready||preloading)
+   $fatal(1,"manual local exit lost mode/cache");
+  display_transition_busy=1;displayed_frame_slot=0;
+  repeat(3)@(negedge clk);
+  if(!active)$fatal(1,"manual local exit skipped full-view transition");
+  display_transition_busy=0;@(negedge clk);
+  repeat(5)@(negedge clk);
+  if(active||!manual_mode||!manual_cache_ready||preloading||load_request)
+   $fatal(1,"manual local exit reloaded unchanged images");
+  confirm=1;@(negedge clk);confirm=0;
+  if(!active||!manual_mode||display_slot!=0||preloading)
+   $fatal(1,"manual local reentry failed without reload");
   preload_index=2;
   for(i=3;i>=0;i=i-1) begin
    manual_image=i;manual_image_set=1;@(negedge clk);manual_image_set=0;

@@ -8,7 +8,7 @@ module tb_video_light_band;
     reg [23:0] rgb=24'h123456;
     wire [23:0] direct_rgb, piped_rgb;
     reg [23:0] e0=0,e1=0,e2=0,expected;
-    integer p,r,c,d,step,radius,phase,abs_x,limit,edge_x,k;
+    integer p,r,c,d,step,radius,phase,abs_x,limit,edge_x,k,m;
     reg passed=0;
     always #5 clk=~clk;
     video_transition_mask #(.VIDEO_W(1280),.VIDEO_H(720)) direct (
@@ -37,6 +37,18 @@ module tb_video_light_band;
                 limit=step*64-step-(step/2);
                 abs_x=x>=640 ? x-640 : 640-x;
                 expected=(step>=16 || (step!=0 && abs_x+d<limit)) ? rgb : 0;
+            end else if(enable && de && mode>=1 && mode<=3) begin
+                phase=closing ? (progress & 31) :
+                      progress>=16 ? ((progress & 31)-16)&31 : 0;
+                if(phase>16) phase=16;
+                step=closing ? 16-phase : phase;
+                abs_x=x>=640 ? x-640 : 640-x;
+                if(step==0) expected=0;
+                else if(step<16) begin
+                    if(mode==1) expected=x<step*80 ? rgb : 0;
+                    else if(mode==2) expected=abs_x<step*40 ? rgb : 0;
+                    else expected=(abs_x<step*40 && d<(step*45)/2) ? rgb : 0;
+                end
             end
             #1;
             if(direct_rgb!==expected) $fatal(1,"band geometry p=%0d y=%0d close=%b",progress,y,closing);
@@ -80,6 +92,27 @@ module tb_video_light_band;
             progress=p&255; closing=p[8]; x=$random; y=$random;
             de=p[9]; enable=p[10];
             check;
+        end
+        // Linear masks share the original three-cycle latency, including
+        // changing mode/progress, exact boundaries and blanking coordinates.
+        de=1; enable=1;
+        for(m=1;m<=3;m=m+1)
+          for(c=0;c<2;c=c+1)
+            for(p=0;p<=32;p=p+1)
+              for(r=0;r<720;r=r+1)
+                for(k=0;k<3;k=k+1) begin
+                    @(negedge clk); mode=m;closing=c;progress=p;y=r;
+                    step=c ? 16-(p>16 ? 16 : p) : (p<16 ? 0 : p-16);
+                    case(k)
+                        0:x=step*80;
+                        1:x=(640-step*40-1)&2047;
+                        default:x=(640+step*40)&2047;
+                    endcase
+                    check;
+                end
+        for(p=0;p<4096;p=p+1) begin
+            @(negedge clk);mode=p%4;progress=p&255;closing=p[8];
+            x=$random;y=$random;de=p[9];enable=p[10];check;
         end
         mode=7; de=1; enable=1;
         // The midpoint and adjacent boundary pixels must be black, even with

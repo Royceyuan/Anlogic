@@ -4,7 +4,9 @@
 // Read one fixed-format WAV from a FAT32 root directory.  The fixed names are
 // AUDIO0.WAV through AUDIO4.WAV.  Canonical PCM16/48k/stereo remains
 // mandatory so this small selector cannot destabilise the proven image path.
-module fat32_wav_streamer (
+module fat32_wav_streamer #(
+    parameter integer REUSE_GEOMETRY = 0
+) (
     input  wire        clk,
     input  wire        rst_n,
     input  wire        start,
@@ -269,7 +271,14 @@ always @(posedge clk or negedge rst_n) begin
                 sd_sec_read <= 1'b0;
                 if (start && sd_init_done) begin
                     active_track <= track_index;
-                    state <= S_REQ_MBR;
+                    // Keep shared FAT geometry stable while subtitles restart.
+                    // A full KEY4 reset still invalidates it and rereads MBR/VBR.
+                    if (REUSE_GEOMETRY && fs_geometry_ready) begin
+                        current_cluster <= root_cluster;
+                        root_sector_in_cluster <= 8'd0;
+                        fat_for_root <= 1'b0;
+                        state <= S_REQ_ROOT;
+                    end else state <= S_REQ_MBR;
                 end
             end
 

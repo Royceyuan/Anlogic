@@ -12,7 +12,7 @@ module museum_status_osd #(
     input wire [2:0] artifact, input wire [2:0] stage,
     input wire [2:0] effect,
     input wire [15:0] width_bcd, input wire [15:0] height_bcd,
-    input wire zoom_2x,
+    input wire zoom_2x, input wire manual_mode,
     input wire [2:0] brightness_index, contrast_index, saturation_index, temperature_index,
     input wire name_ready,
     input wire name_wr_clk, input wire name_wr_en,
@@ -330,6 +330,49 @@ function [15:0] chinese_row;
             9'h13c: chinese_row=16'h1184;
             9'h13d: chinese_row=16'h1238;
             9'h13e: chinese_row=16'h1000;
+            // 自、动、手: native 16-pixel glyphs in the existing font ROM.
+            9'h140: chinese_row=16'h0400;
+            9'h141: chinese_row=16'h1ff0;
+            9'h142: chinese_row=16'h1010;
+            9'h143: chinese_row=16'h1010;
+            9'h144: chinese_row=16'h1010;
+            9'h145: chinese_row=16'h1ff0;
+            9'h146: chinese_row=16'h1010;
+            9'h147: chinese_row=16'h1010;
+            9'h148: chinese_row=16'h1ff0;
+            9'h149: chinese_row=16'h1010;
+            9'h14a: chinese_row=16'h1010;
+            9'h14b: chinese_row=16'h1010;
+            9'h14c: chinese_row=16'h1ff0;
+            9'h14d: chinese_row=16'h1010;
+            9'h150: chinese_row=16'h7c40;
+            9'h151: chinese_row=16'h0040;
+            9'h152: chinese_row=16'h01fc;
+            9'h153: chinese_row=16'h0044;
+            9'h154: chinese_row=16'hfe44;
+            9'h155: chinese_row=16'h2044;
+            9'h156: chinese_row=16'h2044;
+            9'h157: chinese_row=16'h2084;
+            9'h158: chinese_row=16'h4884;
+            9'h159: chinese_row=16'h4484;
+            9'h15a: chinese_row=16'hfd04;
+            9'h15b: chinese_row=16'h4504;
+            9'h15c: chinese_row=16'h0228;
+            9'h15d: chinese_row=16'h0410;
+            9'h160: chinese_row=16'h3f00;
+            9'h161: chinese_row=16'h0100;
+            9'h162: chinese_row=16'h0100;
+            9'h163: chinese_row=16'h3ff8;
+            9'h164: chinese_row=16'h0100;
+            9'h165: chinese_row=16'h0100;
+            9'h166: chinese_row=16'h0100;
+            9'h167: chinese_row=16'hfffe;
+            9'h168: chinese_row=16'h0100;
+            9'h169: chinese_row=16'h0100;
+            9'h16a: chinese_row=16'h0100;
+            9'h16b: chinese_row=16'h0100;
+            9'h16c: chinese_row=16'h0500;
+            9'h16d: chinese_row=16'h0200;
             default: chinese_row=16'd0;
         endcase
     end
@@ -436,6 +479,8 @@ generate if (SHOW_PERCENT) begin : g_font_rom
         .INIT_0E(font_init(14)), .INIT_0F(font_init(15)),
         .INIT_10(font_init(16)), .INIT_11(font_init(17)),
         .INIT_12(font_init(18)), .INIT_13(font_init(19)),
+        .INIT_14(font_init(20)), .INIT_15(font_init(21)),
+        .INIT_16(font_init(22)),
         .INIT_20(font_init(32)), .INIT_21(font_init(33)),
         .INIT_22(font_init(34)), .INIT_23(font_init(35)),
         .INIT_24(font_init(36)), .INIT_25(font_init(37)),
@@ -582,6 +627,10 @@ always @(*) begin
         early_glyph=stage_glyph(stage,(x_i-202)>>4);
         early_row=y_i-12;
         early_col=x_i-202;
+    end else if (SHOW_PERCENT && x_i>=332 && x_i<364 && y_i>=12 && y_i<28) begin
+        early_glyph=x_i<348 ? (manual_mode ? 5'd22 : 5'd20) : 5'd21;
+        early_row=y_i-12;
+        early_col=x_i-332;
     end else if (x_i>=22 && x_i<70 && y_i>=32 && y_i<48) begin
         case(effect)
             0:early_glyph=(x_i<38) ? 5'd9 : (x_i<54) ? 5'd10 : 5'd0; // 标准

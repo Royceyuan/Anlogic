@@ -441,6 +441,8 @@ wire lecture_active;
 wire lecture_paused;
 wire lecture_finished;
 wire lecture_audio_restart;
+reg manual_media_restart;
+wire media_session_restart = lecture_audio_restart || manual_media_restart;
 wire [1:0] lecture_display_slot;
 wire [2:0] lecture_display_frame_slot;
 wire lecture_media_error;
@@ -639,13 +641,15 @@ wire museum_preload_valid = sw[2:0] < 3'd5;
 wire [2:0] museum_preload_index = sw[2:0];
 wire signed [15:0] requested_pan_x = remote_command_payload[31:16];
 wire signed [15:0] requested_pan_y = remote_command_payload[15:0];
-wire main5_remote_busy = emergency_active_50m || recovery_busy ||
+reg manual_reload_pending;
+wire main5_remote_busy = emergency_active_50m || recovery_busy || manual_reload_pending ||
                          transition_active_ff2_50m || main5_request_busy;
 reg main5_command_seen;
 reg manual_set_pulse, manual_image_pulse;
 reg manual_value;
 reg [1:0] browse_image_index;
 wire manual_mode, manual_cache_ready;
+reg manual_overview_ff1, manual_overview_ff2;
 reg [3:0] main5_sw_ff1, main5_sw_ff2;
 wire local_manual_changed;
 wire [2:0] local_manual_switch;
@@ -679,7 +683,7 @@ wire local_manual_set = local_manual_changed &&
     !main5_remote_busy && !key_press_pulse[3] && !remote_command_valid &&
     overview_cache_ready && !lecture_finished &&
     (local_manual_switch==3'd6 || !lecture_active || manual_cache_ready);
-wire local_manual_next = ENABLE_LOCAL_MANUAL_TEST && key_press_pulse[2] &&
+wire manual_key_next = ENABLE_MAIN5_REMOTE && key_press_pulse[2] &&
     manual_mode && lecture_active && !lecture_finished && manual_cache_ready &&
     !main5_remote_busy && !key_press_pulse[3] && !remote_command_valid;
 always @(posedge clk_50m or negedge write_rst_n) begin
@@ -735,7 +739,7 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         if (local_manual_set) begin
             manual_value <= local_manual_switch==3'd5;
             manual_set_pulse <= 1'b1;
-        end else if (local_manual_next) begin
+        end else if (manual_key_next) begin
             browse_image_index <= lecture_display_slot + 2'd1;
             manual_image_pulse <= 1'b1;
         end else if (ENABLE_MAIN5_REMOTE && remote_command_valid && !main5_command_seen) begin
@@ -873,12 +877,26 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         recovery_reset_count <= 5'd0;
         recovery_wait_count <= 27'd0;
         recovery_select_pulse <= 1'b0;
+        manual_reload_pending <= 1'b0;
+        manual_media_restart <= 1'b0;
     end else begin
         recovery_select_pulse <= 1'b0;
+        manual_media_restart <= 1'b0;
+        // Retain image caches. Hold audio/subtitles cancelled until overview
+        // is really displayed and any abandoned sector has finished.
+        if (ENABLE_MAIN5_REMOTE && manual_set_pulse && !manual_value && manual_mode)
+            manual_reload_pending <= 1'b1;
+        if (manual_reload_pending && !lecture_active && manual_overview_ff2 &&
+            !sd_read_active && !recovery_busy) begin
+            manual_reload_pending <= 1'b0;
+            manual_media_restart <= 1'b1;
+        end
         case (recovery_state)
             3'd0: if (emergency_active_50m ||
-                       (ENABLE_MAIN3 && key_press_pulse[3]))
+                       (ENABLE_MAIN3 && key_press_pulse[3])) begin
+                manual_reload_pending <= 1'b0;
                 recovery_state <= 3'd1;
+            end
             3'd1: if (writer_abort_done) begin
                 recovery_reset_count <= 5'd0;
                 recovery_state <= 3'd2;
@@ -981,9 +999,19 @@ wire transition_active = fade_out_active ||
                          ((transition_mode == 3'b000) ?
                           (fade_level < 5'd16) :
                           transition_before_end);
+always @(posedge clk_50m or negedge write_rst_n) begin
+    if (!write_rst_n) begin
+        manual_overview_ff1 <= 1'b0;
+        manual_overview_ff2 <= 1'b0;
+    end else begin
+        manual_overview_ff1 <= display_media_index == VIDEO_FRAME_COUNT &&
+                               !transition_active && !switch_pending;
+        manual_overview_ff2 <= manual_overview_ff1;
+    end
+end
 localparam integer AUDIO_SWITCH_RESET_CYCLES = 50_000;
 
-wire audio_stream_enable = ENABLE_AUDIO_VISUALIZER && !recovery_busy &&
+wire audio_stream_enable = ENABLE_AUDIO_VISUALIZER && !recovery_busy && !manual_reload_pending &&
                            (ENABLE_MUSEUM_LECTURE ?
                             (((lecture_cache_ready || lecture_preloading) &&
                               overview_mode) ||
@@ -1050,6 +1078,17 @@ reg audio_paused;
 reg [19:0] audio_switch_reset_count;
 reg audio_stream_enable_d;
 wire audio_switch_reset = (audio_switch_reset_count != 0);
+// Split the recovery-to-reader path; sector ownership still drains cancellation.
+reg media_session_start_q;
+always @(posedge clk_50m or negedge client_rst_n) begin
+    if (!client_rst_n)
+        media_session_start_q <= 1'b0;
+    else
+        media_session_start_q <= audio_stream_enable && !audio_switch_reset &&
+                                 !sd_read_abandoned && !media_session_restart;
+end
+wire media_session_start = ENABLE_MAIN5_REMOTE ? media_session_start_q :
+                                                 audio_stream_enable;
 reg [2:0] audio_track_ff1, audio_track_ff2;
 reg audio_paused_ff1, audio_paused_ff2;
 reg lecture_paused_ff1, lecture_paused_ff2;
@@ -1082,7 +1121,7 @@ generate
                          lecture_cache_ready &&
                          (manual_mode || (audio_prepared && subtitle_entry_ready)) &&
                          (lecture_artifact_index == overview_selected_ctrl)),
-            .key_confirm(key_press_pulse[1] && !recovery_busy),
+            .key_confirm(key_press_pulse[1] && !recovery_busy && !manual_reload_pending),
             .key_previous(ENABLE_MAIN3 ? 1'b0 : key_press_pulse[3]),
             .key_next(ENABLE_MAIN3 ? key_press_pulse[0] : key_press_pulse[2]),
             .recover_select(recovery_select_pulse),
@@ -1132,7 +1171,10 @@ generate
             .overview_ready(overview_cache_ready),
             .confirm_pulse(overview_confirm_pulse),
             .key_pause(key_press_pulse[1] && !recovery_busy),
-            .key_return(key_press_pulse[2] && !recovery_busy && !ENABLE_MAIN3),
+            .key_return(!recovery_busy &&
+                ((key_press_pulse[2] && !ENABLE_MAIN3) ||
+                 (ENABLE_MAIN5_REMOTE && manual_mode && key_press_pulse[1] &&
+                  !lecture_finished))),
             .manual_set(manual_set_pulse), .manual_value(manual_value),
             .manual_image_set(manual_image_pulse), .manual_image(browse_image_index),
             .manual_mode(manual_mode), .manual_cache_ready(manual_cache_ready),
@@ -1382,7 +1424,7 @@ assign video_output_rgb = (RIGHT_EDGE_MASK_COLUMNS != 0 && video_post_osd_de &&
 
 generate
     if (ENABLE_MAIN4) begin : g_museum_emergency_overlay
-        museum_emergency_overlay u_museum_emergency_overlay (
+        museum_emergency_overlay #(.PIPELINED(ENABLE_MAIN5_REMOTE)) u_museum_emergency_overlay (
             .clk(video_clk), .rst_n(video_rst_n),
             .emergency(emergency_video_active),
             .frame_tick(video_frame_tick),
@@ -1404,7 +1446,9 @@ generate
 endgenerate
 
 generate
-    if (ENABLE_MAIN5_REMOTE) begin : g_main5_emergency_pipe
+    // MAIN-4 moves this existing pixel boundary before palette selection;
+    // its internal geometry pipeline keeps the total pixel latency unchanged.
+    if (ENABLE_MAIN5_REMOTE && !ENABLE_MAIN4) begin : g_main5_emergency_pipe
         reg hs_q, vs_q, de_q;
         reg [10:0] x_q;
         reg [9:0] y_q;
@@ -1472,7 +1516,7 @@ generate
                                   .PIPE_RAM_OUTPUT(ENABLE_MAIN5_REMOTE))
         u_museum_subtitle_overlay (
             .clk_50m(clk_50m), .rst_n_50m(client_rst_n),
-            .start(audio_stream_enable), .restart(lecture_audio_restart),
+            .start(media_session_start), .restart(media_session_restart),
             .lecture_active(lecture_active && !manual_mode), .lecture_paused(lecture_paused),
             .lecture_finished(lecture_finished),
             .track_index(lecture_artifact_index),
@@ -1662,9 +1706,9 @@ fat32_image_loader #(
 
 generate
     if (ENABLE_AUDIO_VISUALIZER) begin : g_audio_wav
-        fat32_wav_streamer u_wav_streamer (
-            .clk(clk_50m), .rst_n(client_rst_n), .start(audio_stream_enable),
-            .restart(lecture_audio_restart),
+        fat32_wav_streamer #(.REUSE_GEOMETRY(ENABLE_MAIN5_REMOTE)) u_wav_streamer (
+            .clk(clk_50m), .rst_n(client_rst_n), .start(media_session_start),
+            .restart(media_session_restart),
             .track_index(audio_track_index),
             .sd_init_done(sd_init_done), .sd_sec_read(audio_sd_sec_read),
             .sd_sec_read_addr(audio_sd_sec_read_addr),
@@ -2142,7 +2186,7 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         if (audio_switch_reset_count != 0)
             audio_switch_reset_count <= audio_switch_reset_count - 1'b1;
         if (audio_track_switch_ack ||
-            lecture_audio_restart ||
+            media_session_restart ||
             (audio_stream_enable_d && !audio_stream_enable) ||
             (!ENABLE_MUSEUM_LECTURE && audio_control_mode &&
              (key_press_pulse[2] || key_press_pulse[3])))
@@ -2162,7 +2206,7 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         end
 
         if (ENABLE_MAIN5_CONTROLS && key_press_pulse[2] &&
-            !(ENABLE_LOCAL_MANUAL_TEST && manual_mode && lecture_active)) begin
+            !(manual_mode && lecture_active)) begin
             if (overview_mode)
                 overview_osd_visible <= ~overview_osd_visible;
             else if (lecture_active)
@@ -3118,18 +3162,23 @@ reg [2:0] osd_effect;
 reg [15:0] osd_width_bcd, osd_height_bcd;
 reg [2:0] osd_lecture_artifact_ff1, osd_lecture_artifact_ff2;
 reg osd_final_full_ff1, osd_final_full_ff2;
+reg osd_manual_ff1, osd_manual_ff2, osd_manual;
 always @(posedge video_clk or negedge video_rst_n) begin
     if (!video_rst_n) begin
         osd_artifact<=0; osd_stage<=0; osd_effect<=0;
         osd_width_bcd<=0; osd_height_bcd<=0;
         osd_lecture_artifact_ff1<=0; osd_lecture_artifact_ff2<=0;
         osd_final_full_ff1<=0; osd_final_full_ff2<=0;
+        osd_manual_ff1<=0; osd_manual_ff2<=0; osd_manual<=0;
     end else begin
         osd_lecture_artifact_ff1<=lecture_artifact_index;
         osd_lecture_artifact_ff2<=osd_lecture_artifact_ff1;
         osd_final_full_ff1<=lecture_final_full_active;
         osd_final_full_ff2<=osd_final_full_ff1;
+        osd_manual_ff1<=manual_mode;
+        osd_manual_ff2<=osd_manual_ff1;
         if (video_frame_tick) begin
+            osd_manual<=osd_manual_ff2;
             if (ENABLE_MAIN5_REMOTE)
                 osd_effect <= (main5_preset_video == 8'hff) ? 3'd4 :
                               main5_preset_video[2:0];
@@ -3183,6 +3232,7 @@ generate
             .width_bcd(osd_width_bcd), .height_bcd(osd_height_bcd),
             .name_ready(osd_name_ready),
             .zoom_2x(display_zoom_2x),
+            .manual_mode(osd_manual),
             .name_wr_clk(clk_50m), .name_wr_en(osd_name_wr_en),
             .name_wr_addr(osd_name_wr_addr), .name_wr_data(osd_name_wr_data),
             .hs_o(video_status_hs), .vs_o(video_status_vs),
@@ -3410,13 +3460,13 @@ assign main5_mode = emergency_active_50m ? 8'd3 :
                     main5_error != 0 ? 8'd4 :
                     !sd_init_done ? 8'd0 : lecture_active ? 8'd2 : 8'd1;
 reg [23:0] main5_ui_previous;
-wire main5_entry_ready = !lecture_active && !recovery_busy && !emergency_active_50m &&
+wire main5_entry_ready = !lecture_active && !recovery_busy && !manual_reload_pending && !emergency_active_50m &&
                         overview_cache_ready && museum_preload_valid &&
                         lecture_cache_ready &&
                         (manual_mode || (audio_prepared && subtitle_entry_ready)) &&
                         lecture_artifact_index == museum_preload_index &&
                         main5_sw_ff2[2:0] == museum_preload_index;
-wire [23:0] main5_ui = {{1'b1, recovery_busy, lecture_preloading,
+wire [23:0] main5_ui = {{1'b1, (recovery_busy || manual_reload_pending), lecture_preloading,
                          lecture_paused, main5_sw_ff2},
                         1'b0, overview_selected_ctrl,
                         (main5_sw_ff2[2:0] < 5 ? {1'b0, main5_sw_ff2[2:0]} : 4'hf),

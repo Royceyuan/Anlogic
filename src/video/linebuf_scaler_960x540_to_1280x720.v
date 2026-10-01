@@ -90,7 +90,7 @@ wire [31:0] line0_word;
 wire [31:0] line1_word;
 wire [31:0] line2_word;
 wire [10:0] source_x;
-wire [10:0] normal_source_x;
+wire [10:0] scaled_source_x;
 wire [9:0]  source_y;
 wire signed [10:0] mapped_y;
 wire [12:0] source_x_times3;
@@ -130,8 +130,9 @@ reg  [10:0] museum_panel_left;
 reg  [10:0] museum_panel_left_next;
 reg  signed [11:0] museum_source_offset;
 reg  signed [11:0] museum_source_offset_next;
-wire signed [11:0] museum_source_x =
-    $signed({1'b0, normal_source_x}) + museum_source_offset;
+// Combine the two origins before the pixel mapping, not after it. Modular
+// 11-bit addition is unchanged, but the raster no longer crosses two adders.
+wire [10:0] museum_source_start = active_source_x_start + museum_source_offset;
 wire museum_panel_hit = museum_recenter_active &&
                         video_x >= museum_panel_left &&
                         video_x < museum_panel_left + 11'd256;
@@ -156,13 +157,11 @@ generate
         // wraps at x=683, so the second half of a scan line addresses the
         // wrong source pixels.
         assign source_x_times3 = {2'b00, video_x} + ({2'b00, video_x} << 1);
-        assign normal_source_x = active_source_x_start +
-                                 (active_zoom_2x ? (source_x_times3 >> 3) :
-                                                   (source_x_times3 >> 2));
+        assign scaled_source_x = active_zoom_2x ? (source_x_times3 >> 3) :
+                                                 (source_x_times3 >> 2);
     end else begin : g_x_generic
-        assign normal_source_x = active_source_x_start +
-                                 (active_zoom_2x ? ((video_x * SRC_W) / (DST_W * 2)) :
-                                                   ((video_x * SRC_W) / DST_W));
+        assign scaled_source_x = active_zoom_2x ? ((video_x * SRC_W) / (DST_W * 2)) :
+                                                 ((video_x * SRC_W) / DST_W);
     end
     if ((SRC_H == 540) && (DST_H == 720)) begin : g_y_3_over_4
         // Likewise, 3*y needs 12 bits.  Without widening it wraps at y=342
@@ -234,8 +233,8 @@ always @(posedge clk or negedge rst_n) begin
     end
 end
 
-assign source_x = museum_panel_hit ?
-                  museum_source_x[10:0] : normal_source_x;
+assign source_x = scaled_source_x +
+                 (museum_panel_hit ? museum_source_start : active_source_x_start);
 
 assign source_word_addr = source_x[WORD_BITS:1];
 assign display_epoch = video_epoch ^

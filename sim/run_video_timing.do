@@ -1,8 +1,10 @@
 onerror {quit -code 1 -f}
 if {[file exists work_main5_video_timing]} {vdel -lib work_main5_video_timing -all}
 vlib work_main5_video_timing
-set source [exec git show 62ee8bf:src/video/museum_status_osd.v]
-set source [string map {"module museum_status_osd (" "module museum_status_osd_ref ("} $source]
+# Compare against the compact OSD immediately before the mode label, not the
+# historical full-width layout. The added label is tested separately.
+set source [exec git show 78d2ac5:src/video/museum_status_osd.v]
+set source [string map {"module museum_status_osd #(" "module museum_status_osd_ref #("} $source]
 set fd [open work_main5_video_timing/museum_status_osd_ref.v w]
 puts $fd $source
 close $fd

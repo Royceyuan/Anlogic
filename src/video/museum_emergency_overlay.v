@@ -3,7 +3,9 @@
 
 // Final full-screen emergency layer. It replaces every normal active pixel;
 // the audio visualizer is intentionally downstream so alarm bars remain red.
-module museum_emergency_overlay (
+module museum_emergency_overlay #(
+    parameter integer PIPELINED = 0
+) (
     input wire clk, input wire rst_n, input wire emergency, input wire frame_tick,
     input wire hs_i, input wire vs_i, input wire de_i,
     input wire [10:0] x_i, input wire [9:0] y_i, input wire [23:0] rgb_i,
@@ -42,31 +44,67 @@ wire border = x_i < 11'd18 || x_i >= 11'd1262 ||
               y_i < 10'd18 || y_i >= 10'd702;
 wire hazard_band = y_i < 10'd82 || y_i >= 10'd638;
 wire hazard_yellow = x_i[6] ^ y_i[5];
+wire [7:0] geometry;
+wire pixel_de, pixel_emergency, pixel_flash;
+wire [23:0] pixel_rgb;
+generate
+    if (PIPELINED) begin : g_geometry_pipe
+        reg [7:0] geometry_q;
+        reg hs_q, vs_q, de_q, emergency_q, flash_q;
+        reg [10:0] x_q;
+        reg [9:0] y_q;
+        reg [23:0] rgb_q;
+        always @(posedge clk or negedge rst_n) begin
+            if (!rst_n) begin
+                geometry_q <= 8'd0;
+                hs_q <= 1'b1; vs_q <= 1'b1; de_q <= 1'b0;
+                emergency_q <= 1'b0; flash_q <= 1'b0;
+                x_q <= 11'd0; y_q <= 10'd0; rgb_q <= 24'd0;
+            end else begin
+                geometry_q <= {triangle_hit, triangle_inner, exclamation_hit,
+                               arrow_shaft, arrow_head, border, hazard_band, hazard_yellow};
+                hs_q <= hs_i; vs_q <= vs_i; de_q <= de_i;
+                emergency_q <= emergency; flash_q <= flash_count[4];
+                x_q <= x_i; y_q <= y_i; rgb_q <= rgb_i;
+            end
+        end
+        assign geometry = geometry_q;
+        assign pixel_de = de_q;
+        assign pixel_emergency = emergency_q;
+        assign pixel_flash = flash_q;
+        assign pixel_rgb = rgb_q;
+        assign hs_o = hs_q; assign vs_o = vs_q; assign de_o = de_q;
+        assign x_o = x_q; assign y_o = y_q;
+    end else begin : g_geometry_direct
+        assign geometry = {triangle_hit, triangle_inner, exclamation_hit,
+                           arrow_shaft, arrow_head, border, hazard_band, hazard_yellow};
+        assign pixel_de = de_i;
+        assign pixel_emergency = emergency;
+        assign pixel_flash = flash_count[4];
+        assign pixel_rgb = rgb_i;
+        assign hs_o = hs_i; assign vs_o = vs_i; assign de_o = de_i;
+        assign x_o = x_i; assign y_o = y_i;
+    end
+endgenerate
 // Parallel palette enables preserve layer priority without cascading wide
 // RGB muxes after the diagonal comparisons (a video-clock timing bottleneck).
-wire symbol_yellow = (triangle_hit && !triangle_inner) || exclamation_hit;
-wire select_white = de_i && (border ||
-                    (!hazard_band && !symbol_yellow && (arrow_shaft || arrow_head)));
-wire select_yellow = de_i && !border &&
-                     (hazard_band ? hazard_yellow : symbol_yellow);
-wire select_dark = de_i && !border && hazard_band && !hazard_yellow;
-wire select_red = de_i && !border && !hazard_band && !symbol_yellow &&
-                  !arrow_shaft && !arrow_head;
+wire symbol_yellow = (geometry[7] && !geometry[6]) || geometry[5];
+wire select_white = pixel_de && (geometry[2] ||
+                    (!geometry[1] && !symbol_yellow && (geometry[4] || geometry[3])));
+wire select_yellow = pixel_de && !geometry[2] &&
+                     (geometry[1] ? geometry[0] : symbol_yellow);
+wire select_dark = pixel_de && !geometry[2] && geometry[1] && !geometry[0];
+wire select_red = pixel_de && !geometry[2] && !geometry[1] && !symbol_yellow &&
+                  !geometry[4] && !geometry[3];
 
 always @(*) begin
-    rgb_o = rgb_i;
-    if (emergency)
+    rgb_o = pixel_rgb;
+    if (pixel_emergency)
         rgb_o = ({24{select_white}} & 24'hffffff) |
                 ({24{select_yellow}} & 24'hffd000) |
                 ({24{select_dark}} & 24'h111111) |
-                ({24{select_red}} & (flash_count[4] ? 24'h780000 : 24'h500000));
+                ({24{select_red}} & (pixel_flash ? 24'h780000 : 24'h500000));
 end
-
-assign hs_o = hs_i;
-assign vs_o = vs_i;
-assign de_o = de_i;
-assign x_o = x_i;
-assign y_o = y_i;
 
 endmodule
 

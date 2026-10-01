@@ -104,6 +104,15 @@ initial begin
              dut.museum_source_offset!==expected_offset[11:0])
             $fatal(1,"geometry mismatch dir=%d origin=%d progress=%d",
                    direction,origin,progress);
+          for(column=expected_left-1;column<=expected_left+256;column=column+1) begin
+            video_x=column; #1;
+            expected_column=video_x*3/4;
+            if(video_x>=expected_left && video_x<expected_left+256)
+                expected_column=expected_column+expected_offset;
+            if(source_x!==expected_column[10:0])
+                $fatal(1,"recenter X mismatch dir=%d origin=%d progress=%d x=%d",
+                       direction,origin,progress,video_x);
+          end
         end
     museum_active=0;
     // All encoded columns and every legal horizontal pan position. Capture

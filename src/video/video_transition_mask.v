@@ -127,7 +127,9 @@ always @(*) begin
         panel_right_next = 11'd768 + {museum_step, 3'b000};
     end
 
-    if (mode == 3'd7)
+    if (PIPE_MASK_3 && (mode == 3'd1 || mode == 3'd2 || mode == 3'd3))
+        reveal = 1'b0; // These comparisons are performed in pipeline stage 2.
+    else if (mode == 3'd7)
         reveal = (band_step == 32) || (dy < band_limit);
     else if (mode == 3'b101)
         reveal = (x >= panel_left) && (x < panel_right);
@@ -160,7 +162,11 @@ generate
         reg [10:0] dx_d1, diamond_limit_d1, diamond_limit_d2;
         reg [9:0] dy_d1;
         reg [11:0] diamond_distance_d2;
-        reg diamond_mode_d1, diamond_mode_d2;
+        reg [2:0] mode_d1;
+        reg diamond_mode_d2;
+        reg [10:0] x_d1, linear_limit_d1;
+        reg [9:0] vertical_limit_d1;
+        reg shape_zero_d1;
         reg diamond_bypass_d1, diamond_bypass_d2;
         always @(posedge clk or negedge rst_n) begin
             if (!rst_n) begin
@@ -172,13 +178,28 @@ generate
                 diamond_limit_d1 <= 11'd0;
                 diamond_limit_d2 <= 11'd0;
                 diamond_distance_d2 <= 12'd0;
-                diamond_mode_d1 <= 1'b0;
+                mode_d1 <= 3'd0;
+                x_d1 <= 11'd0;
+                linear_limit_d1 <= 11'd0;
+                vertical_limit_d1 <= 10'd0;
+                shape_zero_d1 <= 1'b1;
                 diamond_mode_d2 <= 1'b0;
                 diamond_bypass_d1 <= 1'b0;
                 diamond_bypass_d2 <= 1'b0;
             end else begin
                 pass_d1 <= pass_pixel;
-                pass_d2 <= pass_d1;
+                // Split the linear masks across the same existing three clocks:
+                // progress/limits first, pixel comparisons second, output third.
+                case (mode_d1)
+                    3'd1: pass_d2 <= diamond_bypass_d1 ||
+                                    (!shape_zero_d1 && x_d1 < linear_limit_d1);
+                    3'd2: pass_d2 <= diamond_bypass_d1 ||
+                                    (!shape_zero_d1 && dx_d1 < linear_limit_d1);
+                    3'd3: pass_d2 <= diamond_bypass_d1 ||
+                                    (!shape_zero_d1 && dx_d1 < linear_limit_d1 &&
+                                     dy_d1 < vertical_limit_d1);
+                    default: pass_d2 <= pass_d1;
+                endcase
                 pass_d3 <= diamond_mode_d2 ?
                            (diamond_bypass_d2 || diamond_distance_d2 < diamond_limit_d2) :
                            pass_d2;
@@ -187,8 +208,12 @@ generate
                 diamond_limit_d1 <= diamond_limit;
                 diamond_limit_d2 <= diamond_limit_d1;
                 diamond_distance_d2 <= {1'b0, dx_d1} + {2'b0, dy_d1};
-                diamond_mode_d1 <= mode == 3'd6;
-                diamond_mode_d2 <= diamond_mode_d1;
+                mode_d1 <= mode;
+                diamond_mode_d2 <= mode_d1 == 3'd6;
+                x_d1 <= x;
+                linear_limit_d1 <= mode == 3'd1 ? h_limit : center_half_w;
+                vertical_limit_d1 <= center_half_h;
+                shape_zero_d1 <= shape_step == 0;
                 diamond_bypass_d1 <= !de || !enable || shape_step >= 16;
                 diamond_bypass_d2 <= diamond_bypass_d1;
             end

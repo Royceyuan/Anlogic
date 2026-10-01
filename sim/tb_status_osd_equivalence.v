@@ -17,7 +17,7 @@ always #5 clk=~clk;
  .width_bcd(width_bcd),.height_bcd(height_bcd),.zoom_2x(zoom), \
  .name_ready(ready),.name_wr_clk(clk),.name_wr_en(we), \
  .name_wr_addr(addr),.name_wr_data(data)
-museum_status_osd dut(`INPUTS,.hs_o(actual[47]),.vs_o(actual[46]),
+museum_status_osd dut(`INPUTS,.manual_mode(1'b0),.hs_o(actual[47]),.vs_o(actual[46]),
  .de_o(actual[45]),.x_o(actual[44:34]),.y_o(actual[33:24]),.rgb_o(actual[23:0]));
 museum_status_osd_ref ref_dut(`INPUTS,.hs_o(expected[47]),.vs_o(expected[46]),
  .de_o(expected[45]),.x_o(expected[44:34]),.y_o(expected[33:24]),.rgb_o(expected[23:0]));

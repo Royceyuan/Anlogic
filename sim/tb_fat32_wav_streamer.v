@@ -1,8 +1,8 @@
 `timescale 1ns/1ps
 `default_nettype none
 
-module tb_fat32_wav_streamer;
-reg clk = 0, rst_n = 0, start = 0, sd_init_done = 1;
+module tb_fat32_wav_streamer #(parameter REUSE_GEOMETRY=1);
+reg clk = 0, rst_n = 0, start = 0, restart=0, sd_init_done = 1;
 reg [2:0] track_index = 0;
 wire sd_read;
 wire [31:0] sd_addr;
@@ -20,8 +20,11 @@ reg [7:0] sector [0:6][0:511];
 reg serving = 0;
 integer byte_no = 0, lba = 0, writes = 0, seen_lba6 = 0;
 reg ready_seen = 0, ready_dropped = 0, track_switch_seen = 0;
+integer mbr_reads=0, saved_mbr_reads;
+reg check_geometry=0, geometry_changed=0;
 
-fat32_wav_streamer dut (.clk(clk), .rst_n(rst_n), .start(start), .restart(1'b0),
+fat32_wav_streamer #(.REUSE_GEOMETRY(REUSE_GEOMETRY)) dut (
+    .clk(clk), .rst_n(rst_n), .start(start), .restart(restart),
     .track_index(track_index), .sd_init_done(sd_init_done),
     .sd_sec_read(sd_read), .sd_sec_read_addr(sd_addr), .sd_sec_read_data(sd_data),
     .sd_sec_read_data_valid(sd_valid), .sd_sec_read_end(sd_end), .fifo_almost_full(1'b0),
@@ -37,6 +40,7 @@ always @(negedge clk) begin
     sd_valid = 0; sd_end = 0;
     if (!serving && sd_read) begin
         serving = 1; byte_no = 0; lba = sd_addr;
+        if(sd_addr==0) mbr_reads=mbr_reads+1;
         if (sd_addr == 6) seen_lba6 = 1;
     end
     if (serving) begin
@@ -46,11 +50,14 @@ always @(negedge clk) begin
     end
 end
 always @(posedge clk) if (fifo_wr) begin
-    if ((writes == 0 || writes == 128) && fifo_data != 32'h4433_2211) $fatal(1, "first WAV PCM frame order");
-    if ((writes == 1 || writes == 129) && fifo_data != 32'h8877_6655) $fatal(1, "second WAV PCM frame order");
+    if (writes%128 == 0 && fifo_data != 32'h4433_2211) $fatal(1, "first WAV PCM frame order");
+    if (writes%128 == 1 && fifo_data != 32'h8877_6655) $fatal(1, "second WAV PCM frame order");
     writes = writes + 1;
 end
 always @(posedge clk) begin
+    if(check_geometry && (!fs_geometry_ready || fs_fat_start!=2 || fs_data_start!=3 ||
+                          fs_root_cluster!=2 || fs_sectors_per_cluster!=1))
+        geometry_changed<=1;
     if (!rst_n) begin
         ready_seen <= 1'b0;
         ready_dropped <= 1'b0;
@@ -98,6 +105,17 @@ initial begin
     if (!track_switch_seen || !ready || format_error || file_error) begin
         $fatal(1, "AUDIO1.WAV selection failed");
     end
+    // Silent/manual -> automatic restarts readers, not the card/image cache.
+    // Re-reading VBR here used to transiently invalidate shared subtitle geometry.
+    @(negedge clk); start=0;restart=1;check_geometry=1;saved_mbr_reads=mbr_reads;
+    repeat(10)@(posedge clk);
+    @(negedge clk);restart=0;start=1;
+    repeat(6000)@(posedge clk);
+    if(!ready || !stream_done || writes!=384 || format_error || file_error)
+        $fatal(1,"light WAV rearm failed");
+    if(REUSE_GEOMETRY && (geometry_changed || mbr_reads!=saved_mbr_reads))
+        $fatal(1,"light rearm invalidated shared FAT geometry or reread MBR");
+    check_geometry=0;
     // Root-directory miss is a sticky file error, not a silent audio loop.
     @(negedge clk); rst_n = 0; start = 0; track_index = 0; sector[4][0] = 0;
     repeat (520) @(posedge clk); serving = 0;
