@@ -8,6 +8,7 @@
 - 当前 bit：`release/dual_fpga_museum_terminal_main_board.bit`
 - SHA-256：`4C695F6CE48BD9826AD18A7A1A8E21EE4324630A89A2F4C05FFE7687F5B9DBF4`
 - 当前恢复基线：`a0a6832`，用户于2026-10-01重新上板确认图片及名称正常；发布bit为该提交原始二进制，不是重新布线生成的近似版本。
+- 后续现场反馈：恢复相同原始bit后仍再次出现黑屏/名称回退。当前不能认定故障已解决或优化为唯一根因；需用PC面板的图槽掩码及就绪位继续定位，详见撤回记录中的后续证据。
 - 已验收回退 bit：`release/dual_fpga_museum_terminal_main_board_last_verified.bit`
 
 当前产品入口集成 TF 图片/音频/字幕、总览与讲解流程、转场、自适应显示、OSD、画面参数、应急模式、应用恢复，以及主副板 UDP/MBP1 通信。旧阶段入口、诊断工程和历史报告已移入 `D:\VSCode\CodeFiles\Git_TD\rubbish`，不参与当前构建。

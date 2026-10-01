@@ -297,6 +297,7 @@ def main():
         if 0x31 in peer.status:
             d = peer.status[0x31][0]
             lines.append(f"PHY={d[0]}  速度代码={d[1]}  存储状态={d[3]}  错误={d[6]}")
+            lines.append(f"总览图槽[4～0]={d[4]&31:05b}  总览就绪={bool(d[5]&1)}  音频预备={bool(d[5]&2)}  字幕就绪={bool(d[5]&4)}")
             if d[7] & 3:
                 lines.append(f"字幕诊断：文件读取错误={bool(d[7]&1)}，格式错误={bool(d[7]&2)}（不锁住图片控制）")
         if not peer.ready():
