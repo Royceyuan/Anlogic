@@ -285,7 +285,9 @@ always @(posedge clk or posedge rst) begin
                         control_hb_fresh <= !(active_control_type == 8'h17 &&
                             !active_control_payload[56] && control_age_ms < 13'd100);
                     if (control_waiting &&
-                        (packet_payload[95:88] != 8'd0 || packet_payload[70] ||
+                        (packet_payload[95:88] != 8'd0 ||
+                         (packet_payload[70] && !(active_control_type == 8'h17 &&
+                                                  !active_control_payload[56])) ||
                          (active_control_type == 8'h15 &&
                           (packet_payload[119:112] != active_control_payload[63:56] ||
                            packet_payload[111:104] != active_control_payload[55:48])) ||

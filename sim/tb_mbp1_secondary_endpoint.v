@@ -243,6 +243,10 @@ initial begin
     if (control_done_seen!=5) $fatal(1,"exit must not complete from immediate logical overview");
     repeat(11000) @(negedge clk);
     inject(8'h02,0,32'd27,32'h12345678,16,
+           128'h0002ff00000000c00000000000002322);
+    if (control_done_seen!=5 || control_ready)
+        $fatal(1,"mode-off must await automatic recovery, not cancel or unlock");
+    inject(8'h02,0,32'd28,32'h12345678,16,
            128'h0102ff00000000800000000000002322);
     if (control_done_seen!=6 || !control_ready) $fatal(1,"fresh settled overview completes exit");
     request_control(8'h17,64'h0100000000000000);

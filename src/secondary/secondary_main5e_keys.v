@@ -143,13 +143,7 @@ always @(posedge clk or posedge rst) begin
                 control_payload <= {7'd0,sw_stable[2],56'd0};
                 control_request <= 1;
                 mode_retry_ready <= 0; mode_attempts <= mode_attempts + 1'b1;
-            end else if ((|key_press) && mode_matches && sw_stable[2] &&
-                         manual_supported && hb[103:96] == 5 && hb_artifact <= 4 &&
-                         hb_phase <= 4 && display[39:32] == hb_phase) begin
-                control_type <= 8'h18;
-                control_payload <= {hb_artifact,key_code,48'd0};
-                control_request <= 1;
-            end else if ((|key_press) && !sw_stable[2] && !display[42] &&
+            end else if ((|key_press) && mode_matches &&
                          !(manual_next && hb_phase == 8'hff)) begin
             if (mode == 2'b00) begin
                 control_type <= 8'h13;

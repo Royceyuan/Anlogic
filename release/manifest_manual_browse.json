@@ -5,40 +5,40 @@
   "project": "hx4s20_secondary_main5e.al",
   "top": "top_secondary_main5e",
   "bit": "release/hx4s20_secondary_main5e_manual_browse.bit",
-  "bit_sha256": "8ba0aea6d4cee450c58e74ba10dd5dd401785f93dc7e6cdc6a2bf51a5b02f5fb",
+  "bit_sha256": "fd19782ea3ac24d1f59918f6f08c054e20832b40ddd4ed9c44ff088fe1bf151a",
   "bytes": 629641,
-  "timestamp_local": "2026-10-01T20:32:45",
+  "timestamp_local": "2026-10-01T21:02:12",
   "tool": "Tang Dynasty 6.2.168116",
   "seed": 6,
   "timing_ps": {
     "hold_tns": 0,
     "setup_tns": 0,
-    "hold_wns": 23,
-    "setup_wns": 313
+    "hold_wns": 21,
+    "setup_wns": 213
   },
   "sta_coverage_percent": 99.76,
   "gate_resource": {
     "PLL": 4,
-    "LUT": 10612,
+    "LUT": 10608,
     "BRAM32K": 0,
     "DSP": 9,
-    "registers": 6679,
+    "registers": 6676,
     "BRAM9K": 32
   },
   "placed_resource": {
     "PLL": 4,
-    "LUT": 10731,
+    "LUT": 10726,
     "BRAM32K": 0,
     "DSP": 9,
-    "registers": 6724,
+    "registers": 6714,
     "BRAM9K": 32
   },
   "gate_delta_from_v06": {
     "BRAM9K": 0,
-    "LUT": 53,
+    "LUT": 49,
     "DSP": 0,
     "PLL": 0,
-    "registers": 3
+    "registers": 0
   },
   "drc": "PASS No multi-drive; No abnormal timing path",
   "known_critical_warnings": [
@@ -53,7 +53,7 @@
   },
   "required_main_bit": {
     "path": "Anlogic/release/dual_fpga_museum_terminal_main_board.bit",
-    "sha256": "14d503535ca033a01ce2f5ac5805e97fd7e3a994d0a3e8866d67419d75076a14",
+    "sha256": "36d9bb7c74e23c047bec15a5e128a8540852b8c4b7ecd11f504e25cdb107a6ec",
     "hello": "0101010100050004000003ff"
   },
   "inputs_sha256": {
@@ -69,13 +69,13 @@
     "src/common/seg_hex_display.v": "534c1bcca5da859c7018bfa93a72bbd85a0803538edcf9b0d4af0cef27be3be7",
     "src/ethernet/mbp1_codec.v": "0d05a817427ee8643b4e16efc2e5e7879609ddcafb4658f0334c1c710a1f44d6",
     "src/ethernet/mbp1_fixed_udp.v": "e63b9c0216cd68ee7b89581526ecca8448cb061083ab8590ff6721fd4ac5902c",
-    "src/ethernet/mbp1_secondary_endpoint.v": "cc8359791fb606a465077da9a8cd1ed6825d74b488deac459706a8a1b628355b",
+    "src/ethernet/mbp1_secondary_endpoint.v": "47f94a3cfa8e2ddcb6d4dc1678dc6820a0c87b9f520236aad922d3e87bac252b",
     "src/ethernet/mdio_clause22_monitor.v": "4935feed29863fe6a70a7b276f6f6c7174980e4f9a753a0b98ba2414beabb5ac",
     "src/input/key_debounce.v": "c498915acde5c365fd94bee384da6dff78ef4fa59c1ce8191b537357c2949e23",
     "src/memory/anlogic_frame_store.v": "9c190fec86f5fcc358e0225f6e676457323eafd1b55750e8ab720c538ebbcbe1",
     "src/memory/sdram_bmp_row_top_v66.v": "1d5989c6b6a344ddeb5bd401dbc4088a46b871b29b1f7267e7c192cd57ea233f",
     "src/secondary/secondary_carousel_controller.v": "9582864472ec079ed1dc2fb1d3b7addc3a3cd3ebab8b7e3998095a38e9ef1369",
-    "src/secondary/secondary_main5e_keys.v": "497e6df915341d94b5b6af2a8b014e7072e74d1de0528fc971768ddca01c4b11",
+    "src/secondary/secondary_main5e_keys.v": "339bcaeee9d54a60eeed3228de25048f68d9b5fe3a91d5647aba4f1fe929f62a",
     "src/secondary/secondary_main5e_status_adapter.v": "7c99191d6b900b9a7307f619177e8f373ddabb67684c2ef694c59a3df439ed1f",
     "src/secondary/secondary_page_overlay.v": "c7fb36f980e60edd9c30b087164e70bcbd46ad05da8d3d38a439bc846dc3e9ec",
     "src/secondary/top_secondary_main5e_netdiag.v": "f47be72870cf0eafb11f1cc8b849667338cf6de0df3bf5f69dd2154c8918245b",
@@ -130,50 +130,50 @@
   },
   "build_directory": "_build_secondary_main5e_manual_browse_seed6",
   "report_sha256": {
-    "console.log": "b7364d962fa247c294e45e611f4fdef25fc3628a8f8ec29a06350deeb9e6ffd4",
-    "bitgen.log": "a5e8aa70363195be6b249b931ff5d21b29eea50931fbfa6aa565484cd17af6e2",
-    "secondary_main5e_gate.area": "17e9297f2857dbf0c92f1c5fa2a4baf1c4116335ce8534635e417c73490f896e",
-    "secondary_main5e_place.area": "4e83ebca16c0fc5d04af38002d25e21e987d21db5fd1186f29c1b16df8b3b201",
-    "secondary_main5e_final.ts": "fc7e17b66c99fa3e029568b39fc950babcd59ca9974d0ce301d5bd22b884cb44",
-    "secondary_main5e_final.timing": "571fbe3104cce32c775b5a28eb069c301c93b4c270265adde0b4cd2130cec91a",
-    "secondary_main5e_exception.timing": "91c89dafe06ba87cda2ba0e03428435b5b468c8db5813e78c6ee7f50de81d5c6",
-    "secondary_main5e_pr.status": "5d3c3e8efc44f7c6042237789d49227438beb7bf8220336fbf5a3e46ed37d17d"
+    "console.log": "3c2fb925b0c1be81354d8b158d9588264d65583307c1eb517865cf944458d5e6",
+    "bitgen.log": "ce5761f2ffb23ee06ba5306f861c92dbc4abd0a8b419c54f9c5092ce6c450358",
+    "secondary_main5e_gate.area": "fa453e7803811ca772ec790c6e33b667308fb2a3ad618b4d6d7fc58a4e228e4a",
+    "secondary_main5e_place.area": "9c55a12d7a6a868da7d66aa32096b8c6af22ef914dbdde3057070582b0d9e6e7",
+    "secondary_main5e_final.ts": "8ee7a0c36dde4d537edaad573688c3ef214238e9c1df53a75a385c4aa1ccc350",
+    "secondary_main5e_final.timing": "f502a48876effd254b99234855486a55b6faed0e8f9ef0eada50aeba1f91f83a",
+    "secondary_main5e_exception.timing": "41b859cf8234dc685fc977455834e744db40322a1c6b1589fec598872f6643cd",
+    "secondary_main5e_pr.status": "112f0c7955c173fb19662926c2eab9babd9a22240a2c840b502cfc6b9ce8935a"
   },
   "simulation": {
     "sim/regression_alignment.log": {
-      "sha256": "c01ea5eb0b1abd319d8ae65af76b65426aebffe6f83e486a8fe09024e8748f71",
+      "sha256": "f88b278f8edf5490be3a31a30af7a47bd92665ccc411334ecd0cfcc8e33f32de",
       "passes": 2
     },
     "sim/regression_codec.log": {
-      "sha256": "c5ffdab60f1d43af3c8f9484b7a41b4aa1ee4c9b57d5f6507f288794c3a3ee8b",
+      "sha256": "80bcf9df469827dbdfa302a939237d036990668f738fb871f3f275ef34f737f3",
       "passes": 1
     },
     "sim/regression_endpoint.log": {
-      "sha256": "7c5207494b44a8ffd327fbc1301367450234c5d667ed9cb4434afe8c58a914e0",
+      "sha256": "f44bf6542cca0bead00d7fd7368aba9393991778e8ee2bc2b2d73a0ed86350ee",
       "passes": 1
     },
     "sim/regression_fixed_udp.log": {
-      "sha256": "da08b7769de80ca020f6f8c279349413bb1050376f17361afdbc89b58d4fc0d3",
+      "sha256": "635fa096faf140a2f0ca2f98ceec93b8f9ff9163dd1fe8995d6ab4861178bab3",
       "passes": 2
     },
     "sim/regression_keys.log": {
-      "sha256": "00751654dab017c31db888fbc01e3f0c87a270f05211998316d3dbb10229e1f3",
+      "sha256": "3d6910d70de334f141b9fb6ce98d473704158988a172835be392bc91aed87201",
       "passes": 1
     },
     "sim/regression_status.log": {
-      "sha256": "6fcf316d9bfd5b61f2fba06bd4be44afb184c7590f24d333a8accf2a9def8cb8",
+      "sha256": "52750d477312c1291996b070291d84ec8961cf296b83e2b413f5f7c13c65facd",
       "passes": 1
     },
     "sim/run_secondary_local_regression.log": {
-      "sha256": "c6301d145b62e02533602285c3bf2ed466f91d6b4f62a05851d8861eaae2898e",
+      "sha256": "c32e5e02f08fb0767574dfcc86c31d6464f216858d3b7003e3c279ae19eff36a",
       "passes": 3
     },
     "sim/run_secondary_transition_regression.log": {
-      "sha256": "3b39147756ea19a6e977f60df3d7ae9e847ff8f77cd60ca1125bb69afe44ff90",
+      "sha256": "e9d78ea66e2315f71fd04a2545e9c66a25ffcf70ec2b42f5fe294b7fb2f5e479",
       "passes": 2
     },
     "sim/run_secondary_native720_media_regression.log": {
-      "sha256": "517094f682c8eeca8a5c47e5803e62330b7be2692a86fbc15071a1ffa4283a98",
+      "sha256": "f3e4244f48fa062aba5131eea0a2810d74471013f09da2e2705ddf68d33e4774",
       "passes": 2
     }
   },

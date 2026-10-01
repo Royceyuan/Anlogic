@@ -99,16 +99,23 @@ initial begin
     ready=1;
     repeat(2) @(negedge clk);
     press(4'b1000);
-    if (!request || request_type!=8'h18 || request_payload!=64'h0203000000000000)
-        $fatal(1,"KEY4 detail3 must use actual artifact 2");
+    if (!request || request_type!=8'h13 || request_payload!=64'h0301000000000000)
+        $fatal(1,"manual mode must retain preset KEY4");
     @(negedge clk);
+    force dut.sw_stable=4'b0101;
     press(4'b0010);
-    if (!request || request_type!=8'h18 || request_payload!=64'h0201000000000000)
-        $fatal(1,"KEY2 detail1 overrides the normal key group");
+    if (!request || request_type!=8'h14 || request_payload[63:32]!=32'h04020303)
+        $fatal(1,"manual mode must retain brightness KEY2");
     @(negedge clk);
+    force dut.sw_stable=4'b0110;
     press(4'b0100);
-    if (!request || request_type!=8'h18 || request_payload!=64'h0202000000000000)
-        $fatal(1,"KEY3 detail2 overrides the normal key group");
+    if (!request || request_type!=8'h14 || request_payload[63:32]!=32'h03020302)
+        $fatal(1,"manual mode must retain temperature KEY3");
+    @(negedge clk);
+    force dut.sw_stable=4'b0111;
+    press(4'b0010);
+    if (!request || request_type!=8'h15)
+        $fatal(1,"manual mode must retain viewport KEY2");
     @(negedge clk);
     hb[103:96]=3;
     snapshot();
@@ -116,10 +123,10 @@ initial begin
     if (request) $fatal(1,"transition key must be discarded");
     hb[103:96]=5;
     snapshot();
-    if (request) $fatal(1,"discarded image key replayed");
+    if (request) $fatal(1,"discarded control key replayed");
     press(4'b0001);
-    if (!request || request_type!=8'h18 || request_payload!=64'h0200000000000000)
-        $fatal(1,"KEY1 full image");
+    if (!request || request_type!=8'h15)
+        $fatal(1,"manual viewport must recover after transition");
     @(negedge clk);
     force dut.sw_stable=4'b1000;
     @(negedge clk);
@@ -132,6 +139,22 @@ initial begin
     ready=1;
     repeat(3) @(negedge clk);
     if (request) $fatal(1,"normal mode must not send repeated exit commands");
+    // After mode-off/recovery, all normal key groups must work again.
+    force dut.sw_stable=4'b0001;
+    snapshot(); press(4'b0010);
+    if (!request || request_type!=8'h14)
+        $fatal(1,"normal parameters did not return after manual exit");
+    @(negedge clk);
+    hb[127:120]=2; hb[79:72]=0; hb[103:96]=2;
+    hb[111:104]=1; display[39:32]=1; display[55:48]=2;
+    snapshot();
+    force dut.sw_stable=4'b0011;
+    press(4'b0010);
+    if (!request || request_type!=8'h15)
+        $fatal(1,"normal viewport did not return after manual exit");
+    @(negedge clk);
+    hb[127:120]=1; hb[79:72]=0; hb[103:96]=0;
+    hb[111:104]=8'hff; display[39:32]=8'hff;
     // MAIN KEY4 clearing actual mode must reconcile a still-high SW3.
     force dut.sw_stable=4'b0100;
     snapshot();
