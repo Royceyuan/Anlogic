@@ -18,7 +18,7 @@ foreach file $required_files {if {![file exists [file join $root $file]] || [fil
 if {!$good} {puts "REFUSED: stale P&R, warnings, or failed timing"; exit}
 cd $root
 import_db $db
-set bit [file join $root release hx4s20_secondary_help.bit]
+set bit [file join $root release hx4s20_secondary_help_v2.bit]
 if {[info exists ::env(SECONDARY_BIT)]} {set bit $::env(SECONDARY_BIT)}
 bitgen -bit $bit
 exit

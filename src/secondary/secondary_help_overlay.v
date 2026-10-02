@@ -24,15 +24,22 @@ wire [10:0] controls = {switches_50m, manual_50m, overview_50m,
 wire help_frame = controls_frame[10] && !controls_frame[1] && !emergency_bitmap_video;
 wire [1:0] main_context = controls_frame[5] ? 2'd0 :
                          controls_frame[6] ? 2'd2 : 2'd1;
-reg glyph_valid_q, heading_q;
+reg glyph_valid_q;
 reg [3:0] glyph_col_q;
-reg font_bank_q;
-wire [10:0] dx = pre_x - 11'd64;
-wire [9:0] dy = pre_y - 10'd48;
+reg [2:0] font_bank_q;
+wire side = pre_x >= 11'd640;
+wire [10:0] dx = pre_x - (side ? 11'd672 : 11'd64);
+wire [9:0] dy = pre_y - 10'd24;
 wire [4:0] line = dy[9:5];
-wire [255:0] line_codes = help_line(line, controls_frame[8:7], main_context,
-                                   controls_frame[4], controls_frame[3:2]);
-wire [7:0] glyph_code = line_codes >> {dx[9:5],3'b000};
+reg [287:0] left_line_q, right_line_q;
+wire [287:0] line_codes = side ? right_line_q : left_line_q;
+wire [8:0] line_cells [0:31];
+genvar text_cell;
+generate for (text_cell=0;text_cell<32;text_cell=text_cell+1) begin : g_line_cell
+    assign line_cells[text_cell] = line_codes[text_cell*9 +: 9];
+end endgenerate
+wire [8:0] glyph_cell = line_cells[dx[8:4]];
+wire [7:0] glyph_code = glyph_cell[7:0];
 wire [15:0] glyph_bits;
 wire [15:0] background_pixel;
 wire [13:0] write_address = ({7'd0,write_row[9:3]} << 7) +
@@ -48,7 +55,7 @@ reg [15:0] backdrop_q, glyph_q;
 always @(posedge write_clk) if (cache_write) backdrop[write_address] <= write_pixel;
 always @(posedge clk) begin
     backdrop_q <= backdrop[read_address];
-    glyph_q <= help_font_init(glyph_code) >> {dy[4:1],4'b0000};
+    glyph_q <= help_font_init({glyph_code,dy[4:3]}) >> {dy[2:0],glyph_cell[8],4'b0000};
 end
 assign background_pixel = backdrop_q;
 assign glyph_bits = glyph_q;
@@ -70,9 +77,9 @@ EG_LOGIC_BRAM #(
     .ceb(1'b1), .oceb(1'b1), .clkb(clk), .web(1'b0), .rstb(1'b0),
     .bea(1'b1), .beb(1'b1), .addra(write_address), .addrb(read_address)
 );
-wire [15:0] font_data [0:1];
+wire [15:0] font_data [0:HELP_FONT_BANKS-1];
 genvar bank;
-generate for (bank=0;bank<2;bank=bank+1) begin : g_font
+generate for (bank=0;bank<HELP_FONT_BANKS;bank=bank+1) begin : g_font
     EG_PHY_BRAM32K #(
         .MODE("DP16K"), .DATA_WIDTH_A("16"), .DATA_WIDTH_B("16"),
         .REGMODE_A("NOREG"), .REGMODE_B("NOREG"),
@@ -205,41 +212,72 @@ generate for (bank=0;bank<2;bank=bank+1) begin : g_font
                 .INIT_7E(help_font_init(bank*128+126)),
                 .INIT_7F(help_font_init(bank*128+127))
     ) u_font (
-        .doa(font_data[bank]), .dia(16'd0), .addra({glyph_code[6:0],dy[4:1]}),
+        .doa(font_data[bank]), .dia(16'd0), .addra({glyph_code[4:0],dy[4:0],glyph_cell[8]}),
         .bytea(1'b0), .bytewea(1'b0), .csa(1'b1), .wea(1'b0),
         .clka(clk), .rsta(1'b0), .ocea(1'b1),
         .dob(), .dib(16'd0), .addrb(11'd0), .byteb(1'b0), .byteweb(1'b0),
         .csb(1'b0), .web(1'b0), .clkb(clk), .rstb(1'b0), .oceb(1'b0)
     );
 end endgenerate
-assign glyph_bits = font_bank_q ? font_data[1] : font_data[0];
+assign glyph_bits = font_data[font_bank_q];
 `endif
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         controls_ff1 <= 0; controls_ff2 <= 0; controls_frame <= 0;
-        glyph_valid_q <= 0; glyph_col_q <= 0; heading_q <= 0; font_bank_q <= 0;
+        glyph_valid_q <= 0; glyph_col_q <= 0; font_bank_q <= 0;
+        left_line_q <= 0; right_line_q <= 0;
     end else begin
         controls_ff1 <= controls; controls_ff2 <= controls_ff1;
         if (x == 0 && y == 0) controls_frame <= controls_ff2;
-        glyph_valid_q <= pre_x >= 64 && pre_x < 1088 &&
-                         pre_y >= 48 && pre_y < 624;
-        glyph_col_q <= dx[4:1];
-        heading_q <= line == 0 || line == 3 || line == 8;
-        font_bank_q <= glyph_code[7];
+        // Prepare both text rows before x=64; no full-line ROM decode in the pixel path.
+        if (pre_x == 0) begin
+            left_line_q <= help_line(line, 1'b0, main_context, controls_frame[4], controls_frame[3:2]);
+            right_line_q <= help_line(line, 1'b1, main_context, controls_frame[4], controls_frame[3:2]);
+        end
+        glyph_valid_q <= ((pre_x >= 64 && pre_x < 576) ||
+                          (pre_x >= 672 && pre_x < 1184)) &&
+                         pre_y >= 24 && pre_y < 696;
+        glyph_col_q <= dx[3:0];
+        font_bank_q <= glyph_code[7:5];
+    end
+end
+reg [23:0] page_rgb;
+reg [23:0] page_rgb_q;
+reg [15:0] glyph_row_q;
+reg [3:0] glyph_col_d;
+reg glyph_valid_d, de_d;
+always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+        page_rgb_q <= 0; glyph_row_q <= 0; glyph_col_d <= 0;
+        glyph_valid_d <= 0; de_d <= 0;
+    end else begin
+        page_rgb_q <= page_rgb; glyph_row_q <= glyph_bits; glyph_col_d <= glyph_col_q;
+        glyph_valid_d <= glyph_valid_q && help_frame; de_d <= de;
     end
 end
 always @* begin
-    rgb = base_rgb;
+    page_rgb = base_rgb;
     if (help_frame) begin
-        rgb = 24'hF2EEE1;
+        page_rgb = 24'hF2EEE1;
         if (controls_frame[0])
-            rgb = {background_pixel[15:11],background_pixel[15:13],
+            page_rgb = {background_pixel[15:11],background_pixel[15:13],
                    background_pixel[10:5],background_pixel[10:9],
                    background_pixel[4:0],background_pixel[4:2]};
-        if (glyph_valid_q && glyph_bits[15-glyph_col_q])
-            rgb = heading_q ? 24'h5B4525 : 24'h23302E;
+        if (((x >= 32 && x < 624) || (x >= 656 && x < 1248)) && y >= 80 && y < 640)
+            page_rgb = 24'hF7F5EC;
+        // Mark the active remote group with a pale card, never synthetic bold.
+        if (x >= 664 && x < 1240 &&
+            ((controls_frame[8:7] == 0 && y >= 120 && y < 216) ||
+             (controls_frame[8:7] == 1 && y >= 216 && y < 312) ||
+             (controls_frame[8:7] == 2 && y >= 312 && y < 408) ||
+             (controls_frame[8:7] == 3 && y >= 408 && y < 504)))
+            page_rgb = 24'hE5EAE1;
+        if (x >= 32 && x < 1248 && y >= 656 && y < 704)
+            page_rgb = 24'hE5EAE1;
     end
-    if (!de) rgb = 24'h000000;
+    rgb = page_rgb_q;
+    if (glyph_valid_d && glyph_row_q[15-glyph_col_d]) rgb = 24'h23302E;
+    if (!de_d) rgb = 24'h000000;
 end
 endmodule
 `default_nettype wire

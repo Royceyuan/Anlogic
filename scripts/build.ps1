@@ -3,9 +3,9 @@ param([string]$TD = 'D:\TD_6.2.1\bin\td_commands_prompt.exe')
 $ErrorActionPreference = 'Stop'
 $projectRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 Set-Location -LiteralPath $projectRoot
-$buildDir = Join-Path $projectRoot '_build_secondary_help_20261002'
+$buildDir = Join-Path $projectRoot '_build_secondary_help_v2_20261002'
 $env:SECONDARY_BUILD = $buildDir
-$env:SECONDARY_BIT = Join-Path $projectRoot 'release/hx4s20_secondary_help.bit'
+$env:SECONDARY_BIT = Join-Path $projectRoot 'release/hx4s20_secondary_help_v2.bit'
 New-Item -ItemType Directory -Path $buildDir -Force | Out-Null
 Write-Host "Building secondary board; reports: $buildDir"
 & $TD './scripts/build_secondary_main5e_pr.tcl' 2>&1 |

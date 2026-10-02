@@ -1,0 +1,725 @@
+{
+  "schema": 1,
+  "date": "2026-10-02",
+  "project": "hx4s20_secondary_main5e.al",
+  "top": "top_secondary_main5e",
+  "branch": "secondary-main5e",
+  "base_commit": "8f1b02e",
+  "board_validation": "pending",
+  "bit": {
+    "path": "release/hx4s20_secondary_help_v2.bit",
+    "bytes": 652921,
+    "sha256": "B36B3D6E5E0A4FD77A023F5DB5BF5706127253A54FC7ABC41C37B90484353CDA"
+  },
+  "scope": {
+    "secondary_only": true,
+    "main_unchanged": true,
+    "mbp1_and_keys_unchanged": true,
+    "background_unchanged": true,
+    "overview_carousel_and_emergency_preserved": true,
+    "pixel_pipeline_extra_cycles": 1,
+    "rgb_hs_vs_de_aligned": true
+  },
+  "preserved_bits": [
+    {
+      "path": "release/hx4s20_secondary_help.bit",
+      "sha256": "DBF31AC8F131DA07294C1940C53C36BFBA9AF63DC0E17668A129B4F7E3613335"
+    },
+    {
+      "path": "release/hx4s20_secondary_main5e_manual_browse.bit",
+      "sha256": "41B81E033E6F282AAC9E572D982BF8E145504FA38111CDC5F22F86021956CA58"
+    }
+  ],
+  "layout": {
+    "output": [
+      1280,
+      720
+    ],
+    "left": "main overview / automatic / silent manual keys and switches",
+    "right": "secondary four key groups and switches",
+    "footer": "link state and actual main state",
+    "left_text_x": 64,
+    "right_text_x": 672,
+    "column_pixels": 512,
+    "text_y": 24,
+    "line_pitch": 32,
+    "body_font": "Microsoft YaHei regular 28px",
+    "ascii_font": "Consolas regular 24px",
+    "synthetic_bold": false,
+    "upscaling": false,
+    "glyphs": 139,
+    "font_bram32k": 5,
+    "active_group": "pale card, no font change"
+  },
+  "media": {
+    "file": "IMAGEB.BMP",
+    "size": [
+      160,
+      90
+    ],
+    "bpp": 24,
+    "compression": "BI_RGB",
+    "bytes": 43254,
+    "sha256": "4D3C5315101364BC2CEFE4C8F5A279FD03DAF6E1A97DE3622F7066CA2E433687",
+    "requires_tf_update": false,
+    "background_cache_bytes": 28800,
+    "background_bram32k": 8
+  },
+  "implementation": {
+    "tool": "TD 6.2.168116",
+    "seed": 6,
+    "constraints_unchanged": true,
+    "build_directory": "_build_secondary_help_v2_20261002",
+    "synthesis_place_route_hold_repair_drc_bitgen": "passed",
+    "setup_wns_ps": 297,
+    "hold_wns_ps": 21,
+    "setup_tns_ps": 0,
+    "hold_tns_ps": 0,
+    "setup_failed_endpoints": 0,
+    "hold_failed_endpoints": 0,
+    "sta_coverage_percent": 99.79,
+    "known_critical_warning_codes": [
+      "PHY-7002",
+      "PHY-5079"
+    ],
+    "resource_final_after_hold_repair": {
+      "lut": {
+        "used": 11867,
+        "total": 19600
+      },
+      "register": {
+        "used": 7127,
+        "total": 19600
+      },
+      "slice": {
+        "used": 6727,
+        "total": 9800
+      },
+      "bram9k": {
+        "used": 32,
+        "total": 64
+      },
+      "bram32k": {
+        "used": 13,
+        "total": 16
+      },
+      "dsp": {
+        "used": 9,
+        "total": 29
+      },
+      "pll": {
+        "used": 4,
+        "total": 4
+      }
+    },
+    "baseline_v1": {
+      "lut": 11558,
+      "register": 6794,
+      "slice": 6539,
+      "bram9k": 32,
+      "bram32k": 10,
+      "dsp": 9,
+      "pll": 4,
+      "setup_wns_ps": 152,
+      "hold_wns_ps": 27
+    },
+    "timing_fix": "Fixed-cell selection, text rows prepared at line start, glyph row pipeline with matched output sync; no relaxed clocks or new exceptions."
+  },
+  "verification": {
+    "tool": "ModelSim 10.6e",
+    "groups": 13,
+    "pass_count": 21,
+    "error_count": 0,
+    "overlay_pixels_per_model": 3686400,
+    "overlay_models": [
+      "SIM behavioral",
+      "official EG4 BRAM32K and logic RAM"
+    ],
+    "continuous_normal_rgb_de_test": "passed",
+    "actual_top_rgb_hs_vs_de_two_cycle_delay": "passed",
+    "offline_peer_tool_self_checks": "passed",
+    "official_logic_ram_model_internal_part_select_warnings": 2,
+    "physical_io_stubs_only_for_scheduler_test": true,
+    "logs": [
+      {
+        "log": "sim/run_secondary_help.log",
+        "passes": 3,
+        "errors": 0,
+        "sha256": "6772722CD648D3FB1E982316CC09199546C168E7F5C38745FC070E7B0307866F",
+        "pass_lines": [
+          "# PASS help overlay: 3686400 pixels, native split glyphs, two columns, four groups, bottom status, emergency, frame switch",
+          "# Adaptive BMP: PASS source=160x90 top_down=0 row_padding=0 output=1280x720",
+          "# Adaptive BMP: PASS source=160x90 top_down=1 row_padding=0 output=1280x720"
+        ]
+      },
+      {
+        "log": "sim/run_secondary_help_load.log",
+        "passes": 1,
+        "errors": 0,
+        "sha256": "E768F8B9F3C3967ABFA9CDE019672AED3F0FBD5F6703169AF6A697B02039E243",
+        "pass_lines": [
+          "# PASS real top media scheduler: help once, no SDRAM write, emergency priority, SW4 isolation, missing help recovery, scan delay aligned"
+        ]
+      },
+      {
+        "log": "sim/run_secondary_help_primitives.log",
+        "passes": 1,
+        "errors": 0,
+        "sha256": "0774B52691C0A4F53EC229A48188F1D5E4E71F5F5C4EF972C1FDD73EF269004B",
+        "pass_lines": [
+          "# PASS help overlay: 3686400 pixels, native split glyphs, two columns, four groups, bottom status, emergency, frame switch"
+        ]
+      },
+      {
+        "log": "sim/run_secondary_frame_store_alignment.log",
+        "passes": 2,
+        "errors": 0,
+        "sha256": "31EFE90B3C1B6C783B467F1E3E9B380BC07EE413DE8603649F65BFCB56574C81",
+        "pass_lines": [
+          "# PASS wrapper regression EXPECT_ERROR=1 errors=2540 frames=4 words=2560",
+          "# PASS wrapper regression EXPECT_ERROR=0 errors=0 frames=4 words=2560"
+        ]
+      },
+      {
+        "log": "sim/run_mbp1_reconnect.log",
+        "passes": 1,
+        "errors": 0,
+        "sha256": "AD9347ED9A4DC06DA908F0386747DA5E2EF75F2327E1217CDE72AB64756C1A1B",
+        "pass_lines": [
+          "# PASS same-boot reconnect, switch reconciliation, timeout, no HELLO loop: commands=11"
+        ]
+      },
+      {
+        "log": "sim/run_secondary_main5e_codec.log",
+        "passes": 1,
+        "errors": 0,
+        "sha256": "4554C7E7AA50EC43D1E48A8B3FBF07433B21354AE4010464F31B701B80D6EB75",
+        "pass_lines": [
+          "# PASS: MBP1 codec CRC, encode/decode and bad packet rejection"
+        ]
+      },
+      {
+        "log": "sim/run_secondary_main5e_endpoint.log",
+        "passes": 1,
+        "errors": 0,
+        "sha256": "910A229CAE46491EA87028DA674AC98701AD57D929106700E1188D9D6C81BA60",
+        "pass_lines": [
+          "# PASS tb_mbp1_secondary_endpoint"
+        ]
+      },
+      {
+        "log": "sim/run_secondary_main5e_fixed_udp.log",
+        "passes": 2,
+        "errors": 0,
+        "sha256": "772905A3F618996FB25E67542B0964D0A6457E958CD67A925AAB2551B854C702",
+        "pass_lines": [
+          "# PASS tb_mbp1_fixed_udp",
+          "# PASS tb_mbp1_fixed_udp"
+        ]
+      },
+      {
+        "log": "sim/run_secondary_main5e_keys.log",
+        "passes": 1,
+        "errors": 0,
+        "sha256": "4192111562A3F81908F78081A975BC4B6EE00F5ADF396940A77E20A07754A27D",
+        "pass_lines": [
+          "# PASS tb_secondary_main5e_keys"
+        ]
+      },
+      {
+        "log": "sim/run_secondary_main5e_status_adapter.log",
+        "passes": 1,
+        "errors": 0,
+        "sha256": "181ABC1C7122072BDE360B96DEBA0D95D4C998F377E9C4E9C19A2982ADCA09C5",
+        "pass_lines": [
+          "# PASS tb_secondary_main5e_status_adapter"
+        ]
+      },
+      {
+        "log": "sim/run_secondary_local.log",
+        "passes": 3,
+        "errors": 0,
+        "sha256": "D3EB0CEF52D686BEA3B7D7DCA0A979221E9A4264673EAB5B7012EE52365DDBBB",
+        "pass_lines": [
+          "# PASS: SECONDARY hero carousel, confirmed information page, emergency and link timeout",
+          "# PASS: streaming carousel waits for cached pages and holds information page",
+          "# PASS: SECONDARY emergency bitmap, wait and media placeholders"
+        ]
+      },
+      {
+        "log": "sim/run_secondary_transition.log",
+        "passes": 2,
+        "errors": 0,
+        "sha256": "65010F271E3890046D2AC7B5D65829074695EEA20F6143D45A14BC3D2CDB0B85",
+        "pass_lines": [
+          "# PASS phase4 theme mapping and Demo rotation",
+          "# PASS: phase3 transition mask close/midpoint/reveal"
+        ]
+      },
+      {
+        "log": "sim/run_secondary_native720_media.log",
+        "passes": 2,
+        "errors": 0,
+        "sha256": "9C5C0A4AC1DE45639153A3950D959ED5F23880C125C58064CCA843C7CDCB99C7",
+        "pass_lines": [
+          "# Adaptive BMP: PASS source=1280x720 top_down=0 row_padding=0 output=1280x720",
+          "# Adaptive BMP: PASS source=1280x720 top_down=0 row_padding=0 output=1280x720"
+        ]
+      }
+    ]
+  },
+  "input_hash_format": "SHA256 of working-tree bytes; Git CRLF conversion can change byte hashes without changing HDL semantics.",
+  "inputs": [
+    {
+      "path": "constraints/top_secondary_main5e.adc",
+      "bytes": 5536,
+      "sha256": "E36490A3EECC10DC52F0B4EA02FAD1F8AB39B5223ED106D29962E94DC59B0D90",
+      "fresh": true
+    },
+    {
+      "path": "constraints/top_secondary_main5e.sdc",
+      "bytes": 692,
+      "sha256": "9ECEC6C1235C2E86D45DDB619C41D9B98D258524B5293763495C835F6F1482E0",
+      "fresh": true
+    },
+    {
+      "path": "hx4s20_secondary_main5e.al",
+      "bytes": 27411,
+      "sha256": "0ABB494D05AB4F66DC41776C3D00C55A4F536D13B9E71370F530F8FB8F5606B5",
+      "fresh": true
+    },
+    {
+      "path": "src/clock/sys_pll_50m_phase144_native720.v",
+      "bytes": 1424,
+      "sha256": "C6959AF1BF5528105159C5049A573C20EAF7D459A9D4D3FC5F99563205D7F4AE",
+      "fresh": true
+    },
+    {
+      "path": "src/clock/video_pll_75m.v",
+      "bytes": 1544,
+      "sha256": "0D27232FFDDCED7159F5AF5379AB7620F25098D218619729A4209B207DDAFECB",
+      "fresh": true
+    },
+    {
+      "path": "src/common/reset_sync.v",
+      "bytes": 411,
+      "sha256": "0A50EF656A0417F8DFF61CEA48BD353F1FC3147667C4C1984EB4C5FDD2CDC737",
+      "fresh": true
+    },
+    {
+      "path": "src/common/seg_hex_display.v",
+      "bytes": 1862,
+      "sha256": "534C1BCCA5DA859C7018BFA93A72BBD85A0803538EDCF9B0D4AF0CEF27BE3BE7",
+      "fresh": true
+    },
+    {
+      "path": "src/ethernet/mbp1_codec.v",
+      "bytes": 12119,
+      "sha256": "0D05A817427EE8643B4E16EFC2E5E7879609DDCAFB4658F0334C1C710A1F44D6",
+      "fresh": true
+    },
+    {
+      "path": "src/ethernet/mbp1_fixed_udp.v",
+      "bytes": 12356,
+      "sha256": "E63B9C0216CD68EE7B89581526ECCA8448CB061083AB8590FF6721FD4AC5902C",
+      "fresh": true
+    },
+    {
+      "path": "src/ethernet/mbp1_secondary_endpoint.v",
+      "bytes": 21757,
+      "sha256": "E4E6750ACA71E4BE813DB1F39574B49F8FAF562C97B2C18EC12413BAC9CE04E5",
+      "fresh": true
+    },
+    {
+      "path": "src/ethernet/mdio_clause22_monitor.v",
+      "bytes": 3846,
+      "sha256": "4935FEED29863FE6A70A7B276F6F6C7174980E4F9A753A0B98BA2414BEABB5AC",
+      "fresh": true
+    },
+    {
+      "path": "src/input/key_debounce.v",
+      "bytes": 3782,
+      "sha256": "C498915ACDE5C365FD94BEE384DA6DFF78EF4FA59C1CE8191B537357C2949E23",
+      "fresh": true
+    },
+    {
+      "path": "src/memory/anlogic_frame_store.v",
+      "bytes": 5147,
+      "sha256": "9C190FEC86F5FCC358E0225F6E676457323EAFD1B55750E8AB720C538EBBCBE1",
+      "fresh": true
+    },
+    {
+      "path": "src/memory/sdram_bmp_row_top_v66.v",
+      "bytes": 137722,
+      "sha256": "A65E8E94C148526535643881256CF5752B68112964486DDE6418C005037D0AB6",
+      "fresh": true
+    },
+    {
+      "path": "src/secondary/secondary_carousel_controller.v",
+      "bytes": 8088,
+      "sha256": "9582864472EC079ED1DC2FB1D3B7ADDC3A3CD3EBAB8B7E3998095A38E9EF1369",
+      "fresh": true
+    },
+    {
+      "path": "src/secondary/secondary_help_font.vh",
+      "bytes": 55065,
+      "sha256": "C8E662968D7642CBC3A692D2DD7B3FF149AD81FC0B34D65B811B631B20871C92",
+      "fresh": true
+    },
+    {
+      "path": "src/secondary/secondary_help_overlay.v",
+      "bytes": 13805,
+      "sha256": "539297DCDAFEBDEEEAAF8E74FD11A24B88FF861F26111284E8B5AD62FD3DF173",
+      "fresh": true
+    },
+    {
+      "path": "src/secondary/secondary_main5e_keys.v",
+      "bytes": 7022,
+      "sha256": "725D67C7D9AD07189B628351A84367BC6620A2AEF4D3DA68CB6180C99432AEA2",
+      "fresh": true
+    },
+    {
+      "path": "src/secondary/secondary_main5e_status_adapter.v",
+      "bytes": 2181,
+      "sha256": "7C99191D6B900B9A7307F619177E8F373DDABB67684C2EF694C59A3DF439ED1F",
+      "fresh": true
+    },
+    {
+      "path": "src/secondary/secondary_page_overlay.v",
+      "bytes": 10780,
+      "sha256": "C7FB36F980E60EDD9C30B087164E70BCBD46AD05DA8D3D38A439BC846DC3E9EC",
+      "fresh": true
+    },
+    {
+      "path": "src/secondary/top_secondary_main5e_netdiag.v",
+      "bytes": 16821,
+      "sha256": "F47BE72870CF0EAFB11F1CC8B849667338CF6DE0DF3BF5F69DD2154C8918245B",
+      "fresh": true
+    },
+    {
+      "path": "src/secondary/top_secondary_main5e.v",
+      "bytes": 6067,
+      "sha256": "1CD5EE9A75DC7F6F2D85C8FC5B766970D686C9753E873664C724CDAFF56D2BB5",
+      "fresh": true
+    },
+    {
+      "path": "src/storage/adaptive_row_ram.v",
+      "bytes": 2826,
+      "sha256": "48C9752F3AA9ECA96FE4E9878479FFD0E7F85640EA64AA125BD6F9E78CBA8235",
+      "fresh": true
+    },
+    {
+      "path": "src/storage/al_dp_ram16.v",
+      "bytes": 1652,
+      "sha256": "A57C09B252E697E932CCCF9396CDCF3E216BEA986B89430A728BB01E2A31E435",
+      "fresh": true
+    },
+    {
+      "path": "src/storage/bmp_row_buffer.v",
+      "bytes": 7544,
+      "sha256": "3BD05C950C0E8812276CEC5A63F9C120AD596455AF24D165023B2650CC0A6701",
+      "fresh": true
+    },
+    {
+      "path": "src/storage/bmp_sdram_row_writer.v",
+      "bytes": 11475,
+      "sha256": "ED168AE3723F29B7B6E6368A0A11DE912142723671BCB0D7C0AC0FB008DA9E8B",
+      "fresh": true
+    },
+    {
+      "path": "src/storage/fat32_image_loader.v",
+      "bytes": 64777,
+      "sha256": "2D4F8A42CA25ABAE48709DF837288B4B151EEC8E3F68E2449D105DDF52767D35",
+      "fresh": true
+    },
+    {
+      "path": "src/storage/rgb565_stream_packer_ready.v",
+      "bytes": 1302,
+      "sha256": "DD9DDF2273BF8F8D313683DFB1FCFE55857EBAD2251BCCB4E171E4643C59FD05",
+      "fresh": true
+    },
+    {
+      "path": "src/video/product_show_controller.v",
+      "bytes": 6283,
+      "sha256": "897FD3ECD8817B3BC190E732C6CFE1661893E6DC74D114E51046DF1AD5BC1A75",
+      "fresh": true
+    },
+    {
+      "path": "src/video/rgb888_adjust.v",
+      "bytes": 3211,
+      "sha256": "929B4558BE593DAC7CE52075AD3B419FC7F3A39E35C91E45AF739825DAE5A010",
+      "fresh": true
+    },
+    {
+      "path": "src/video/transition_theme_controller.v",
+      "bytes": 1212,
+      "sha256": "6D716CC7F7B0AC8E7B5DF25D2AEF53EAB34D221B945DBB2F5E5F04B2BD1D7A8A",
+      "fresh": true
+    },
+    {
+      "path": "src/video/video_fade.v",
+      "bytes": 931,
+      "sha256": "196D4917E1685B5A00C58F202F9320053676BF34577C4D4CC2F19AEC9963A290",
+      "fresh": true
+    },
+    {
+      "path": "src/video/video_timing_640x480_pclk.v",
+      "bytes": 2063,
+      "sha256": "49DE1E6E28617FB829DF973E2ED9FB7E47F878712F0AC899F58DF7BECE366695",
+      "fresh": true
+    },
+    {
+      "path": "src/video/video_transition_mask.v",
+      "bytes": 5787,
+      "sha256": "3D600032950BCDE2FED6F62F715B449B1A0F6D62244BA6427273125ABF320F94",
+      "fresh": true
+    },
+    {
+      "path": "vendor/anlogic_hx4s20_udp/par_ph1demo/al_ip/pll_gen.v",
+      "bytes": 2904,
+      "sha256": "83ACF5D318070806D0ED0986F04F0D5A37BD98735728F1AC4BE7B0CC982455C0",
+      "fresh": true
+    },
+    {
+      "path": "vendor/anlogic_hx4s20_udp/par_ph1demo/al_ip/rx_pll.v",
+      "bytes": 2545,
+      "sha256": "0C5FCDC0E921F076884F90F0E188E4B0E632BBEA8266026B1A174BFB8DD7AB24",
+      "fresh": true
+    },
+    {
+      "path": "vendor/anlogic_hx4s20_udp/par_ph1demo/al_ip/TEMAC_CORE_gate.v",
+      "bytes": 388529,
+      "sha256": "96167779D09373CF3AC131ECFA8A2B5D25EC28E4A7FBC446B0B1C5FE01036EEB",
+      "fresh": true
+    },
+    {
+      "path": "vendor/anlogic_hx4s20_udp/par_ph1demo/al_ip/TEMAC_CORE.ipc",
+      "bytes": 600,
+      "sha256": "80A8B8DAFFA2C465EDC80DF2143013C3B399D762F08E5501B0A2431537CBF6D8",
+      "fresh": true
+    },
+    {
+      "path": "vendor/anlogic_hx4s20_udp/src/clk_gen_rst_gen.v",
+      "bytes": 2884,
+      "sha256": "22394CF13EF897E679EF3D72B91150EEEA0FF53474AC3FA73D292231D8F74577",
+      "fresh": true
+    },
+    {
+      "path": "vendor/anlogic_hx4s20_udp/src/div_clk_gen.v",
+      "bytes": 1874,
+      "sha256": "D33D57F0D70D8D05A9E7B81FB5B56690505C6127D119A24F8DCB49C96E2AFE7A",
+      "fresh": true
+    },
+    {
+      "path": "vendor/anlogic_hx4s20_udp/src/IDDR.v",
+      "bytes": 1875,
+      "sha256": "CBF4C3C34DAFE672AA7CCC010440E01FC7DBDDF428BDE868319D8D0580208F53",
+      "fresh": true
+    },
+    {
+      "path": "vendor/anlogic_hx4s20_udp/src/ODDR.v",
+      "bytes": 1689,
+      "sha256": "D3EDB14DAEBDCB028E1CB3A8C6C944556FA28568C04E8A0193C868F654AD3A84",
+      "fresh": true
+    },
+    {
+      "path": "vendor/anlogic_hx4s20_udp/src/RAMB16_S9_S9.v",
+      "bytes": 2255,
+      "sha256": "457278A570CF5A9F6E8280A4C2860154A785E7E110D46F5E6F9C2AA263FE4287",
+      "fresh": true
+    },
+    {
+      "path": "vendor/anlogic_hx4s20_udp/src/rgmii_interface.v",
+      "bytes": 10846,
+      "sha256": "CFE987991204FF5D307FBE9043DC0C42F3B9D9CF4F5BCCFD6F9E8A3D8EA7C5D4",
+      "fresh": true
+    },
+    {
+      "path": "vendor/anlogic_hx4s20_udp/src/rx_client_fifo.v",
+      "bytes": 26448,
+      "sha256": "FF1BE590E136905CD36B19B99869EAB8596CADDDB820EBFA63ABD6BC2674C04B",
+      "fresh": true
+    },
+    {
+      "path": "vendor/anlogic_hx4s20_udp/src/temac_block.v",
+      "bytes": 16939,
+      "sha256": "CBB801F21AB7DB5312F1BDC6B107C3480E709309BC7377B9D85678519D34CD78",
+      "fresh": true
+    },
+    {
+      "path": "vendor/anlogic_hx4s20_udp/src/temac_clk_gen.v",
+      "bytes": 2189,
+      "sha256": "B1B3474B1A97CC96A73297BE56C4D3FC8322891CD3D6F83B3560D2FE95C126D3",
+      "fresh": true
+    },
+    {
+      "path": "vendor/anlogic_hx4s20_udp/src/tx_client_fifo.v",
+      "bytes": 39538,
+      "sha256": "F4A118BA55C737B26B1A1498402A5CE5E710E30AB4FB34CA8FEB49F23C2333BC",
+      "fresh": true
+    },
+    {
+      "path": "vendor/anlogic_hx4s20_udp/src/tx_clk_en_gen.v",
+      "bytes": 7144,
+      "sha256": "DA8C09E5308E8BEBBFDFACAAD7D83F5F9371811F54A8F6203E452E40649B02E9",
+      "fresh": true
+    },
+    {
+      "path": "vendor/anlogic_lab6/al_ip/afifo_16_32_256.v",
+      "bytes": 34859,
+      "sha256": "32C86A05D74F05C19E38AD87D73040530F6430FEE6ACBF9B4D4DF8900152B4ED",
+      "fresh": true
+    },
+    {
+      "path": "vendor/anlogic_lab6/al_ip/afifo_32_16_256.v",
+      "bytes": 34859,
+      "sha256": "3F0119E1B1BCECD5AF05CDFDB3A56DC336EFCBC2EEA9F9DD3AF8B98A205DED75",
+      "fresh": true
+    },
+    {
+      "path": "vendor/anlogic_lab6/frame_fifo_read.v",
+      "bytes": 11498,
+      "sha256": "9620C3151B0A905B7DEFAFF8048AF2938368737B9CE27696E3021E495DBCFC1D",
+      "fresh": true
+    },
+    {
+      "path": "vendor/anlogic_lab6/frame_fifo_write.v",
+      "bytes": 10474,
+      "sha256": "202042F62448CC1BC8B73F2EC70FF4A012969BB5E8F4226A9E8E0CCA7E9D37F0",
+      "fresh": true
+    },
+    {
+      "path": "vendor/anlogic_lab6/frame_read_write.v",
+      "bytes": 12408,
+      "sha256": "118D27A3AEFBD3FA241CCE1491015D7F54161ACD523A526FD4CFF5EA66EF3C96",
+      "fresh": true
+    },
+    {
+      "path": "vendor/anlogic_lab6/sdram/enc_file/global_def.v",
+      "bytes": 505,
+      "sha256": "398A6F849990F421C65D3D65DB4A2E09824811B61D027CC375C99BD3D2F2E896",
+      "fresh": true
+    },
+    {
+      "path": "vendor/anlogic_lab6/sdram/enc_file/sdr_as_ram.enc.v",
+      "bytes": 7575,
+      "sha256": "3FC0299E910B80FCA5EB5D644F6C62232E0B7E40F01701084C2D98B044F07AFF",
+      "fresh": true
+    },
+    {
+      "path": "vendor/anlogic_lab6/sdram/enc_file/sdr_init_ref.enc.v",
+      "bytes": 9060,
+      "sha256": "101157CA6B08281A3BF7746AF36FA69FC3521B560A960CAD4BF7FBCB3BD16E44",
+      "fresh": true
+    },
+    {
+      "path": "vendor/anlogic_lab6/sdram/enc_file/sdr_wrrd.enc.v",
+      "bytes": 15637,
+      "sha256": "C7D7FE07D75F66AA88D9F986B3006319C995162434F104F9990664B374CDFDD2",
+      "fresh": true
+    },
+    {
+      "path": "vendor/anlogic_lab6/sdram/sdram.v",
+      "bytes": 3235,
+      "sha256": "E3859F8E09180EF2DD36365143134A081B91F7A133BA2870F9106D03E0225E2C",
+      "fresh": true
+    },
+    {
+      "path": "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/DVITransmitter.enc.vhd",
+      "bytes": 9219,
+      "sha256": "FA009E816FC717374679DBA8096C518DC6F3FFBC2389D440A1724D9487EC1674",
+      "fresh": true
+    },
+    {
+      "path": "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/SerializerN_1_lvds_dat.enc.vhd",
+      "bytes": 8250,
+      "sha256": "2215E28372D39D6CB155F5B87FEB39FA578CCA39223CEDB9E712CA7413D7783E",
+      "fresh": true
+    },
+    {
+      "path": "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/SerializerN_1_lvds.enc.vhd",
+      "bytes": 8076,
+      "sha256": "D5FB9B03E33A0E43398E1E963036BBD87FD386C23AF1B79F23E3D32E87B1DD63",
+      "fresh": true
+    },
+    {
+      "path": "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/TMDSEncoder.enc.vhd",
+      "bytes": 8736,
+      "sha256": "F87572D7CE8539276E280C411FE46F42F3282210D7C53601CFD6C8ECB8C71BEB",
+      "fresh": true
+    },
+    {
+      "path": "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/hdmi_tx.vhd",
+      "bytes": 1873,
+      "sha256": "DC91FE383C0001B1CE71B91BBD8DEEE2FF3C6FC14E5B973CB33E168653264AA5",
+      "fresh": true
+    },
+    {
+      "path": "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/sd_card/sd_card_cmd.v",
+      "bytes": 8902,
+      "sha256": "0220AF147042E24F2DA4A56DD8C22909D1FF5B3FA2B86ACA86B3C52291ADE7C3",
+      "fresh": true
+    },
+    {
+      "path": "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/sd_card/sd_card_sec_read_write.v",
+      "bytes": 5874,
+      "sha256": "562FF43E6544728D09143FED377DFC67AF37ACE1CE3351FDCC56306B3B8A00EC",
+      "fresh": true
+    },
+    {
+      "path": "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/sd_card/sd_card_top.v",
+      "bytes": 7404,
+      "sha256": "9875D2603C55DBD66C961CB26D23834F525242BA6E5209ABF5BDEEE44E8A4426",
+      "fresh": true
+    },
+    {
+      "path": "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/sd_card/spi_master.v",
+      "bytes": 3791,
+      "sha256": "A8C1CCE7D22A6BD32D2CF08D441723858085EB05424E462487844C571EC102F2",
+      "fresh": true
+    },
+    {
+      "path": "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/video_delay.v",
+      "bytes": 1595,
+      "sha256": "F47C4B63F8BAA6D8874C87DCA5B72DFDADD19F4A107403DA98752BCE98936433",
+      "fresh": true
+    }
+  ],
+  "reports": [
+    {
+      "path": "docs/reports/secondary_help_v2_20261002_area.rpt",
+      "bytes": 31453,
+      "sha256": "245B237D821242A80427494D1D6BCB3839A6EDB1C8CC607CEE1DE938F867DA4E"
+    },
+    {
+      "path": "docs/reports/secondary_help_v2_20261002_bitgen.rpt",
+      "bytes": 4746,
+      "sha256": "6B21D7B0808945654DC66C6820DCDFE8AFC93AC802F4446D877AD9B873FA7B92"
+    },
+    {
+      "path": "docs/reports/secondary_help_v2_20261002_exceptions.rpt",
+      "bytes": 1200,
+      "sha256": "3720E2335639CD3257D319BB164A129D66AB0483CC75F93185A99A798E363C81"
+    },
+    {
+      "path": "docs/reports/secondary_help_v2_20261002_implementation.rpt",
+      "bytes": 334856,
+      "sha256": "8A8C49F6117CFD45D117851BC26DE50396441BDA443C98BFFD3B894920388CDB"
+    },
+    {
+      "path": "docs/reports/secondary_help_v2_20261002_qor.rpt",
+      "bytes": 1313,
+      "sha256": "22A9E91C4E1CB787EDCCF636CC69DD08713BFE57D7E4F7DE518F0B719898C7F8"
+    },
+    {
+      "path": "docs/reports/secondary_help_v2_20261002_status.rpt",
+      "bytes": 1832,
+      "sha256": "A66E086B0EA270065949059B9B89350C1E4C032ED820E61110348783ACEC62B6"
+    },
+    {
+      "path": "docs/reports/secondary_help_v2_20261002_timing.rpt",
+      "bytes": 1120168,
+      "sha256": "D35407DA92A69A3E887FD45DBD3CD77EDFFCCC5F575190403BC42CB361539609"
+    }
+  ]
+}

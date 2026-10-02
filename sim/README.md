@@ -37,7 +37,7 @@ Pop-Location
 | regression_local.log | 3 | 轮播、后台缓存、简介和应急页面 |
 | regression_transition.log | 2 | 转场控制和遮罩 |
 | regression_native720.log | 2 | IMAGE0、IMAGEA 原生 1280×720 BMP 读取 |
-| regression_help.log | 3 | 369万像素、四组说明、背景缓存及正向/倒序IMAGEB读取 |
+| regression_help.log | 3 | 369万像素、原生分半字模、左右双栏、四组说明、底部状态、背景缓存及正向/倒序IMAGEB读取 |
 | regression_help_load.log | 1 | 实际顶层调度：背景只加载一次、不写SDRAM、失败后恢复原素材加载 |
 | regression_help_primitives.log | 1 | 官方BRAM32K/逻辑RAM模型下同一369万像素检查；两个官方加密模型内部告警记录于发布说明 |
 

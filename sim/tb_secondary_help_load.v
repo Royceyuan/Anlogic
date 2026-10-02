@@ -9,6 +9,13 @@ reg cmd_valid=0;
 reg [7:0] cmd_type=0, artifact=0;
 reg test_pass=0;
 integer loads=0, help_loads=0;
+reg [2:0] sync_previous=3'b110;
+reg [2:0] sync_expected=3'b110;
+integer sync_checks=0;
+reg [2:0] scan_input=3'b110;
+reg [23:0] scan_rgb_input=0, rgb_previous=0, rgb_expected=0;
+reg monitor_rgb=0;
+integer scan_step;
 top_v66 #(.VIDEO_W(1280),.VIDEO_H(720),.SOURCE_W(1280),.SOURCE_H(720),
     .VIDEO_MODE_1280(1),.ADAPTIVE_BMP(1),.MULTI_IMAGE_BMP(1),
     .MULTI_FRAME_PRELOAD(1),.VIDEO_FRAME_COUNT(5),.SECONDARY_STREAMING(1),
@@ -35,6 +42,23 @@ always @(negedge clk) if(dut.image_load_start) begin
         help_loads=help_loads+1;
         if(dut.writer_start || dut.loader_file_index!=11 || !dut.row_input_continue)
             $fatal(1,"help must bypass SDRAM writer and select IMAGEB");
+    end
+end
+// The new glyph stage and RGB pass-through have one extra cycle; all scan
+// signals must follow the same two-cycle delay from the original output.
+always @(posedge clk) begin
+    if(!rst_n) begin sync_previous=3'b110; sync_checks=0; end
+    else begin
+        sync_expected=sync_previous;
+        sync_previous={dut.video_hs_out,dut.video_vs_out,dut.video_de_out};
+        rgb_expected=rgb_previous;
+        rgb_previous=dut.g_secondary_overlay.engineering_rgb;
+        sync_checks=sync_checks+1;
+        #1;
+        if(sync_checks>2 && {dut.secondary_hs_out,dut.secondary_vs_out,dut.secondary_de_out} !== sync_expected)
+            $fatal(1,"help pipeline changed RGB/sync alignment");
+        if(monitor_rgb && sync_checks>2 && dut.secondary_rgb_out !== (sync_expected[0] ? rgb_expected : 24'd0))
+            $fatal(1,"normal RGB and scan delay diverged");
     end
 end
 task finish;
@@ -86,8 +110,17 @@ initial begin
     finish();
     if(!dut.secondary_info_valid || dut.secondary_info_cached_artifact!=2)
         $fatal(1,"info completion failed");
+    force dut.video_hs_out=scan_input[2];
+    force dut.video_vs_out=scan_input[1];
+    force dut.video_de_out=scan_input[0];
+    force dut.g_secondary_overlay.engineering_rgb=scan_rgb_input;
+    for(scan_step=0;scan_step<48;scan_step=scan_step+1) begin
+        @(negedge clk); scan_input=scan_step[2:0]; scan_rgb_input=24'h123400+scan_step;
+        if(scan_step==3) monitor_rgb=1;
+    end
+    @(negedge clk); monitor_rgb=0;
     test_pass=1;
-    $display("PASS real top media scheduler: help once, no SDRAM write, emergency priority, SW4 isolation, missing help recovery");
+    $display("PASS real top media scheduler: help once, no SDRAM write, emergency priority, SW4 isolation, missing help recovery, scan delay aligned");
     $finish;
 end
 initial begin #50000; $fatal(1,"integration timeout"); end

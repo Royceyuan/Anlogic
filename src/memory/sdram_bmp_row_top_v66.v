@@ -2849,9 +2849,20 @@ generate
         end else begin : g_no_help_page
             assign help_rgb = engineering_rgb;
         end
-        assign secondary_hs_out = hs_q;
-        assign secondary_vs_out = vs_q;
-        assign secondary_de_out = de_q;
+        if (SECONDARY_HELP) begin : g_help_sync_delay
+            reg hs_d, vs_d, de_d;
+            always @(posedge video_clk or negedge video_rst_n) begin
+                if (!video_rst_n) begin hs_d <= 1; vs_d <= 1; de_d <= 0; end
+                else begin hs_d <= hs_q; vs_d <= vs_q; de_d <= de_q; end
+            end
+            assign secondary_hs_out = hs_d;
+            assign secondary_vs_out = vs_d;
+            assign secondary_de_out = de_d;
+        end else begin : g_no_help_sync_delay
+            assign secondary_hs_out = hs_q;
+            assign secondary_vs_out = vs_q;
+            assign secondary_de_out = de_q;
+        end
         assign secondary_rgb_out = rgb_q;
     end else begin : g_no_secondary_overlay
         assign secondary_hs_out = video_hs_out;
