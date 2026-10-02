@@ -1,0 +1,33 @@
+# vsim -c -modelsimini modelsim.ini -voptargs="+acc" -onfinish stop scale_trial.tb_interpolate -do "onerror {quit -code 1 -f}; run 100 ns; force -freeze /tb_interpolate/out_h 16#FFFF; run -all; if {[examine -radix unsigned /tb_interpolate/test_pass] != 1} {quit -code 1 -f}; quit -code 0 -f" -l negative_check.log 
+# Start time: 20:34:16 on Oct 02,2026
+# ** Note: (vsim-8009) Loading existing optimized design _opt
+# //  ModelSim SE-64 10.6e Jun 23 2018
+# //
+# //  Copyright 1991-2018 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  ModelSim SE-64 and its associated documentation contain trade
+# //  secrets and commercial or financial information that are the property of
+# //  Mentor Graphics Corporation and are privileged, confidential,
+# //  and exempt from disclosure under the Freedom of Information Act,
+# //  5 U.S.C. Section 552. Furthermore, this information
+# //  is prohibited from disclosure under the Trade Secrets Act,
+# //  18 U.S.C. Section 1905.
+# //
+# Loading work.tb_interpolate(fast)
+# Loading work.rgb565_interpolate(fast)
+# Loading work.rgb565_interpolate(fast__1)
+# onerror {quit -code 1 -f}
+#  Warning: onerror command for use within macro
+#  run 100 ns
+#  force -freeze /tb_interpolate/out_h 16#FFFF
+#  run -all
+# ** Fatal: horizontal mismatch/latency           9 ffff 0000
+#    Time: 280 ns  Scope: tb_interpolate.check File: D:/VSCode/CodeFiles/Git_TD/Anlogic/experiments/scale_quality/tb_interpolate.v Line: 45
+# ** Note: $finish    : D:/VSCode/CodeFiles/Git_TD/Anlogic/experiments/scale_quality/tb_interpolate.v(45)
+#    Time: 280 ns  Iteration: 1  Instance: /tb_interpolate
+# Break in Task check at D:/VSCode/CodeFiles/Git_TD/Anlogic/experiments/scale_quality/tb_interpolate.v line 45
+# Stopped at D:/VSCode/CodeFiles/Git_TD/Anlogic/experiments/scale_quality/tb_interpolate.v line 45
+#  if {[examine -radix unsigned /tb_interpolate/test_pass] != 1} {quit -code 1 -f}
+# End time: 20:34:17 on Oct 02,2026, Elapsed time: 0:00:01
+# Errors: 1, Warnings: 0

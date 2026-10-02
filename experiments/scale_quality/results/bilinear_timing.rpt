@@ -1,0 +1,937 @@
+Created by          : Tang Dynasty v6.2.168116
+                    : Copyright (c) 2012-2025 Anlogic Inc.
+Generated           : Fri Oct  2 20:27:55 2026
+
+Top Model           : rgb565_interpolate
+Device              : EG4S20BG256
+Speed               : NA
+STA coverage        : 100.00%
+Constraint File     : D:/VSCode/CodeFiles/Git_TD/Anlogic/experiments/scale_quality/timing.sdc;
+Confidence          : Routed
+Check Corner        : Both (Slow and Fast)
+CRPR Enabled        : Yes
+Report Scheme       : 10 end point(s) per path group, 1 path(s) per end point
+
+
+Check Status
+-------------
+
+Corner   | Max      Min     
+------------------------------------
+Slow     | yes      yes     
+Fast     | yes      yes     
+
+
+Timing Status
+--------------------
+	SWNS: 5.528ns, STNS: 0.000ns
+	HWNS: 0.387ns, HTNS: 0.000ns
+	Period Check WNS: 16.586ns
+
+
+Clock Summary
+--------------------
+
+       Clock-Id:       C-Freq       Fanout   Clock-Name
+--------------------------------------------------------------------------------
+           clk0:       50.000           99   trial_clk
+--------------------------------------------------------------------------------
+
+       Name            Type         Rise(ns)   Fall(ns)          C-Period(ns)     C-Freq(MHz)          R-Period(ns)     R-Freq(MHz)         SWNS(ns)   STNS(ns)         HWNS(ns)   HTNS(ns)         Skew(ns)           Fanout        Max-Level        CC-From    CC-To
+       clk0           local            0.000     10.000                20.000          50.000                14.472          69.099            5.528      0.000            0.387      0.000            0.480               99                6             no       no
+
+Notes
+----------
+C-Period  :  constraint period
+C-Freq    :  constraint freq
+R-Period  :  report min period
+R-Freq    :  report fmax
+CC-From   :  has path(s) from cross-domain clock
+CC-To     :  has path(s) to cross-domain clock
+
+
+*   Clock R-Period data only takes intra-clock timing. SWNS/STNS/HWNS/HTNS take both intra-clock and inter-clock timing.
+*   If there is mismatch between R-Period and SWNS, check inter-clock timing of this clock as capture clock.
+*   SWNS/STNS/HWNS/HTNS of timing exception (SMCP/SMD) only counted in global Timing Status, not counted in Clock Summary.
+
+Intra clock domain timing
+--------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+Path Group     :     trial_clk -> trial_clk
+Type           :     Self
+From Clock     :     trial_clk
+To Clock       :     trial_clk
+Min Period     :     14.472ns
+Fmax           :     69.099MHz
+
+Statistics:
+Max            : SWNS      5.528ns, STNS      0.000ns,         0 Viol Endpoints,       265 Total Endpoints,       968 Paths Analyzed
+Min            : HWNS      0.387ns, HTNS      0.000ns,         0 Viol Endpoints,       265 Total Endpoints,       968 Paths Analyzed
+----------------------------------------------------------------------------------------------------
+
+Max Paths
+----------------------------------------------------------------------------------------------------
+Slack               : 5.528ns
+Begin Point         : base_b1[12]_syn_37.clk (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : busy (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : setup
+Process             : slow
+Budget              : 20.000ns { trial_clk rising@20.000ns - trial_clk rising@0.000ns }
+Data Path Delay     : 10.420ns (cell 7.949ns (76%), net 2.471ns (24%))
+Clock Skew          : 3.952ns
+Logic Level         : 2 ( PAD=1  LUT2=1 )
+Max Fanout          : 17
+Clock Uncertainty   : 0.100ns (sdc uncertainty: 0.000ns, default uncertainty: 0.100ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+hierarchy                               0.000          0.000          pin: clk_syn_2.ipad
+PAD                 x014y000            1.890          1.890          pin: clk_syn_2.di
+net (fo=99)                             2.062          3.952          net: clk_dup_1,  ./experiments/scale_quality/rgb565_interpolate.v(14)
+                                                                      pin: base_b1[12]_syn_37.clk
+launch edge                             0.000    r     3.952               
+--------------------------------------------------------------------  ---------------
+clk2q               x023y026z0          0.146    r     4.098          pin: base_b1[12]_syn_37.q[0]
+net (fo=17)                             1.173          5.271          net: state_reg_syn_1[0],  ./experiments/scale_quality/rgb565_interpolate.v(39)
+                                                                      pin: busy_syn_6.d[1]
+LUT2                x013y018z2          0.262    r     5.533       1  pin: busy_syn_6.f[1]
+net (fo=1)                              1.298          6.831          net: busy_dup_1,  ./experiments/scale_quality/rgb565_interpolate.v(17)
+                                                                      pin: busy_syn_2.do[0]
+PAD                 x000y005            5.541    f    12.372       2  pin: busy_syn_2.opad
+net (fo=1)                              0.000         12.372          net: busy,  ./experiments/scale_quality/rgb565_interpolate.v(17)
+                                                                      pin: busy
+--------------------------------------------------------------------  ---------------
+Arrival                                               12.372               
+
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+capture edge                           20.000    r    20.000               
+--------------------------------------------------------------------  ---------------
+output                                 -2.000         18.000               
+clock uncertainty                      -0.100         17.900               
+clock pessimism                         0.000         17.900               
+--------------------------------------------------------------------  ---------------
+Required                                              17.900               
+--------------------------------------------------------------------  ---------------
+Slack                                                  5.528               
+
+Slack               : 8.820ns
+Begin Point         : pixel[13]_syn_6.osclk (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : pixel[13] (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : setup
+Process             : slow
+Budget              : 20.000ns { trial_clk rising@20.000ns - trial_clk rising@0.000ns }
+Data Path Delay     : 7.437ns (cell 7.437ns (100%), net 0.000ns (0%))
+Clock Skew          : 3.743ns
+Logic Level         : 0
+Max Fanout          : 1
+Clock Uncertainty   : 0.000ns (sdc uncertainty: 0.000ns, default uncertainty: 0.000ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+hierarchy                               0.000          0.000          pin: clk_syn_2.ipad
+PAD                 x014y000            1.890          1.890          pin: clk_syn_2.di
+net (fo=99)                             1.853          3.743          net: clk_dup_1,  ./experiments/scale_quality/rgb565_interpolate.v(14)
+                                                                      pin: pixel[13]_syn_6.osclk
+launch edge                             0.000    r     3.743               
+--------------------------------------------------------------------  ---------------
+PAD (clk2q)         x002y071            5.437    f     9.180          pin: pixel[13]_syn_6.opad
+net (fo=1)                              0.000          9.180          net: pixel[13],  ./experiments/scale_quality/rgb565_interpolate.v(19)
+                                                                      pin: pixel[13]
+--------------------------------------------------------------------  ---------------
+Arrival                                                9.180               
+
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+capture edge                           20.000    r    20.000               
+--------------------------------------------------------------------  ---------------
+output                                 -2.000         18.000               
+clock uncertainty                       0.000         18.000               
+clock pessimism                         0.000         18.000               
+--------------------------------------------------------------------  ---------------
+Required                                              18.000               
+--------------------------------------------------------------------  ---------------
+Slack                                                  8.820               
+
+Slack               : 8.820ns
+Begin Point         : pixel[12]_syn_6.osclk (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : pixel[12] (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : setup
+Process             : slow
+Budget              : 20.000ns { trial_clk rising@20.000ns - trial_clk rising@0.000ns }
+Data Path Delay     : 7.437ns (cell 7.437ns (100%), net 0.000ns (0%))
+Clock Skew          : 3.743ns
+Logic Level         : 0
+Max Fanout          : 1
+Clock Uncertainty   : 0.000ns (sdc uncertainty: 0.000ns, default uncertainty: 0.000ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+hierarchy                               0.000          0.000          pin: clk_syn_2.ipad
+PAD                 x014y000            1.890          1.890          pin: clk_syn_2.di
+net (fo=99)                             1.853          3.743          net: clk_dup_1,  ./experiments/scale_quality/rgb565_interpolate.v(14)
+                                                                      pin: pixel[12]_syn_6.osclk
+launch edge                             0.000    r     3.743               
+--------------------------------------------------------------------  ---------------
+PAD (clk2q)         x028y071            5.437    f     9.180          pin: pixel[12]_syn_6.opad
+net (fo=1)                              0.000          9.180          net: pixel[12],  ./experiments/scale_quality/rgb565_interpolate.v(19)
+                                                                      pin: pixel[12]
+--------------------------------------------------------------------  ---------------
+Arrival                                                9.180               
+
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+capture edge                           20.000    r    20.000               
+--------------------------------------------------------------------  ---------------
+output                                 -2.000         18.000               
+clock uncertainty                       0.000         18.000               
+clock pessimism                         0.000         18.000               
+--------------------------------------------------------------------  ---------------
+Required                                              18.000               
+--------------------------------------------------------------------  ---------------
+Slack                                                  8.820               
+
+Slack               : 8.820ns
+Begin Point         : pixel[11]_syn_6.osclk (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : pixel[11] (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : setup
+Process             : slow
+Budget              : 20.000ns { trial_clk rising@20.000ns - trial_clk rising@0.000ns }
+Data Path Delay     : 7.437ns (cell 7.437ns (100%), net 0.000ns (0%))
+Clock Skew          : 3.743ns
+Logic Level         : 0
+Max Fanout          : 1
+Clock Uncertainty   : 0.000ns (sdc uncertainty: 0.000ns, default uncertainty: 0.000ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+hierarchy                               0.000          0.000          pin: clk_syn_2.ipad
+PAD                 x014y000            1.890          1.890          pin: clk_syn_2.di
+net (fo=99)                             1.853          3.743          net: clk_dup_1,  ./experiments/scale_quality/rgb565_interpolate.v(14)
+                                                                      pin: pixel[11]_syn_6.osclk
+launch edge                             0.000    r     3.743               
+--------------------------------------------------------------------  ---------------
+PAD (clk2q)         x004y000            5.437    f     9.180          pin: pixel[11]_syn_6.opad
+net (fo=1)                              0.000          9.180          net: pixel[11],  ./experiments/scale_quality/rgb565_interpolate.v(19)
+                                                                      pin: pixel[11]
+--------------------------------------------------------------------  ---------------
+Arrival                                                9.180               
+
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+capture edge                           20.000    r    20.000               
+--------------------------------------------------------------------  ---------------
+output                                 -2.000         18.000               
+clock uncertainty                       0.000         18.000               
+clock pessimism                         0.000         18.000               
+--------------------------------------------------------------------  ---------------
+Required                                              18.000               
+--------------------------------------------------------------------  ---------------
+Slack                                                  8.820               
+
+Slack               : 8.820ns
+Begin Point         : pixel[10]_syn_6.osclk (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : pixel[10] (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : setup
+Process             : slow
+Budget              : 20.000ns { trial_clk rising@20.000ns - trial_clk rising@0.000ns }
+Data Path Delay     : 7.437ns (cell 7.437ns (100%), net 0.000ns (0%))
+Clock Skew          : 3.743ns
+Logic Level         : 0
+Max Fanout          : 1
+Clock Uncertainty   : 0.000ns (sdc uncertainty: 0.000ns, default uncertainty: 0.000ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+hierarchy                               0.000          0.000          pin: clk_syn_2.ipad
+PAD                 x014y000            1.890          1.890          pin: clk_syn_2.di
+net (fo=99)                             1.853          3.743          net: clk_dup_1,  ./experiments/scale_quality/rgb565_interpolate.v(14)
+                                                                      pin: pixel[10]_syn_6.osclk
+launch edge                             0.000    r     3.743               
+--------------------------------------------------------------------  ---------------
+PAD (clk2q)         x030y000            5.437    f     9.180          pin: pixel[10]_syn_6.opad
+net (fo=1)                              0.000          9.180          net: pixel[10],  ./experiments/scale_quality/rgb565_interpolate.v(19)
+                                                                      pin: pixel[10]
+--------------------------------------------------------------------  ---------------
+Arrival                                                9.180               
+
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+capture edge                           20.000    r    20.000               
+--------------------------------------------------------------------  ---------------
+output                                 -2.000         18.000               
+clock uncertainty                       0.000         18.000               
+clock pessimism                         0.000         18.000               
+--------------------------------------------------------------------  ---------------
+Required                                              18.000               
+--------------------------------------------------------------------  ---------------
+Slack                                                  8.820               
+
+Slack               : 8.820ns
+Begin Point         : pixel[7]_syn_6.osclk (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : pixel[7] (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : setup
+Process             : slow
+Budget              : 20.000ns { trial_clk rising@20.000ns - trial_clk rising@0.000ns }
+Data Path Delay     : 7.437ns (cell 7.437ns (100%), net 0.000ns (0%))
+Clock Skew          : 3.743ns
+Logic Level         : 0
+Max Fanout          : 1
+Clock Uncertainty   : 0.000ns (sdc uncertainty: 0.000ns, default uncertainty: 0.000ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+hierarchy                               0.000          0.000          pin: clk_syn_2.ipad
+PAD                 x014y000            1.890          1.890          pin: clk_syn_2.di
+net (fo=99)                             1.853          3.743          net: clk_dup_1,  ./experiments/scale_quality/rgb565_interpolate.v(14)
+                                                                      pin: pixel[7]_syn_6.osclk
+launch edge                             0.000    r     3.743               
+--------------------------------------------------------------------  ---------------
+PAD (clk2q)         x020y071            5.437    f     9.180          pin: pixel[7]_syn_6.opad
+net (fo=1)                              0.000          9.180          net: pixel[7],  ./experiments/scale_quality/rgb565_interpolate.v(19)
+                                                                      pin: pixel[7]
+--------------------------------------------------------------------  ---------------
+Arrival                                                9.180               
+
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+capture edge                           20.000    r    20.000               
+--------------------------------------------------------------------  ---------------
+output                                 -2.000         18.000               
+clock uncertainty                       0.000         18.000               
+clock pessimism                         0.000         18.000               
+--------------------------------------------------------------------  ---------------
+Required                                              18.000               
+--------------------------------------------------------------------  ---------------
+Slack                                                  8.820               
+
+Slack               : 8.820ns
+Begin Point         : pixel[6]_syn_6.osclk (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : pixel[6] (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : setup
+Process             : slow
+Budget              : 20.000ns { trial_clk rising@20.000ns - trial_clk rising@0.000ns }
+Data Path Delay     : 7.437ns (cell 7.437ns (100%), net 0.000ns (0%))
+Clock Skew          : 3.743ns
+Logic Level         : 0
+Max Fanout          : 1
+Clock Uncertainty   : 0.000ns (sdc uncertainty: 0.000ns, default uncertainty: 0.000ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+hierarchy                               0.000          0.000          pin: clk_syn_2.ipad
+PAD                 x014y000            1.890          1.890          pin: clk_syn_2.di
+net (fo=99)                             1.853          3.743          net: clk_dup_1,  ./experiments/scale_quality/rgb565_interpolate.v(14)
+                                                                      pin: pixel[6]_syn_6.osclk
+launch edge                             0.000    r     3.743               
+--------------------------------------------------------------------  ---------------
+PAD (clk2q)         x022y000            5.437    f     9.180          pin: pixel[6]_syn_6.opad
+net (fo=1)                              0.000          9.180          net: pixel[6],  ./experiments/scale_quality/rgb565_interpolate.v(19)
+                                                                      pin: pixel[6]
+--------------------------------------------------------------------  ---------------
+Arrival                                                9.180               
+
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+capture edge                           20.000    r    20.000               
+--------------------------------------------------------------------  ---------------
+output                                 -2.000         18.000               
+clock uncertainty                       0.000         18.000               
+clock pessimism                         0.000         18.000               
+--------------------------------------------------------------------  ---------------
+Required                                              18.000               
+--------------------------------------------------------------------  ---------------
+Slack                                                  8.820               
+
+Slack               : 8.820ns
+Begin Point         : pixel[4]_syn_6.osclk (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : pixel[4] (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : setup
+Process             : slow
+Budget              : 20.000ns { trial_clk rising@20.000ns - trial_clk rising@0.000ns }
+Data Path Delay     : 7.437ns (cell 7.437ns (100%), net 0.000ns (0%))
+Clock Skew          : 3.743ns
+Logic Level         : 0
+Max Fanout          : 1
+Clock Uncertainty   : 0.000ns (sdc uncertainty: 0.000ns, default uncertainty: 0.000ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+hierarchy                               0.000          0.000          pin: clk_syn_2.ipad
+PAD                 x014y000            1.890          1.890          pin: clk_syn_2.di
+net (fo=99)                             1.853          3.743          net: clk_dup_1,  ./experiments/scale_quality/rgb565_interpolate.v(14)
+                                                                      pin: pixel[4]_syn_6.osclk
+launch edge                             0.000    r     3.743               
+--------------------------------------------------------------------  ---------------
+PAD (clk2q)         x028y071            5.437    f     9.180          pin: pixel[4]_syn_6.opad
+net (fo=1)                              0.000          9.180          net: pixel[4],  ./experiments/scale_quality/rgb565_interpolate.v(19)
+                                                                      pin: pixel[4]
+--------------------------------------------------------------------  ---------------
+Arrival                                                9.180               
+
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+capture edge                           20.000    r    20.000               
+--------------------------------------------------------------------  ---------------
+output                                 -2.000         18.000               
+clock uncertainty                       0.000         18.000               
+clock pessimism                         0.000         18.000               
+--------------------------------------------------------------------  ---------------
+Required                                              18.000               
+--------------------------------------------------------------------  ---------------
+Slack                                                  8.820               
+
+Slack               : 8.820ns
+Begin Point         : pixel[3]_syn_6.osclk (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : pixel[3] (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : setup
+Process             : slow
+Budget              : 20.000ns { trial_clk rising@20.000ns - trial_clk rising@0.000ns }
+Data Path Delay     : 7.437ns (cell 7.437ns (100%), net 0.000ns (0%))
+Clock Skew          : 3.743ns
+Logic Level         : 0
+Max Fanout          : 1
+Clock Uncertainty   : 0.000ns (sdc uncertainty: 0.000ns, default uncertainty: 0.000ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+hierarchy                               0.000          0.000          pin: clk_syn_2.ipad
+PAD                 x014y000            1.890          1.890          pin: clk_syn_2.di
+net (fo=99)                             1.853          3.743          net: clk_dup_1,  ./experiments/scale_quality/rgb565_interpolate.v(14)
+                                                                      pin: pixel[3]_syn_6.osclk
+launch edge                             0.000    r     3.743               
+--------------------------------------------------------------------  ---------------
+PAD (clk2q)         x020y071            5.437    f     9.180          pin: pixel[3]_syn_6.opad
+net (fo=1)                              0.000          9.180          net: pixel[3],  ./experiments/scale_quality/rgb565_interpolate.v(19)
+                                                                      pin: pixel[3]
+--------------------------------------------------------------------  ---------------
+Arrival                                                9.180               
+
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+capture edge                           20.000    r    20.000               
+--------------------------------------------------------------------  ---------------
+output                                 -2.000         18.000               
+clock uncertainty                       0.000         18.000               
+clock pessimism                         0.000         18.000               
+--------------------------------------------------------------------  ---------------
+Required                                              18.000               
+--------------------------------------------------------------------  ---------------
+Slack                                                  8.820               
+
+Slack               : 8.820ns
+Begin Point         : pixel[2]_syn_6.osclk (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : pixel[2] (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : setup
+Process             : slow
+Budget              : 20.000ns { trial_clk rising@20.000ns - trial_clk rising@0.000ns }
+Data Path Delay     : 7.437ns (cell 7.437ns (100%), net 0.000ns (0%))
+Clock Skew          : 3.743ns
+Logic Level         : 0
+Max Fanout          : 1
+Clock Uncertainty   : 0.000ns (sdc uncertainty: 0.000ns, default uncertainty: 0.000ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+hierarchy                               0.000          0.000          pin: clk_syn_2.ipad
+PAD                 x014y000            1.890          1.890          pin: clk_syn_2.di
+net (fo=99)                             1.853          3.743          net: clk_dup_1,  ./experiments/scale_quality/rgb565_interpolate.v(14)
+                                                                      pin: pixel[2]_syn_6.osclk
+launch edge                             0.000    r     3.743               
+--------------------------------------------------------------------  ---------------
+PAD (clk2q)         x028y000            5.437    f     9.180          pin: pixel[2]_syn_6.opad
+net (fo=1)                              0.000          9.180          net: pixel[2],  ./experiments/scale_quality/rgb565_interpolate.v(19)
+                                                                      pin: pixel[2]
+--------------------------------------------------------------------  ---------------
+Arrival                                                9.180               
+
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+capture edge                           20.000    r    20.000               
+--------------------------------------------------------------------  ---------------
+output                                 -2.000         18.000               
+clock uncertainty                       0.000         18.000               
+clock pessimism                         0.000         18.000               
+--------------------------------------------------------------------  ---------------
+Required                                              18.000               
+--------------------------------------------------------------------  ---------------
+Slack                                                  8.820               
+
+
+Period Check
+----------------------------------------------------------------------------------------------------
+    Type       Setting(ns)      Required(ns)         Slack(ns)   Point
+--------------------------------------------------------------------------------
+    ERAM            20.000             3.414            16.586   mult0_syn_2.clk
+
+Min Paths
+----------------------------------------------------------------------------------------------------
+Slack               : 0.387ns
+Begin Point         : p00[10] (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : a_reg[10]_syn_4.d[0] (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : hold
+Process             : slow
+Budget              : 0.000ns { trial_clk rising@0.000ns - trial_clk rising@0.000ns }
+Data Path Delay     : 4.513ns (cell 3.954ns (87%), net 0.559ns (13%))
+Clock Skew          : 3.952ns
+Logic Level         : 2 ( PAD=1  LUT2=1 )
+Max Fanout          : 1
+Clock Uncertainty   : 0.100ns (sdc uncertainty: 0.000ns, default uncertainty: 0.100ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+launch edge                             0.000    r     0.000               
+--------------------------------------------------------------------  ---------------
+input                                   2.000          2.000          pin: p00[10]
+net (fo=1)                              0.000          2.000          net: p00[10],  ./experiments/scale_quality/rgb565_interpolate.v(15)
+                                                                      pin: p00[10]_syn_36.ipad
+PAD                 x040y062            1.700    r     3.700       1  pin: p00[10]_syn_36.di
+net (fo=1)                              0.559          4.259          net: p00[10]_dup_35,  ./experiments/scale_quality/rgb565_interpolate.v(15)
+                                                                      pin: a_reg[10]_syn_4.d[0]
+LUT2 (reg)          x037y060z1          0.254    f     4.513       2  net: a[10],  ./experiments/scale_quality/rgb565_interpolate.v(23)
+--------------------------------------------------------------------  ---------------
+Arrival                                                4.513               
+
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+hierarchy                               0.000          0.000          pin: clk_syn_2.ipad
+PAD                 x014y000            1.890          1.890          pin: clk_syn_2.di
+net (fo=99)                             2.062          3.952          net: clk_dup_1,  ./experiments/scale_quality/rgb565_interpolate.v(14)
+                                                                      pin: a_reg[10]_syn_4.clk
+capture edge                            0.000    r     3.952               
+--------------------------------------------------------------------  ---------------
+hold                                    0.074          4.026               
+clock uncertainty                       0.100          4.126               
+clock pessimism                         0.000          4.126               
+--------------------------------------------------------------------  ---------------
+Required                                               4.126               
+--------------------------------------------------------------------  ---------------
+Slack                                                  0.387               
+
+Slack               : 0.387ns
+Begin Point         : p10[11] (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : c_reg[11]_syn_4.d[1] (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : hold
+Process             : slow
+Budget              : 0.000ns { trial_clk rising@0.000ns - trial_clk rising@0.000ns }
+Data Path Delay     : 4.513ns (cell 3.954ns (87%), net 0.559ns (13%))
+Clock Skew          : 3.952ns
+Logic Level         : 2 ( PAD=1  LUT2=1 )
+Max Fanout          : 1
+Clock Uncertainty   : 0.100ns (sdc uncertainty: 0.000ns, default uncertainty: 0.100ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+launch edge                             0.000    r     0.000               
+--------------------------------------------------------------------  ---------------
+input                                   2.000          2.000          pin: p10[11]
+net (fo=1)                              0.000          2.000          net: p10[11],  ./experiments/scale_quality/rgb565_interpolate.v(15)
+                                                                      pin: p10[11]_syn_36.ipad
+PAD                 x040y065            1.700    r     3.700       1  pin: p10[11]_syn_36.di
+net (fo=1)                              0.559          4.259          net: p10[11]_dup_35,  ./experiments/scale_quality/rgb565_interpolate.v(15)
+                                                                      pin: c_reg[11]_syn_4.d[1]
+LUT2 (reg)          x037y063z1          0.254    f     4.513       2  net: c[11],  ./experiments/scale_quality/rgb565_interpolate.v(23)
+--------------------------------------------------------------------  ---------------
+Arrival                                                4.513               
+
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+hierarchy                               0.000          0.000          pin: clk_syn_2.ipad
+PAD                 x014y000            1.890          1.890          pin: clk_syn_2.di
+net (fo=99)                             2.062          3.952          net: clk_dup_1,  ./experiments/scale_quality/rgb565_interpolate.v(14)
+                                                                      pin: c_reg[11]_syn_4.clk
+capture edge                            0.000    r     3.952               
+--------------------------------------------------------------------  ---------------
+hold                                    0.074          4.026               
+clock uncertainty                       0.100          4.126               
+clock pessimism                         0.000          4.126               
+--------------------------------------------------------------------  ---------------
+Required                                               4.126               
+--------------------------------------------------------------------  ---------------
+Slack                                                  0.387               
+
+Slack               : 0.423ns
+Begin Point         : fy[0] (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : y_reg[0]_syn_4.d[0] (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : hold
+Process             : slow
+Budget              : 0.000ns { trial_clk rising@0.000ns - trial_clk rising@0.000ns }
+Data Path Delay     : 4.549ns (cell 3.954ns (86%), net 0.595ns (14%))
+Clock Skew          : 3.952ns
+Logic Level         : 2 ( PAD=1  LUT2=1 )
+Max Fanout          : 1
+Clock Uncertainty   : 0.100ns (sdc uncertainty: 0.000ns, default uncertainty: 0.100ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+launch edge                             0.000    r     0.000               
+--------------------------------------------------------------------  ---------------
+input                                   2.000          2.000          pin: fy[0]
+net (fo=1)                              0.000          2.000          net: fy[0],  ./experiments/scale_quality/rgb565_interpolate.v(16)
+                                                                      pin: fy[0]_syn_36.ipad
+PAD                 x040y059            1.700    r     3.700       1  pin: fy[0]_syn_36.di
+net (fo=1)                              0.595          4.295          net: fy[0]_dup_35,  ./experiments/scale_quality/rgb565_interpolate.v(16)
+                                                                      pin: y_reg[0]_syn_4.d[0]
+LUT2 (reg)          x033y056z1          0.254    f     4.549       2  net: y[0],  ./experiments/scale_quality/rgb565_interpolate.v(24)
+--------------------------------------------------------------------  ---------------
+Arrival                                                4.549               
+
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+hierarchy                               0.000          0.000          pin: clk_syn_2.ipad
+PAD                 x014y000            1.890          1.890          pin: clk_syn_2.di
+net (fo=99)                             2.062          3.952          net: clk_dup_1,  ./experiments/scale_quality/rgb565_interpolate.v(14)
+                                                                      pin: y_reg[0]_syn_4.clk
+capture edge                            0.000    r     3.952               
+--------------------------------------------------------------------  ---------------
+hold                                    0.074          4.026               
+clock uncertainty                       0.100          4.126               
+clock pessimism                         0.000          4.126               
+--------------------------------------------------------------------  ---------------
+Required                                               4.126               
+--------------------------------------------------------------------  ---------------
+Slack                                                  0.423               
+
+Slack               : 0.428ns
+Begin Point         : axis_reg[0]_syn_48.clk (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : mux31_syn_110.d[0] (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : hold
+Process             : fast
+Budget              : 0.000ns { trial_clk rising@0.000ns - trial_clk rising@0.000ns }
+Data Path Delay     : 0.634ns (cell 0.378ns (59%), net 0.256ns (41%))
+Clock Skew          : 0.045ns
+Logic Level         : 1 ( LUT4=1 )
+Max Fanout          : 18
+Clock Uncertainty   : 0.100ns (sdc uncertainty: 0.000ns, default uncertainty: 0.100ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+hierarchy                               0.000          0.000          pin: clk_syn_2.ipad
+PAD                 x014y000            1.310          1.310          pin: clk_syn_2.di
+net (fo=99)                             1.756          3.066          net: clk_dup_1,  ./experiments/scale_quality/rgb565_interpolate.v(14)
+                                                                      pin: axis_reg[0]_syn_48.clk
+launch edge                             0.000    r     3.066               
+--------------------------------------------------------------------  ---------------
+clk2q               x019y028z0          0.109    f     3.175          pin: axis_reg[0]_syn_48.q[0]
+net (fo=18)                             0.256          3.431          net: axis[0],  ./experiments/scale_quality/rgb565_interpolate.v(22)
+                                                                      pin: mux31_syn_110.d[0]
+LUT4 (reg)          x017y028z2          0.269    f     3.700       1  net: base[13],  ./experiments/scale_quality/rgb565_interpolate.v(27)
+--------------------------------------------------------------------  ---------------
+Arrival                                                3.700               
+
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+hierarchy                               0.000          0.000          pin: clk_syn_2.ipad
+PAD                 x014y000            1.440          1.440          pin: clk_syn_2.di
+net (fo=99)                             1.930          3.370          net: clk_dup_1,  ./experiments/scale_quality/rgb565_interpolate.v(14)
+                                                                      pin: mux31_syn_110.clk
+capture edge                            0.000    r     3.370               
+--------------------------------------------------------------------  ---------------
+hold                                    0.061          3.431               
+clock uncertainty                       0.100          3.531               
+clock pessimism                        -0.259          3.272               
+--------------------------------------------------------------------  ---------------
+Required                                               3.272               
+--------------------------------------------------------------------  ---------------
+Slack                                                  0.428               
+
+Slack               : 0.434ns
+Begin Point         : p00[8] (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : a_reg[8]_syn_4.d[1] (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : hold
+Process             : slow
+Budget              : 0.000ns { trial_clk rising@0.000ns - trial_clk rising@0.000ns }
+Data Path Delay     : 4.560ns (cell 4.015ns (88%), net 0.545ns (12%))
+Clock Skew          : 3.952ns
+Logic Level         : 2 ( PAD=1  LUT2=1 )
+Max Fanout          : 1
+Clock Uncertainty   : 0.100ns (sdc uncertainty: 0.000ns, default uncertainty: 0.100ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+launch edge                             0.000    r     0.000               
+--------------------------------------------------------------------  ---------------
+input                                   2.000          2.000          pin: p00[8]
+net (fo=1)                              0.000          2.000          net: p00[8],  ./experiments/scale_quality/rgb565_interpolate.v(15)
+                                                                      pin: p00[8]_syn_36.ipad
+PAD                 x040y059            1.700    r     3.700       1  pin: p00[8]_syn_36.di
+net (fo=1)                              0.545          4.245          net: p00[8]_dup_35,  ./experiments/scale_quality/rgb565_interpolate.v(15)
+                                                                      pin: a_reg[8]_syn_4.d[1]
+LUT2 (reg)          x037y057z3          0.315    f     4.560       2  net: a[8],  ./experiments/scale_quality/rgb565_interpolate.v(23)
+--------------------------------------------------------------------  ---------------
+Arrival                                                4.560               
+
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+hierarchy                               0.000          0.000          pin: clk_syn_2.ipad
+PAD                 x014y000            1.890          1.890          pin: clk_syn_2.di
+net (fo=99)                             2.062          3.952          net: clk_dup_1,  ./experiments/scale_quality/rgb565_interpolate.v(14)
+                                                                      pin: a_reg[8]_syn_4.clk
+capture edge                            0.000    r     3.952               
+--------------------------------------------------------------------  ---------------
+hold                                    0.074          4.026               
+clock uncertainty                       0.100          4.126               
+clock pessimism                         0.000          4.126               
+--------------------------------------------------------------------  ---------------
+Required                                               4.126               
+--------------------------------------------------------------------  ---------------
+Slack                                                  0.434               
+
+Slack               : 0.434ns
+Begin Point         : channel_reg[0]_syn_9.clk (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : channel_reg[0]_syn_9.d[0] (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : hold
+Process             : fast
+Budget              : 0.000ns { trial_clk rising@0.000ns - trial_clk rising@0.000ns }
+Data Path Delay     : 0.495ns (cell 0.378ns (76%), net 0.117ns (24%))
+Clock Skew          : 0.000ns
+Logic Level         : 1 ( LUT5=1 )
+Max Fanout          : 34
+Clock Uncertainty   : 0.000ns (sdc uncertainty: 0.000ns, default uncertainty: 0.000ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+hierarchy                               0.000          0.000          pin: clk_syn_2.ipad
+PAD                 x014y000            1.310          1.310          pin: clk_syn_2.di
+net (fo=99)                             1.756          3.066          net: clk_dup_1,  ./experiments/scale_quality/rgb565_interpolate.v(14)
+                                                                      pin: channel_reg[0]_syn_9.clk
+launch edge                             0.000    r     3.066               
+--------------------------------------------------------------------  ---------------
+clk2q               x019y026z3          0.109    f     3.175          pin: channel_reg[0]_syn_9.q[1]
+net (fo=34)                             0.117          3.292          net: channel[0],  ./experiments/scale_quality/rgb565_interpolate.v(22)
+                                                                      pin: channel_reg[0]_syn_9.d[0]
+LUT5 (reg)          x019y026z3          0.269    f     3.561       1  net: state_reg_syn_1[1],  ./experiments/scale_quality/rgb565_interpolate.v(39)
+--------------------------------------------------------------------  ---------------
+Arrival                                                3.561               
+
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+hierarchy                               0.000          0.000          pin: clk_syn_2.ipad
+PAD                 x014y000            1.440          1.440          pin: clk_syn_2.di
+net (fo=99)                             1.930          3.370          net: clk_dup_1,  ./experiments/scale_quality/rgb565_interpolate.v(14)
+                                                                      pin: channel_reg[0]_syn_9.clk
+capture edge                            0.000    r     3.370               
+--------------------------------------------------------------------  ---------------
+hold                                    0.061          3.431               
+clock uncertainty                       0.000          3.431               
+clock pessimism                        -0.304          3.127               
+--------------------------------------------------------------------  ---------------
+Required                                               3.127               
+--------------------------------------------------------------------  ---------------
+Slack                                                  0.434               
+
+Slack               : 0.435ns
+Begin Point         : p10[2] (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : c_reg[11]_syn_4.d[0] (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : hold
+Process             : slow
+Budget              : 0.000ns { trial_clk rising@0.000ns - trial_clk rising@0.000ns }
+Data Path Delay     : 4.561ns (cell 3.954ns (86%), net 0.607ns (14%))
+Clock Skew          : 3.952ns
+Logic Level         : 2 ( PAD=1  LUT2=1 )
+Max Fanout          : 1
+Clock Uncertainty   : 0.100ns (sdc uncertainty: 0.000ns, default uncertainty: 0.100ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+launch edge                             0.000    r     0.000               
+--------------------------------------------------------------------  ---------------
+input                                   2.000          2.000          pin: p10[2]
+net (fo=1)                              0.000          2.000          net: p10[2],  ./experiments/scale_quality/rgb565_interpolate.v(15)
+                                                                      pin: p10[2]_syn_36.ipad
+PAD                 x040y068            1.700    r     3.700       1  pin: p10[2]_syn_36.di
+net (fo=1)                              0.607          4.307          net: p10[2]_dup_35,  ./experiments/scale_quality/rgb565_interpolate.v(15)
+                                                                      pin: c_reg[11]_syn_4.d[0]
+LUT2 (reg)          x037y063z1          0.254    f     4.561       2  net: c[2],  ./experiments/scale_quality/rgb565_interpolate.v(23)
+--------------------------------------------------------------------  ---------------
+Arrival                                                4.561               
+
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+hierarchy                               0.000          0.000          pin: clk_syn_2.ipad
+PAD                 x014y000            1.890          1.890          pin: clk_syn_2.di
+net (fo=99)                             2.062          3.952          net: clk_dup_1,  ./experiments/scale_quality/rgb565_interpolate.v(14)
+                                                                      pin: c_reg[11]_syn_4.clk
+capture edge                            0.000    r     3.952               
+--------------------------------------------------------------------  ---------------
+hold                                    0.074          4.026               
+clock uncertainty                       0.100          4.126               
+clock pessimism                         0.000          4.126               
+--------------------------------------------------------------------  ---------------
+Required                                               4.126               
+--------------------------------------------------------------------  ---------------
+Slack                                                  0.435               
+
+Slack               : 0.448ns
+Begin Point         : p01[13] (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : a_reg[8]_syn_4.d[0] (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : hold
+Process             : slow
+Budget              : 0.000ns { trial_clk rising@0.000ns - trial_clk rising@0.000ns }
+Data Path Delay     : 4.574ns (cell 4.015ns (87%), net 0.559ns (13%))
+Clock Skew          : 3.952ns
+Logic Level         : 2 ( PAD=1  LUT2=1 )
+Max Fanout          : 1
+Clock Uncertainty   : 0.100ns (sdc uncertainty: 0.000ns, default uncertainty: 0.100ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+launch edge                             0.000    r     0.000               
+--------------------------------------------------------------------  ---------------
+input                                   2.000          2.000          pin: p01[13]
+net (fo=1)                              0.000          2.000          net: p01[13],  ./experiments/scale_quality/rgb565_interpolate.v(15)
+                                                                      pin: p01[13]_syn_36.ipad
+PAD                 x040y059            1.700    r     3.700       1  pin: p01[13]_syn_36.di
+net (fo=1)                              0.559          4.259          net: p01[13]_dup_35,  ./experiments/scale_quality/rgb565_interpolate.v(15)
+                                                                      pin: a_reg[8]_syn_4.d[0]
+LUT2 (reg)          x037y057z3          0.315    f     4.574       2  net: b[13],  ./experiments/scale_quality/rgb565_interpolate.v(23)
+--------------------------------------------------------------------  ---------------
+Arrival                                                4.574               
+
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+hierarchy                               0.000          0.000          pin: clk_syn_2.ipad
+PAD                 x014y000            1.890          1.890          pin: clk_syn_2.di
+net (fo=99)                             2.062          3.952          net: clk_dup_1,  ./experiments/scale_quality/rgb565_interpolate.v(14)
+                                                                      pin: a_reg[8]_syn_4.clk
+capture edge                            0.000    r     3.952               
+--------------------------------------------------------------------  ---------------
+hold                                    0.074          4.026               
+clock uncertainty                       0.100          4.126               
+clock pessimism                         0.000          4.126               
+--------------------------------------------------------------------  ---------------
+Required                                               4.126               
+--------------------------------------------------------------------  ---------------
+Slack                                                  0.448               
+
+Slack               : 0.466ns
+Begin Point         : p10[3] (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : b_reg[14]_syn_4.d[0] (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : hold
+Process             : slow
+Budget              : 0.000ns { trial_clk rising@0.000ns - trial_clk rising@0.000ns }
+Data Path Delay     : 4.592ns (cell 3.954ns (86%), net 0.638ns (14%))
+Clock Skew          : 3.952ns
+Logic Level         : 2 ( PAD=1  LUT2=1 )
+Max Fanout          : 1
+Clock Uncertainty   : 0.100ns (sdc uncertainty: 0.000ns, default uncertainty: 0.100ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+launch edge                             0.000    r     0.000               
+--------------------------------------------------------------------  ---------------
+input                                   2.000          2.000          pin: p10[3]
+net (fo=1)                              0.000          2.000          net: p10[3],  ./experiments/scale_quality/rgb565_interpolate.v(15)
+                                                                      pin: p10[3]_syn_36.ipad
+PAD                 x025y071            1.700    r     3.700       1  pin: p10[3]_syn_36.di
+net (fo=1)                              0.638          4.338          net: p10[3]_dup_35,  ./experiments/scale_quality/rgb565_interpolate.v(15)
+                                                                      pin: b_reg[14]_syn_4.d[0]
+LUT2 (reg)          x026y059z1          0.254    f     4.592       2  net: c[3],  ./experiments/scale_quality/rgb565_interpolate.v(23)
+--------------------------------------------------------------------  ---------------
+Arrival                                                4.592               
+
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+hierarchy                               0.000          0.000          pin: clk_syn_2.ipad
+PAD                 x014y000            1.890          1.890          pin: clk_syn_2.di
+net (fo=99)                             2.062          3.952          net: clk_dup_1,  ./experiments/scale_quality/rgb565_interpolate.v(14)
+                                                                      pin: b_reg[14]_syn_4.clk
+capture edge                            0.000    r     3.952               
+--------------------------------------------------------------------  ---------------
+hold                                    0.074          4.026               
+clock uncertainty                       0.100          4.126               
+clock pessimism                         0.000          4.126               
+--------------------------------------------------------------------  ---------------
+Required                                               4.126               
+--------------------------------------------------------------------  ---------------
+Slack                                                  0.466               
+
+Slack               : 0.496ns
+Begin Point         : p00[4] (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : a_reg[3]_syn_4.d[0] (rising edge triggered by clock trial_clk  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : hold
+Process             : slow
+Budget              : 0.000ns { trial_clk rising@0.000ns - trial_clk rising@0.000ns }
+Data Path Delay     : 4.622ns (cell 4.015ns (86%), net 0.607ns (14%))
+Clock Skew          : 3.952ns
+Logic Level         : 2 ( PAD=1  LUT2=1 )
+Max Fanout          : 1
+Clock Uncertainty   : 0.100ns (sdc uncertainty: 0.000ns, default uncertainty: 0.100ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+launch edge                             0.000    r     0.000               
+--------------------------------------------------------------------  ---------------
+input                                   2.000          2.000          pin: p00[4]
+net (fo=1)                              0.000          2.000          net: p00[4],  ./experiments/scale_quality/rgb565_interpolate.v(15)
+                                                                      pin: p00[4]_syn_36.ipad
+PAD                 x040y050            1.700    r     3.700       1  pin: p00[4]_syn_36.di
+net (fo=1)                              0.607          4.307          net: p00[4]_dup_35,  ./experiments/scale_quality/rgb565_interpolate.v(15)
+                                                                      pin: a_reg[3]_syn_4.d[0]
+LUT2 (reg)          x036y047z2          0.315    f     4.622       2  net: a[4],  ./experiments/scale_quality/rgb565_interpolate.v(23)
+--------------------------------------------------------------------  ---------------
+Arrival                                                4.622               
+
+source latency                          0.000          0.000               
+port                                    0.000          0.000          pin: clk
+hierarchy                               0.000          0.000          pin: clk_syn_2.ipad
+PAD                 x014y000            1.890          1.890          pin: clk_syn_2.di
+net (fo=99)                             2.062          3.952          net: clk_dup_1,  ./experiments/scale_quality/rgb565_interpolate.v(14)
+                                                                      pin: a_reg[3]_syn_4.clk
+capture edge                            0.000    r     3.952               
+--------------------------------------------------------------------  ---------------
+hold                                    0.074          4.026               
+clock uncertainty                       0.100          4.126               
+clock pessimism                         0.000          4.126               
+--------------------------------------------------------------------  ---------------
+Required                                               4.126               
+--------------------------------------------------------------------  ---------------
+Slack                                                  0.496               
+
+
+Inter clock domain timing
+--------------------------------------------------
+
+IP timing
+--------------------------------------------------

@@ -1,0 +1,125 @@
+standard
+***Report Model: rgb565_interpolate Device: EG4S20BG256***
+
+IO Statistics
+#IO                        61   out of    188   32.45%
+  #input                   43
+  #output                  18
+  #inout                    0
+
+Utilization Statistics
+#lut                      112   out of  19600    0.57%
+#reg                       52   out of  19600    0.27%
+#le                       112
+  #lut only                60   out of    112   53.57%
+  #reg only                 0   out of    112    0.00%
+  #lut&reg                 52   out of    112   46.43%
+#bram                       0   out of     64    0.00%
+  #bram9k                   0
+  #fifo9k                   0
+#bram32k                    0   out of     16    0.00%
+#dsp                        1   out of     29    3.45%
+#pad                       61   out of    188   32.45%
+  #ireg                     0
+  #oreg                    17
+  #treg                     0
+#pll                        0   out of      4    0.00%
+#gclk                       0   out of     16    0.00%
+
+
+Detailed IO Report
+
+    Name       Direction    Location    IOStandard    IOType    DriveStrength    PullType    PackReg  
+     clk         INPUT         F9        LVCMOS25      PAD           N/A           N/A        NONE    
+    fx[7]        INPUT        H15        LVCMOS25      PAD           N/A           N/A        NONE    
+    fx[6]        INPUT         C7        LVCMOS25      PAD           N/A           N/A        NONE    
+    fx[5]        INPUT         F5        LVCMOS25      PAD           N/A           N/A        NONE    
+    fx[4]        INPUT         H5        LVCMOS25      PAD           N/A           N/A        NONE    
+    fx[3]        INPUT        L12        LVCMOS25      PAD           N/A           N/A        NONE    
+    fx[2]        INPUT         K2        LVCMOS25      PAD           N/A           N/A        NONE    
+    fx[1]        INPUT        T12        LVCMOS25      PAD           N/A           N/A        NONE    
+    fx[0]        INPUT        J12        LVCMOS25      PAD           N/A           N/A        NONE    
+   p00[15]       INPUT        F10        LVCMOS25      PAD           N/A           N/A        NONE    
+   p00[14]       INPUT         F1        LVCMOS25      PAD           N/A           N/A        NONE    
+   p00[13]       INPUT         N5        LVCMOS25      PAD           N/A           N/A        NONE    
+   p00[12]       INPUT        C15        LVCMOS25      PAD           N/A           N/A        NONE    
+   p00[11]       INPUT        N11        LVCMOS25      PAD           N/A           N/A        NONE    
+   p00[10]       INPUT        G16        LVCMOS25      PAD           N/A           N/A        NONE    
+   p00[9]        INPUT         F2        LVCMOS25      PAD           N/A           N/A        NONE    
+   p00[8]        INPUT         N3        LVCMOS25      PAD           N/A           N/A        NONE    
+   p00[7]        INPUT         B8        LVCMOS25      PAD           N/A           N/A        NONE    
+   p00[6]        INPUT         K1        LVCMOS25      PAD           N/A           N/A        NONE    
+   p00[5]        INPUT        L16        LVCMOS25      PAD           N/A           N/A        NONE    
+   p00[4]        INPUT        K15        LVCMOS25      PAD           N/A           N/A        NONE    
+   p00[3]        INPUT         L1        LVCMOS25      PAD           N/A           N/A        NONE    
+   p00[2]        INPUT         A2        LVCMOS25      PAD           N/A           N/A        NONE    
+   p00[1]        INPUT         M7        LVCMOS25      PAD           N/A           N/A        NONE    
+   p00[0]        INPUT         A8        LVCMOS25      PAD           N/A           N/A        NONE    
+   p01[15]       INPUT         J6        LVCMOS25      PAD           N/A           N/A        NONE    
+   p01[14]       INPUT        F13        LVCMOS25      PAD           N/A           N/A        NONE    
+   p01[13]       INPUT        N12        LVCMOS25      PAD           N/A           N/A        NONE    
+   p01[12]       INPUT        K16        LVCMOS25      PAD           N/A           N/A        NONE    
+   p01[11]       INPUT        L13        LVCMOS25      PAD           N/A           N/A        NONE    
+   p01[10]       INPUT         P7        LVCMOS25      PAD           N/A           N/A        NONE    
+   p01[9]        INPUT         G1        LVCMOS25      PAD           N/A           N/A        NONE    
+   p01[8]        INPUT         H2        LVCMOS25      PAD           N/A           N/A        NONE    
+   p01[7]        INPUT         G6        LVCMOS25      PAD           N/A           N/A        NONE    
+   p01[6]        INPUT         E8        LVCMOS25      PAD           N/A           N/A        NONE    
+   p01[5]        INPUT         C3        LVCMOS25      PAD           N/A           N/A        NONE    
+   p01[4]        INPUT         C9        LVCMOS25      PAD           N/A           N/A        NONE    
+   p01[3]        INPUT         B1        LVCMOS25      PAD           N/A           N/A        NONE    
+   p01[2]        INPUT        B10        LVCMOS25      PAD           N/A           N/A        NONE    
+   p01[1]        INPUT         C2        LVCMOS25      PAD           N/A           N/A        NONE    
+   p01[0]        INPUT         A9        LVCMOS25      PAD           N/A           N/A        NONE    
+    rst_n        INPUT        N16        LVCMOS25      PAD           N/A           N/A        NONE    
+    start        INPUT         P1        LVCMOS25      PAD           N/A           N/A        NONE    
+    busy        OUTPUT        H16        LVCMOS25      PAD            8            N/A        NONE    
+    done        OUTPUT        M16        LVCMOS25      PAD            8            N/A        OREG    
+  pixel[15]     OUTPUT         C1        LVCMOS25      PAD            8            N/A        OREG    
+  pixel[14]     OUTPUT        K12        LVCMOS25      PAD            8            N/A        OREG    
+  pixel[13]     OUTPUT         G5        LVCMOS25      PAD            8            N/A        OREG    
+  pixel[12]     OUTPUT        T14        LVCMOS25      PAD            8            N/A        OREG    
+  pixel[11]     OUTPUT        M15        LVCMOS25      PAD            8            N/A        OREG    
+  pixel[10]     OUTPUT        E16        LVCMOS25      PAD            8            N/A        OREG    
+  pixel[9]      OUTPUT        M11        LVCMOS25      PAD            8            N/A        OREG    
+  pixel[8]      OUTPUT        E13        LVCMOS25      PAD            8            N/A        OREG    
+  pixel[7]      OUTPUT         M1        LVCMOS25      PAD            8            N/A        OREG    
+  pixel[6]      OUTPUT        C16        LVCMOS25      PAD            8            N/A        OREG    
+  pixel[5]      OUTPUT         R2        LVCMOS25      PAD            8            N/A        OREG    
+  pixel[4]      OUTPUT         C4        LVCMOS25      PAD            8            N/A        OREG    
+  pixel[3]      OUTPUT        A10        LVCMOS25      PAD            8            N/A        OREG    
+  pixel[2]      OUTPUT         G3        LVCMOS25      PAD            8            N/A        OREG    
+  pixel[1]      OUTPUT        E15        LVCMOS25      PAD            8            N/A        OREG    
+  pixel[0]      OUTPUT        P16        LVCMOS25      PAD            8            N/A        OREG    
+
+Report Clock Domain Luts:
+
+----------------------------------------------------------------------------------------------------------------
+  Index   |  Name       |  Frequency   |  LUT As Logic   |  LUT As Shifter   |  LUT As Dram   |  BRAM   |  DSP
+----------------------------------------------------------------------------------------------------------------
+  #1      |  trial_clk  |  50MHz       |  54             |  0                |  0             |  0      |  1
+----------------------------------------------------------------------------------------------------------------
+
+Clock Resource Statistics
+Index     ClockNet     Type               DriverType         Driver          Fanout
+#1        clk_dup_1    Global             io                 clk_syn_2.di    51
+
+Report Hierarchy Area:
++-----------------------------------------------------------------------------------+
+|Instance |Module             |le      |lut     |ripple  |seq     |bram    |dsp     |
++-----------------------------------------------------------------------------------+
+|top      |rgb565_interpolate |112     |104     |8       |69      |0       |1       |
++-----------------------------------------------------------------------------------+
+
+
+DataNet Average Fanout:
+
+   Index     Fanout    Nets  
+    #1         1       121   
+    #2         2        26   
+    #3         3        8    
+    #4         4        1    
+    #5        5-10      5    
+    #6       11-50      4    
+    #7       51-100     1    
+  Average     2.30           
