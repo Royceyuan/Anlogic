@@ -2,6 +2,7 @@
 `default_nettype none
 module tb_museum_emergency_overlay;
 reg clk=0,rst_n=0,emergency=0,frame_tick=0,de=1;
+reg hs=1,vs=1;
 reg [10:0] x=0;
 reg [9:0] y=0;
 reg [23:0] rgb=24'h123456;
@@ -19,6 +20,7 @@ integer changed_count=0;
 integer positive_count=0;
 integer negative_count=0;
 integer px,py,dx,dy,arrow_dx,arrow_dy;
+integer pipeline_checks=0;
 reg old_triangle,old_inner,old_arrow;
 reg [23:0] expected_color;
 reg signed [15:0] previous_sample=0;
@@ -26,19 +28,20 @@ always #1 clk=~clk;
 
 museum_emergency_overlay dut_overlay(
  .clk(clk),.rst_n(rst_n),.emergency(emergency),.frame_tick(frame_tick),
- .hs_i(1'b1),.vs_i(1'b1),.de_i(de),.x_i(x),.y_i(y),.rgb_i(rgb),
+ .hs_i(hs),.vs_i(vs),.de_i(de),.x_i(x),.y_i(y),.rgb_i(rgb),
  .hs_o(),.vs_o(),.de_o(),.x_o(),.y_o(),.rgb_o(out));
 museum_emergency_overlay #(.PIPELINED(1)) dut_piped(
  .clk(clk),.rst_n(rst_n),.emergency(emergency),.frame_tick(frame_tick),
- .hs_i(1'b1),.vs_i(1'b1),.de_i(de),.x_i(x),.y_i(y),.rgb_i(rgb),
+ .hs_i(hs),.vs_i(vs),.de_i(de),.x_i(x),.y_i(y),.rgb_i(rgb),
  .hs_o(piped_hs),.vs_o(piped_vs),.de_o(piped_de),
  .x_o(piped_x),.y_o(piped_y),.rgb_o(piped_out));
-// The production boundary moves, but keeps the original one-cycle latency.
+// Each input coordinate must retain the original one-cycle pixel latency.
 always @(posedge clk) if(rst_n) begin
- expected_pipe={2'b11,de,x,y,out};
+ expected_pipe={hs,vs,de,x,y,out};
  #0.001;
  if({piped_hs,piped_vs,piped_de,piped_x,piped_y,piped_out}!==expected_pipe)
   $fatal(1,"emergency geometry pipeline changed pixel or raster alignment");
+ pipeline_checks=pipeline_checks+1;
 end
 emergency_alarm_48k #(.CLK_HZ(480_000)) dut_alarm(
  .clk(clk),.rst_n(rst_n),.enable(emergency),.sample_valid(alarm_valid),
@@ -78,11 +81,21 @@ initial begin
  repeat(20) @(posedge clk);
  if(alarm_valid || alarm_left!==0 || alarm_right!==0)
   $fatal(1,"alarm did not stop cleanly");
+ // Reset with ROM outputs live, then check normal RGB and raster passthrough.
+ @(negedge clk);rst_n=0;
+ #0.1;if(piped_de!==0 || piped_out!==0)$fatal(1,"pipeline reset leaked a pixel");
+ repeat(3) @(negedge clk);
+ rst_n=1;
+ for(px=0;px<32;px=px+1) begin
+  @(negedge clk);rgb=$random;x=$random;y=$random;
+  hs=px[0];vs=px[1];de=px[2];
+ end
+ @(negedge clk);de=1;
  // Exhaustive equivalence over all coordinate input bits, not just HDMI DE.
  emergency=1;
  for(py=0;py<1024;py=py+1) begin
   for(px=0;px<2048;px=px+1) begin
-   x=px; y=py;
+   @(negedge clk);x=px;y=py;hs=px[0];vs=py[0];
    dx=px>=330 ? px-330 : 330-px;
    dy=py>=140 ? py-140 : 0;
    arrow_dx=(1120-px)&1023;
@@ -90,7 +103,7 @@ initial begin
    old_triangle=py>=140 && py<=430 && dx<=dy;
    old_inner=py>=176 && py<402 && dx+28<dy;
    old_arrow=px>=850 && px<=1120 && arrow_dy<=arrow_dx;
-   #1;
+   #0.1;
    if(dut_overlay.triangle_hit!==old_triangle ||
       dut_overlay.triangle_inner!==old_inner || dut_overlay.arrow_head!==old_arrow)
     $fatal(1,"emergency geometry differs at %0d,%0d",px,py);
@@ -108,8 +121,10 @@ initial begin
   @(negedge clk); frame_tick=1;
   @(negedge clk); frame_tick=0;#0.1;
  end
- de=0; #1;
+ @(negedge clk);de=0;#0.1;
  if(out!==0) $fatal(1,"emergency blanking leaked color");
+ repeat(2) @(negedge clk);
+ if(pipeline_checks<2097152) $fatal(1,"pipeline coordinate sweep incomplete");
  test_pass=1;
  $display("PASS emergency overlay priority, exclusive 48 kHz alarm and 2097152-coordinate equivalence");
  $finish;

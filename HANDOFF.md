@@ -15,6 +15,10 @@
 
 ## 构建入口
 
+2026-10-02：双板已建立仓库外离线回溯点（实文件快照及已校验 Git bundle）。波形单热点候选完成等效检查及布局对照，但未获得 Slice 收益，已撤回生产 RTL；正式 bit 不变。新增验证与具体结果见 `docs/reports/waveform_single_hotspot_20261002.md`，不把未合入候选作为当前资源数字。
+
+继续对照的应急区域 ROM 候选有 LUT/Slice 收益，但三个布局对照均未同时闭合 setup/hold；已撤回生产 RTL，未生成新 bit。结果见 `docs/reports/emergency_region_single_hotspot_20261002.md`。本轮提交仅含回溯说明、评估记录和更严格的回归检查，现有正式资源报告及双板 bit 仍为已验收基线。
+
 ```powershell
 Get-Content scripts/build_museum_main_board.tcl | & D:\TD_6.2.1\bin\td_commands_prompt.exe
 Get-Content scripts/build_museum_main_board_bitgen.tcl | & D:\TD_6.2.1\bin\td_commands_prompt.exe
@@ -30,7 +34,7 @@ Get-Content scripts/build_museum_main_board_bitgen.tcl | & D:\TD_6.2.1\bin\td_co
 
 ## 主副板联调
 
-2026-10-01：用户已确认双板手动展示可用，随后发现拔插网线后SW3无法切换主板模式。本次仅修改副板能力缓存失效策略，主板源码/bit保持不变；只需更换副板重连修复版bit（SHA256开头41B81E03），步骤见 `Anlogic2/docs/网线重连模式恢复_20261001.md`，修复待实板确认。应急期间副屏保持逃生图但没有失联提示，用户要求暂缓该提示，未记为通过。资源优化暂停，不与本次稳定性修复合并。
+2026-10-01：用户已确认双板手动展示及副板网线重连修复正常，并已要求推送对应分支。重连修复仅修改副板能力缓存失效策略，主板源码/bit不变；副板bit的SHA256开头为41B81E03，步骤见 `Anlogic2/docs/网线重连模式恢复_20261001.md`。应急期间副屏保持逃生图但没有失联提示，用户要求暂缓该提示，未记为通过。
 
 - 通信协议与副板实现要求：`docs/副板实施与双板通信协议.md`
 - 双板控制分配与联调步骤：`docs/双板控制分配与以太网联调计划.md`
