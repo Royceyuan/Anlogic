@@ -21,6 +21,8 @@ ModelSim 生成的 `work*`、`modelsim.ini`、`transcript` 和运行日志不属
 
 `run_video_timing.do` 的缩放检查新增 2097152 种纵坐标/倍率/编码起点组合，覆盖负平移、消隐及越界；启动后改变原始控制输入，确认只有 `source_start` 更新当前读帧坐标。
 
+`run_osd_name_address_equivalence.do` 将名称地址优化与 `aa6292d` 的原模块对照。SHOW_PERCENT=0/1各跑行为和官方BRAM模型，共四项PASS；每项691874周期，覆盖全部文物编码、名称末四字节、完整面板、随机输入和复位，比较逐周期地址及RGB/HS/VS/DE/X/Y。厂商BRAM32K测试需要同时加载官方 `glbl`，没有用行为模型代替物理初始化。
+
 `run_viewport_pan_stream.do` 复用同一测试分别跑行为 RAM 和 `D:\TD_6.2.1\sim_release\eg4` 官方非 SIM BRAM 模型，核对 1×/2× 连续帧、20/40 步长、正负平移及边界像素，并检查行缓存下溢。预期各输出两项 PASS，共四项；保护模型的两项参数切片警告保留记录，不替代上板验证。单热点候选结果见 `docs/reports/y_origin_single_hotspot_20261002.md`。
 
 ## 音频波形单热点等效检查
