@@ -58,7 +58,7 @@ TD 6.2.168116、EG4S20BG256，复用原构建脚本、ADC/SDC：gate pack_effort
 | hold失败端点 | 0 | 0 |
 | STA覆盖 | 99.66% | 99.67% |
 
-三个setup失败端点均来自75MHz视频域 `main5_pan_hold_y[1]`，分别通向 `pending_media_index[0]`、`pending_source_height_bcd[15]` 的使能及 `transition_pace` 逻辑。最坏路径7层逻辑、最大扇出41，数据延迟13.378ns中11.088ns（83%）为布线延迟。不能断言是画面算术公式错误；目前证据说明这次映射/布局变化暴露了既有控制链的物理时序瓶颈。它没有达到稳定发布要求，不能为14个Slice收益忽略违例。
+三个setup失败端点的工具起点实例均名为75MHz视频域 `main5_pan_hold_y_reg[1]_syn_3`，分别通向 `pending_media_index[0]`、`pending_source_height_bcd[15]` 的使能及 `transition_pace` 逻辑。核对路径逐项网络可见该起点Q实际驱动 `transition_mode[2]`，不是对平移Y坐标的比较，不能从综合后的实例名字误判逻辑功能。最坏路径7层逻辑、最大扇出41，数据延迟13.378ns中11.088ns（83%）为布线延迟。不能断言是画面算术公式错误；目前证据说明这次映射/布局变化暴露了既有转场→视口更新控制链的物理时序瓶颈。它没有达到稳定发布要求，不能为14个Slice收益忽略违例。
 
 因此完整撤回本轮生产修改。原始综合、最终QoR、时序报告留于本目录 `picture_reset_trial_20261002_gate_area.rpt`、`picture_width_trial_20261002_gate_area.rpt`、`picture_width_trial_20261002_qor.rpt`、`picture_width_trial_20261002_timing.rpt`。现有PLL派生、SDRAM本地时钟、PHY位置及PLL反馈布线工具警告保留，不用新增例外掩盖失败；未执行bitgen。
 
