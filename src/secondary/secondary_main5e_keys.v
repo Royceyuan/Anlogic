@@ -19,7 +19,8 @@ module secondary_main5e_keys (
     output reg [7:0] control_type,
     output reg [63:0] control_payload,
     output wire manual_mode,
-    output wire manual_next
+    output wire manual_next,
+    output wire [3:0] help_switches
 );
 wire [3:0] key_press;
 key_debounce u_keys (
@@ -29,7 +30,8 @@ key_debounce u_keys (
 );
 reg [3:0] sw_ff1, sw_ff2, sw_stable;
 reg [19:0] sw_settle;
-assign manual_mode = sw_stable[3];
+assign help_switches = sw_stable;
+assign manual_mode = 1'b0;
 reg [127:0] hb;
 reg [95:0] display;
 reg hb_seen, display_seen;
@@ -37,9 +39,8 @@ reg desired_manual_d, mode_retry_ready;
 reg [3:0] mode_attempts;
 wire [7:0] hb_artifact = hb[119:112];
 wire [7:0] hb_phase = hb[111:104];
-// SW4 is the secondary's local carousel, not main-board silent browsing.
-assign manual_next = manual_mode && !sw_stable[2] && !display[42] &&
-                     hb_phase == 8'hff && key_press[0];
+// SW4 changes only the local help page. All four remote keys remain active.
+assign manual_next = 1'b0;
 wire hb_emergency = hb[95:88] != 0;
 wire hb_restoring = hb[70];
 wire [1:0] mode = sw_stable[1:0];
@@ -143,8 +144,7 @@ always @(posedge clk or posedge rst) begin
                 control_payload <= {7'd0,sw_stable[2],56'd0};
                 control_request <= 1;
                 mode_retry_ready <= 0; mode_attempts <= mode_attempts + 1'b1;
-            end else if ((|key_press) && mode_matches &&
-                         !(manual_next && hb_phase == 8'hff)) begin
+            end else if ((|key_press) && mode_matches) begin
             if (mode == 2'b00) begin
                 control_type <= 8'h13;
                 control_payload <= {6'd0,key_code[1:0],8'd1,16'd0,32'd0};

@@ -372,11 +372,12 @@ function [7:0] expected_name_byte;
                 4'd3: expected_name_byte = "G";
                 4'd4: expected_name_byte = "E";
                 // IMAGE0.BMP through IMAGE9.BMP, plus the secondary screen's
-                // IMAGEA.BMP emergency page, are valid short names. Keep
+                // IMAGEA.BMP emergency and IMAGEB.BMP help background. Keep
                 // the old bit-0 behavior by default; v61 opts into the full
                 // four-bit index without changing v60's synthesized path.
                 4'd5: expected_name_byte = (MULTI_IMAGE_BMP && file_index == 4'd10) ?
-                                            "A" : ("0" +
+                                            "A" : (MULTI_IMAGE_BMP && file_index == 4'd11) ?
+                                            "B" : ("0" +
                                             (MULTI_IMAGE_BMP ? file_index :
                                                                file_index[0]));
                 4'd6, 4'd7: expected_name_byte = " ";

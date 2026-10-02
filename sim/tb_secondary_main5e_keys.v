@@ -17,7 +17,7 @@ secondary_main5e_keys dut (
     .control_ready(ready), .peer_alive(peer_alive), .manual_supported(supported),
     .control_request(request),
     .control_type(request_type), .control_payload(request_payload),
-    .manual_mode(manual_mode), .manual_next(manual_next)
+    .manual_mode(manual_mode), .manual_next(manual_next), .help_switches()
 );
 task press;
     input [3:0] keys;
@@ -68,9 +68,11 @@ initial begin
     force dut.sw_stable=4'b1000;
     force dut.key_press=4'b0001;
     #1;
-    if (!manual_mode || !manual_next) $fatal(1,"manual KEY1 pulse");
+    if (manual_mode || manual_next || dut.help_switches != 4'b1000)
+        $fatal(1,"SW4 must only enable help, never the old local carousel");
     @(negedge clk);
-    if (request) $fatal(1,"manual KEY1 sent a main-board preset");
+    if (!request || request_type != 8'h13)
+        $fatal(1,"help page KEY1 must retain main-board preset");
     release dut.key_press;
     hb[111:104]=8'd0;
     hb_pulse=1;

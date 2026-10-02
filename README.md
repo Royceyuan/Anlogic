@@ -2,9 +2,9 @@
 
 正式分支：`secondary-main5e`。唯一 TD 工程入口：`hx4s20_secondary_main5e.al`，顶层 `top_secondary_main5e`。
 
-保留已上板版本 `release/hx4s20_secondary_main5e_return_align_v06.bit` 及其 `release/manifest.json`。当前 `release/hx4s20_secondary_main5e_manual_browse.bit` 接入主板静音手动浏览，保留原生 720p 显示、SW4 本地轮播及 SDRAM 返回对齐修复；用户已反馈配对主板/副板版本可用。
+最新待上板版本：`release/hx4s20_secondary_help.bit`，副板 SW4 切换正常展示／操作说明，TF 背景配合 FPGA 动态文字。主板工程、协议、原媒体和音画时间轴不变。[功能、资源及上板检查](docs/副板SW4操作说明页_20261002.md)。
 
-最新 bit 增加同 boot_id 拔插网线后 SW3 恢复修复，SHA256 开头 `41B81E03`，本次修复仍待实板确认；仅重烧副板，主板和TF卡保持不变。[修复依据、回归及验收步骤](docs/网线重连模式恢复_20261001.md)。修复前已通过的手动浏览 bit 及 manifest 备份在当前构建目录的 `board_pass_before_reconnect/`。
+保留已上板版本 `release/hx4s20_secondary_main5e_manual_browse.bit`（SHA256 开头 `41B81E03`）及 `release/manifest_manual_browse.json`，以及更早的 v06 发布。旧 bit 的 SW4 本地手动轮播定义仅用于历史回退，不是当前工程的操作定义。[网线重连修复记录](docs/网线重连模式恢复_20261001.md)。
 
 ## 使用
 
@@ -15,8 +15,9 @@
    ```
 
    这会写入 11 张图片并逐文件核对 SHA256。盘符按实际情况修改。
-2. 将 TF 卡插回副板，SRAM 烧录新手动浏览 bit。SW4 向下自动轮播五张文物大图；向上停用自动轮播，SW3=0 且主板总览时用 KEY1 切下一张。
-3. 主板预载命令只在后台缓存简介；确认讲解后显示对应简介与路线图。应急命令优先显示逃生图，红色路线、当前位置及绿色出口周期增强。简介页按键保持主板画面控制功能。
+2. 说明页另需 TF 根目录 `IMAGEB.BMP`（160×90、24 位 BMP），在工程根目录执行 `py -3 tools/prepare_secondary_help.py --card E:\`，盘符按实际副板 TF 卡修改。只新增说明背景，不重写现有 11 张素材；四组硬件排版预览在 `assets/secondary_help/preview_group0.png`～`preview_group3.png`。
+3. 将 TF 卡安全弹出并插回副板，烧录 `release/hx4s20_secondary_help.bit`。SW4=0 正常展示，SW4=1 操作说明；SW2:SW1 切换四组说明，四键始终保留原远程控制。主板保持当前已验收 bit。
+4. 主板预载命令只在后台缓存简介；确认讲解后显示对应简介与路线图。应急命令优先显示逃生图，红色路线、当前位置及绿色出口周期增强。说明页不暂停主板或后台轮播；应急解除后按 SW4 位置恢复页面。
 
 以太网地址、按键表及电脑模拟主板的操作见 [联调说明](docs/SECONDARY_MAIN5E_联调说明.md)，本轮双板操作及边界见 [静音手动浏览接入与验收](docs/副板静音手动浏览接入与验收_20261001.md)。不要求电脑有线网卡可用，不需要更换当前 TF 素材。原始素材保存在 `assets/`，可用 `tools/prepare_secondary_exhibit_720p.py` 和 `tools/prepare_secondary_emergency_720p_v2.py` 重新生成 BMP（需要 Pillow）。
 
@@ -28,7 +29,7 @@
 powershell -ExecutionPolicy Bypass -File scripts/build.ps1
 ```
 
-默认调用 `D:/TD_6.2.1/bin/td_commands_prompt.exe`（6.2.168116）。其他安装位置使用 `-TD` 参数。脚本先布局布线，再检查时序、警告和输入文件新鲜度，符合条件才生成位流；报告位于 `_build_secondary_main5e_manual_browse_seed6/`。重建仅覆盖新手动浏览 bit，不覆盖已上板 v06 bit。
+默认调用 `D:/TD_6.2.1/bin/td_commands_prompt.exe`（6.2.168116）。其他安装位置使用 `-TD` 参数。脚本先布局布线，再检查时序、警告和输入文件新鲜度，符合条件才生成位流；报告位于 `_build_secondary_help_20261002/`。重建仅覆盖说明页 bit，不覆盖已上板手动浏览及 v06 bit。
 
 回归命令见 [sim/README.md](sim/README.md)。清理后 9 组仿真、15 个用例通过。目录只保留正式工程依赖、素材、必要工具、说明和回归；构建与仿真缓存可重新生成。
 

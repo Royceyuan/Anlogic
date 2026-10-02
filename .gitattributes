@@ -4,3 +4,5 @@
 assets/secondary_exhibit_source/*.png filter=lfs diff=lfs merge=lfs -text
 assets/secondary_exhibit_hero_source/*.png filter=lfs diff=lfs merge=lfs -text
 assets/secondary_emergency_720p_v2/source.png filter=lfs diff=lfs merge=lfs -text
+assets/secondary_help/*.png filter=lfs diff=lfs merge=lfs -text
+docs/reports/secondary_help_20261002_*.rpt binary

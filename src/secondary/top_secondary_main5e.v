@@ -42,6 +42,7 @@ wire peer_alive, manual_supported;
 wire [7:0] control_type, control_result;
 wire [63:0] control_payload;
 wire manual_mode, manual_next;
+wire [3:0] help_switches;
 wire [7:0] media_seg_data, media_seg_sel;
 assign seg_data = media_seg_data;
 assign seg_sel = media_seg_sel;
@@ -82,7 +83,8 @@ secondary_main5e_keys u_keys (
     .control_ready(control_ready), .control_request(control_request),
     .peer_alive(peer_alive), .manual_supported(manual_supported),
     .control_type(control_type), .control_payload(control_payload),
-    .manual_mode(manual_mode), .manual_next(manual_next)
+    .manual_mode(manual_mode), .manual_next(manual_next),
+    .help_switches(help_switches)
 );
 secondary_main5e_status_adapter u_status_adapter (
     .clk(clk_50m), .rst(network_reset),
@@ -104,7 +106,7 @@ top_v66 #(
     .MULTI_IMAGE_BMP(1), .MULTI_FRAME_PRELOAD(1), .VIDEO_FRAME_COUNT(5),
     .FORCE_SEQUENCE_AUTO(1), .AUTO_PERIOD_CYCLES(250_000_000),
     .LINEBUF_SCALE(0), .SECONDARY_STREAMING(1),
-    .SECONDARY_ENGINEERING(0),
+    .SECONDARY_ENGINEERING(0), .SECONDARY_HELP(1),
     .RESOURCE_OPT_CONSTANT_MULT(1),
     .ENABLE_SUBTITLE(0), .ENABLE_AUDIO_VISUALIZER(0),
     .ENABLE_MUSEUM_OVERVIEW(0), .ENABLE_MUSEUM_LECTURE(0),
@@ -131,6 +133,7 @@ top_v66 #(
     .secondary_cmd_result(cmd_result),
     .secondary_manual_mode(manual_mode),
     .secondary_manual_next(manual_next),
+    .secondary_help_switches(help_switches),
     .secondary_eng_enable(1'b0),
     .secondary_eng_link(1'b0),
     .secondary_eng_heartbeat(heartbeat_data),

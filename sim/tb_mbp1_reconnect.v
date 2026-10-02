@@ -47,7 +47,7 @@ secondary_main5e_keys keys (
     .display_pulse(display_pulse),.display_data(display_data),
     .control_ready(ready),.peer_alive(alive),.manual_supported(supported),
     .control_request(request),.control_type(request_type),.control_payload(request_payload),
-    .manual_mode(),.manual_next());
+    .manual_mode(),.manual_next(),.help_switches());
 always @(posedge clk) begin
     done<=0;
     if(main_rst) manual<=0;

@@ -14,6 +14,9 @@ vsim -c -do run_secondary_main5e_status_adapter.do -l regression_status.log
 vsim -c -do run_secondary_local.do -l regression_local.log
 vsim -c -do run_secondary_transition.do -l regression_transition.log
 vsim -c -do run_secondary_native720_media.do -l regression_native720.log
+vsim -c -do run_secondary_help.do -l regression_help.log
+vsim -c -do run_secondary_help_load.do -l regression_help_load.log
+vsim -c -do run_secondary_help_primitives.do -l regression_help_primitives.log
 Pop-Location
 ```
 
@@ -29,11 +32,14 @@ Pop-Location
 | regression_codec.log | 1 | MBP1 CRC、编解码及错误包拒绝 |
 | regression_endpoint.log | 1 | 副板协议端点 |
 | regression_udp.log | 2 | 固定地址 UDP 两个方向 |
-| regression_keys.log | 1 | 正常控制、SW3 静音浏览、SW4 本地轮播隔离 |
+| regression_keys.log | 1 | 正常控制、SW3 静音浏览、SW4说明页不吞远程键 |
 | regression_status.log | 1 | 主板状态与副屏页面适配 |
 | regression_local.log | 3 | 轮播、后台缓存、简介和应急页面 |
 | regression_transition.log | 2 | 转场控制和遮罩 |
 | regression_native720.log | 2 | IMAGE0、IMAGEA 原生 1280×720 BMP 读取 |
+| regression_help.log | 3 | 369万像素、四组说明、背景缓存及正向/倒序IMAGEB读取 |
+| regression_help_load.log | 1 | 实际顶层调度：背景只加载一次、不写SDRAM、失败后恢复原素材加载 |
+| regression_help_primitives.log | 1 | 官方BRAM32K/逻辑RAM模型下同一369万像素检查；两个官方加密模型内部告警记录于发布说明 |
 
 2026-10-01 清理后以上 9 项、15 个用例已通过。对齐回归使用实际帧控制器和 FIFO，SDRAM 返回由测试替身产生；它不能替代真实板卡验证。官方 FIFO 的未连接可选端口可能产生既有警告。
 

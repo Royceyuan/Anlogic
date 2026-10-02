@@ -1,6 +1,7 @@
 import_device eagle_s20.db -package EG4S20BG256
 set secondary_root .
 set secondary_build [file join $secondary_root _build_secondary_main5e_manual_browse_seed6]
+if {[info exists ::env(SECONDARY_BUILD)]} {set secondary_build $::env(SECONDARY_BUILD)}
 file mkdir $secondary_build
 cd $secondary_root
 open_project [file join $secondary_root hx4s20_secondary_main5e.al] -single_run
@@ -29,6 +30,8 @@ route
 fix_hold
 set_param route fix_hold on
 update_timing -mode final
+report_area -io_info -file [file join $secondary_build secondary_main5e_final.area]
+report_qor -step route -file [file join $secondary_build secondary_main5e_final.qor]
 report_timing_status -file [file join $secondary_build secondary_main5e_final.ts]
 report_timing_summary -file [file join $secondary_build secondary_main5e_final.timing]
 report_timing_exception -file [file join $secondary_build secondary_main5e_exception.timing]

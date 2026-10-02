@@ -3,7 +3,9 @@ param([string]$TD = 'D:\TD_6.2.1\bin\td_commands_prompt.exe')
 $ErrorActionPreference = 'Stop'
 $projectRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 Set-Location -LiteralPath $projectRoot
-$buildDir = Join-Path $projectRoot '_build_secondary_main5e_manual_browse_seed6'
+$buildDir = Join-Path $projectRoot '_build_secondary_help_20261002'
+$env:SECONDARY_BUILD = $buildDir
+$env:SECONDARY_BIT = Join-Path $projectRoot 'release/hx4s20_secondary_help.bit'
 New-Item -ItemType Directory -Path $buildDir -Force | Out-Null
 Write-Host "Building secondary board; reports: $buildDir"
 & $TD './scripts/build_secondary_main5e_pr.tcl' 2>&1 |
@@ -18,4 +20,4 @@ if (Select-String -LiteralPath (Join-Path $buildDir 'bitgen.log') -Pattern 'REFU
 if (-not (Select-String -LiteralPath (Join-Path $buildDir 'bitgen.log') -Pattern 'Generate bits file')) {
     throw 'Bit generation did not confirm an output; inspect bitgen.log'
 }
-Get-FileHash -LiteralPath 'release\hx4s20_secondary_main5e_manual_browse.bit' -Algorithm SHA256
+Get-FileHash -LiteralPath $env:SECONDARY_BIT -Algorithm SHA256

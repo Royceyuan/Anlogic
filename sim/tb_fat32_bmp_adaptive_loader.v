@@ -383,7 +383,8 @@ initial begin
     put_byte(ROOT_LBA, 3, MUSEUM_DETAIL ? ("0" + ARTIFACT_INDEX[2:0]) : "G");
     put_byte(ROOT_LBA, 4, MUSEUM_DETAIL ? "D" : "E");
     put_byte(ROOT_LBA, 5, (!MUSEUM_DETAIL && MULTI_IMAGE_BMP && IMAGE_INDEX == 10) ?
-                            "A" : ("0" + (MUSEUM_DETAIL ? DETAIL_INDEX[1:0] : IMAGE_INDEX[3:0])));
+                            "A" : (!MUSEUM_DETAIL && MULTI_IMAGE_BMP && IMAGE_INDEX == 11) ?
+                            "B" : ("0" + (MUSEUM_DETAIL ? DETAIL_INDEX[1:0] : IMAGE_INDEX[3:0])));
     put_byte(ROOT_LBA, 6, " ");
     put_byte(ROOT_LBA, 7, " ");
     put_byte(ROOT_LBA, 8, "B");

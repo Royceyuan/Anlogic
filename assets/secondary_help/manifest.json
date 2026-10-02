@@ -1,0 +1,13 @@
+{
+  "file": "IMAGEB.BMP",
+  "size": [
+    160,
+    90
+  ],
+  "bpp": 24,
+  "sha256": "4d3c5315101364bc2cefe4c8f5a279fd03daf6e1a97de3622f7066ca2e433687",
+  "glyphs": 157,
+  "background_cache_bytes": 28800,
+  "prompt": "16:9 pale ivory museum instruction background; faded bronze ornament at edges; clean blank text area; no lettering",
+  "generation": "built-in image_gen"
+}

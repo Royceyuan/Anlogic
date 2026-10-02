@@ -90,6 +90,7 @@ module top_v66 #(
     ,parameter integer ENABLE_SECONDARY = 0
     ,parameter integer SECONDARY_STREAMING = 0
     ,parameter integer SECONDARY_ENGINEERING = 0
+    ,parameter integer SECONDARY_HELP = 0
     ,parameter integer LECTURE_CLOCK_HZ = 50_000_000
     ,parameter integer OVERVIEW_CROP_X0_0 = 384
     ,parameter integer OVERVIEW_CROP_X0_1 = 384
@@ -131,6 +132,7 @@ module top_v66 #(
     output wire [2:0]  secondary_cmd_result,
     input  wire        secondary_manual_mode,
     input  wire        secondary_manual_next,
+    input  wire [3:0]  secondary_help_switches,
     input  wire        secondary_eng_enable,
     input  wire        secondary_eng_link,
     input  wire [127:0] secondary_eng_heartbeat,
@@ -323,6 +325,8 @@ reg secondary_info_valid;
 reg secondary_info_error;
 reg secondary_emergency_valid;
 reg secondary_emergency_error;
+reg secondary_help_valid, secondary_help_error;
+wire secondary_help_loading = SECONDARY_HELP && load_active && load_image_index == 4'd7;
 reg [2:0] secondary_info_cached_artifact;
 reg [2:0] secondary_info_error_artifact;
 reg [2:0] secondary_info_load_artifact;
@@ -366,6 +370,9 @@ wire secondary_emergency_load_request = ENABLE_SECONDARY &&
     (SECONDARY_STREAMING ? initial_frame_published :
                            frame_valid == 5'b11111) &&
     !secondary_emergency_valid && !secondary_emergency_error;
+wire secondary_help_load_request = ENABLE_SECONDARY && SECONDARY_HELP &&
+    initial_frame_published && !secondary_emergency_active &&
+    !secondary_help_valid && !secondary_help_error;
 reg [15:0] published_source_width_bcd;
 reg [15:0] published_source_height_bcd;
 reg [15:0] preload_select_source_width_bcd;
@@ -548,11 +555,13 @@ wire [3:0] normal_load_start_image_index = SECONDARY_STREAMING ?
 wire [3:0] load_start_image_index = lecture_load_request ?
                                       {1'b0, lecture_load_frame_slot} :
                                       (secondary_emergency_load_request ? 4'd6 :
+                                      (secondary_help_load_request ? 4'd7 :
                                       (secondary_info_load_request ? 4'd5 :
-                                                                   normal_load_start_image_index));
+                                                                   normal_load_start_image_index)));
 wire [3:0] load_start_media_index = lecture_load_request ?
                                       {1'b0, lecture_load_frame_slot} :
                                       (secondary_emergency_load_request ? 4'd6 :
+                                      (secondary_help_load_request ? 4'd7 :
                                       (secondary_info_load_request ? 4'd5 :
                                       (SECONDARY_STREAMING ?
                                        {1'b0, stream_load_artifact} :
@@ -560,11 +569,14 @@ wire [3:0] load_start_media_index = lecture_load_request ?
                                        normal_load_start_image_index :
                                        (ENABLE_DUAL_FRAME_PRELOAD ?
                                         {3'd0, preload_load_frame_index} :
-                                        desired_media_index)))));
+                                        desired_media_index))))));
 wire [3:0] secondary_info_file_index = 4'd5 +
     {1'b0, (load_active ? secondary_info_load_artifact :
                            secondary_info_preload_artifact)};
 wire [3:0] normal_loader_file_index = ENABLE_SECONDARY &&
+                                      (load_active ? load_image_index == 4'd7 :
+                                                     load_start_image_index == 4'd7) ? 4'd11 :
+                                      ENABLE_SECONDARY &&
                                       (load_active ? load_image_index == 4'd6 :
                                                      secondary_emergency_load_request) ? 4'd10 :
                                       ENABLE_SECONDARY &&
@@ -971,10 +983,12 @@ assign load_request_pending = lecture_load_request ? lecture_load_accept :
                               (SECONDARY_STREAMING ?
                                (stream_load_request ||
                                 secondary_emergency_load_request ||
+                                secondary_help_load_request ||
                                 secondary_info_load_request) :
                               (ENABLE_MULTI_FRAME_PRELOAD ?
                               (frame_valid != 5'b11111 ||
                                secondary_emergency_load_request ||
+                               secondary_help_load_request ||
                                secondary_info_load_request) :
                              (ENABLE_DUAL_FRAME_PRELOAD ?
                               (frame_valid != 2'b11) :
@@ -1456,7 +1470,8 @@ always @(posedge video_clk or negedge video_rst_n) begin
     end
 end
 
-assign row_input_continue = VIDEO_BIN ? bin_sector_continue :
+assign row_input_continue = secondary_help_loading ? 1'b1 :
+                            VIDEO_BIN ? bin_sector_continue :
                             bmp_row_input_continue;
 
 generate
@@ -1468,7 +1483,7 @@ generate
         ) u_bmp_row_buffer (
             .clk(clk_50m), .rst_n(write_rst_n),
             .hires_frame(ENABLE_SECONDARY && load_image_index == 4'd5),
-            .in_valid(image_wr_en),
+            .in_valid(image_wr_en && !secondary_help_loading),
             .in_row(image_wr_row[10:0]), .in_col(image_wr_col[10:0]),
             .in_pixel(image_wr_data), .overflow(row_overflow),
             .out_valid(row_valid), .out_row(row_index), .out_pixel(row_pixel),
@@ -1713,6 +1728,8 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         secondary_info_error <= 1'b0;
         secondary_emergency_valid <= 1'b0;
         secondary_emergency_error <= 1'b0;
+        secondary_help_valid <= 1'b0;
+        secondary_help_error <= 1'b0;
         secondary_info_cached_artifact <= 3'd0;
         secondary_info_error_artifact <= 3'd0;
         secondary_info_load_artifact <= 3'd0;
@@ -1922,7 +1939,7 @@ always @(posedge clk_50m or negedge write_rst_n) begin
                 load_museum_artifact <= 3'd0;
                 load_museum_detail_index <= 2'd0;
                 image_load_start <= 1'b1;
-                writer_start     <= 1'b1;
+                writer_start     <= !(SECONDARY_HELP && load_start_image_index == 4'd7);
                 load_active      <= 1'b1;
                 load_reported    <= 1'b0;
                 writer_done_seen <= 1'b0;
@@ -1951,7 +1968,7 @@ always @(posedge clk_50m or negedge write_rst_n) begin
                 if (lecture_load_request)
                     frame_valid[load_start_image_index] <= 1'b0;
                 image_load_start <= 1'b1;
-                writer_start     <= 1'b1;
+                writer_start     <= !(SECONDARY_HELP && load_start_image_index == 4'd7);
                 load_active      <= 1'b1;
                 load_reported    <= 1'b0;
                 writer_done_seen <= 1'b0;
@@ -1977,6 +1994,8 @@ always @(posedge clk_50m or negedge write_rst_n) begin
                 secondary_info_error_artifact <= secondary_info_load_artifact;
             end else if (ENABLE_SECONDARY && load_image_index == 4'd6) begin
                 secondary_emergency_error <= 1'b1;
+            end else if (secondary_help_loading) begin
+                secondary_help_error <= 1'b1;
             end
         end else begin
             // Both completion outputs are level-held. Do not accept a high
@@ -1993,8 +2012,8 @@ always @(posedge clk_50m or negedge write_rst_n) begin
                 loader_done_seen <= 1'b1;
 
             if (!load_reported &&
-                writer_done_clear_seen && loader_done_clear_seen &&
-                (writer_done_seen || frame_done) &&
+                (secondary_help_loading || writer_done_clear_seen) && loader_done_clear_seen &&
+                (secondary_help_loading || writer_done_seen || frame_done) &&
                 (loader_done_seen || image_load_done)) begin
             // Do not publish or accept another switch until both sides have
             // completed: the writer may finish its last SDRAM block before
@@ -2006,6 +2025,11 @@ always @(posedge clk_50m or negedge write_rst_n) begin
                     secondary_info_cached_slot <= secondary_info_load_slot;
             end else if (ENABLE_SECONDARY && load_image_index == 4'd6) begin
                 secondary_emergency_valid <= 1'b1;
+            end else if (secondary_help_loading) begin
+                secondary_help_valid <= image_source_width == 16'd160 &&
+                                        image_source_height == 16'd90;
+                secondary_help_error <= image_source_width != 16'd160 ||
+                                        image_source_height != 16'd90;
             end else if (ENABLE_MULTI_FRAME_PRELOAD)
                 frame_valid[load_image_index] <= 1'b1;
             else
@@ -2751,6 +2775,7 @@ generate
         reg [23:0] rgb_q;
         wire [23:0] overlay_rgb;
         wire [23:0] engineering_rgb;
+        wire [23:0] help_rgb;
         always @(posedge video_clk or negedge video_rst_n) begin
             if (!video_rst_n) begin
                 x_q <= 11'd0;
@@ -2769,7 +2794,7 @@ generate
                 hs_q <= video_hs_out;
                 vs_q <= video_vs_out;
                 de_q <= video_de_out;
-                rgb_q <= engineering_rgb;
+                rgb_q <= help_rgb;
             end
         end
         secondary_page_overlay u_secondary_page_overlay (
@@ -2784,7 +2809,8 @@ generate
             .route_id_50m(secondary_active_route_id),
             .media_ready_50m(SECONDARY_STREAMING ? initial_frame_published :
                                                   &frame_valid),
-            .media_error_50m(image_load_error | writer_error),
+            .media_error_50m((image_load_error &&
+                              !(SECONDARY_HELP && load_image_index == 4'd7)) | writer_error),
             .rgb(overlay_rgb)
         );
         if (SECONDARY_ENGINEERING) begin : g_engineering_page
@@ -2801,6 +2827,27 @@ generate
         );
         end else begin : g_no_engineering_page
             assign engineering_rgb = overlay_rgb;
+        end
+        if (SECONDARY_HELP) begin : g_help_page
+            secondary_help_overlay u_help (
+                .clk(video_clk), .rst_n(video_rst_n),
+                .de(video_de_out), .x(x_q_d), .y(y_q_d),
+                .pre_x(x_q), .pre_y(y_q), .base_rgb(engineering_rgb),
+                .switches_50m(secondary_help_switches),
+                .manual_50m(secondary_eng_display[42]),
+                .overview_50m(secondary_eng_heartbeat[111:104] == 8'hff),
+                .paused_50m(secondary_eng_heartbeat[103:96] == 8'd2),
+                .link_50m(secondary_link_state),
+                .emergency_50m(secondary_emergency_active),
+                .emergency_bitmap_video(display_media_index == 4'd6),
+                .background_ready_50m(secondary_help_valid),
+                .write_clk(clk_50m),
+                .write_en(secondary_help_loading && image_wr_en),
+                .write_row(image_wr_row), .write_col(image_wr_col),
+                .write_pixel(image_wr_data), .rgb(help_rgb)
+            );
+        end else begin : g_no_help_page
+            assign help_rgb = engineering_rgb;
         end
         assign secondary_hs_out = hs_q;
         assign secondary_vs_out = vs_q;
