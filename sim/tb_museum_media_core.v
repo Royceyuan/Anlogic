@@ -948,7 +948,7 @@ module tb_museum_media_core #(
                 $fatal(1,"stale lecture viewport returned after recovery");
             if (dut.g_linebuf_scaler.u_linebuf_scaler.active_zoom_2x ||
                 dut.g_linebuf_scaler.u_linebuf_scaler.active_source_x_start!=0 ||
-                dut.g_linebuf_scaler.u_linebuf_scaler.active_pan_y!=0)
+                dut.g_linebuf_scaler.u_linebuf_scaler.active_source_y_start!=0)
                 $fatal(1,"overview line buffer retained stale source geometry");
             $display("PASS MAIN5 KEY4 restores 1x centered overview from paused 2x pan");
             sw[3]=1'b1;

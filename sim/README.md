@@ -17,6 +17,12 @@ D:\Modelsim\win64\vsim.exe -c -do run_remote_controls.do
 
 ModelSim 生成的 `work*`、`modelsim.ini`、`transcript` 和运行日志不属于源码，已由 `.gitignore` 排除。
 
+## 行缓冲纵坐标与连续帧检查
+
+`run_video_timing.do` 的缩放检查新增 2097152 种纵坐标/倍率/编码起点组合，覆盖负平移、消隐及越界；启动后改变原始控制输入，确认只有 `source_start` 更新当前读帧坐标。
+
+`run_viewport_pan_stream.do` 复用同一测试分别跑行为 RAM 和 `D:\TD_6.2.1\sim_release\eg4` 官方非 SIM BRAM 模型，核对 1×/2× 连续帧、20/40 步长、正负平移及边界像素，并检查行缓存下溢。预期各输出两项 PASS，共四项；保护模型的两项参数切片警告保留记录，不替代上板验证。单热点候选结果见 `docs/reports/y_origin_single_hotspot_20261002.md`。
+
 ## 音频波形单热点等效检查
 
 ```powershell

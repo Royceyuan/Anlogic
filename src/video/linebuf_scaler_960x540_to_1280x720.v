@@ -66,7 +66,7 @@ reg        video_epoch;
 reg        video_started;
 reg        active_zoom_2x;
 reg [10:0] active_source_x_start;
-reg signed [9:0] active_pan_y;
+reg signed [10:0] active_source_y_start;
 reg [9:0] active_zoom_row_start;
 reg [9:0] active_row_end;
 reg [WORD_BITS-1:0] request_word;
@@ -167,14 +167,15 @@ generate
         // Likewise, 3*y needs 12 bits.  Without widening it wraps at y=342
         // and makes the display request rows which were already released.
         assign source_y_times3 = {2'b00, video_y} + ({2'b00, video_y} << 1);
-        assign mapped_y = active_zoom_2x ?
-                          active_zoom_row_start + (source_y_times3 >> 3) :
-                          {{6{active_pan_y[9]}},active_pan_y} + (source_y_times3 >> 2);
+        // Capture the selected origin at source_start, as on the X path.
+        // Keep 11-bit wrapping for negative pan and blanking coordinates.
+        wire [9:0] scaled_y = active_zoom_2x ? {1'b0,source_y_times3[11:3]} :
+                                              source_y_times3[11:2];
+        assign mapped_y = active_source_y_start + {1'b0,scaled_y};
     end else begin : g_y_generic
-        assign mapped_y = active_zoom_2x ?
-                          active_zoom_row_start +
+        assign mapped_y = active_source_y_start + (active_zoom_2x ?
                           ((video_y * SRC_H) / (DST_H * 2)) :
-                          {{6{active_pan_y[9]}},active_pan_y} + ((video_y * SRC_H) / DST_H);
+                          ((video_y * SRC_H) / DST_H));
     end
 endgenerate
 
@@ -331,7 +332,7 @@ always @(posedge clk or negedge rst_n) begin
         video_started     <= 1'b0;
         active_zoom_2x    <= 1'b0;
         active_source_x_start <= 11'd0;
-        active_pan_y       <= 16'sd0;
+        active_source_y_start <= 11'sd0;
         active_row_end     <= SRC_H-1;
         active_zoom_row_start <= ZOOM_ROW_START;
         request_word      <= {WORD_BITS{1'b0}};
@@ -366,7 +367,8 @@ always @(posedge clk or negedge rst_n) begin
             // Zoom origin is constant for this source transaction: add it
             // here, not in every pixel's mapping chain. The output is 11 bits.
             active_source_x_start <= pan_x_effective + (zoom_2x ? SRC_W/4 : 0);
-            active_pan_y       <= pan_y_effective;
+            active_source_y_start <= zoom_2x ? {1'b0,zoom_row_start} :
+                                               {pan_y_effective[9],pan_y_effective[9:0]};
             active_zoom_row_start <= first_row;
             active_row_end     <= first_row + row_count - 1'b1;
             load_row          <= first_row;

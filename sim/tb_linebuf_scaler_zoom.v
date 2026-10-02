@@ -15,6 +15,7 @@ wire [10:0] source_x = dut.source_x;
 wire [9:0] source_y = dut.source_y;
 integer direction, origin, progress, step, expected_left, expected_offset;
 integer zoom_case, pan_case, column, expected_column;
+integer row, expected_row, expected_source_row;
 
 always #5 clk=~clk;
 
@@ -129,7 +130,25 @@ initial begin
             $fatal(1,"X origin mismatch zoom=%d pan=%d x=%d",zoom_case,pan_case,column);
         end
       end
-    $display("PASS linebuf 1x/2x, all legal X pan/columns and 4096 recenter geometries");
+    // All encoded Y origins and raster rows, not just valid visible pans.
+    pan_x=0;video_x=0;
+    for (zoom_case=0; zoom_case<2; zoom_case=zoom_case+1)
+      for (pan_case=-512; pan_case<512; pan_case=pan_case+1) begin
+        @(negedge clk);zoom_2x=zoom_case;pan_y=pan_case;source_start=1;
+        @(posedge clk);#1;source_start=0;
+        // Controls may change during a frame; only source_start captures them.
+        @(negedge clk);zoom_2x=!zoom_case;pan_y=~pan_case;
+        for(row=0;row<1024;row=row+1) begin
+          video_y=row;#1;
+          expected_row=(zoom_case ? ((135+pan_case)&1023)+row*3/8 :
+                                    pan_case+row*3/4)&2047;
+          expected_source_row=(expected_row&1024) ? 0 : expected_row&1023;
+          if(dut.mapped_y!==expected_row[10:0] || source_y!==expected_source_row[9:0] ||
+             dut.in_picture!==((expected_row&1024)==0 && expected_row<540))
+            $fatal(1,"Y mapping mismatch zoom=%d pan=%d y=%d",zoom_case,pan_case,row);
+        end
+      end
+    $display("PASS linebuf 1x/2x, all legal X pan/columns, 4096 recenter geometries, 2097152 Y mappings");
     test_pass=1;
     $finish;
 end
