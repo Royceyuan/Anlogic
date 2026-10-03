@@ -1,5 +1,6 @@
 from pathlib import Path
 import argparse
+import html
 import re
 import struct
 import wave
@@ -17,9 +18,30 @@ PAYLOAD_OFFSET = 16
 
 
 def timestamp_ms(value: str) -> int:
-    hour, minute, rest = value.split(":")
-    second, milli = rest.split(",")
-    return ((int(hour) * 60 + int(minute)) * 60 + int(second)) * 1000 + int(milli)
+    match = re.fullmatch(r"(\d+):(\d{2}):(\d{2})[,.](\d{1,3})", value.strip())
+    if not match:
+        raise ValueError(f"invalid SRT timestamp: {value}")
+    hour, minute, second, milli = match.groups()
+    if int(minute) >= 60 or int(second) >= 60:
+        raise ValueError(f"invalid SRT timestamp: {value}")
+    return ((int(hour) * 60 + int(minute)) * 60 + int(second)) * 1000 + int(milli.ljust(3, "0"))
+
+
+def read_srt_text(path: Path) -> str:
+    data = path.read_bytes()
+    if data.startswith((b"\xff\xfe\x00\x00", b"\x00\x00\xfe\xff")):
+        return data.decode("utf-32")
+    if data.startswith((b"\xff\xfe", b"\xfe\xff")):
+        return data.decode("utf-16")
+    if b"\x00" in data:
+        encoding = "utf-16-le" if data[1::2].count(0) > data[::2].count(0) else "utf-16-be"
+        return data.decode(encoding)
+    for encoding in ("utf-8-sig", "gb18030"):
+        try:
+            return data.decode(encoding)
+        except UnicodeDecodeError:
+            continue
+    raise ValueError(f"{path}: cannot decode SRT; save as UTF-8 or UTF-16")
 
 
 def script_timestamp_ms(value: str) -> int:
@@ -54,17 +76,26 @@ def timestamp_frames(value: str, total_frames: int, srt_end_ms: int,
     return round(ms * total_frames / srt_end_ms)
 
 
-def parse_srt(path: Path, total_frames: int, timing_mode: str):
-    blocks = re.split(r"\r?\n\r?\n", path.read_text(encoding="utf-8").strip())
+def parse_srt(path: Path, total_frames: int, timing_mode: str, check_timing: bool = True):
+    blocks = re.split(r"\n(?:[ \t]*\n)+", read_srt_text(path).replace("\r\n", "\n").replace("\r", "\n").strip())
     raw = []
-    for block in blocks:
+    timing = re.compile(r"(\d+:\d{2}:\d{2}[,.]\d{1,3})\s*-->\s*(\d+:\d{2}:\d{2}[,.]\d{1,3})(?:\s+.*)?")
+    for index, block in enumerate(blocks, 1):
         lines = block.splitlines()
-        if len(lines) < 3:
-            continue
-        start, end = lines[1].split(" --> ")
-        raw.append((start, end, "".join(lines[2:]).strip()))
+        time_line = 1 if lines and lines[0].strip().isdigit() else 0
+        match = timing.fullmatch(lines[time_line].strip()) if len(lines) > time_line else None
+        if not match or len(lines) <= time_line + 1:
+            raise ValueError(f"{path}: invalid SRT block {index}")
+        text = "".join(lines[time_line + 1:]).strip()
+        text = html.unescape(re.sub(r"</?(?:b|i|u|font)(?:\s[^>]*)?>", "", text, flags=re.IGNORECASE))
+        if not text:
+            raise ValueError(f"{path}: empty subtitle in block {index}")
+        raw.append((*match.groups(), text))
     if not raw or len(raw) > 32:
         raise ValueError(f"{path}: cue count must be 1..32")
+    if not check_timing:
+        return [(timestamp_ms(start) * 48, timestamp_ms(end) * 48, text)
+                for start, end, text in raw]
     srt_end_ms = timestamp_ms(raw[-1][1])
     if timing_mode == "auto":
         timing_mode = "direct" if srt_end_ms * 48 <= total_frames else "fit"
@@ -123,14 +154,19 @@ def render_bitmap(text: str):
 
 
 def build_track(track: int, folder: Path, audio_dir: Path, destination: Path,
-                timing_mode: str) -> Path:
+                timing_mode: str, subtitle_path: Path = None, scene_cuts=None):
     audio = audio_dir / f"AUDIO{track}.WAV"
     with wave.open(str(audio), "rb") as wav:
         if (wav.getnchannels(), wav.getsampwidth(), wav.getframerate()) != (2, 2, 48_000):
             raise ValueError(f"{audio}: expected PCM16 stereo 48kHz")
         total_frames = wav.getnframes()
-    cues = parse_srt(folder / "字幕.srt", total_frames, timing_mode)
-    scene_cuts = parse_scene_script(folder / "图片切换脚本.md", total_frames)
+    cues = parse_srt(subtitle_path or folder / "字幕.srt", total_frames, timing_mode)
+    script = folder / "图片切换脚本.md"
+    # ponytail: equal-duration fallback, not semantic audio/image alignment; optional script supplies precise cuts.
+    if scene_cuts is None:
+        scene_cuts = parse_scene_script(script, total_frames) if script.is_file() else [total_frames * n // 5 for n in range(1, 5)]
+    if len(scene_cuts) != 4 or not (0 < scene_cuts[0] < scene_cuts[1] < scene_cuts[2] < scene_cuts[3] < total_frames):
+        raise ValueError(f"{audio}: four scene cuts must be ordered inside the audio")
 
     header = bytearray(512)
     header[0:4] = b"MSUB"

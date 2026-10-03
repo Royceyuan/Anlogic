@@ -25,6 +25,15 @@ sim/transcript
 **/__pycache__/
 *.pyc
 
+# Optional offline PC alignment bundle (not FPGA inputs)
+tools/Package_tool/_alignment_runtime/
+tools/Package_tool/AlignmentWorker/
+tools/Package_tool/models/
+tools/Package_tool/ffmpeg/
+tools/Package_tool/offline_licenses/
+tools/Package_tool/MuseumTFPackager_Offline.zip
+tools/Package_tool/offline_bundle_manifest.json
+
 # Editor and OS noise
 .DS_Store
 Thumbs.db

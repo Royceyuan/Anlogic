@@ -1,10 +1,12 @@
 """Run the standalone windowed EXE against temporary media, not the TF card."""
 
+import argparse
 import json
 import os
 from pathlib import Path
 import struct
 import subprocess
+import shutil
 import tempfile
 import tkinter as tk
 from unittest.mock import patch
@@ -16,9 +18,13 @@ from museum_media_packager import (
     HELP_TEXT, build_package, canonical_wav, find_ffmpeg, normalize_wav, sha256,
     show_help, verify_tf,
 )
+from generate_museum_subtitles import parse_srt
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--offline", action="store_true", help="Also exercise the relocated complete package")
+    args = parser.parse_args()
     gui = tk.Tk()
     gui.withdraw()
     try:
@@ -99,6 +105,35 @@ def main():
             print("PASS FFmpeg conversion with CREATE_NO_WINDOW")
         else:
             print("SKIP optional FFmpeg conversion: not installed")
+        if args.offline:
+            here = exe.parent
+            for name in ("AlignmentWorker", "models", "ffmpeg"):
+                shutil.copytree(here / name, root / name)
+            original = Path(r"D:\VSCode\CodeFiles\Git_TD\素材\01_越王勾践剑")
+            texts = [text for _, _, text in parse_srt(original / "字幕.srt", 0, "direct", False)]
+            choices = {}
+            for folder in sorted(source.iterdir()):
+                shutil.copy2(original / "讲解音频.wav", folder / "讲解音频.wav")
+                srt = folder / "字幕.srt"
+                srt.write_text("\n\n".join(f"{number}\n00:00:00,000 --> 00:00:00,000\n{text}"
+                                          for number, text in enumerate(texts, 1)), encoding="utf-16")
+                choices[folder.name] = {"subtitle_sha256": sha256(srt), "cues": [5, 10, 15, 20]}
+            choices_path = root / "scene_cues.json"
+            choices_path.write_text(json.dumps(choices), encoding="utf-8")
+            aligned = run("--build", source, "--output", root / "aligned_output", "--align-subtitles", "--scene-cues", choices_path)
+            assert aligned.returncode == 0, f"Offline EXE alignment failed: {aligned.returncode:#x}"
+            package = next((root / "aligned_output").glob("museum_package_*"))
+            verify_tf(package / "TF_CARD")
+            report = json.loads((package / "alignment_report.json").read_text(encoding="utf-8"))
+            manifest = json.loads((package / "package_manifest.json").read_text(encoding="utf-8"))
+            assert manifest["align_subtitles"] and report["network"] == "disabled"
+            for index, track in enumerate(report["tracks"]):
+                cues = parse_srt(package / track["subtitle"], round(track["duration_s"] * 48000), "direct")
+                assert [text for _, _, text in cues] == texts
+                cuts = [cues[number - 1][0] for number in [5, 10, 15, 20]]
+                assert cuts == manifest["scene_cuts_48k_frames"][index]
+                assert list(struct.unpack_from("<IIII", (package / "TF_CARD" / f"SUB{index}.BIN").read_bytes(), 20)) == cuts
+            print("PASS relocated offline EXE: 5 audio conversions, 5 corrected SRTs, 31 TF files, cuts follow corrected cues, network forbidden")
 
 
 if __name__ == "__main__":
