@@ -1,0 +1,26 @@
+Location         : D:\VSCode\CodeFiles\Git_TD\Anlogic
+Running with     : Tang Dynasty v6.2.168116
+                   Copyright (c) 2012-2025 Anlogic Inc.
+Top Model        : dual_fpga_museum_terminal_main_board
+Device           : EG4S20BG256
+Speed            : NA
+
+Timing Mode      : final
+Setup            : WNS   107ps  TNS        0ps  NUM_FEPS     0
+Hold             : WNS    23ps  TNS        0ps  NUM_FEPS     0
+
+Flow Statistics  :
+---------------------------------------------------------------------------------------------------
+     command     |  #calls  |  wall time   |  cpu time(s)  |  used memory(mb)  |  peak memory(mb)  
+---------------------------------------------------------------------------------------------------
+      route      |    1     |  2m16s(45%)  |   184(47%)    |       1291        |       1442        
+      place      |    1     |  1m25s(28%)  |   130(33%)    |       1061        |       1442        
+  optimize_rtl   |    1     |   38s(12%)   |    37(9%)     |        670        |        791        
+  optimize_gate  |    1     |   34s(11%)   |    33(8%)     |        785        |        791        
+    fix_hold     |    1     |    7s(2%)    |     7(1%)     |       1291        |       1442        
+  import_device  |    1     |    0s(0%)    |     0(0%)     |        86         |        86         
+    read_adc     |    1     |    0s(0%)    |     0(0%)     |        390        |        390        
+    read_sdc     |    1     |    0s(0%)    |     0(0%)     |        390        |        390        
+---------------------------------------------------------------------------------------------------
+      total      |    8     |     5m0s     |      391      |       1291        |       1442        
+---------------------------------------------------------------------------------------------------
