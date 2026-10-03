@@ -25,7 +25,7 @@ module tb_museum_media_core #(
     parameter integer MAIN4_EMERGENCY_TEST = 0,
     parameter integer MAIN5_CONTROLS_TEST = 0,
     parameter integer MAIN5_REMOTE_TEST = 0,
-    parameter integer SOURCE_DIMENSIONS_TEST = 0,
+    parameter integer PLL_STARTUP_TEST = 0,
     parameter integer LOCAL_MANUAL_TEST = 0,
     parameter integer LIGHT_BAND_TEST = 0
 );
@@ -37,8 +37,8 @@ module tb_museum_media_core #(
     reg [2:0] saved_mode;
     reg [7:0] saved_progress;
     reg light_band_pass=0;
-    reg source_dimensions_pass=0;
-    reg [31:0] dimension_values [0:4];
+    reg pll_startup_pass=0;
+    reg pll_system_lock=0, pll_video_lock=0;
     reg remote_command_valid = 1'b0;
     reg [7:0] remote_command_type = 8'd0;
     reg [63:0] remote_command_payload = 64'd0;
@@ -385,6 +385,45 @@ module tb_museum_media_core #(
     end
 
     initial begin
+        if (PLL_STARTUP_TEST) begin
+            // Model clocks running before lock; no global reset is supplied.
+            force dut.u_sys_pll.lock_enable=pll_system_lock;
+            force dut.g_video_pll_1280.u_video_pll.lock_enable=pll_video_lock;
+            for (step=0;step<4;step=step+1) begin
+                pll_system_lock=0; pll_video_lock=0;
+                repeat(9+step*7) @(negedge clk_50m);
+                if(dut.write_rst_n!==1'b0 || dut.mem_rst_n!==1'b0 || dut.video_rst_n!==1'b0 ||
+                   dut.load_active!==1'b0 || dut.frame_valid!==5'd0 || dut.video_run!==1'b0)
+                    $fatal(1,"media released before system PLL lock");
+                pll_system_lock=1;
+                repeat(6) @(negedge clk_50m);
+                if(dut.write_rst_n!==1'b1 || dut.mem_rst_n!==1'b1 || dut.video_rst_n!==1'b0)
+                    $fatal(1,"system/video PLL reset sequencing");
+                // Also let all caches finish before the video clock locks;
+                // the initial publication must survive delayed video reset.
+                repeat(step==2 ? 1000 : 7+step*5) @(negedge clk_50m);
+                if(dut.video_rst_n!==1'b0 || dut.linebuf_source_read_req!==1'b0 || dut.video_run!==1'b0)
+                    $fatal(1,"video reader released before video PLL lock");
+                if(step==2 && dut.overview_cache_ready!==1'b1)
+                    $fatal(1,"late video lock test did not finish overview preload");
+                pll_video_lock=1;
+                timeout=0;
+                while(dut.video_run!==1'b1 && timeout<100000) begin
+                    @(negedge clk_50m); timeout=timeout+1;
+                end
+                if(dut.video_run!==1'b1) $fatal(1,"PLL relock did not restart video");
+                long_debug_samples=0;
+                repeat(5000) begin
+                    @(negedge clk_50m);
+                    if(dut.video_de && (^dut.video_rgb)!==1'bx && dut.video_rgb!=0)
+                        long_debug_samples=long_debug_samples+1;
+                end
+                if(long_debug_samples==0) $fatal(1,"PLL startup produced black pixels");
+            end
+            pll_startup_pass=1;
+            $display("PASS PLL startup: delayed independent locks, relock/cache reset and nonblack video x4");
+            $finish;
+        end
         if (PHASE1_TEST || PHASE2_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST) begin
             force dut.write_rst_n = 1'b0;
             force dut.mem_rst_n = 1'b0;
@@ -550,71 +589,6 @@ module tb_museum_media_core #(
             if(dut.transition_active) $fatal(1,"recovery left band active");
             $display("PASS light-band selection, 64-frame duration, pause, delayed prefetch and recovery");
             light_band_pass=1;
-            $finish;
-        end
-        if (SOURCE_DIMENSIONS_TEST) begin
-            force dut.recovery_busy=0;
-            force dut.image_load_error=0; force dut.writer_error=0;
-            force dut.load_active=1;
-            force dut.load_finish_ready_q=1;
-            force dut.load_museum_asset=0;
-            for(mode_check=0;mode_check<5;mode_check=mode_check+1) begin
-                dimension_values[mode_check]={16'h0640+mode_check[15:0],16'h0480+mode_check[15:0]};
-                force dut.load_image_index=mode_check[3:0];
-                force dut.image_width_bcd=dimension_values[mode_check][31:16];
-                force dut.image_height_bcd=dimension_values[mode_check][15:0];
-                repeat(2) @(negedge clk_50m);
-            end
-            force dut.load_active=0;
-            force dut.transition_active=0; force dut.switch_pending=0;
-            force dut.display_media_index=5;
-            force dut.recovery_video_ff2=0;
-            for(mode_check=0;mode_check<5;mode_check=mode_check+1) begin
-                force dut.desired_image_index=mode_check[3:0];
-                force dut.overview_selected_video=mode_check[2:0];
-                #1;
-                if(dut.frame_source_dimensions!==dimension_values[mode_check] ||
-                   dut.overview_source_dimensions!==dimension_values[mode_check])
-                    $fatal(1,"dimension table integration/read index");
-                force dut.video_frame_tick=1;
-                repeat(2) @(negedge clk_50m);
-                if({dut.osd_width_bcd,dut.osd_height_bcd}!==dimension_values[mode_check])
-                    $fatal(1,"overview OSD dimensions");
-            end
-            // A background lecture-slot overwrite must not alter overview dimensions.
-            force dut.desired_image_index=4; force dut.overview_selected_video=4;
-            force dut.load_active=1; force dut.load_museum_asset=1;
-            force dut.load_image_index=4;
-            force dut.image_width_bcd=16'h1920; force dut.image_height_bcd=16'h1080;
-            repeat(2) @(negedge clk_50m);
-            force dut.load_active=0;
-            if(dut.frame_source_dimensions!==32'h19201080 ||
-               dut.overview_source_dimensions!==dimension_values[4])
-                $fatal(1,"background preload polluted overview");
-            force dut.load_active=1; force dut.image_width_bcd=16'h9999;
-            force dut.image_load_error=1;
-            repeat(2) @(negedge clk_50m);
-            force dut.image_load_error=0; force dut.recovery_busy=1;
-            repeat(2) @(negedge clk_50m);
-            force dut.load_active=0;
-            if(dut.frame_source_dimensions!==32'h19201080)
-                $fatal(1,"failed/recovery load committed metadata");
-            force dut.recovery_video_ff2=1;
-            force dut.overview_cache_ready_ff2=1;
-            force dut.museum_preload_valid=1; force dut.museum_preload_index=2;
-            repeat(2) @(negedge clk_50m);
-            if({dut.osd_width_bcd,dut.osd_height_bcd}!==dimension_values[2])
-                $fatal(1,"recovery OSD selection");
-            force dut.museum_preload_valid=0;
-            repeat(2) @(negedge clk_50m);
-            if({dut.osd_width_bcd,dut.osd_height_bcd}!==dimension_values[0])
-                $fatal(1,"invalid preload recovery OSD selection");
-            force dut.write_rst_n=0;
-            #1;
-            if(dut.frame_source_dimensions!==0 || dut.overview_source_dimensions!==0)
-                $fatal(1,"dimension reset validity");
-            source_dimensions_pass=1;
-            $display("PASS source dimension integration: five slots, OSD, background preload, error/recovery/reset");
             $finish;
         end
         if (MAIN5_REMOTE_TEST) begin
@@ -1585,14 +1559,18 @@ endmodule
 // Clock models keep the integration test independent of vendor PLL macros.
 module system_clock_pll(input wire refclk, input wire reset,
                 output wire clk0_out, output wire clk1_out,
-                output wire clk2_out);
+                output wire clk2_out, output wire locked);
+    reg lock_enable=1'b1;
+    assign locked=lock_enable && !reset;
     assign clk0_out = refclk;
     assign clk1_out = refclk;
     assign clk2_out = refclk;
 endmodule
 
 module hdmi_pixel_clock_pll(input wire refclk, input wire reset,
-                     output wire clk0_out, output wire clk1_out);
+                     output wire clk0_out, output wire clk1_out, output wire locked);
+    reg lock_enable=1'b1;
+    assign locked=lock_enable && !reset;
     assign clk0_out = refclk;
     assign clk1_out = refclk;
 endmodule

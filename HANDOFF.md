@@ -1,10 +1,16 @@
 # 双 FPGA 博物馆双屏展陈终端——主板工程交接
 
-## 独立资源候选（2026-10-03，待上板）
+## Flash启动修复（2026-10-03，待上板）
+
+用户反馈尺寸表资源候选写入Flash后概率黑屏/8008、名称缺失，KEY4不恢复，因此该候选不通过。已撤回尺寸表分布式RAM和行命中OR优化，恢复已验收数据通路；另修复可复现的启动隐患：系统PLL与1280视频PLL导出extlock，内存/读取控制复位等待系统锁定，视频/FIFO复位等待视频锁定及SDRAM初始化，仍由原reset_sync同步释放。新增 `sim/run_pll_startup.do` 在修复前复现90ns提前释放，修复后延迟/重新锁定及晚锁定场景通过。该隐患与本次真实板故障的因果关系仍需Flash冷启动验收，不能用模型宣称概率故障彻底消除。
+
+新构建/bit路径为 `_build_flash_startup_repair` / `release/dual_fpga_museum_terminal_main_board_flash_startup_repair.bit`，SHA256 `4409952619964B9FB2D138E2D3FB9006DB005E53278404412D8A7F92AB876BE5`；复用原产品约束和固定seed1，完成STA/DRC/bitgen：setup +0.107ns、hold +0.023ns，TNS=0，LUT16960、FF11427、Slice9540（97.35%），BRAM/DSP/PLL不增。17正常回归入口27项PASS，另有PLL启动4轮场景通过。完整结果/Flash冷启动验收见 `docs/reports/flash_startup_repair_20261003.md`。旧已验收主板7EE6C57A和副板B36B3D6E不覆盖，副板及TF无需修改；该修复候选仍待实板确认。
+
+## 已撤回资源候选（2026-10-03，实板未通过）
 
 源图片尺寸表改用异步读分布式 RAM，行缓存命中存在性改为并行译码，保留原槽位优先级；不调整控制、协议、素材和音画时间轴。固定 seed 1、原时钟及约束完成整机综合、布线、STA/DRC 和 bitgen：LUT 16691、FF 11120、Slice 9321（95.11%），相对已验收纵坐标版减少 390 LUT / 325 FF / 165 Slice，BRAM/DSP/PLL 不增。setup +0.016 ns / hold +0.024 ns，TNS=0，覆盖率99.80%；setup余量薄，不能代替实板验收。
 
-仅烧录独立候选 `release/dual_fpga_museum_terminal_main_board_dimensions_candidate.bit`（SHA256 `01C1721A28CC876D5F2221D126E2A848567A84D83FCFB0129177BFF5E5392FDA`）进行对照，副板无需更换。已验收主板 `7EE6C57A...` 和副板 `B36B3D6E...` 未覆盖；当前生产源码为新候选，重新运行原构建脚本也会使用该源码。回归、资源及完整复现见 `docs/reports/source_dimensions_single_hotspot_20261003.md`。当前未收到此候选的 BOARD PASS。
+该候选 `release/dual_fpga_museum_terminal_main_board_dimensions_candidate.bit`（SHA256 `01C1721A28CC876D5F2221D126E2A848567A84D83FCFB0129177BFF5E5392FDA`）仅保留作诊断，不能再作为发布版烧录。已验收主板 `7EE6C57A...` 和副板 `B36B3D6E...` 未覆盖；当前生产源码为上述启动修复，不再是尺寸表资源候选。历史回归和资源见 `docs/reports/source_dimensions_single_hotspot_20261003.md`；已删除失效的候选专用测试/构建入口，仍可由提交c955aa6恢复。
 
 ## 当前双板上板验收记录（2026-10-02）
 

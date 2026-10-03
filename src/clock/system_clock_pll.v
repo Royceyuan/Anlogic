@@ -7,7 +7,8 @@ module system_clock_pll (
     reset,
     clk0_out,
     clk1_out,
-    clk2_out
+    clk2_out,
+    locked
 );
 
 input refclk;
@@ -15,6 +16,7 @@ input reset;
 output clk0_out;
 output clk1_out;
 output clk2_out;
+output locked;
 
 wire clk0_buf;
 
@@ -55,7 +57,7 @@ EG_PHY_PLL #(
     .refclk(refclk),
     .reset(reset),
     .stdby(1'b0),
-    .extlock(open),
+    .extlock(locked),
     .load_reg(1'b0),
     .psclk(1'b0),
     .psdown(1'b0),

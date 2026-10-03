@@ -8,7 +8,8 @@ module hdmi_pixel_clock_pll (
     input  wire refclk,
     input  wire reset,
     output wire clk0_out,
-    output wire clk1_out
+    output wire clk1_out,
+    output wire locked
 );
 
 wire clk0_buf;
@@ -47,7 +48,7 @@ EG_PHY_PLL #(
     .refclk(refclk),
     .reset(reset),
     .stdby(1'b0),
-    .extlock(open),
+    .extlock(locked),
     .load_reg(1'b0),
     .psclk(1'b0),
     .psdown(1'b0),
