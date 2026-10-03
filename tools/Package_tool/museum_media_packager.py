@@ -16,7 +16,7 @@ from pathlib import Path
 from PIL import Image
 
 
-HERE = Path(__file__).resolve().parent
+HERE = Path(sys.executable if getattr(sys, "frozen", False) else __file__).resolve().parent
 TOOLS = HERE.parent
 sys.path.insert(0, str(TOOLS))
 
@@ -195,7 +195,8 @@ def normalize_wav(source: Path, target: Path, ffmpeg: Path | None) -> None:
             "-i", str(source), "-map_metadata", "-1", "-vn",
             "-f", "s16le", "-acodec", "pcm_s16le", "-ar", "48000", "-ac", "2",
             str(raw),
-        ], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
+        ], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True,
+            creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
         if result.returncode:
             raise RuntimeError(f"{source}: FFmpeg 转换失败\n{result.stderr.strip()}")
         data_size = raw.stat().st_size

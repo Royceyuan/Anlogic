@@ -4,7 +4,7 @@
 
 ## 使用方法
 
-1. 双击 `启动素材打包工具.bat`。
+1. 双击 `MuseumTFPackager.exe`（不弹终端，无需安装 Python/Pillow）；原 BAT 保留供源码调试。
 2. 选择包含 `01_文物名`～`05_文物名` 的素材根目录。
 3. 先点“检查素材”，再点“生成 TF 素材包”。
 4. 将生成目录中 `TF_CARD` 文件夹内的 **31 个文件**复制到 FAT32 TF 卡根目录。
@@ -25,6 +25,12 @@
 
 ## 环境
 
+EXE 已包含 Python、Tkinter、Pillow 和名称/字幕生成模块。仅支持 Windows x64；依赖 Windows 自带微软雅黑字体。首次启动需要解包，可能稍等几秒。
+
+源音频已是规范 WAV 时，EXE 可直接完成打包；非规范 WAV 仍需本机 FFmpeg（未打入 EXE），转换时不会弹终端。源图片、字幕、时间轴处理规则不变。
+
+以下仅为源码运行环境：
+
 - Python 3（含 Tkinter）
 - Pillow
 - FFmpeg：仅当源音频不是主板标准 WAV 时需要。程序会自动查找 PATH、Conda 和当前开发机的 Anaconda 安装；也可用 `FFMPEG` 环境变量指定完整路径。
@@ -40,3 +46,16 @@ py -3 .\museum_media_packager.py --check "D:\VSCode\CodeFiles\Git_TD\素材"
 ```powershell
 py -3 .\museum_media_packager.py --build "D:\VSCode\CodeFiles\Git_TD\素材" --output "D:\打包输出"
 ```
+
+## 重新生成 EXE
+
+在此目录执行 `powershell -NoProfile -ExecutionPolicy Bypass -File .\build_exe.ps1`。
+脚本使用仓库根目录下独立的 `_build_media_packager_venv`，不修改系统 Python；构建缓存位于 `_build_media_packager`，均不参与工程构建或提交。
+
+运行 `py -3 .\test_packager_exe.py` 可测试单文件 EXE 的无终端格式、打包输出和校验清单；测试素材及输出仅存在临时目录，不改动 TF 卡或当前素材。
+
+2026-10-03 验证：GUI 窗口正常启动，PE 子系统为 Windows GUI；仅复制 EXE、移除 PATH 中的 Python 后，31 个文件生成及校验通过，并与源码版逐文件 SHA-256 一致。规范 WAV、名称、字幕和切图时间通过；本机 FFmpeg 非规范 WAV 转换及 `CREATE_NO_WINDOW` 检查通过。测试未改动真实素材或 TF 卡。
+
+本次 EXE 大小 20,402,205 字节，SHA-256 见 `MuseumTFPackager.exe.sha256`。EXE 未签名，Windows 首次运行可能提示安全确认；分发前可核对校验值。
+
+打包采用 [PyInstaller 官方单文件/无控制台选项](https://pyinstaller.org/en/stable/usage.html)。未重新实现界面或媒体转换逻辑。
