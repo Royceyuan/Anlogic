@@ -15,6 +15,9 @@ integer sync_checks=0;
 reg [2:0] scan_input=3'b110;
 reg [23:0] scan_rgb_input=0, rgb_previous=0, rgb_expected=0;
 reg monitor_rgb=0;
+reg pixel_valid=0;
+reg [10:0] pixel_row=0, pixel_col=0;
+reg [15:0] pixel_data=0;
 integer scan_step;
 top_v66 #(.VIDEO_W(1280),.VIDEO_H(720),.SOURCE_W(1280),.SOURCE_H(720),
     .VIDEO_MODE_1280(1),.ADAPTIVE_BMP(1),.MULTI_IMAGE_BMP(1),
@@ -38,10 +41,20 @@ top_v66 #(.VIDEO_W(1280),.VIDEO_H(720),.SOURCE_W(1280),.SOURCE_H(720),
 );
 always @(negedge clk) if(dut.image_load_start) begin
     loads=loads+1;
+    if(dut.u_fat32_image_loader.IMAGE_WIDTH!=160 ||
+       dut.u_fat32_image_loader.IMAGE_HEIGHT!=90 ||
+       dut.u_fat32_image_loader.HIRES_WIDTH!=1280 ||
+       dut.u_fat32_image_loader.HIRES_HEIGHT!=720 ||
+       !dut.u_fat32_image_loader.FIXED_BMP)
+        $fatal(1,"native help must use fixed dual-size loader");
     if(dut.load_image_index==7) begin
         help_loads=help_loads+1;
         if(dut.writer_start || dut.loader_file_index!=11 || !dut.row_input_continue)
             $fatal(1,"help must bypass SDRAM writer and select IMAGEB");
+        if(dut.u_fat32_image_loader.hires_frame)
+            $fatal(1,"help target must be native 160x90");
+    end else if(!dut.u_fat32_image_loader.hires_frame) begin
+        $fatal(1,"ordinary media target must remain native 1280x720");
     end
 end
 // The new glyph stage and RGB pass-through have one extra cycle; all scan
@@ -89,10 +102,18 @@ initial begin
     force dut.mem_rst_n=rst_n; force dut.write_rst_n=rst_n; force dut.video_rst_n=rst_n;
     force dut.image_load_done=done; force dut.frame_done=frame_done;
     force dut.image_load_error=failed; force dut.writer_error=1'b0;
-    force dut.image_wr_en=1'b0;
+    force dut.image_wr_en=pixel_valid;
+    force dut.image_wr_row=pixel_row; force dut.image_wr_col=pixel_col;
+    force dut.image_wr_data=pixel_data;
     force dut.image_source_width=16'd160; force dut.image_source_height=16'd90;
     force dut.stream_load_request=1'b0;
-    boot(); finish();
+    boot();
+    @(negedge clk); pixel_row=89; pixel_col=159; pixel_data=16'habcd; pixel_valid=1;
+    @(negedge clk); pixel_valid=0;
+    if(dut.g_secondary_overlay.g_help_page.u_help.backdrop[14399]!==16'habcd ||
+       dut.g_secondary_overlay.g_help_page.u_help.write_address!=14399)
+        $fatal(1,"native help final pixel did not reach 8x background cache");
+    finish();
     if(!dut.secondary_help_valid || dut.frame_valid!=5'b00001 || !dut.secondary_emergency_valid)
         $fatal(1,"help completion corrupted normal/emergency cache");
     repeat(3) begin switches=8; repeat(5) @(negedge clk); switches=0; repeat(5) @(negedge clk); end
@@ -120,7 +141,7 @@ initial begin
     end
     @(negedge clk); monitor_rgb=0;
     test_pass=1;
-    $display("PASS real top media scheduler: help once, no SDRAM write, emergency priority, SW4 isolation, missing help recovery, scan delay aligned");
+    $display("PASS real top media scheduler: fixed dual-size target, native help cache, help once, no SDRAM write, emergency priority, SW4 isolation, missing help recovery, scan delay aligned");
     $finish;
 end
 initial begin #50000; $fatal(1,"integration timeout"); end

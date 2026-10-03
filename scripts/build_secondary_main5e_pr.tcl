@@ -1,6 +1,6 @@
 import_device eagle_s20.db -package EG4S20BG256
 set secondary_root .
-set secondary_build [file join $secondary_root _build_secondary_main5e_manual_browse_seed6]
+set secondary_build [file join $secondary_root _build_secondary_help_fixed720_seed6]
 if {[info exists ::env(SECONDARY_BUILD)]} {set secondary_build $::env(SECONDARY_BUILD)}
 file mkdir $secondary_build
 cd $secondary_root

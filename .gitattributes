@@ -7,3 +7,5 @@ assets/secondary_emergency_720p_v2/source.png filter=lfs diff=lfs merge=lfs -tex
 assets/secondary_help/*.png filter=lfs diff=lfs merge=lfs -text
 docs/reports/secondary_help_20261002_*.rpt binary
 docs/reports/secondary_help_v2_20261002_*.rpt binary
+
+docs/reports/secondary_help_fixed720_20261003_*.rpt binary

@@ -1,0 +1,1195 @@
+Accepted release: 91A70946; 15 simulation groups, 38 PASS
+
+===== sim/alignment_help_sync.log | 2 PASS | SHA256 081f76bcd094d5ef89548cb818393eab5eda75512de12d5b49f25c0bb56f4ca5 =====
+# do sim/run_secondary_frame_store_alignment.do
+# ** Warning: (vlib-34) Library already exists at "sim/work_secondary_frame_store_alignment".
+# 
+# Model Technology ModelSim SE-64 vlog 10.4 Compiler 2014.12 Dec  3 2014
+# Start time: 19:19:07 on Oct 03,2026
+# vlog -work sim/work_secondary_frame_store_alignment vendor/anlogic_lab6/al_ip/afifo_16_32_256.v vendor/anlogic_lab6/al_ip/afifo_32_16_256.v vendor/anlogic_lab6/frame_read_write.v vendor/anlogic_lab6/frame_fifo_read.v vendor/anlogic_lab6/frame_fifo_write.v sim/tb_secondary_frame_store_alignment.v 
+# -- Compiling module wfifo_32_32_512
+# -- Compiling module fifo_cross_domain_addr_process_al_wfifo_32_32_512
+# -- Compiling module ram_infer_wfifo_32_32_512
+# -- Compiling module rfifo_32_32_512
+# -- Compiling module fifo_cross_domain_addr_process_al_rfifo_32_32_512
+# -- Compiling module ram_infer_rfifo_32_32_512
+# -- Compiling module frame_read_write
+# -- Compiling module frame_fifo_read
+# -- Compiling module frame_fifo_write
+# -- Compiling module tb_secondary_frame_store_alignment
+# -- Compiling module sdram
+# 
+# Top level modules:
+# 	frame_read_write
+# 	tb_secondary_frame_store_alignment
+# 	sdram
+# End time: 19:19:07 on Oct 03,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# Model Technology ModelSim SE-64 vlog 10.4 Compiler 2014.12 Dec  3 2014
+# Start time: 19:19:07 on Oct 03,2026
+# vlog -work sim/work_secondary_frame_store_alignment sim/work_secondary_frame_store_alignment/anlogic_frame_store_unaligned.v 
+# -- Compiling module anlogic_frame_store
+# 
+# Top level modules:
+# 	anlogic_frame_store
+# End time: 19:19:07 on Oct 03,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# vsim -c -do "sim/run_secondary_frame_store_alignment.do" -l sim/alignment_help_sync.log 
+# Start time: 19:19:08 on Oct 03,2026
+# ** Note: (vsim-8009) Loading existing optimized design _opt
+# 
+# //  ModelSim SE-64 10.4 Dec  3 2014 
+# //
+# //  Copyright 1991-2014 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  THIS WORK CONTAINS TRADE SECRET AND PROPRIETARY INFORMATION
+# //  WHICH IS THE PROPERTY OF MENTOR GRAPHICS CORPORATION OR ITS
+# //  LICENSORS AND IS SUBJECT TO LICENSE TERMS.
+# //  THIS DOCUMENT CONTAINS TRADE SECRETS AND COMMERCIAL OR FINANCIAL
+# //  INFORMATION THAT ARE PRIVILEGED, CONFIDENTIAL, AND EXEMPT FROM
+# //  DISCLOSURE UNDER THE FREEDOM OF INFORMATION ACT, 5 U.S.C. SECTION 552.
+# //  FURTHERMORE, THIS INFORMATION IS PROHIBITED FROM DISCLOSURE UNDER
+# //  THE TRADE SECRETS ACT, 18 U.S.C. SECTION 1905.
+# //
+# Loading work.tb_secondary_frame_store_alignment(fast)
+# Loading work.anlogic_frame_store(fast)
+# Loading work.frame_read_write(fast)
+# Loading work.wfifo_32_32_512(fast)
+# Loading work.fifo_cross_domain_addr_process_al_wfifo_32_32_512(fast)
+# Loading work.ram_infer_wfifo_32_32_512(fast)
+# Loading work.frame_fifo_write(fast)
+# Loading work.rfifo_32_32_512(fast)
+# Loading work.fifo_cross_domain_addr_process_al_rfifo_32_32_512(fast)
+# Loading work.ram_infer_rfifo_32_32_512(fast)
+# Loading work.frame_fifo_read(fast)
+# Loading work.sdram(fast)
+# BOUNDARY base=0 word=0 actual=a5000001
+# BOUNDARY base=0 word=639 actual=a500027f
+# BOUNDARY base=0 word=640 actual=a5000001
+# BOUNDARY base=0 word=1279 actual=a500027f
+# BOUNDARY base=1024 word=0 actual=a5000401
+# BOUNDARY base=1024 word=639 actual=a500067f
+# BOUNDARY base=1024 word=640 actual=a5000401
+# BOUNDARY base=1024 word=1279 actual=a500067f
+# PASS wrapper regression EXPECT_ERROR=1 errors=2540 frames=4 words=2560
+# ** Note: $finish    : sim/tb_secondary_frame_store_alignment.v(72)
+#    Time: 74083704 ps  Iteration: 1  Instance: /tb_secondary_frame_store_alignment
+# Break in Module tb_secondary_frame_store_alignment at sim/tb_secondary_frame_store_alignment.v line 72
+# Stopped at sim/tb_secondary_frame_store_alignment.v line 72
+# Model Technology ModelSim SE-64 vlog 10.4 Compiler 2014.12 Dec  3 2014
+# Start time: 19:19:11 on Oct 03,2026
+# vlog -work sim/work_secondary_frame_store_alignment src/memory/anlogic_frame_store.v 
+# -- Compiling module anlogic_frame_store
+# 
+# Top level modules:
+# 	anlogic_frame_store
+# End time: 19:19:11 on Oct 03,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# vsim 
+# Start time: 19:19:11 on Oct 03,2026
+# ** Note: (vsim-8009) Loading existing optimized design _opt1
+# 
+# Loading work.tb_secondary_frame_store_alignment(fast)
+# Loading work.anlogic_frame_store(fast)
+# Loading work.frame_read_write(fast)
+# Loading work.wfifo_32_32_512(fast)
+# Loading work.fifo_cross_domain_addr_process_al_wfifo_32_32_512(fast)
+# Loading work.ram_infer_wfifo_32_32_512(fast)
+# Loading work.frame_fifo_write(fast)
+# Loading work.rfifo_32_32_512(fast)
+# Loading work.fifo_cross_domain_addr_process_al_rfifo_32_32_512(fast)
+# Loading work.ram_infer_rfifo_32_32_512(fast)
+# Loading work.frame_fifo_read(fast)
+# Loading work.sdram(fast)
+# BOUNDARY base=0 word=0 actual=a5000000
+# BOUNDARY base=0 word=639 actual=a500027f
+# BOUNDARY base=0 word=640 actual=a5000000
+# BOUNDARY base=0 word=1279 actual=a500027f
+# BOUNDARY base=1024 word=0 actual=a5000400
+# BOUNDARY base=1024 word=639 actual=a500067f
+# BOUNDARY base=1024 word=640 actual=a5000400
+# BOUNDARY base=1024 word=1279 actual=a500067f
+# PASS wrapper regression EXPECT_ERROR=0 errors=0 frames=4 words=2560
+# ** Note: $finish    : sim/tb_secondary_frame_store_alignment.v(72)
+#    Time: 74083704 ps  Iteration: 1  Instance: /tb_secondary_frame_store_alignment
+# Break in Module tb_secondary_frame_store_alignment at sim/tb_secondary_frame_store_alignment.v line 72
+# Stopped at sim/tb_secondary_frame_store_alignment.v line 72
+
+===== sim/run_secondary_main5e_codec_help_sync.log | 1 PASS | SHA256 3bf0c066198b66c31954051e598e7560ae8df57a42e78fc895881df9f852ac76 =====
+# do {work_secondary_sync_scripts\run_secondary_main5e_codec.do}
+# Model Technology ModelSim SE-64 vlog 10.4 Compiler 2014.12 Dec  3 2014
+# Start time: 19:18:55 on Oct 03,2026
+# vlog -work work_secondary_main5e_codec_help_sync ../src/ethernet/mbp1_codec.v tb_mbp1_codec.v 
+# -- Compiling module mbp1_codec
+# -- Compiling module tb_mbp1_codec
+# 
+# Top level modules:
+# 	tb_mbp1_codec
+# End time: 19:18:55 on Oct 03,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# vsim -c -do "work_secondary_sync_scripts\run_secondary_main5e_codec.do" -l run_secondary_main5e_codec_help_sync.log 
+# Start time: 19:18:56 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# //  ModelSim SE-64 10.4 Dec  3 2014 
+# //
+# //  Copyright 1991-2014 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  THIS WORK CONTAINS TRADE SECRET AND PROPRIETARY INFORMATION
+# //  WHICH IS THE PROPERTY OF MENTOR GRAPHICS CORPORATION OR ITS
+# //  LICENSORS AND IS SUBJECT TO LICENSE TERMS.
+# //  THIS DOCUMENT CONTAINS TRADE SECRETS AND COMMERCIAL OR FINANCIAL
+# //  INFORMATION THAT ARE PRIVILEGED, CONFIDENTIAL, AND EXEMPT FROM
+# //  DISCLOSURE UNDER THE FREEDOM OF INFORMATION ACT, 5 U.S.C. SECTION 552.
+# //  FURTHERMORE, THIS INFORMATION IS PROHIBITED FROM DISCLOSURE UNDER
+# //  THE TRADE SECRETS ACT, 18 U.S.C. SECTION 1905.
+# //
+# Loading work.tb_mbp1_codec(fast)
+# PASS: MBP1 codec CRC, encode/decode and bad packet rejection
+# ** Note: $finish    : tb_mbp1_codec.v(172)
+#    Time: 7370 ns  Iteration: 1  Instance: /tb_mbp1_codec
+# Break at tb_mbp1_codec.v line 172
+# Stopped at tb_mbp1_codec.v line 172
+# End time: 19:18:59 on Oct 03,2026, Elapsed time: 0:00:03
+# Errors: 0, Warnings: 0
+
+===== sim/run_secondary_main5e_endpoint_help_sync.log | 1 PASS | SHA256 757e84e3aebd677403ef1f35f45b1b8c28544a94a4659b8d2f86368c23d3db9f =====
+# do {work_secondary_sync_scripts\run_secondary_main5e_endpoint.do}
+# Model Technology ModelSim SE-64 vlog 10.4 Compiler 2014.12 Dec  3 2014
+# Start time: 19:19:01 on Oct 03,2026
+# vlog -work work_secondary_main5e_endpoint_help_sync ../src/ethernet/mbp1_codec.v ../src/ethernet/mbp1_secondary_endpoint.v tb_mbp1_secondary_endpoint.v 
+# -- Compiling module mbp1_codec
+# -- Compiling module mbp1_secondary_endpoint
+# -- Compiling module tb_mbp1_secondary_endpoint
+# 
+# Top level modules:
+# 	tb_mbp1_secondary_endpoint
+# End time: 19:19:01 on Oct 03,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# vsim -c -do "work_secondary_sync_scripts\run_secondary_main5e_endpoint.do" -l run_secondary_main5e_endpoint_help_sync.log 
+# Start time: 19:19:02 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# //  ModelSim SE-64 10.4 Dec  3 2014 
+# //
+# //  Copyright 1991-2014 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  THIS WORK CONTAINS TRADE SECRET AND PROPRIETARY INFORMATION
+# //  WHICH IS THE PROPERTY OF MENTOR GRAPHICS CORPORATION OR ITS
+# //  LICENSORS AND IS SUBJECT TO LICENSE TERMS.
+# //  THIS DOCUMENT CONTAINS TRADE SECRETS AND COMMERCIAL OR FINANCIAL
+# //  INFORMATION THAT ARE PRIVILEGED, CONFIDENTIAL, AND EXEMPT FROM
+# //  DISCLOSURE UNDER THE FREEDOM OF INFORMATION ACT, 5 U.S.C. SECTION 552.
+# //  FURTHERMORE, THIS INFORMATION IS PROHIBITED FROM DISCLOSURE UNDER
+# //  THE TRADE SECRETS ACT, 18 U.S.C. SECTION 1905.
+# //
+# Loading work.tb_mbp1_secondary_endpoint(fast)
+# PASS tb_mbp1_secondary_endpoint
+# ** Note: $finish    : tb_mbp1_secondary_endpoint.v(292)
+#    Time: 10361300 ns  Iteration: 1  Instance: /tb_mbp1_secondary_endpoint
+# Break at tb_mbp1_secondary_endpoint.v line 292
+# Stopped at tb_mbp1_secondary_endpoint.v line 292
+# End time: 19:19:05 on Oct 03,2026, Elapsed time: 0:00:03
+# Errors: 0, Warnings: 0
+
+===== sim/run_secondary_main5e_fixed_udp_help_sync.log | 2 PASS | SHA256 4e44053b8f492c67945e11dfc42bb768c9aad3a01bd42b3b110ca8357a557020 =====
+# do {work_secondary_sync_scripts\run_secondary_main5e_fixed_udp.do}
+# Model Technology ModelSim SE-64 vlog 10.4 Compiler 2014.12 Dec  3 2014
+# Start time: 19:19:08 on Oct 03,2026
+# vlog -work work_secondary_main5e_udp_help_sync ../src/ethernet/mbp1_fixed_udp.v tb_mbp1_fixed_udp.v 
+# -- Compiling module mbp1_fixed_udp
+# -- Compiling module tb_mbp1_fixed_udp
+# 
+# Top level modules:
+# 	tb_mbp1_fixed_udp
+# End time: 19:19:08 on Oct 03,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# vsim -c -do "work_secondary_sync_scripts\run_secondary_main5e_fixed_udp.do" -l run_secondary_main5e_fixed_udp_help_sync.log 
+# Start time: 19:19:08 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# //  ModelSim SE-64 10.4 Dec  3 2014 
+# //
+# //  Copyright 1991-2014 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  THIS WORK CONTAINS TRADE SECRET AND PROPRIETARY INFORMATION
+# //  WHICH IS THE PROPERTY OF MENTOR GRAPHICS CORPORATION OR ITS
+# //  LICENSORS AND IS SUBJECT TO LICENSE TERMS.
+# //  THIS DOCUMENT CONTAINS TRADE SECRETS AND COMMERCIAL OR FINANCIAL
+# //  INFORMATION THAT ARE PRIVILEGED, CONFIDENTIAL, AND EXEMPT FROM
+# //  DISCLOSURE UNDER THE FREEDOM OF INFORMATION ACT, 5 U.S.C. SECTION 552.
+# //  FURTHERMORE, THIS INFORMATION IS PROHIBITED FROM DISCLOSURE UNDER
+# //  THE TRADE SECRETS ACT, 18 U.S.C. SECTION 1905.
+# //
+# Loading work.tb_mbp1_fixed_udp(fast)
+# PASS tb_mbp1_fixed_udp
+# ** Note: $finish    : tb_mbp1_fixed_udp.v(161)
+#    Time: 3212 ns  Iteration: 2  Instance: /tb_mbp1_fixed_udp
+# Break at tb_mbp1_fixed_udp.v line 161
+# Stopped at tb_mbp1_fixed_udp.v line 161
+# vsim 
+# Start time: 19:19:12 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# Loading work.tb_mbp1_fixed_udp(fast)
+# PASS tb_mbp1_fixed_udp
+# ** Note: $finish    : tb_mbp1_fixed_udp.v(161)
+#    Time: 3996 ns  Iteration: 2  Instance: /tb_mbp1_fixed_udp
+# Break at tb_mbp1_fixed_udp.v line 161
+# Stopped at tb_mbp1_fixed_udp.v line 161
+# End time: 19:19:16 on Oct 03,2026, Elapsed time: 0:00:04
+# Errors: 0, Warnings: 0
+
+===== sim/run_secondary_main5e_keys_help_sync.log | 1 PASS | SHA256 d3cd47022054b1e9e36c9b1dfe4a959dc059c81ac49271f1bd2d97f7fa4cb8bb =====
+# do {work_secondary_sync_scripts\run_secondary_main5e_keys.do}
+# Model Technology ModelSim SE-64 vlog 10.4 Compiler 2014.12 Dec  3 2014
+# Start time: 19:18:21 on Oct 03,2026
+# vlog -work work_secondary_main5e_keys_help_sync ../src/input/key_debounce.v ../src/secondary/secondary_main5e_keys.v tb_secondary_main5e_keys.v 
+# -- Compiling module key_debounce
+# -- Compiling module secondary_main5e_keys
+# -- Compiling module tb_secondary_main5e_keys
+# 
+# Top level modules:
+# 	tb_secondary_main5e_keys
+# End time: 19:18:21 on Oct 03,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# vsim -c -do "work_secondary_sync_scripts\run_secondary_main5e_keys.do" -l run_secondary_main5e_keys_help_sync.log 
+# Start time: 19:18:21 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# //  ModelSim SE-64 10.4 Dec  3 2014 
+# //
+# //  Copyright 1991-2014 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  THIS WORK CONTAINS TRADE SECRET AND PROPRIETARY INFORMATION
+# //  WHICH IS THE PROPERTY OF MENTOR GRAPHICS CORPORATION OR ITS
+# //  LICENSORS AND IS SUBJECT TO LICENSE TERMS.
+# //  THIS DOCUMENT CONTAINS TRADE SECRETS AND COMMERCIAL OR FINANCIAL
+# //  INFORMATION THAT ARE PRIVILEGED, CONFIDENTIAL, AND EXEMPT FROM
+# //  DISCLOSURE UNDER THE FREEDOM OF INFORMATION ACT, 5 U.S.C. SECTION 552.
+# //  FURTHERMORE, THIS INFORMATION IS PROHIBITED FROM DISCLOSURE UNDER
+# //  THE TRADE SECRETS ACT, 18 U.S.C. SECTION 1905.
+# //
+# Loading work.tb_secondary_main5e_keys(fast)
+# PASS tb_secondary_main5e_keys
+# ** Note: $finish    : tb_secondary_main5e_keys.v(188)
+#    Time: 1180 ns  Iteration: 1  Instance: /tb_secondary_main5e_keys
+# Break at tb_secondary_main5e_keys.v line 188
+# Stopped at tb_secondary_main5e_keys.v line 188
+# End time: 19:18:25 on Oct 03,2026, Elapsed time: 0:00:04
+# Errors: 0, Warnings: 0
+
+===== sim/run_secondary_main5e_status_adapter_help_sync.log | 1 PASS | SHA256 28f207bd9b157faec3b960b94d21ab367b0279c3b273e4dae668b13f040ad144 =====
+# do {work_secondary_sync_scripts\run_secondary_main5e_status_adapter.do}
+# Model Technology ModelSim SE-64 vlog 10.4 Compiler 2014.12 Dec  3 2014
+# Start time: 19:18:27 on Oct 03,2026
+# vlog -work work_secondary_main5e_status_help_sync ../src/secondary/secondary_main5e_status_adapter.v ../src/secondary/secondary_carousel_controller.v tb_secondary_main5e_status_adapter.v 
+# -- Compiling module secondary_main5e_status_adapter
+# -- Compiling module secondary_carousel_controller
+# -- Compiling module tb_secondary_main5e_status_adapter
+# 
+# Top level modules:
+# 	tb_secondary_main5e_status_adapter
+# End time: 19:18:27 on Oct 03,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# vsim -c -do "work_secondary_sync_scripts\run_secondary_main5e_status_adapter.do" -l run_secondary_main5e_status_adapter_help_sync.log 
+# Start time: 19:18:28 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# //  ModelSim SE-64 10.4 Dec  3 2014 
+# //
+# //  Copyright 1991-2014 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  THIS WORK CONTAINS TRADE SECRET AND PROPRIETARY INFORMATION
+# //  WHICH IS THE PROPERTY OF MENTOR GRAPHICS CORPORATION OR ITS
+# //  LICENSORS AND IS SUBJECT TO LICENSE TERMS.
+# //  THIS DOCUMENT CONTAINS TRADE SECRETS AND COMMERCIAL OR FINANCIAL
+# //  INFORMATION THAT ARE PRIVILEGED, CONFIDENTIAL, AND EXEMPT FROM
+# //  DISCLOSURE UNDER THE FREEDOM OF INFORMATION ACT, 5 U.S.C. SECTION 552.
+# //  FURTHERMORE, THIS INFORMATION IS PROHIBITED FROM DISCLOSURE UNDER
+# //  THE TRADE SECRETS ACT, 18 U.S.C. SECTION 1905.
+# //
+# Loading work.tb_secondary_main5e_status_adapter(fast)
+# PASS tb_secondary_main5e_status_adapter
+# ** Note: $finish    : tb_secondary_main5e_status_adapter.v(75)
+#    Time: 730 ns  Iteration: 1  Instance: /tb_secondary_main5e_status_adapter
+# Break at tb_secondary_main5e_status_adapter.v line 75
+# Stopped at tb_secondary_main5e_status_adapter.v line 75
+# End time: 19:18:31 on Oct 03,2026, Elapsed time: 0:00:03
+# Errors: 0, Warnings: 0
+
+===== sim/run_secondary_local_help_sync.log | 3 PASS | SHA256 0884fda806ab691142e497a0f65e79212abb04e561d4a00a671eb60741f7ccf3 =====
+# do {work_secondary_sync_scripts\run_secondary_local.do}
+# Model Technology ModelSim SE-64 vlog 10.4 Compiler 2014.12 Dec  3 2014
+# Start time: 19:18:33 on Oct 03,2026
+# vlog -work work_secondary_local_help_sync ../src/secondary/secondary_carousel_controller.v ../src/secondary/secondary_page_overlay.v tb_secondary_carousel_controller.v tb_secondary_stream_carousel.v tb_secondary_page_overlay.v 
+# -- Compiling module secondary_carousel_controller
+# -- Compiling module secondary_page_overlay
+# -- Compiling module tb_secondary_carousel_controller
+# -- Compiling module tb_secondary_stream_carousel
+# -- Compiling module tb_secondary_page_overlay
+# 
+# Top level modules:
+# 	tb_secondary_carousel_controller
+# 	tb_secondary_stream_carousel
+# 	tb_secondary_page_overlay
+# End time: 19:18:33 on Oct 03,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# vsim -c -do "work_secondary_sync_scripts\run_secondary_local.do" -l run_secondary_local_help_sync.log 
+# Start time: 19:18:33 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# //  ModelSim SE-64 10.4 Dec  3 2014 
+# //
+# //  Copyright 1991-2014 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  THIS WORK CONTAINS TRADE SECRET AND PROPRIETARY INFORMATION
+# //  WHICH IS THE PROPERTY OF MENTOR GRAPHICS CORPORATION OR ITS
+# //  LICENSORS AND IS SUBJECT TO LICENSE TERMS.
+# //  THIS DOCUMENT CONTAINS TRADE SECRETS AND COMMERCIAL OR FINANCIAL
+# //  INFORMATION THAT ARE PRIVILEGED, CONFIDENTIAL, AND EXEMPT FROM
+# //  DISCLOSURE UNDER THE FREEDOM OF INFORMATION ACT, 5 U.S.C. SECTION 552.
+# //  FURTHERMORE, THIS INFORMATION IS PROHIBITED FROM DISCLOSURE UNDER
+# //  THE TRADE SECRETS ACT, 18 U.S.C. SECTION 1905.
+# //
+# Loading work.tb_secondary_carousel_controller(fast)
+# PASS: SECONDARY hero carousel, confirmed information page, emergency and link timeout
+# ** Note: $finish    : tb_secondary_carousel_controller.v(159)
+#    Time: 1260 ns  Iteration: 1  Instance: /tb_secondary_carousel_controller
+# Break at tb_secondary_carousel_controller.v line 159
+# Stopped at tb_secondary_carousel_controller.v line 159
+# vsim 
+# Start time: 19:18:37 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# Loading work.tb_secondary_stream_carousel(fast)
+# PASS: streaming carousel waits for cached pages and holds information page
+# ** Note: $finish    : tb_secondary_stream_carousel.v(101)
+#    Time: 726 ns  Iteration: 0  Instance: /tb_secondary_stream_carousel
+# Break at tb_secondary_stream_carousel.v line 101
+# Stopped at tb_secondary_stream_carousel.v line 101
+# vsim 
+# Start time: 19:18:40 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# Loading work.tb_secondary_page_overlay(fast)
+# PASS: SECONDARY emergency bitmap, wait and media placeholders
+# ** Note: $finish    : tb_secondary_page_overlay.v(100)
+#    Time: 927 ns  Iteration: 0  Instance: /tb_secondary_page_overlay
+# Break at tb_secondary_page_overlay.v line 100
+# Stopped at tb_secondary_page_overlay.v line 100
+# End time: 19:18:43 on Oct 03,2026, Elapsed time: 0:00:03
+# Errors: 0, Warnings: 0
+
+===== sim/run_secondary_transition_help_sync.log | 2 PASS | SHA256 18010d759c08cceae5c8af64db246ae91cbc76986a665bf89824876a290462b0 =====
+# do {work_secondary_sync_scripts\run_secondary_transition.do}
+# Model Technology ModelSim SE-64 vlog 10.4 Compiler 2014.12 Dec  3 2014
+# Start time: 19:18:46 on Oct 03,2026
+# vlog -work work_secondary_transition_help_sync ../src/video/transition_theme_controller.v ../src/video/video_transition_mask.v ../src/video/video_fade.v tb_transition_theme_controller.v tb_video_transition_mask.v 
+# -- Compiling module transition_theme_controller
+# -- Compiling module video_transition_mask
+# -- Compiling module video_fade
+# -- Compiling module tb_transition_theme_controller
+# -- Compiling module tb_video_transition_mask
+# 
+# Top level modules:
+# 	tb_transition_theme_controller
+# 	tb_video_transition_mask
+# End time: 19:18:46 on Oct 03,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# vsim -c -do "work_secondary_sync_scripts\run_secondary_transition.do" -l run_secondary_transition_help_sync.log 
+# Start time: 19:18:46 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# //  ModelSim SE-64 10.4 Dec  3 2014 
+# //
+# //  Copyright 1991-2014 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  THIS WORK CONTAINS TRADE SECRET AND PROPRIETARY INFORMATION
+# //  WHICH IS THE PROPERTY OF MENTOR GRAPHICS CORPORATION OR ITS
+# //  LICENSORS AND IS SUBJECT TO LICENSE TERMS.
+# //  THIS DOCUMENT CONTAINS TRADE SECRETS AND COMMERCIAL OR FINANCIAL
+# //  INFORMATION THAT ARE PRIVILEGED, CONFIDENTIAL, AND EXEMPT FROM
+# //  DISCLOSURE UNDER THE FREEDOM OF INFORMATION ACT, 5 U.S.C. SECTION 552.
+# //  FURTHERMORE, THIS INFORMATION IS PROHIBITED FROM DISCLOSURE UNDER
+# //  THE TRADE SECRETS ACT, 18 U.S.C. SECTION 1905.
+# //
+# Loading work.tb_transition_theme_controller(fast)
+# PASS phase4 theme mapping and Demo rotation
+# ** Note: $finish    : tb_transition_theme_controller.v(34)
+#    Time: 15 ns  Iteration: 0  Instance: /tb_transition_theme_controller
+# Break at tb_transition_theme_controller.v line 34
+# Stopped at tb_transition_theme_controller.v line 34
+# vsim 
+# Start time: 19:18:50 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# Loading work.tb_video_transition_mask(fast)
+# PASS: phase3 transition mask close/midpoint/reveal
+# ** Note: $finish    : tb_video_transition_mask.v(143)
+#    Time: 142 ns  Iteration: 0  Instance: /tb_video_transition_mask
+# Break at tb_video_transition_mask.v line 143
+# Stopped at tb_video_transition_mask.v line 143
+# End time: 19:18:53 on Oct 03,2026, Elapsed time: 0:00:03
+# Errors: 0, Warnings: 0
+
+===== sim/run_secondary_native720_media_help_sync.log | 2 PASS | SHA256 ecec2dda97704b06cf5a54db976db34b4de25225bea2694804f4a2c8652761be =====
+# do {work_secondary_sync_scripts\run_secondary_native720_media.do}
+# Model Technology ModelSim SE-64 vlog 10.4 Compiler 2014.12 Dec  3 2014
+# Start time: 19:20:52 on Oct 03,2026
+# vlog "+define+SIM" -work work_secondary_native720_media_help_sync ../src/storage/al_dp_ram16.v ../src/storage/adaptive_row_ram.v ../src/storage/fat32_image_loader.v ../src/storage/bmp_row_buffer.v ../src/storage/rgb565_stream_packer_ready.v ../src/storage/bmp_sdram_row_writer.v tb_fat32_bmp_adaptive_loader.v 
+# -- Compiling module al_dp_ram16
+# -- Compiling module EG_LOGIC_BRAM
+# -- Compiling module adaptive_row_ram
+# -- Compiling module fat32_image_loader
+# -- Compiling module bmp_row_buffer
+# -- Compiling module rgb565_stream_packer_ready
+# -- Compiling module bmp_sdram_row_writer
+# -- Compiling module tb_fat32_bmp_adaptive_loader
+# 
+# Top level modules:
+# 	tb_fat32_bmp_adaptive_loader
+# End time: 19:20:53 on Oct 03,2026, Elapsed time: 0:00:01
+# Errors: 0, Warnings: 0
+# vsim -c -do "work_secondary_sync_scripts\run_secondary_native720_media.do" -l run_secondary_native720_media_help_sync.log 
+# Start time: 19:20:53 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# //  ModelSim SE-64 10.4 Dec  3 2014 
+# //
+# //  Copyright 1991-2014 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  THIS WORK CONTAINS TRADE SECRET AND PROPRIETARY INFORMATION
+# //  WHICH IS THE PROPERTY OF MENTOR GRAPHICS CORPORATION OR ITS
+# //  LICENSORS AND IS SUBJECT TO LICENSE TERMS.
+# //  THIS DOCUMENT CONTAINS TRADE SECRETS AND COMMERCIAL OR FINANCIAL
+# //  INFORMATION THAT ARE PRIVILEGED, CONFIDENTIAL, AND EXEMPT FROM
+# //  DISCLOSURE UNDER THE FREEDOM OF INFORMATION ACT, 5 U.S.C. SECTION 552.
+# //  FURTHERMORE, THIS INFORMATION IS PROHIBITED FROM DISCLOSURE UNDER
+# //  THE TRADE SECRETS ACT, 18 U.S.C. SECTION 1905.
+# //
+# Loading work.tb_fat32_bmp_adaptive_loader(fast)
+# Adaptive BMP: PASS source=1280x720 top_down=0 row_padding=0 output=1280x720
+# ** Note: $finish    : tb_fat32_bmp_adaptive_loader.v(613)
+#    Time: 116606730 ns  Iteration: 1  Instance: /tb_fat32_bmp_adaptive_loader
+# Break at tb_fat32_bmp_adaptive_loader.v line 613
+# Stopped at tb_fat32_bmp_adaptive_loader.v line 613
+# vsim 
+# Start time: 19:21:01 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# Loading work.tb_fat32_bmp_adaptive_loader(fast)
+# Adaptive BMP: PASS source=1280x720 top_down=0 row_padding=0 output=1280x720
+# ** Note: $finish    : tb_fat32_bmp_adaptive_loader.v(613)
+#    Time: 116606730 ns  Iteration: 1  Instance: /tb_fat32_bmp_adaptive_loader
+# Break at tb_fat32_bmp_adaptive_loader.v line 613
+# Stopped at tb_fat32_bmp_adaptive_loader.v line 613
+# End time: 19:21:10 on Oct 03,2026, Elapsed time: 0:00:09
+# Errors: 0, Warnings: 0
+
+===== sim/run_secondary_fixed720_help_sync.log | 8 PASS | SHA256 6aac739e0ee1de09c43204bbc31c3bb6e55b91b334143fcbb36b4a4271a45bce =====
+# do {work_secondary_sync_scripts\run_secondary_fixed720.do}
+# Model Technology ModelSim SE-64 vlog 10.4 Compiler 2014.12 Dec  3 2014
+# Start time: 19:19:58 on Oct 03,2026
+# vlog "+define+SIM" -work work_secondary_fixed720_help_sync ../src/storage/al_dp_ram16.v ../src/storage/adaptive_row_ram.v ../src/storage/fat32_image_loader.v ../src/storage/bmp_row_buffer.v ../src/storage/rgb565_stream_packer_ready.v ../src/storage/bmp_sdram_row_writer.v tb_fat32_bmp_adaptive_loader.v 
+# -- Compiling module al_dp_ram16
+# -- Compiling module EG_LOGIC_BRAM
+# -- Compiling module adaptive_row_ram
+# -- Compiling module fat32_image_loader
+# -- Compiling module bmp_row_buffer
+# -- Compiling module rgb565_stream_packer_ready
+# -- Compiling module bmp_sdram_row_writer
+# -- Compiling module tb_fat32_bmp_adaptive_loader
+# 
+# Top level modules:
+# 	tb_fat32_bmp_adaptive_loader
+# End time: 19:19:58 on Oct 03,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# -gFIXED_MODE=1 -gIMAGE_W=1280 -gIMAGE_H=720 -gBASE_W=1280 -gBASE_H=720 -gHIRES=0 -gIMAGE_ADDR_BITS=21 -gSOURCE_W=1280 -gSOURCE_H=720 -gBMP_MAX_WIDTH=1280 -gBMP_MAX_HEIGHT=720 -gDISK_BYTES=8388608 -gMULTI_IMAGE_BMP=1
+# vsim -c -do "work_secondary_sync_scripts\run_secondary_fixed720.do" -l run_secondary_fixed720_help_sync.log 
+# Start time: 19:19:58 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# ** Note: (vopt-143) Recognized 2 FSMs in module "fat32_image_loader(fast)".
+# 
+# ** Note: (vopt-143) Recognized 1 FSM in module "bmp_sdram_row_writer(fast)".
+# 
+# //  ModelSim SE-64 10.4 Dec  3 2014 
+# //
+# //  Copyright 1991-2014 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  THIS WORK CONTAINS TRADE SECRET AND PROPRIETARY INFORMATION
+# //  WHICH IS THE PROPERTY OF MENTOR GRAPHICS CORPORATION OR ITS
+# //  LICENSORS AND IS SUBJECT TO LICENSE TERMS.
+# //  THIS DOCUMENT CONTAINS TRADE SECRETS AND COMMERCIAL OR FINANCIAL
+# //  INFORMATION THAT ARE PRIVILEGED, CONFIDENTIAL, AND EXEMPT FROM
+# //  DISCLOSURE UNDER THE FREEDOM OF INFORMATION ACT, 5 U.S.C. SECTION 552.
+# //  FURTHERMORE, THIS INFORMATION IS PROHIBITED FROM DISCLOSURE UNDER
+# //  THE TRADE SECRETS ACT, 18 U.S.C. SECTION 1905.
+# //
+# Loading work.tb_fat32_bmp_adaptive_loader(fast)
+# Loading work.fat32_image_loader(fast)
+# Loading work.bmp_row_buffer(fast)
+# Loading work.adaptive_row_ram(fast)
+# Loading work.EG_LOGIC_BRAM(fast)
+# Loading work.bmp_sdram_row_writer(fast)
+# Loading work.rgb565_stream_packer_ready(fast)
+# Adaptive BMP: PASS source=1280x720 top_down=0 row_padding=0 output=1280x720
+# ** Note: $finish    : tb_fat32_bmp_adaptive_loader.v(613)
+#    Time: 74971230 ns  Iteration: 1  Instance: /tb_fat32_bmp_adaptive_loader
+# Break in Module tb_fat32_bmp_adaptive_loader at tb_fat32_bmp_adaptive_loader.v line 613
+# Stopped at tb_fat32_bmp_adaptive_loader.v line 613
+# vsim 
+# Start time: 19:20:09 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# ** Note: (vopt-143) Recognized 2 FSMs in module "fat32_image_loader(fast)".
+# 
+# ** Note: (vopt-143) Recognized 1 FSM in module "bmp_sdram_row_writer(fast)".
+# 
+# Loading work.tb_fat32_bmp_adaptive_loader(fast)
+# Loading work.fat32_image_loader(fast)
+# Loading work.bmp_row_buffer(fast)
+# Loading work.adaptive_row_ram(fast)
+# Loading work.EG_LOGIC_BRAM(fast)
+# Loading work.bmp_sdram_row_writer(fast)
+# Loading work.rgb565_stream_packer_ready(fast)
+# Adaptive BMP: PASS source=1280x720 top_down=1 row_padding=0 output=1280x720
+# ** Note: $finish    : tb_fat32_bmp_adaptive_loader.v(613)
+#    Time: 81361050 ns  Iteration: 1  Instance: /tb_fat32_bmp_adaptive_loader
+# Break in Module tb_fat32_bmp_adaptive_loader at tb_fat32_bmp_adaptive_loader.v line 613
+# Stopped at tb_fat32_bmp_adaptive_loader.v line 613
+# vsim 
+# Start time: 19:20:19 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# ** Note: (vopt-143) Recognized 2 FSMs in module "fat32_image_loader(fast)".
+# 
+# ** Note: (vopt-143) Recognized 1 FSM in module "bmp_sdram_row_writer(fast)".
+# 
+# Loading work.tb_fat32_bmp_adaptive_loader(fast)
+# Loading work.fat32_image_loader(fast)
+# Loading work.bmp_row_buffer(fast)
+# Loading work.adaptive_row_ram(fast)
+# Loading work.EG_LOGIC_BRAM(fast)
+# Loading work.bmp_sdram_row_writer(fast)
+# Loading work.rgb565_stream_packer_ready(fast)
+# Adaptive BMP: PASS source=1280x720 top_down=0 row_padding=0 output=1280x720
+# ** Note: $finish    : tb_fat32_bmp_adaptive_loader.v(613)
+#    Time: 74971230 ns  Iteration: 1  Instance: /tb_fat32_bmp_adaptive_loader
+# Break in Module tb_fat32_bmp_adaptive_loader at tb_fat32_bmp_adaptive_loader.v line 613
+# Stopped at tb_fat32_bmp_adaptive_loader.v line 613
+# vsim 
+# Start time: 19:20:31 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# ** Note: (vopt-143) Recognized 2 FSMs in module "fat32_image_loader(fast)".
+# 
+# ** Note: (vopt-143) Recognized 1 FSM in module "bmp_sdram_row_writer(fast)".
+# 
+# Loading work.tb_fat32_bmp_adaptive_loader(fast)
+# Loading work.fat32_image_loader(fast)
+# Loading work.bmp_row_buffer(fast)
+# Loading work.adaptive_row_ram(fast)
+# Loading work.EG_LOGIC_BRAM(fast)
+# Loading work.bmp_sdram_row_writer(fast)
+# Loading work.rgb565_stream_packer_ready(fast)
+# Adaptive BMP invalid: PASS bpp=24 compression=0 source=960x540
+# ** Note: $finish    : tb_fat32_bmp_adaptive_loader.v(596)
+#    Time: 32130 ns  Iteration: 1  Instance: /tb_fat32_bmp_adaptive_loader
+# Break in Module tb_fat32_bmp_adaptive_loader at tb_fat32_bmp_adaptive_loader.v line 596
+# Stopped at tb_fat32_bmp_adaptive_loader.v line 596
+# vsim 
+# Start time: 19:20:34 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# ** Note: (vopt-143) Recognized 2 FSMs in module "fat32_image_loader(fast)".
+# 
+# ** Note: (vopt-143) Recognized 1 FSM in module "bmp_sdram_row_writer(fast)".
+# 
+# Loading work.tb_fat32_bmp_adaptive_loader(fast)
+# Loading work.fat32_image_loader(fast)
+# Loading work.bmp_row_buffer(fast)
+# Loading work.adaptive_row_ram(fast)
+# Loading work.EG_LOGIC_BRAM(fast)
+# Loading work.bmp_sdram_row_writer(fast)
+# Loading work.rgb565_stream_packer_ready(fast)
+# Adaptive BMP invalid: PASS bpp=24 compression=0 source=1280x720
+# ** Note: $finish    : tb_fat32_bmp_adaptive_loader.v(596)
+#    Time: 32130 ns  Iteration: 1  Instance: /tb_fat32_bmp_adaptive_loader
+# Break in Module tb_fat32_bmp_adaptive_loader at tb_fat32_bmp_adaptive_loader.v line 596
+# Stopped at tb_fat32_bmp_adaptive_loader.v line 596
+# vsim 
+# Start time: 19:20:38 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# ** Note: (vopt-143) Recognized 2 FSMs in module "fat32_image_loader(fast)".
+# 
+# ** Note: (vopt-143) Recognized 1 FSM in module "bmp_sdram_row_writer(fast)".
+# 
+# Loading work.tb_fat32_bmp_adaptive_loader(fast)
+# Loading work.fat32_image_loader(fast)
+# Loading work.bmp_row_buffer(fast)
+# Loading work.adaptive_row_ram(fast)
+# Loading work.EG_LOGIC_BRAM(fast)
+# Loading work.bmp_sdram_row_writer(fast)
+# Loading work.rgb565_stream_packer_ready(fast)
+# Adaptive BMP invalid: PASS bpp=16 compression=0 source=1280x720
+# ** Note: $finish    : tb_fat32_bmp_adaptive_loader.v(596)
+#    Time: 32130 ns  Iteration: 1  Instance: /tb_fat32_bmp_adaptive_loader
+# Break in Module tb_fat32_bmp_adaptive_loader at tb_fat32_bmp_adaptive_loader.v line 596
+# Stopped at tb_fat32_bmp_adaptive_loader.v line 596
+# vsim 
+# Start time: 19:20:42 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# ** Note: (vopt-143) Recognized 2 FSMs in module "fat32_image_loader(fast)".
+# 
+# ** Note: (vopt-143) Recognized 1 FSM in module "bmp_sdram_row_writer(fast)".
+# 
+# Loading work.tb_fat32_bmp_adaptive_loader(fast)
+# Loading work.fat32_image_loader(fast)
+# Loading work.bmp_row_buffer(fast)
+# Loading work.adaptive_row_ram(fast)
+# Loading work.EG_LOGIC_BRAM(fast)
+# Loading work.bmp_sdram_row_writer(fast)
+# Loading work.rgb565_stream_packer_ready(fast)
+# Adaptive BMP invalid: PASS bpp=24 compression=1 source=1280x720
+# ** Note: $finish    : tb_fat32_bmp_adaptive_loader.v(596)
+#    Time: 32130 ns  Iteration: 1  Instance: /tb_fat32_bmp_adaptive_loader
+# Break in Module tb_fat32_bmp_adaptive_loader at tb_fat32_bmp_adaptive_loader.v line 596
+# Stopped at tb_fat32_bmp_adaptive_loader.v line 596
+# vsim 
+# Start time: 19:20:46 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# ** Note: (vopt-143) Recognized 2 FSMs in module "fat32_image_loader(fast)".
+# 
+# ** Note: (vopt-143) Recognized 1 FSM in module "bmp_sdram_row_writer(fast)".
+# 
+# Loading work.tb_fat32_bmp_adaptive_loader(fast)
+# Loading work.fat32_image_loader(fast)
+# Loading work.bmp_row_buffer(fast)
+# Loading work.adaptive_row_ram(fast)
+# Loading work.EG_LOGIC_BRAM(fast)
+# Loading work.bmp_sdram_row_writer(fast)
+# Loading work.rgb565_stream_packer_ready(fast)
+# Adaptive BMP invalid: PASS bpp=24 compression=0 source=1280x720
+# ** Note: $finish    : tb_fat32_bmp_adaptive_loader.v(596)
+#    Time: 32130 ns  Iteration: 1  Instance: /tb_fat32_bmp_adaptive_loader
+# Break in Module tb_fat32_bmp_adaptive_loader at tb_fat32_bmp_adaptive_loader.v line 596
+# Stopped at tb_fat32_bmp_adaptive_loader.v line 596
+
+===== sim/run_secondary_page_switch_help_sync.log | 1 PASS | SHA256 b9e8473a6359f4e17403253659ceccab60288ff026cd76bf9f7cc34d659cc5fc =====
+# do {work_secondary_sync_scripts\run_secondary_page_switch.do}
+# Model Technology ModelSim SE-64 vlog 10.4 Compiler 2014.12 Dec  3 2014
+# Start time: 19:19:19 on Oct 03,2026
+# vlog "+incdir+work_secondary_page_switch_help_sync" -work work_secondary_page_switch_help_sync tb_secondary_page_switch.v 
+# -- Compiling module tb_secondary_page_switch
+# 
+# Top level modules:
+# 	tb_secondary_page_switch
+# End time: 19:19:19 on Oct 03,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# vsim -c -do "work_secondary_sync_scripts\run_secondary_page_switch.do" -l run_secondary_page_switch_help_sync.log 
+# Start time: 19:19:19 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# //  ModelSim SE-64 10.4 Dec  3 2014 
+# //
+# //  Copyright 1991-2014 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  THIS WORK CONTAINS TRADE SECRET AND PROPRIETARY INFORMATION
+# //  WHICH IS THE PROPERTY OF MENTOR GRAPHICS CORPORATION OR ITS
+# //  LICENSORS AND IS SUBJECT TO LICENSE TERMS.
+# //  THIS DOCUMENT CONTAINS TRADE SECRETS AND COMMERCIAL OR FINANCIAL
+# //  INFORMATION THAT ARE PRIVILEGED, CONFIDENTIAL, AND EXEMPT FROM
+# //  DISCLOSURE UNDER THE FREEDOM OF INFORMATION ACT, 5 U.S.C. SECTION 552.
+# //  FURTHERMORE, THIS INFORMATION IS PROHIBITED FROM DISCLOSURE UNDER
+# //  THE TRADE SECRETS ACT, 18 U.S.C. SECTION 1905.
+# //
+# Loading work.tb_secondary_page_switch(fast)
+# PASS: production page FSM lecture fade, emergency direct/preemption, carousel preserved
+# ** Note: $finish    : tb_secondary_page_switch.v(100)
+#    Time: 63076 ns  Iteration: 0  Instance: /tb_secondary_page_switch
+# Break in Module tb_secondary_page_switch at tb_secondary_page_switch.v line 100
+# Stopped at tb_secondary_page_switch.v line 100
+# End time: 19:19:23 on Oct 03,2026, Elapsed time: 0:00:04
+# Errors: 0, Warnings: 0
+
+===== sim/run_secondary_help_help_sync.log | 3 PASS | SHA256 50c90afca9309c9c826b7464a402ae138817219d1abbe6b85513d44e1e261ef1 =====
+# do {work_secondary_sync_scripts\run_secondary_help.do}
+# Model Technology ModelSim SE-64 vlog 10.4 Compiler 2014.12 Dec  3 2014
+# Start time: 19:21:12 on Oct 03,2026
+# vlog "+define+SIM" "+incdir+.." -work work_secondary_help_help_sync ../src/secondary/secondary_help_overlay.v tb_secondary_help_overlay.v 
+# -- Compiling module secondary_help_overlay
+# -- Compiling module tb_secondary_help_overlay
+# 
+# Top level modules:
+# 	tb_secondary_help_overlay
+# End time: 19:21:12 on Oct 03,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# vsim -c -do "work_secondary_sync_scripts\run_secondary_help.do" -l run_secondary_help_help_sync.log 
+# Start time: 19:21:12 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# //  ModelSim SE-64 10.4 Dec  3 2014 
+# //
+# //  Copyright 1991-2014 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  THIS WORK CONTAINS TRADE SECRET AND PROPRIETARY INFORMATION
+# //  WHICH IS THE PROPERTY OF MENTOR GRAPHICS CORPORATION OR ITS
+# //  LICENSORS AND IS SUBJECT TO LICENSE TERMS.
+# //  THIS DOCUMENT CONTAINS TRADE SECRETS AND COMMERCIAL OR FINANCIAL
+# //  INFORMATION THAT ARE PRIVILEGED, CONFIDENTIAL, AND EXEMPT FROM
+# //  DISCLOSURE UNDER THE FREEDOM OF INFORMATION ACT, 5 U.S.C. SECTION 552.
+# //  FURTHERMORE, THIS INFORMATION IS PROHIBITED FROM DISCLOSURE UNDER
+# //  THE TRADE SECRETS ACT, 18 U.S.C. SECTION 1905.
+# //
+# Loading work.tb_secondary_help_overlay(fast)
+# Loading work.secondary_help_overlay(fast)
+# PASS help overlay: 3686400 pixels, native split glyphs, two columns, four groups, bottom status, emergency, frame switch
+# ** Note: $finish    : tb_secondary_help_overlay.v(126)
+#    Time: 73943276 ns  Iteration: 0  Instance: /tb_secondary_help_overlay
+# Break in Module tb_secondary_help_overlay at tb_secondary_help_overlay.v line 126
+# Stopped at tb_secondary_help_overlay.v line 126
+# Model Technology ModelSim SE-64 vlog 10.4 Compiler 2014.12 Dec  3 2014
+# Start time: 19:21:34 on Oct 03,2026
+# vlog "+define+SIM" -work work_secondary_help_help_sync ../src/storage/al_dp_ram16.v ../src/storage/adaptive_row_ram.v ../src/storage/fat32_image_loader.v ../src/storage/bmp_row_buffer.v ../src/storage/rgb565_stream_packer_ready.v ../src/storage/bmp_sdram_row_writer.v tb_fat32_bmp_adaptive_loader.v 
+# -- Compiling module al_dp_ram16
+# -- Compiling module EG_LOGIC_BRAM
+# -- Compiling module adaptive_row_ram
+# -- Compiling module fat32_image_loader
+# -- Compiling module bmp_row_buffer
+# -- Compiling module rgb565_stream_packer_ready
+# -- Compiling module bmp_sdram_row_writer
+# -- Compiling module tb_fat32_bmp_adaptive_loader
+# 
+# Top level modules:
+# 	tb_fat32_bmp_adaptive_loader
+# End time: 19:21:34 on Oct 03,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# vsim 
+# Start time: 19:21:34 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# Loading work.tb_fat32_bmp_adaptive_loader(fast)
+# Adaptive BMP: PASS source=160x90 top_down=0 row_padding=0 output=1280x720
+# ** Note: $finish    : tb_fat32_bmp_adaptive_loader.v(613)
+#    Time: 33641290 ns  Iteration: 1  Instance: /tb_fat32_bmp_adaptive_loader
+# Break at tb_fat32_bmp_adaptive_loader.v line 613
+# Stopped at tb_fat32_bmp_adaptive_loader.v line 613
+# vsim 
+# Start time: 19:21:40 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# Loading work.tb_fat32_bmp_adaptive_loader(fast)
+# Adaptive BMP: PASS source=160x90 top_down=1 row_padding=0 output=1280x720
+# ** Note: $finish    : tb_fat32_bmp_adaptive_loader.v(613)
+#    Time: 33641290 ns  Iteration: 1  Instance: /tb_fat32_bmp_adaptive_loader
+# Break at tb_fat32_bmp_adaptive_loader.v line 613
+# Stopped at tb_fat32_bmp_adaptive_loader.v line 613
+# End time: 19:21:45 on Oct 03,2026, Elapsed time: 0:00:05
+# Errors: 0, Warnings: 0
+
+===== sim/run_secondary_help_primitives_help_sync.log | 1 PASS | SHA256 5ec19939a8d20cfdc32d4b65647e4b05172b24809f6d92ecca0d29fbb2051da5 =====
+# do {work_secondary_sync_scripts\run_secondary_help_primitives.do}
+# Model Technology ModelSim SE-64 vlog 10.4 Compiler 2014.12 Dec  3 2014
+# Start time: 19:21:48 on Oct 03,2026
+# vlog -work work_secondary_help_phy_help_sync D:/Anlogic/TD5.6.2/sim_release/eg4/eg_phy_bram32k.v D:/Anlogic/TD5.6.2/sim_release/eg4/eg_phy_bram.v D:/Anlogic/TD5.6.2/sim_release/eg4/eg_logic_bram.v 
+# -- Compiling module EG_PHY_BRAM32K
+# -- Compiling module EG_PHY_BRAM
+# 
+# Top level modules:
+# 	EG_PHY_BRAM32K
+# 	EG_PHY_BRAM
+# End time: 19:21:48 on Oct 03,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# Model Technology ModelSim SE-64 vlog 10.4 Compiler 2014.12 Dec  3 2014
+# Start time: 19:21:49 on Oct 03,2026
+# vlog -work work_secondary_help_phy_help_sync D:/Anlogic/TD5.6.2/sim_release/eg4/eg_phy_glbl.v 
+# -- Compiling module glbl
+# 
+# Top level modules:
+# 	glbl
+# End time: 19:21:49 on Oct 03,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# Model Technology ModelSim SE-64 vlog 10.4 Compiler 2014.12 Dec  3 2014
+# Start time: 19:21:49 on Oct 03,2026
+# vlog "+incdir+.." -work work_secondary_help_phy_help_sync ../src/secondary/secondary_help_overlay.v tb_secondary_help_overlay.v 
+# -- Compiling module secondary_help_overlay
+# -- Compiling module tb_secondary_help_overlay
+# 
+# Top level modules:
+# 	tb_secondary_help_overlay
+# End time: 19:21:49 on Oct 03,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# vsim -c -do "work_secondary_sync_scripts\run_secondary_help_primitives.do" -l run_secondary_help_primitives_help_sync.log 
+# Start time: 19:21:49 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# //  ModelSim SE-64 10.4 Dec  3 2014 
+# //
+# //  Copyright 1991-2014 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  THIS WORK CONTAINS TRADE SECRET AND PROPRIETARY INFORMATION
+# //  WHICH IS THE PROPERTY OF MENTOR GRAPHICS CORPORATION OR ITS
+# //  LICENSORS AND IS SUBJECT TO LICENSE TERMS.
+# //  THIS DOCUMENT CONTAINS TRADE SECRETS AND COMMERCIAL OR FINANCIAL
+# //  INFORMATION THAT ARE PRIVILEGED, CONFIDENTIAL, AND EXEMPT FROM
+# //  DISCLOSURE UNDER THE FREEDOM OF INFORMATION ACT, 5 U.S.C. SECTION 552.
+# //  FURTHERMORE, THIS INFORMATION IS PROHIBITED FROM DISCLOSURE UNDER
+# //  THE TRADE SECRETS ACT, 18 U.S.C. SECTION 1905.
+# //
+# Loading work.tb_secondary_help_overlay(fast)
+# Loading work.secondary_help_overlay(fast)
+# Loading work.EG_PHY_BRAM32K(fast)
+# Loading work.EG_PHY_BRAM32K(fast__1)
+# Loading work.EG_PHY_BRAM32K(fast__2)
+# Loading work.EG_PHY_BRAM32K(fast__3)
+# Loading work.EG_PHY_BRAM32K(fast__4)
+# Loading work.glbl(fast)
+# PASS help overlay: 3686400 pixels, native split glyphs, two columns, four groups, bottom status, emergency, frame switch
+# ** Note: $finish    : tb_secondary_help_overlay.v(126)
+#    Time: 73943276 ns  Iteration: 0  Instance: /tb_secondary_help_overlay
+# Break in Module tb_secondary_help_overlay at tb_secondary_help_overlay.v line 126
+# Stopped at tb_secondary_help_overlay.v line 126
+# End time: 19:22:51 on Oct 03,2026, Elapsed time: 0:01:02
+# Errors: 0, Warnings: 0
+
+===== sim/help_fixed720.log | 9 PASS | SHA256 a879ead55d8d7686040031842b27db81eb7fac9985d958ba91deac419d744c8f =====
+# do run_secondary_help_fixed720.do
+# ** Warning: (vlib-34) Library already exists at "work_secondary_help_fixed720".
+# 
+# Model Technology ModelSim SE-64 vlog 10.4 Compiler 2014.12 Dec  3 2014
+# Start time: 19:20:19 on Oct 03,2026
+# vlog "+define+SIM" "+incdir+.." -work work_secondary_help_fixed720 ../src/storage/al_dp_ram16.v ../src/storage/adaptive_row_ram.v ../src/storage/fat32_image_loader.v ../src/storage/bmp_row_buffer.v ../src/storage/rgb565_stream_packer_ready.v ../src/storage/bmp_sdram_row_writer.v ../src/secondary/secondary_help_overlay.v tb_fat32_bmp_adaptive_loader.v 
+# -- Compiling module al_dp_ram16
+# -- Compiling module EG_LOGIC_BRAM
+# -- Compiling module adaptive_row_ram
+# -- Compiling module fat32_image_loader
+# -- Compiling module bmp_row_buffer
+# -- Compiling module rgb565_stream_packer_ready
+# -- Compiling module bmp_sdram_row_writer
+# -- Compiling module secondary_help_overlay
+# -- Compiling module tb_fat32_bmp_adaptive_loader
+# 
+# Top level modules:
+# 	tb_fat32_bmp_adaptive_loader
+# End time: 19:20:19 on Oct 03,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# -gFIXED_MODE=1 -gBASE_W=160 -gBASE_H=90 -gIMAGE_W=1280 -gIMAGE_H=720 -gIMAGE_ADDR_BITS=21 -gBMP_MAX_WIDTH=1280 -gBMP_MAX_HEIGHT=720 -gMULTI_IMAGE_BMP=1 -gRESOURCE_OPT_CONSTANT_MULT=1
+# -gHELP_MODE=1 -gHIRES=0 -gIMAGE_INDEX=11 -gSOURCE_W=160 -gSOURCE_H=90 -gDISK_BYTES=2097152
+# vsim -c -do "run_secondary_help_fixed720.do" -l help_fixed720.log 
+# Start time: 19:20:19 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# ** Note: (vopt-143) Recognized 2 FSMs in module "fat32_image_loader(fast)".
+# 
+# //  ModelSim SE-64 10.4 Dec  3 2014 
+# //
+# //  Copyright 1991-2014 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  THIS WORK CONTAINS TRADE SECRET AND PROPRIETARY INFORMATION
+# //  WHICH IS THE PROPERTY OF MENTOR GRAPHICS CORPORATION OR ITS
+# //  LICENSORS AND IS SUBJECT TO LICENSE TERMS.
+# //  THIS DOCUMENT CONTAINS TRADE SECRETS AND COMMERCIAL OR FINANCIAL
+# //  INFORMATION THAT ARE PRIVILEGED, CONFIDENTIAL, AND EXEMPT FROM
+# //  DISCLOSURE UNDER THE FREEDOM OF INFORMATION ACT, 5 U.S.C. SECTION 552.
+# //  FURTHERMORE, THIS INFORMATION IS PROHIBITED FROM DISCLOSURE UNDER
+# //  THE TRADE SECRETS ACT, 18 U.S.C. SECTION 1905.
+# //
+# Loading work.tb_fat32_bmp_adaptive_loader(fast)
+# Loading work.fat32_image_loader(fast)
+# Loading work.bmp_row_buffer(fast)
+# Loading work.adaptive_row_ram(fast)
+# Loading work.EG_LOGIC_BRAM(fast)
+# Loading work.secondary_help_overlay(fast)
+# Adaptive BMP: PASS source=160x90 top_down=0 row_padding=0 output=160x90
+# ** Note: $finish    : tb_fat32_bmp_adaptive_loader.v(613)
+#    Time: 925780 ns  Iteration: 2  Instance: /tb_fat32_bmp_adaptive_loader
+# Break in Module tb_fat32_bmp_adaptive_loader at tb_fat32_bmp_adaptive_loader.v line 613
+# Stopped at tb_fat32_bmp_adaptive_loader.v line 613
+# vsim 
+# Start time: 19:20:23 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# ** Note: (vopt-143) Recognized 2 FSMs in module "fat32_image_loader(fast)".
+# 
+# Loading work.tb_fat32_bmp_adaptive_loader(fast)
+# Loading work.fat32_image_loader(fast)
+# Loading work.bmp_row_buffer(fast)
+# Loading work.adaptive_row_ram(fast)
+# Loading work.EG_LOGIC_BRAM(fast)
+# Loading work.secondary_help_overlay(fast)
+# Adaptive BMP: PASS source=160x90 top_down=1 row_padding=0 output=160x90
+# ** Note: $finish    : tb_fat32_bmp_adaptive_loader.v(613)
+#    Time: 925780 ns  Iteration: 2  Instance: /tb_fat32_bmp_adaptive_loader
+# Break in Module tb_fat32_bmp_adaptive_loader at tb_fat32_bmp_adaptive_loader.v line 613
+# Stopped at tb_fat32_bmp_adaptive_loader.v line 613
+# vsim 
+# Start time: 19:20:26 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# ** Note: (vopt-143) Recognized 2 FSMs in module "fat32_image_loader(fast)".
+# 
+# Loading work.tb_fat32_bmp_adaptive_loader(fast)
+# Loading work.fat32_image_loader(fast)
+# Loading work.bmp_row_buffer(fast)
+# Loading work.adaptive_row_ram(fast)
+# Loading work.EG_LOGIC_BRAM(fast)
+# Loading work.secondary_help_overlay(fast)
+# Adaptive BMP invalid: PASS bpp=24 compression=0 source=161x90
+# ** Note: $finish    : tb_fat32_bmp_adaptive_loader.v(596)
+#    Time: 32130 ns  Iteration: 1  Instance: /tb_fat32_bmp_adaptive_loader
+# Break in Module tb_fat32_bmp_adaptive_loader at tb_fat32_bmp_adaptive_loader.v line 596
+# Stopped at tb_fat32_bmp_adaptive_loader.v line 596
+# vsim 
+# Start time: 19:20:30 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# ** Note: (vopt-143) Recognized 2 FSMs in module "fat32_image_loader(fast)".
+# 
+# Loading work.tb_fat32_bmp_adaptive_loader(fast)
+# Loading work.fat32_image_loader(fast)
+# Loading work.bmp_row_buffer(fast)
+# Loading work.adaptive_row_ram(fast)
+# Loading work.EG_LOGIC_BRAM(fast)
+# Loading work.secondary_help_overlay(fast)
+# Adaptive BMP invalid: PASS bpp=24 compression=0 source=160x90
+# ** Note: $finish    : tb_fat32_bmp_adaptive_loader.v(596)
+#    Time: 32130 ns  Iteration: 1  Instance: /tb_fat32_bmp_adaptive_loader
+# Break in Module tb_fat32_bmp_adaptive_loader at tb_fat32_bmp_adaptive_loader.v line 596
+# Stopped at tb_fat32_bmp_adaptive_loader.v line 596
+# vsim 
+# Start time: 19:20:34 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# ** Note: (vopt-143) Recognized 2 FSMs in module "fat32_image_loader(fast)".
+# 
+# Loading work.tb_fat32_bmp_adaptive_loader(fast)
+# Loading work.fat32_image_loader(fast)
+# Loading work.bmp_row_buffer(fast)
+# Loading work.adaptive_row_ram(fast)
+# Loading work.EG_LOGIC_BRAM(fast)
+# Loading work.secondary_help_overlay(fast)
+# Adaptive BMP invalid: PASS bpp=16 compression=0 source=160x90
+# ** Note: $finish    : tb_fat32_bmp_adaptive_loader.v(596)
+#    Time: 32130 ns  Iteration: 1  Instance: /tb_fat32_bmp_adaptive_loader
+# Break in Module tb_fat32_bmp_adaptive_loader at tb_fat32_bmp_adaptive_loader.v line 596
+# Stopped at tb_fat32_bmp_adaptive_loader.v line 596
+# vsim 
+# Start time: 19:20:37 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# ** Note: (vopt-143) Recognized 2 FSMs in module "fat32_image_loader(fast)".
+# 
+# Loading work.tb_fat32_bmp_adaptive_loader(fast)
+# Loading work.fat32_image_loader(fast)
+# Loading work.bmp_row_buffer(fast)
+# Loading work.adaptive_row_ram(fast)
+# Loading work.EG_LOGIC_BRAM(fast)
+# Loading work.secondary_help_overlay(fast)
+# Adaptive BMP invalid: PASS bpp=24 compression=1 source=160x90
+# ** Note: $finish    : tb_fat32_bmp_adaptive_loader.v(596)
+#    Time: 32130 ns  Iteration: 1  Instance: /tb_fat32_bmp_adaptive_loader
+# Break in Module tb_fat32_bmp_adaptive_loader at tb_fat32_bmp_adaptive_loader.v line 596
+# Stopped at tb_fat32_bmp_adaptive_loader.v line 596
+# -gHIRES=1 -gSOURCE_W=1280 -gSOURCE_H=720 -gDISK_BYTES=8388608
+# vsim 
+# Start time: 19:20:40 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# ** Note: (vopt-143) Recognized 2 FSMs in module "fat32_image_loader(fast)".
+# 
+# ** Note: (vopt-143) Recognized 1 FSM in module "bmp_sdram_row_writer(fast)".
+# 
+# Loading work.tb_fat32_bmp_adaptive_loader(fast)
+# Loading work.fat32_image_loader(fast)
+# Loading work.bmp_row_buffer(fast)
+# Loading work.adaptive_row_ram(fast)
+# Loading work.EG_LOGIC_BRAM(fast)
+# Loading work.bmp_sdram_row_writer(fast)
+# Loading work.rgb565_stream_packer_ready(fast)
+# Adaptive BMP: PASS source=1280x720 top_down=0 row_padding=0 output=1280x720
+# ** Note: $finish    : tb_fat32_bmp_adaptive_loader.v(613)
+#    Time: 74971230 ns  Iteration: 1  Instance: /tb_fat32_bmp_adaptive_loader
+# Break in Module tb_fat32_bmp_adaptive_loader at tb_fat32_bmp_adaptive_loader.v line 613
+# Stopped at tb_fat32_bmp_adaptive_loader.v line 613
+# vsim 
+# Start time: 19:20:51 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# ** Note: (vopt-143) Recognized 2 FSMs in module "fat32_image_loader(fast)".
+# 
+# ** Note: (vopt-143) Recognized 1 FSM in module "bmp_sdram_row_writer(fast)".
+# 
+# Loading work.tb_fat32_bmp_adaptive_loader(fast)
+# Loading work.fat32_image_loader(fast)
+# Loading work.bmp_row_buffer(fast)
+# Loading work.adaptive_row_ram(fast)
+# Loading work.EG_LOGIC_BRAM(fast)
+# Loading work.bmp_sdram_row_writer(fast)
+# Loading work.rgb565_stream_packer_ready(fast)
+# Adaptive BMP: PASS source=1280x720 top_down=1 row_padding=0 output=1280x720
+# ** Note: $finish    : tb_fat32_bmp_adaptive_loader.v(613)
+#    Time: 79882990 ns  Iteration: 1  Instance: /tb_fat32_bmp_adaptive_loader
+# Break in Module tb_fat32_bmp_adaptive_loader at tb_fat32_bmp_adaptive_loader.v line 613
+# Stopped at tb_fat32_bmp_adaptive_loader.v line 613
+# vsim 
+# Start time: 19:21:02 on Oct 03,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# 
+# ** Note: (vopt-143) Recognized 2 FSMs in module "fat32_image_loader(fast)".
+# 
+# ** Note: (vopt-143) Recognized 1 FSM in module "bmp_sdram_row_writer(fast)".
+# 
+# Loading work.tb_fat32_bmp_adaptive_loader(fast)
+# Loading work.fat32_image_loader(fast)
+# Loading work.bmp_row_buffer(fast)
+# Loading work.adaptive_row_ram(fast)
+# Loading work.EG_LOGIC_BRAM(fast)
+# Loading work.bmp_sdram_row_writer(fast)
+# Loading work.rgb565_stream_packer_ready(fast)
+# Adaptive BMP: PASS source=1280x720 top_down=0 row_padding=0 output=1280x720
+# ** Note: $finish    : tb_fat32_bmp_adaptive_loader.v(613)
+#    Time: 74971230 ns  Iteration: 1  Instance: /tb_fat32_bmp_adaptive_loader
+# Break in Module tb_fat32_bmp_adaptive_loader at tb_fat32_bmp_adaptive_loader.v line 613
+# Stopped at tb_fat32_bmp_adaptive_loader.v line 613
+
+===== sim/help_load_fixed720.log | 1 PASS | SHA256 6be577fac5254f6db1abe9287f673b223d16fb6362cb0b102c655f929886c576 =====
+# do run_secondary_help_load.do
+# Model Technology ModelSim SE-64 vlog 10.4 Compiler 2014.12 Dec  3 2014
+# Start time: 19:20:19 on Oct 03,2026
+# vlog -work work_secondary_help_load ../src/storage/rgb565_stream_packer_ready.v 
+# -- Compiling module rgb565_stream_packer_ready
+# 
+# Top level modules:
+# 	rgb565_stream_packer_ready
+# End time: 19:20:19 on Oct 03,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# Model Technology ModelSim SE-64 vlog 10.4 Compiler 2014.12 Dec  3 2014
+# Start time: 19:20:19 on Oct 03,2026
+# vlog "+define+SIM" "+incdir+.." -work work_secondary_help_load ../src/common/reset_sync.v ../src/common/seg_hex_display.v ../src/input/key_debounce.v ../src/video/video_timing_640x480_pclk.v ../vendor/official_ref/lab_ex_6_tf_sdram_hdmi/video_delay.v ../src/storage/fat32_image_loader.v ../src/storage/adaptive_row_ram.v ../src/storage/al_dp_ram16.v ../src/storage/bmp_row_buffer.v ../src/storage/bmp_sdram_row_writer.v ../src/video/rgb888_adjust.v ../src/video/video_fade.v ../src/video/video_transition_mask.v ../src/video/transition_theme_controller.v ../src/video/product_show_controller.v ../src/secondary/secondary_carousel_controller.v ../src/secondary/secondary_page_overlay.v ../src/secondary/secondary_help_overlay.v ../src/memory/sdram_bmp_row_top_v66.v secondary_help_physical_stubs.v tb_secondary_help_load.v 
+# -- Compiling module reset_sync
+# -- Compiling module seg_hex_display
+# -- Compiling module key_debounce
+# -- Compiling module video_timing_640x480_pclk
+# -- Compiling module video_delay
+# -- Compiling module fat32_image_loader
+# -- Compiling module EG_LOGIC_BRAM
+# -- Compiling module adaptive_row_ram
+# -- Compiling module al_dp_ram16
+# -- Compiling module bmp_row_buffer
+# -- Compiling module bmp_sdram_row_writer
+# -- Compiling module rgb888_adjust
+# -- Compiling module video_fade
+# -- Compiling module video_transition_mask
+# -- Compiling module transition_theme_controller
+# -- Compiling module product_show_controller
+# -- Compiling module secondary_carousel_controller
+# -- Compiling module secondary_page_overlay
+# -- Compiling module secondary_help_overlay
+# -- Compiling module top_v66
+# -- Compiling module anlogic_frame_store
+# -- Compiling module sys_pll
+# -- Compiling module video_pll_75m
+# -- Compiling module hdmi_tx
+# -- Compiling module sd_card_top
+# -- Compiling module tb_secondary_help_load
+# 
+# Top level modules:
+# 	tb_secondary_help_load
+# End time: 19:20:19 on Oct 03,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# vsim -c -do "run_secondary_help_load.do" -l help_load_fixed720.log 
+# Start time: 19:20:19 on Oct 03,2026
+# ** Warning: (vsim-8891) All optimizations are turned off because the -novopt switch is in effect. This will cause your simulation to run very slowly. If you are using this switch to preserve visibility for Debug or PLI features please see the User's Manual section on Preserving Object Visibility with vopt.
+# 
+# //  ModelSim SE-64 10.4 Dec  3 2014 
+# //
+# //  Copyright 1991-2014 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  THIS WORK CONTAINS TRADE SECRET AND PROPRIETARY INFORMATION
+# //  WHICH IS THE PROPERTY OF MENTOR GRAPHICS CORPORATION OR ITS
+# //  LICENSORS AND IS SUBJECT TO LICENSE TERMS.
+# //  THIS DOCUMENT CONTAINS TRADE SECRETS AND COMMERCIAL OR FINANCIAL
+# //  INFORMATION THAT ARE PRIVILEGED, CONFIDENTIAL, AND EXEMPT FROM
+# //  DISCLOSURE UNDER THE FREEDOM OF INFORMATION ACT, 5 U.S.C. SECTION 552.
+# //  FURTHERMORE, THIS INFORMATION IS PROHIBITED FROM DISCLOSURE UNDER
+# //  THE TRADE SECRETS ACT, 18 U.S.C. SECTION 1905.
+# //
+# Refreshing D:/Anlogic_information/hx4s20_secondary/sim/work_secondary_help_load.tb_secondary_help_load
+# Loading work_secondary_help_load.tb_secondary_help_load
+# Refreshing D:/Anlogic_information/hx4s20_secondary/sim/work_secondary_help_load.top_v66
+# Loading work_secondary_help_load.top_v66
+# Refreshing D:/Anlogic_information/hx4s20_secondary/sim/work_secondary_help_load.transition_theme_controller
+# Loading work_secondary_help_load.transition_theme_controller
+# Refreshing D:/Anlogic_information/hx4s20_secondary/sim/work_secondary_help_load.product_show_controller
+# Loading work_secondary_help_load.product_show_controller
+# Refreshing D:/Anlogic_information/hx4s20_secondary/sim/work_secondary_help_load.reset_sync
+# Loading work_secondary_help_load.reset_sync
+# Refreshing D:/Anlogic_information/hx4s20_secondary/sim/work_secondary_help_load.key_debounce
+# Loading work_secondary_help_load.key_debounce
+# Refreshing D:/Anlogic_information/hx4s20_secondary/sim/work_secondary_help_load.sys_pll
+# Loading work_secondary_help_load.sys_pll
+# Refreshing D:/Anlogic_information/hx4s20_secondary/sim/work_secondary_help_load.sd_card_top
+# Loading work_secondary_help_load.sd_card_top
+# Refreshing D:/Anlogic_information/hx4s20_secondary/sim/work_secondary_help_load.fat32_image_loader
+# Loading work_secondary_help_load.fat32_image_loader
+# Refreshing D:/Anlogic_information/hx4s20_secondary/sim/work_secondary_help_load.anlogic_frame_store
+# Loading work_secondary_help_load.anlogic_frame_store
+# Refreshing D:/Anlogic_information/hx4s20_secondary/sim/work_secondary_help_load.video_timing_640x480_pclk
+# Loading work_secondary_help_load.video_timing_640x480_pclk
+# Refreshing D:/Anlogic_information/hx4s20_secondary/sim/work_secondary_help_load.video_delay
+# Loading work_secondary_help_load.video_delay
+# Refreshing D:/Anlogic_information/hx4s20_secondary/sim/work_secondary_help_load.rgb888_adjust
+# Loading work_secondary_help_load.rgb888_adjust
+# Refreshing D:/Anlogic_information/hx4s20_secondary/sim/work_secondary_help_load.video_transition_mask
+# Loading work_secondary_help_load.video_transition_mask
+# Refreshing D:/Anlogic_information/hx4s20_secondary/sim/work_secondary_help_load.seg_hex_display
+# Loading work_secondary_help_load.seg_hex_display
+# Refreshing D:/Anlogic_information/hx4s20_secondary/sim/work_secondary_help_load.secondary_carousel_controller
+# Loading work_secondary_help_load.secondary_carousel_controller
+# Refreshing D:/Anlogic_information/hx4s20_secondary/sim/work_secondary_help_load.video_pll_75m
+# Loading work_secondary_help_load.video_pll_75m
+# Refreshing D:/Anlogic_information/hx4s20_secondary/sim/work_secondary_help_load.bmp_row_buffer
+# Loading work_secondary_help_load.bmp_row_buffer
+# Refreshing D:/Anlogic_information/hx4s20_secondary/sim/work_secondary_help_load.adaptive_row_ram
+# Loading work_secondary_help_load.adaptive_row_ram
+# Refreshing D:/Anlogic_information/hx4s20_secondary/sim/work_secondary_help_load.EG_LOGIC_BRAM
+# Loading work_secondary_help_load.EG_LOGIC_BRAM
+# Refreshing D:/Anlogic_information/hx4s20_secondary/sim/work_secondary_help_load.bmp_sdram_row_writer
+# Loading work_secondary_help_load.bmp_sdram_row_writer
+# Refreshing D:/Anlogic_information/hx4s20_secondary/sim/work_secondary_help_load.rgb565_stream_packer_ready
+# Loading work_secondary_help_load.rgb565_stream_packer_ready
+# Refreshing D:/Anlogic_information/hx4s20_secondary/sim/work_secondary_help_load.video_fade
+# Loading work_secondary_help_load.video_fade
+# Refreshing D:/Anlogic_information/hx4s20_secondary/sim/work_secondary_help_load.secondary_page_overlay
+# Loading work_secondary_help_load.secondary_page_overlay
+# Refreshing D:/Anlogic_information/hx4s20_secondary/sim/work_secondary_help_load.secondary_help_overlay
+# Loading work_secondary_help_load.secondary_help_overlay
+# Refreshing D:/Anlogic_information/hx4s20_secondary/sim/work_secondary_help_load.hdmi_tx
+# Loading work_secondary_help_load.hdmi_tx
+# PASS real top media scheduler: fixed dual-size target, native help cache, help once, no SDRAM write, emergency priority, SW4 isolation, missing help recovery, scan delay aligned
+# ** Note: $finish    : tb_secondary_help_load.v(145)
+#    Time: 1270 ns  Iteration: 1  Instance: /tb_secondary_help_load
+# Break in Module tb_secondary_help_load at tb_secondary_help_load.v line 145
+# Stopped at tb_secondary_help_load.v line 145
+# End time: 19:20:26 on Oct 03,2026, Elapsed time: 0:00:07
+# Errors: 0, Warnings: 1

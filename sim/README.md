@@ -17,10 +17,13 @@ vsim -c -do run_secondary_native720_media.do -l regression_native720.log
 vsim -c -do run_secondary_help.do -l regression_help.log
 vsim -c -do run_secondary_help_load.do -l regression_help_load.log
 vsim -c -do run_secondary_help_primitives.do -l regression_help_primitives.log
+vsim -c -do run_secondary_fixed720.do -l regression_fixed720.log
+vsim -c -do run_secondary_page_switch.do -l regression_page_switch.log
+vsim -c -do run_secondary_help_fixed720.do -l regression_help_fixed720.log
 Pop-Location
 ```
 
-`run_secondary_frame_store_alignment.do` 必须从工程根目录运行；其余八项从 `sim` 目录运行。
+`run_secondary_frame_store_alignment.do` 必须从工程根目录运行；其余项目从 `sim` 目录运行。
 
 ## 验收
 
@@ -40,10 +43,15 @@ Pop-Location
 | regression_help.log | 3 | 369万像素、原生分半字模、左右双栏、四组说明、底部状态、背景缓存及正向/倒序IMAGEB读取 |
 | regression_help_load.log | 1 | 实际顶层调度：背景只加载一次、不写SDRAM、失败后恢复原素材加载 |
 | regression_help_primitives.log | 1 | 官方BRAM32K/逻辑RAM模型下同一369万像素检查；两个官方加密模型内部告警记录于发布说明 |
+| regression_fixed720.log | 8 | 固定尺寸逐像素/SDRAM 字检查、上下行、扩展像素偏移、碎片 FAT 链、写入停顿及非法 BMP 拒绝 |
+| regression_page_switch.log | 1 | 讲解淡出/切页/淡入、应急直接切换与抢占、轮播转场保持 |
+| regression_help_fixed720.log | 9 | 同一固定加载器下160×90背景与720p媒体、背景逐像素/地址/缓存及RGB检查、非法背景拒绝 |
 
 2026-10-01 清理后以上 9 项、15 个用例已通过。对齐回归使用实际帧控制器和 FIFO，SDRAM 返回由测试替身产生；它不能替代真实板卡验证。官方 FIFO 的未连接可选端口可能产生既有警告。
 
 `work*`、日志和 `transcript` 均为可重新生成的仿真缓存，不提交到 Git。
+
+固定 720p 测试保留现有行缓冲和行写入器，三个完整图用例均检查 921600 个像素与 460800 个 SDRAM 字。页面切换测试每次从生产源码提取实际视频状态机及转场选择表达式，隔离 PLL、加密 SDRAM 和 HDMI 原语；不使用手写替代状态机，也不能代替实板验收。
 
 双端点重连回归：在 `sim` 目录运行 `vsim -c -do run_mbp1_reconnect.do`，须有同级 `Anlogic` 主板工程。该测试连接两板真实 MBP1 编解码器、端点及副板拨码请求器，只替代 UDP 字节传输和主板应用命令执行，不手工补发 HELLO。覆盖同 boot_id 短/长断线、断线切 SW3、保持 SW3、在途命令取消、缺少新 DISPLAY_STATUS 不解锁、六秒报文中断、恢复后的预设键及主板重启。预期一项 PASS；不能替代实际 PHY、FIFO 和双板上板验证。
 
@@ -55,3 +63,5 @@ Pop-Location
 py -3 tools/mbp1_secondary_pc_probe.py --self-test
 py -3 tools/mbp1_main_simulator.py --self-test
 ```
+
+2026-10-03 SW4 说明页与固定 BMP/讲解淡入淡出集成：15组、38项PASS，日志及源码校验值见 `release/manifest_secondary_help_fixed720.json`。真实顶层调度使用脚本已注明的 `-novopt` 兼容 ModelSim 10.4 优化器崩溃；保留全部断言。官方RAM检查使用TD安装目录的模型，脚本支持两处已有安装位置。

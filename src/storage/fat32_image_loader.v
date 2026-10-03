@@ -17,6 +17,8 @@ module fat32_image_loader #(
     parameter integer BMP_MAX_WIDTH  = 1024,
     parameter integer BMP_MAX_HEIGHT = 768,
     parameter integer ADAPTIVE_BMP   = 0,
+    // Native assets bypass scaling and its source-row/FIFO storage at synthesis.
+    parameter integer FIXED_BMP = 0,
     parameter integer MULTI_IMAGE_BMP = 0,
     parameter [15:0] ADAPTIVE_BACKGROUND_RGB565 = 16'h0000,
     // v72: replace the fixed 960/540 products with shifts and additions.
@@ -290,7 +292,7 @@ assign adapt_div_quotient_next = adapt_div_ge ?
 assign adapt_div_remainder_next = adapt_div_subtracted[31:0];
 assign adaptive_fit_by_width = (mul_image_height(bmp_width) >=
                                 mul_image_width(bmp_height_abs));
-assign adapt_row_mem_write = ADAPTIVE_BMP &&
+assign adapt_row_mem_write = ADAPTIVE_BMP && !FIXED_BMP &&
                              ((active_bmp_mode && sd_sec_read_data_valid &&
                                (file_bytes_seen >= bmp_data_offset) &&
                                (bmp_padding_bytes == 0) &&
@@ -311,7 +313,7 @@ assign adapt_fifo_wr_data = {sd_sec_read_data[7:3],
                              bmp_green[7:2], bmp_blue[7:3]};
 
 generate
-    if (ADAPTIVE_BMP) begin : g_adaptive_row_ram
+    if (ADAPTIVE_BMP && !FIXED_BMP) begin : g_adaptive_row_ram
         al_dp_ram16 #(.ADDR_WIDTH(ADAPT_FIFO_ADDR_BITS), .DEPTH(ADAPT_FIFO_DEPTH))
         u_adaptive_fifo (
             .clk(clk), .wr_en(adapt_fifo_wr_en),
@@ -775,19 +777,26 @@ always @(posedge clk or negedge rst_n) begin
                                     (bmp_signature1 == "M") &&
                                     (bmp_data_offset >= BMP_HEADER_BYTES) &&
                                     (bmp_dib_size == 32'd40) &&
-                                    ((ADAPTIVE_BMP && bmp_width >= 32'd16) ||
-                                     (!ADAPTIVE_BMP && bmp_width >= IMAGE_WIDTH)) &&
-                                    (bmp_width <= BMP_MAX_WIDTH) &&
-                                    ((ADAPTIVE_BMP && bmp_height_abs >= 32'd16) ||
-                                     (!ADAPTIVE_BMP && bmp_height_abs >= IMAGE_HEIGHT)) &&
-                                    (bmp_height_abs <= BMP_MAX_HEIGHT) &&
+                                    (FIXED_BMP ?
+                                     (bmp_width == target_width &&
+                                      bmp_height_abs == target_height &&
+                                      bmp_data_offset <= file_size &&
+                                      file_size - bmp_data_offset >=
+                                          (hires_frame ? HIRES_WIDTH * HIRES_HEIGHT * 3 :
+                                                         IMAGE_WIDTH * IMAGE_HEIGHT * 3)) :
+                                     (((ADAPTIVE_BMP && bmp_width >= 32'd16) ||
+                                       (!ADAPTIVE_BMP && bmp_width >= IMAGE_WIDTH)) &&
+                                      (bmp_width <= BMP_MAX_WIDTH) &&
+                                      ((ADAPTIVE_BMP && bmp_height_abs >= 32'd16) ||
+                                       (!ADAPTIVE_BMP && bmp_height_abs >= IMAGE_HEIGHT)) &&
+                                      (bmp_height_abs <= BMP_MAX_HEIGHT))) &&
                                     (bmp_planes == 16'd1) &&
                                     (bmp_bits_per_pixel == 16'd24) &&
                                     (bmp_compression == 32'd0);
                                 bmp_top_down <= bmp_height[31];
                                 bmp_source_width  <= bmp_width[15:0];
                                 bmp_source_height <= bmp_height_abs[15:0];
-                                if (ADAPTIVE_BMP) begin
+                                if (ADAPTIVE_BMP && !FIXED_BMP) begin
                                     adapt_fit_w       <= 32'd0;
                                     adapt_fit_h       <= 32'd0;
                                     adapt_off_x       <= 32'd0;
@@ -823,6 +832,41 @@ always @(posedge clk or negedge rst_n) begin
                             // Standard 24-bit BMPs normally use offset 54, but
                             // accepting a later offset also handles legal header
                             // extensions before the pixel array.
+                        end else if (FIXED_BMP) begin
+                            // Preserve B/G/R state across sectors. A 1280-pixel
+                            // row spans 7.5 sectors, so sector boundaries can
+                            // split both a pixel and a row. Gate only the next
+                            // sector; the existing row store absorbs its tail.
+                            if (bmp_rows_done < target_height) begin
+                                case (bmp_component)
+                                    2'd0: begin
+                                        bmp_blue <= sd_sec_read_data;
+                                        bmp_component <= 2'd1;
+                                    end
+                                    2'd1: begin
+                                        bmp_green <= sd_sec_read_data;
+                                        bmp_component <= 2'd2;
+                                    end
+                                    default: begin
+                                        image_wr_en <= 1'b1;
+                                        image_wr_row <= bmp_top_down ? bmp_rows_done[10:0] :
+                                                           target_height - 1 - bmp_rows_done;
+                                        image_wr_col <= bmp_output_x[10:0];
+                                        image_wr_addr <= bmp_dest_addr;
+                                        image_wr_data <= {sd_sec_read_data[7:3],
+                                                          bmp_green[7:2], bmp_blue[7:3]};
+                                        image_pixels_seen <= image_pixels_seen + 1'b1;
+                                        bmp_component <= 2'd0;
+                                        if (bmp_output_x == target_width - 1) begin
+                                            bmp_output_x <= 32'd0;
+                                            bmp_output_y <= bmp_output_y + 1'b1;
+                                            bmp_rows_done <= bmp_rows_done + 1'b1;
+                                        end else begin
+                                            bmp_output_x <= bmp_output_x + 1'b1;
+                                        end
+                                    end
+                                endcase
+                            end
                         end else if (ADAPTIVE_BMP) begin
                             // Adaptive mode stores source pixels first. This
                             // is deliberately sector-paced: the next sector
@@ -961,7 +1005,7 @@ always @(posedge clk or negedge rst_n) begin
 
                 if (sd_sec_read_end) begin
                     sd_sec_read <= 1'b0;
-                    if (active_bmp_mode && ADAPTIVE_BMP) begin
+                    if (active_bmp_mode && ADAPTIVE_BMP && !FIXED_BMP) begin
                         image_resume_fat <= (sector_in_cluster + 8'd1 >= bpb_sectors_per_cluster);
                         if (!adapt_calc_done) begin
                             adapt_calc_stage <= 2'd0;
@@ -987,6 +1031,9 @@ always @(posedge clk or negedge rst_n) begin
                         load_done <= 1'b1;
                         busy <= 1'b0;
                         state <= S_DONE;
+                    end else if (file_bytes_seen == expected_file_size) begin
+                        error_stage <= ERR_INCOMPLETE;
+                        state <= S_ERROR;
                     end else if (sector_in_cluster + 8'd1 < bpb_sectors_per_cluster) begin
                         // Do not start another SD sector until the row store
                         // has absorbed every completed line from this one.
@@ -1015,6 +1062,7 @@ always @(posedge clk or negedge rst_n) begin
             end
 
             S_ADAPT_WAIT: begin
+                if (!FIXED_BMP) begin
                 status_code <= 4'd6;
                 sd_sec_read <= 1'b0;
                 if (!bmp_header_valid || adapt_fit_w == 0 || adapt_fit_h == 0) begin
@@ -1079,9 +1127,14 @@ always @(posedge clk or negedge rst_n) begin
                         state <= S_REQ_IMAGE;
                     end
                 end
+                end else begin
+                    error_stage <= ERR_INTERNAL;
+                    state <= S_ERROR;
+                end
             end
 
             S_ADAPT_CALC: begin
+                if (!FIXED_BMP) begin
                 status_code <= 4'd6;
                 // One restoring-division bit per clock keeps the scaling
                 // setup out of the pixel path and avoids a large divider.
@@ -1131,9 +1184,14 @@ always @(posedge clk or negedge rst_n) begin
                 end else begin
                     adapt_calc_bit <= adapt_calc_bit - 1'b1;
                 end
+                end else begin
+                    error_stage <= ERR_INTERNAL;
+                    state <= S_ERROR;
+                end
             end
 
             S_ADAPT_LOAD: begin
+                if (!FIXED_BMP) begin
                 status_code <= 4'd6;
                 if (adapt_fifo_count == 0) begin
                     state <= S_ADAPT_WAIT;
@@ -1149,9 +1207,14 @@ always @(posedge clk or negedge rst_n) begin
                         adapt_load_col <= adapt_load_col + 1'b1;
                     end
                 end
+                end else begin
+                    error_stage <= ERR_INTERNAL;
+                    state <= S_ERROR;
+                end
             end
 
             S_ADAPT_ACTIVE: begin
+                if (!FIXED_BMP) begin
                 status_code    <= 4'd6;
                 image_wr_en    <= 1'b1;
                 image_wr_row   <= adapt_dest_row[10:0];
@@ -1196,9 +1259,14 @@ always @(posedge clk or negedge rst_n) begin
                 end else begin
                     adapt_out_col <= adapt_out_col + 1'b1;
                 end
+                end else begin
+                    error_stage <= ERR_INTERNAL;
+                    state <= S_ERROR;
+                end
             end
 
             S_ADAPT_BLACK: begin
+                if (!FIXED_BMP) begin
                 status_code   <= 4'd6;
                 image_wr_en   <= 1'b1;
                 image_wr_row  <= adapt_dest_row[10:0];
@@ -1211,6 +1279,10 @@ always @(posedge clk or negedge rst_n) begin
                     state         <= S_ADAPT_WAIT;
                 end else begin
                     adapt_out_col <= adapt_out_col + 1'b1;
+                end
+                end else begin
+                    error_stage <= ERR_INTERNAL;
+                    state <= S_ERROR;
                 end
             end
 

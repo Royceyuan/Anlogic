@@ -734,6 +734,7 @@ wire [2:0] selected_transition_mode =
     (ui_mode == MODE_PRODUCT_SHOW) ? product_theme_transition_mode :
                                      {1'b0, sw[3:2]};
 wire [2:0] museum_switch_transition_mode =
+    (SECONDARY_STREAMING && desired_display_media_index == 4'd5) ? 3'd0 :
     ENABLE_MUSEUM_LECTURE ?
         ((overview_enable_video ||
           (display_media_index == VIDEO_FRAME_COUNT)) ? 3'd5 :
@@ -1308,7 +1309,11 @@ assign sd_sec_read_addr = sd_read_audio_owner ? audio_sd_sec_read_addr :
                                                     image_sd_sec_read_addr);
 
 fat32_image_loader #(
-    .IMAGE_WIDTH(SOURCE_W), .IMAGE_HEIGHT(SOURCE_H), .IMAGE_ADDR_BITS(21),
+    // The guide keeps its original 160x90 backdrop; ordinary media uses the
+    // existing high-resolution target. Both take the direct fixed BMP path.
+    .IMAGE_WIDTH((SECONDARY_HELP && SECONDARY_STREAMING) ? 160 : SOURCE_W),
+    .IMAGE_HEIGHT((SECONDARY_HELP && SECONDARY_STREAMING) ? 90 : SOURCE_H),
+    .IMAGE_ADDR_BITS(21),
     .HIRES_WIDTH(ENABLE_SECONDARY ? VIDEO_W : SOURCE_W),
     .HIRES_HEIGHT(ENABLE_SECONDARY ? VIDEO_H : SOURCE_H),
     .BMP_MAX_WIDTH(ADAPTIVE_BMP ? ADAPTIVE_BMP_MAX_WIDTH :
@@ -1316,14 +1321,18 @@ fat32_image_loader #(
     .BMP_MAX_HEIGHT(ADAPTIVE_BMP ? ADAPTIVE_BMP_MAX_HEIGHT :
                     (VIDEO_MODE_1280 ? 720 : 768)),
     .ADAPTIVE_BMP(ADAPTIVE_BMP),
+    .FIXED_BMP(ENABLE_SECONDARY && SECONDARY_STREAMING),
     .ADAPTIVE_BACKGROUND_RGB565(ADAPTIVE_BACKGROUND_RGB565),
     .MULTI_IMAGE_BMP(MULTI_IMAGE_BMP),
     .RESOURCE_OPT_CONSTANT_MULT(RESOURCE_OPT_CONSTANT_MULT)
 ) u_fat32_image_loader (
     .clk(clk_50m), .rst_n(write_rst_n), .load_start(image_load_start),
     .hires_frame(ENABLE_SECONDARY &&
-                 (load_active ? load_image_index == 4'd5 :
-                                load_start_image_index == 4'd5)),
+                 ((SECONDARY_HELP && SECONDARY_STREAMING) ?
+                  (load_active ? load_image_index != 4'd7 :
+                                 load_start_image_index != 4'd7) :
+                  (load_active ? load_image_index == 4'd5 :
+                                 load_start_image_index == 4'd5))),
     // On the exact start edge load_active is still low, so use the physical
     // switch for the new transaction; afterward keep the latched selection.
     .image_file_index(loader_file_index),
@@ -2843,7 +2852,10 @@ generate
                 .background_ready_50m(secondary_help_valid),
                 .write_clk(clk_50m),
                 .write_en(secondary_help_loading && image_wr_en),
-                .write_row(image_wr_row), .write_col(image_wr_col),
+                // Preserve the guide's 8x coordinate mapping while reading
+                // only its native pixels, rather than expanding them first.
+                .write_row(SECONDARY_STREAMING ? (image_wr_row << 3) : image_wr_row),
+                .write_col(SECONDARY_STREAMING ? (image_wr_col << 3) : image_wr_col),
                 .write_pixel(image_wr_data), .rgb(help_rgb)
             );
         end else begin : g_no_help_page

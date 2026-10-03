@@ -1,6 +1,6 @@
 import_device eagle_s20.db -package EG4S20BG256
 set root .
-set build [file join $root _build_secondary_main5e_manual_browse_seed6]
+set build [file join $root _build_secondary_help_fixed720_seed6]
 if {[info exists ::env(SECONDARY_BUILD)]} {set build $::env(SECONDARY_BUILD)}
 set status [file join $build secondary_main5e_pr.status]
 set log [file join $build console.log]
@@ -18,7 +18,7 @@ foreach file $required_files {if {![file exists [file join $root $file]] || [fil
 if {!$good} {puts "REFUSED: stale P&R, warnings, or failed timing"; exit}
 cd $root
 import_db $db
-set bit [file join $root release hx4s20_secondary_help_v2.bit]
+set bit [file join $root release hx4s20_secondary_help_fixed720.bit]
 if {[info exists ::env(SECONDARY_BIT)]} {set bit $::env(SECONDARY_BIT)}
 bitgen -bit $bit
 exit

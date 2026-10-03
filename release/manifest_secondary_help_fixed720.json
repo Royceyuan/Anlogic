@@ -1,0 +1,282 @@
+{
+  "release": "sw4_help_fixed720_lecture_fade_20261003",
+  "branch": "secondary-main5e",
+  "base_commit": "769d5b1f3f9bb75ed6c7e173950777ba8acc19fc",
+  "working_tree": "Release integration over base_commit; this manifest is bound to its containing Git commit and the input/artifact SHA256 values",
+  "project": "hx4s20_secondary_main5e.al",
+  "top": "top_secondary_main5e",
+  "bit": "release/hx4s20_secondary_help_fixed720.bit",
+  "bit_sha256": "91a70946f2fa9966d1baf6466b921c6d6e4c3be090d8d9c4a62fd0235d5bc25a",
+  "bytes": 652921,
+  "timestamp_local": "2026-10-03T19:28:17+08:00",
+  "tool": "Tang Dynasty 6.2.168116",
+  "seed": 6,
+  "timing_ps": {
+    "setup_wns": 309,
+    "setup_tns": 0,
+    "hold_wns": 22,
+    "hold_tns": 0
+  },
+  "sta_coverage_percent": 99.73,
+  "gate_resource": {
+    "LUT": 9782,
+    "registers": 6436,
+    "BRAM9K": 20,
+    "BRAM32K": 13,
+    "DSP": 5,
+    "PLL": 4
+  },
+  "placed_resource": {
+    "LUT": 9905,
+    "registers": 6468,
+    "BRAM9K": 20,
+    "BRAM32K": 13,
+    "DSP": 5,
+    "PLL": 4
+  },
+  "changes": [
+    "Reuse teammate SW4 dual-column native-font guide from 769d5b1; normal display at SW4=0, guide at SW4=1",
+    "Keep fixed native BMP path: ordinary media 1280x720, IMAGEB native 160x90; no generic scaler/source-row/FIFO in production netlist",
+    "Map native backdrop coordinates 8x into existing BRAM cache, independent of four SDRAM frames",
+    "Lecture fade-out/in; emergency direct switch and preemption; original keyboard/MBP1 retained"
+  ],
+  "drc": "PASS No multi-drive; No abnormal timing path",
+  "known_critical_warnings": [
+    "PHY-7002 CRITICAL-WARNING: Instance u_display/u_frame_store/u_sdram/sdram location (12, 12) is not honored. Cell's initial location is not legal at the beginning of ECO placement, and will be moved during placement. Please verify user location constraints through the adc file.",
+    "PHY-7002 CRITICAL-WARNING: Instance u_display/u_frame_store/u_sdram/sdram location (164, 288) is not honored. Cell's initial location is not legal at the beginning of ECO placement, and will be moved during placement. Please verify user location constraints through the adc file.",
+    "PHY-5079 CRITICAL-WARNING: Marked 1 clock net(s) utilize the local routing resources. Please check log message and the sinks of clock nets."
+  ],
+  "bitgen_gate": "PASS setup/hold, warning whitelist, DRC and input freshness",
+  "hardware": "USER_REPORTED_PASS: user confirmed the current bit display behavior is correct on 2026-10-03; no independent instrument capture or exhaustive hardware test is claimed",
+  "background": {
+    "path": "assets/secondary_help/IMAGEB.BMP",
+    "sha256": "4d3c5315101364bc2cefe4c8f5a279fd03daf6e1a97de3622f7066ca2e433687",
+    "size": [
+      160,
+      90
+    ],
+    "bytes": 43254,
+    "card_root_filename": "IMAGEB.BMP",
+    "original_11_images_unchanged": true
+  },
+  "preserved_bits_sha256": {
+    "release/hx4s20_secondary_help_v2.bit": "b36b3d6e5e0a4fd77a023f5db5bf5706127253a54fc7abc41c37b90484353cda",
+    "release/hx4s20_secondary_main5e_return_align_v06.bit": "77997bd0f08ba70b1fad4f8dd483575ebec49d181baff73fb0f277c1da3f6987",
+    "release/hx4s20_secondary_main5e_manual_browse.bit": "41b81e033e6f282aac9e572d982bf8e145504fa38111cdc5f22f86021956ca58"
+  },
+  "build_directory": "_build_secondary_help_fixed720_seed6",
+  "inputs_sha256": {
+    "constraints/top_secondary_main5e.adc": "e36490a3eecc10dc52f0b4ea02fad1f8ab39b5223ed106d29962e94dc59b0d90",
+    "constraints/top_secondary_main5e.sdc": "708000f2bcf2a462ab1e2f3c5e81af72f1a69503c7575e1b90035d40e4ea137a",
+    "hx4s20_secondary_main5e.al": "11ff6b41ca785cc1c731a8c8c26b4885147a8041b6a1a0db81878523301605c4",
+    "src/clock/sys_pll_50m_phase144_native720.v": "c6959af1bf5528105159c5049a573c20eaf7d459a9d4d3fc5f99563205d7f4ae",
+    "src/clock/video_pll_75m.v": "0d27232ffddced7159f5af5379ab7620f25098d218619729a4209b207ddafecb",
+    "src/common/reset_sync.v": "0a50ef656a0417f8dff61cea48bd353f1fc3147667c4c1984eb4c5fdd2cdc737",
+    "src/common/seg_hex_display.v": "534c1bcca5da859c7018bfa93a72bbd85a0803538edcf9b0d4af0cef27be3be7",
+    "src/ethernet/mbp1_codec.v": "0d05a817427ee8643b4e16efc2e5e7879609ddcafb4658f0334c1c710a1f44d6",
+    "src/ethernet/mbp1_fixed_udp.v": "e63b9c0216cd68ee7b89581526ecca8448cb061083ab8590ff6721fd4ac5902c",
+    "src/ethernet/mbp1_secondary_endpoint.v": "e4e6750aca71e4be813db1f39574b49f8faf562c97b2c18ec12413bac9ce04e5",
+    "src/ethernet/mdio_clause22_monitor.v": "4935feed29863fe6a70a7b276f6f6c7174980e4f9a753a0b98ba2414beabb5ac",
+    "src/input/key_debounce.v": "c498915acde5c365fd94bee384da6dff78ef4fa59c1ce8191b537357c2949e23",
+    "src/memory/anlogic_frame_store.v": "9c190fec86f5fcc358e0225f6e676457323eafd1b55750e8ab720c538ebbcbe1",
+    "src/memory/sdram_bmp_row_top_v66.v": "65585657792d815140fb88f312acea985dbc7c15f82a11f9fec59a52fa28f89d",
+    "src/secondary/secondary_carousel_controller.v": "36b36053244a39307a4121aea4ef9ce64d55c5c759b9a02ba0fb6e6ddeee6b26",
+    "src/secondary/secondary_help_font.vh": "c8e662968d7642cbc3a692d2dd7b3ff149ad81fc0b34d65b811b631b20871c92",
+    "src/secondary/secondary_help_overlay.v": "afd346e6cf015ceb3f0a21c83066f93aeacb012afa9c54930cdefd9103ed4892",
+    "src/secondary/secondary_main5e_keys.v": "0b6507848133edc013ce5fd3cffe2e1067b47718b1b5d1deee78c6dca7016ad2",
+    "src/secondary/secondary_main5e_status_adapter.v": "38771273a4309e28bd8b4f165e1780a77e1856bdd0ac5b3fb67a6da6fbfc2ab7",
+    "src/secondary/secondary_page_overlay.v": "e0ee17a161834a5c83e0ef0ce68adc0dc2b942f0356e54fde1222ebdf8cfea3f",
+    "src/secondary/top_secondary_main5e.v": "1cbbbc9f046e1722629841e7d6ee4a8a85b2959ef9d4904c3bf4f62482ca7c07",
+    "src/secondary/top_secondary_main5e_netdiag.v": "f47be72870cf0eafb11f1cc8b849667338cf6de0df3bf5f69dd2154c8918245b",
+    "src/storage/adaptive_row_ram.v": "48c9752f3aa9eca96fe4e9878479ffd0e7f85640ea64aa125bd6f9e78cba8235",
+    "src/storage/al_dp_ram16.v": "a57c09b252e697e932cccf9396cdcf3e216bea986b89430a728bb01e2a31e435",
+    "src/storage/bmp_row_buffer.v": "4250787b8a4b2f79ac9e4ffb2947debae161f3291e2db2cd6ab4d9a0770daf16",
+    "src/storage/bmp_sdram_row_writer.v": "210a201b101fcd4cdefa518b101c532e020f9503a0891de3508b7fe50e09d68a",
+    "src/storage/fat32_image_loader.v": "a5e054a0115add3175ccf4e48b7fa3624414cabc82ab4bca7869ef9f8172e161",
+    "src/storage/rgb565_stream_packer_ready.v": "dd9ddf2273bf8f8d313683dfb1fcfe55857ebad2251bccb4e171e4643c59fd05",
+    "src/video/product_show_controller.v": "897fd3ecd8817b3bc190e732c6cfe1661893e6dc74d114e51046df1ad5bc1a75",
+    "src/video/rgb888_adjust.v": "929b4558be593dac7ce52075ad3b419fc7f3a39e35c91e45af739825dae5a010",
+    "src/video/transition_theme_controller.v": "6d716cc7f7b0ac8e7b5df25d2aef53eab34d221b945dbb2f5e5f04b2bd1d7a8a",
+    "src/video/video_fade.v": "196d4917e1685b5a00c58f202f9320053676bf34577c4d4cc2f19aec9963a290",
+    "src/video/video_timing_640x480_pclk.v": "49de1e6e28617fb829df973e2ed9fb7e47f878712f0ac899f58df7bece366695",
+    "src/video/video_transition_mask.v": "3d600032950bcde2fed6f62f715b449b1a0f6d62244ba6427273125abf320f94",
+    "vendor/anlogic_hx4s20_udp/par_ph1demo/al_ip/TEMAC_CORE.ipc": "80a8b8daffa2c465edc80df2143013c3b399d762f08e5501b0a2431537cbf6d8",
+    "vendor/anlogic_hx4s20_udp/par_ph1demo/al_ip/TEMAC_CORE_gate.v": "96167779d09373cf3ac131ecfa8a2b5d25ec28e4a7fbc446b0b1c5fe01036eeb",
+    "vendor/anlogic_hx4s20_udp/par_ph1demo/al_ip/pll_gen.v": "83acf5d318070806d0ed0986f04f0d5a37bd98735728f1ac4be7b0cc982455c0",
+    "vendor/anlogic_hx4s20_udp/par_ph1demo/al_ip/rx_pll.v": "0c5fcdc0e921f076884f90f0e188e4b0e632bbea8266026b1a174bfb8dd7ab24",
+    "vendor/anlogic_hx4s20_udp/src/IDDR.v": "cbf4c3c34dafe672aa7ccc010440e01fc7dbddf428bde868319d8d0580208f53",
+    "vendor/anlogic_hx4s20_udp/src/ODDR.v": "d3edb14daebdcb028e1cb3a8c6c944556fa28568c04e8a0193c868f654ad3a84",
+    "vendor/anlogic_hx4s20_udp/src/RAMB16_S9_S9.v": "457278a570cf5a9f6e8280a4c2860154a785e7e110d46f5e6f9c2aa263fe4287",
+    "vendor/anlogic_hx4s20_udp/src/clk_gen_rst_gen.v": "22394cf13ef897e679ef3d72b91150eeea0ff53474ac3fa73d292231d8f74577",
+    "vendor/anlogic_hx4s20_udp/src/div_clk_gen.v": "d33d57f0d70d8d05a9e7b81fb5b56690505c6127d119a24f8dcb49c96e2afe7a",
+    "vendor/anlogic_hx4s20_udp/src/rgmii_interface.v": "cfe987991204ff5d307fbe9043dc0c42f3b9d9cf4f5bccfd6f9e8a3d8ea7c5d4",
+    "vendor/anlogic_hx4s20_udp/src/rx_client_fifo.v": "ff1be590e136905cd36b19b99869eab8596cadddb820ebfa63abd6bc2674c04b",
+    "vendor/anlogic_hx4s20_udp/src/temac_block.v": "cbb801f21ab7db5312f1bdc6b107c3480e709309bc7377b9d85678519d34cd78",
+    "vendor/anlogic_hx4s20_udp/src/temac_clk_gen.v": "b1b3474b1a97cc96a73297be56c4d3fc8322891cd3d6f83b3560d2fe95c126d3",
+    "vendor/anlogic_hx4s20_udp/src/tx_client_fifo.v": "f4a118ba55c737b26b1a1498402a5ce5e710e30ab4fb34ca8feb49f23c2333bc",
+    "vendor/anlogic_hx4s20_udp/src/tx_clk_en_gen.v": "da8c09e5308e8bebbfdfacaad7d83f5f9371811f54a8f6203e452e40649b02e9",
+    "vendor/anlogic_lab6/al_ip/afifo_16_32_256.v": "32c86a05d74f05c19e38ad87d73040530f6430fee6acbf9b4d4df8900152b4ed",
+    "vendor/anlogic_lab6/al_ip/afifo_32_16_256.v": "3f0119e1b1bcecd5af05cdfdb3a56dc336efcbc2eea9f9dd3af8b98a205ded75",
+    "vendor/anlogic_lab6/frame_fifo_read.v": "9620c3151b0a905b7defaff8048af2938368737b9ce27696e3021e495dbcfc1d",
+    "vendor/anlogic_lab6/frame_fifo_write.v": "202042f62448cc1bc8b73f2ec70ff4a012969bb5e8f4226a9e8e0cca7e9d37f0",
+    "vendor/anlogic_lab6/frame_read_write.v": "118d27a3aefbd3fa241cce1491015d7f54161acd523a526fd4cff5ea66ef3c96",
+    "vendor/anlogic_lab6/sdram/enc_file/global_def.v": "398a6f849990f421c65d3d65db4a2e09824811b61d027cc375c99bd3d2f2e896",
+    "vendor/anlogic_lab6/sdram/enc_file/sdr_as_ram.enc.v": "3fc0299e910b80fca5eb5d644f6c62232e0b7e40f01701084c2d98b044f07aff",
+    "vendor/anlogic_lab6/sdram/enc_file/sdr_init_ref.enc.v": "101157ca6b08281a3bf7746af36fa69fc3521b560a960cad4bf7fbcb3bd16e44",
+    "vendor/anlogic_lab6/sdram/enc_file/sdr_wrrd.enc.v": "c7d7fe07d75f66aa88d9f986b3006319c995162434f104f9990664b374cdfdd2",
+    "vendor/anlogic_lab6/sdram/sdram.v": "e3859f8e09180ef2dd36365143134a081b91f7a133ba2870f9106d03e0225e2c",
+    "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/DVITransmitter.enc.vhd": "fa009e816fc717374679dba8096c518dc6f3ffbc2389d440a1724d9487ec1674",
+    "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/SerializerN_1_lvds.enc.vhd": "d5fb9b03e33a0e43398e1e963036bbd87fd386c23af1b79f23e3d32e87b1dd63",
+    "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/SerializerN_1_lvds_dat.enc.vhd": "2215e28372d39d6cb155f5b87feb39fa578cca39223cedb9e712ca7413d7783e",
+    "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/TMDSEncoder.enc.vhd": "f87572d7ce8539276e280c411fe46f42f3282210d7c53601cfd6c8ecb8c71beb",
+    "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/hdmi_tx.vhd": "dc91fe383c0001b1ce71b91bbd8deee2ff3c6fc14e5b973cb33e168653264aa5",
+    "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/sd_card/sd_card_cmd.v": "0220af147042e24f2da4a56dd8c22909d1ff5b3fa2b86aca86b3c52291ade7c3",
+    "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/sd_card/sd_card_sec_read_write.v": "562ff43e6544728d09143fed377dfc67af37ace1ce3351fdcc56306b3b8a00ec",
+    "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/sd_card/sd_card_top.v": "9875d2603c55dbd66c961cb26d23834f525242ba6e5209abf5bdeee44e8a4426",
+    "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/sd_card/spi_master.v": "a8c1cce7d22a6bd32d2cf08d441723858085eb05424e462487844c571ec102f2",
+    "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/video_delay.v": "f47c4b63f8baa6d8874c87dca5b72dfdadd19f4a107403da98752bce98936433"
+  },
+  "scripts_sha256": {
+    "scripts/build.ps1": "785abca12eaf5e3bf7f06876b0c7b83285bf9d9bd0f819ea5b9e093129137db7",
+    "scripts/build_secondary_main5e_pr.tcl": "db2f0d1db1a4d9d289988589ef4700ece5396f8126998bfc6b81419cdd083e93",
+    "scripts/build_secondary_main5e_bitgen.tcl": "a0ff934ef78b0dddb6bfa55677cc5b0b9575c5f1b405fa9c38474cd4f6f7ae2a"
+  },
+  "verification_sources_sha256": {
+    "sim/run_mbp1_reconnect.do": "b48b6c30d3b14588d07e3f8ccdf40360d1b140b91a93a881f86ff53fc43cc92f",
+    "sim/run_secondary_fixed720.do": "da47e72d8d8b1504cfb1acdafcecf21307b6272acdf5402ac324d08238fafd06",
+    "sim/run_secondary_frame_store_alignment.do": "95718131bcd8ead79a97ad82781c99457acf297e77f0e85be38eceafb5166c3a",
+    "sim/run_secondary_help.do": "ecc711d6173034da78a5b347fd634e7191a2466da6536874a7223ee085f4bc40",
+    "sim/run_secondary_help_fixed720.do": "25967923737ecc0971fa41c4729ab4fde2583c98fe1ec234f95c47fe923542bb",
+    "sim/run_secondary_help_load.do": "9c10438f741caaae448b49844ed593aa09848dbd1e64fd83b90d53f7c8863cea",
+    "sim/run_secondary_help_primitives.do": "27d76b8a41fa8a9a6580ff9ce94bb0cdd078dc62649230e747e490e223210452",
+    "sim/run_secondary_local.do": "16c5f35ee1b3b2c3cd3e7f75a4525d1da589b3962b09f6fd976b1fc8041478ce",
+    "sim/run_secondary_main5e_codec.do": "0c96b374025218a2cd34def46d8d67c27fc3c5cf40cc7730e77a4315785f691e",
+    "sim/run_secondary_main5e_endpoint.do": "5d3eecf445c60094c7bf9e2590c6635a1c1ef23d03c59ac1cbbd4c50575742e4",
+    "sim/run_secondary_main5e_fixed_udp.do": "6715c31947eb6f516a576d090f1395c09c0112190bbef09c79b6be280d99b96a",
+    "sim/run_secondary_main5e_keys.do": "52d9d7f26576a65b0a6c9061b3e1b991e239af3bbd478f154d1f0ede2784564f",
+    "sim/run_secondary_main5e_status_adapter.do": "447c24ee3dc0160f2755c465841e2d6672a1b484cfaa82235fc14b7a005dbef5",
+    "sim/run_secondary_native720_media.do": "a615271edefe6f10a09913030f30741d1f5003160f2bdb692d2e705280fd8d86",
+    "sim/run_secondary_page_switch.do": "982c34622bb7c3ab90b6ce31480851a4294df538ee9cc2c52de03a06a9fe54ad",
+    "sim/run_secondary_transition.do": "7a176d3672374b1bf08ae013c707190a3d718645a3e29a896ed8efdec39a3633",
+    "sim/secondary_help_physical_stubs.v": "241dc10f695adc8cf9c6664fb1cbbb2b6df8ac58dcfcf861a9cb79a1ba27d4a1",
+    "sim/tb_fat32_bmp_adaptive_loader.v": "0a44f4e04a8d9b7b4c6eb2c07855e36535f60c1bf9cc124ca3a3ab1b5f1014f5",
+    "sim/tb_mbp1_codec.v": "ecc4e0e9ab6ba70780196cfefb6b278c363103e74138d1185237602ec3482113",
+    "sim/tb_mbp1_fixed_udp.v": "9d2664d0902d681088188eaf4b61fbb56024c0b986a013e1e101abd738473a12",
+    "sim/tb_mbp1_reconnect.v": "61668663000e6bcec3ec438e3aa709a35e37fc84510d7fc5b9f99ee0a4312eec",
+    "sim/tb_mbp1_secondary_endpoint.v": "a66781ce989475fd4b6b8dd5e9c5e80d402af25992985666b6078927283723f4",
+    "sim/tb_secondary_carousel_controller.v": "f4e5ecec7aa9758e632b2595f1368af08a1eebc88983ca8c87776ee349f212e7",
+    "sim/tb_secondary_frame_store_alignment.v": "dca31d906c6445622ce8cd24dda598215ed7188c0ca60bb5ac097f9ab39bb852",
+    "sim/tb_secondary_help_load.v": "97f1b8d0e6bb85447da6878e33ce15fc974575a7d29478080dd1ec386a6b453a",
+    "sim/tb_secondary_help_overlay.v": "69811d7490f1bed3d5e68a928d2c436a0c6011106d1d334094fa86f1e729e9d5",
+    "sim/tb_secondary_main5e_keys.v": "e7bbb0e602457b782315538a5408cff2e168fd7e8be2f4b90892dc78f2da9894",
+    "sim/tb_secondary_main5e_status_adapter.v": "914220b97122aba93682712c9015e7b955a002482149557aaa72fe4dc1c56c42",
+    "sim/tb_secondary_page_overlay.v": "a35e83c608b76457e622e70ebab458563b909d0824df52536843f604685e0078",
+    "sim/tb_secondary_page_switch.v": "01740086ba8d750c923d71a5e2e48e6b08380181550d32877145f1fd8b61d774",
+    "sim/tb_secondary_stream_carousel.v": "0eb7e5250929024bf706cc8da409cc67d5e546f30c08fe32ebf33feaea6b6cff",
+    "sim/tb_transition_theme_controller.v": "6151b569d5648aa6457ab849479b3f4edacbfc69652d03e7d21682834f75baa7",
+    "sim/tb_video_transition_mask.v": "4e66c5e9e7f3d1c379ec7008b7092c223d74b3653eb628438b20ce2b289a0b84"
+  },
+  "simulation": {
+    "sim/alignment_help_sync.log": {
+      "sha256": "081f76bcd094d5ef89548cb818393eab5eda75512de12d5b49f25c0bb56f4ca5",
+      "passes": 2
+    },
+    "sim/run_secondary_main5e_codec_help_sync.log": {
+      "sha256": "3bf0c066198b66c31954051e598e7560ae8df57a42e78fc895881df9f852ac76",
+      "passes": 1
+    },
+    "sim/run_secondary_main5e_endpoint_help_sync.log": {
+      "sha256": "757e84e3aebd677403ef1f35f45b1b8c28544a94a4659b8d2f86368c23d3db9f",
+      "passes": 1
+    },
+    "sim/run_secondary_main5e_fixed_udp_help_sync.log": {
+      "sha256": "4e44053b8f492c67945e11dfc42bb768c9aad3a01bd42b3b110ca8357a557020",
+      "passes": 2
+    },
+    "sim/run_secondary_main5e_keys_help_sync.log": {
+      "sha256": "d3cd47022054b1e9e36c9b1dfe4a959dc059c81ac49271f1bd2d97f7fa4cb8bb",
+      "passes": 1
+    },
+    "sim/run_secondary_main5e_status_adapter_help_sync.log": {
+      "sha256": "28f207bd9b157faec3b960b94d21ab367b0279c3b273e4dae668b13f040ad144",
+      "passes": 1
+    },
+    "sim/run_secondary_local_help_sync.log": {
+      "sha256": "0884fda806ab691142e497a0f65e79212abb04e561d4a00a671eb60741f7ccf3",
+      "passes": 3
+    },
+    "sim/run_secondary_transition_help_sync.log": {
+      "sha256": "18010d759c08cceae5c8af64db246ae91cbc76986a665bf89824876a290462b0",
+      "passes": 2
+    },
+    "sim/run_secondary_native720_media_help_sync.log": {
+      "sha256": "ecec2dda97704b06cf5a54db976db34b4de25225bea2694804f4a2c8652761be",
+      "passes": 2
+    },
+    "sim/run_secondary_fixed720_help_sync.log": {
+      "sha256": "6aac739e0ee1de09c43204bbc31c3bb6e55b91b334143fcbb36b4a4271a45bce",
+      "passes": 8
+    },
+    "sim/run_secondary_page_switch_help_sync.log": {
+      "sha256": "b9e8473a6359f4e17403253659ceccab60288ff026cd76bf9f7cc34d659cc5fc",
+      "passes": 1
+    },
+    "sim/run_secondary_help_help_sync.log": {
+      "sha256": "50c90afca9309c9c826b7464a402ae138817219d1abbe6b85513d44e1e261ef1",
+      "passes": 3
+    },
+    "sim/run_secondary_help_primitives_help_sync.log": {
+      "sha256": "5ec19939a8d20cfdc32d4b65647e4b05172b24809f6d92ecca0d29fbb2051da5",
+      "passes": 1
+    },
+    "sim/help_fixed720.log": {
+      "sha256": "a879ead55d8d7686040031842b27db81eb7fac9985d958ba91deac419d744c8f",
+      "passes": 9
+    },
+    "sim/help_load_fixed720.log": {
+      "sha256": "6be577fac5254f6db1abe9287f673b223d16fb6362cb0b102c655f929886c576",
+      "passes": 1
+    }
+  },
+  "simulation_passes": 38,
+  "simulation_groups": 15,
+  "simulation_note": "ModelSim 10.4 top scheduler uses -novopt after vopt signal11 crash; all assertions retained. Official RAM overlay tested with installed TD model paths. Reconnect pair test needs absent main-board checkout and was not rerun; control RTL matches the fetched release.",
+  "main_board_changed": false,
+  "tf_written": false,
+  "local_build_report_sha256": {
+    "_build_secondary_help_fixed720_seed6/console.log": "c2ce43a0b5d5ebc90ddb225484d34f054d96604f622dd49d663d99dfb869d2ea",
+    "_build_secondary_help_fixed720_seed6/bitgen.log": "7dbe4ebd47a1eedf54287514dfa6c49d2402f2d16716888d001c2285cbf973a8",
+    "_build_secondary_help_fixed720_seed6/secondary_main5e_gate.area": "7bb10b6d0ce7c4d3d02e3833084b1730b4d44c91becea6b719f50a85853eab9f",
+    "_build_secondary_help_fixed720_seed6/secondary_main5e_final.area": "e139e66adf8488048ba29f80cb762516a96a4c3872a581b1dd6ef3f1b8d4708d",
+    "_build_secondary_help_fixed720_seed6/secondary_main5e_final.qor": "647ea4b965bc21e0296cb011937014cdc852ce3ad574440f9f7264373811041b",
+    "_build_secondary_help_fixed720_seed6/secondary_main5e_final.ts": "ea52cfb146f7cff551f105f7a146404988d834b5d6b3c6bb9970f77dfe24204e",
+    "_build_secondary_help_fixed720_seed6/secondary_main5e_final.timing": "e7c3d35c7098485671ecc09fd010d5a569130c64b4822e1624a20cb90ceeeb9e",
+    "_build_secondary_help_fixed720_seed6/secondary_main5e_pr.status": "7ca375aa95b209ae74342ffa04f7476fe884b394840b937bdd818a17ad9e618a",
+    "_build_secondary_help_fixed720_seed6/secondary_main5e_exception.timing": "6caf8bf953267413c11a03707667e3be2bbf6b3e09a4d801bcdbf590ea49e5e1"
+  },
+  "report_sha256": {
+    "docs/reports/secondary_help_fixed720_20261003_area.rpt": "e139e66adf8488048ba29f80cb762516a96a4c3872a581b1dd6ef3f1b8d4708d",
+    "docs/reports/secondary_help_fixed720_20261003_gate_area.rpt": "7bb10b6d0ce7c4d3d02e3833084b1730b4d44c91becea6b719f50a85853eab9f",
+    "docs/reports/secondary_help_fixed720_20261003_status.rpt": "7ca375aa95b209ae74342ffa04f7476fe884b394840b937bdd818a17ad9e618a",
+    "docs/reports/secondary_help_fixed720_20261003_timing.rpt": "e7c3d35c7098485671ecc09fd010d5a569130c64b4822e1624a20cb90ceeeb9e",
+    "docs/reports/secondary_help_fixed720_20261003_bitgen.rpt": "7dbe4ebd47a1eedf54287514dfa6c49d2402f2d16716888d001c2285cbf973a8",
+    "docs/reports/secondary_help_fixed720_20261003_implementation.rpt": "c2ce43a0b5d5ebc90ddb225484d34f054d96604f622dd49d663d99dfb869d2ea",
+    "docs/reports/secondary_help_fixed720_20261003_qor.rpt": "647ea4b965bc21e0296cb011937014cdc852ce3ad574440f9f7264373811041b",
+    "docs/reports/secondary_help_fixed720_20261003_exceptions.rpt": "6caf8bf953267413c11a03707667e3be2bbf6b3e09a4d801bcdbf590ea49e5e1",
+    "docs/reports/secondary_help_fixed720_20261003_simulation.rpt": "cddd6013cdc44e0abd46447d0ac4b6bef24e9dfa2eaf7632f0f55a829aeb7cb0"
+  },
+  "simulation_archive": {
+    "path": "docs/reports/secondary_help_fixed720_20261003_simulation.rpt",
+    "sha256": "cddd6013cdc44e0abd46447d0ac4b6bef24e9dfa2eaf7632f0f55a829aeb7cb0",
+    "passes": 38,
+    "groups": 15,
+    "individual_log_hashes": "simulation records below; raw log bytes are embedded after each header in this archive"
+  },
+  "board_validation": {
+    "status": "USER_REPORTED_PASS",
+    "reported_at": "2026-10-03T19:33:58+08:00",
+    "bit_sha256": "91a70946f2fa9966d1baf6466b921c6d6e4c3be090d8d9c4a62fd0235d5bc25a",
+    "user_confirmation": "可以可以，现象没错，可以push一波",
+    "scope": "Current delivered integrated bit and observed display behavior; duration and exhaustive fault/reconnect scenarios were not reported"
+  }
+}
