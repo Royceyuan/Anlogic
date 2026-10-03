@@ -11,6 +11,8 @@
 
 生成目录同时包含 `package_report.txt` 和 `package_manifest.json`，记录图片尺寸、音频时长、字幕条数及每个板端文件的 SHA-256。这两个报告文件不要复制到 TF 卡。
 
+主界面右侧新增“使用说明”按钮：内置可滚动说明页，包含目录与文件命名、检查/打包/写卡流程、图片及音频格式、direct/auto/fit 区别、SRT 和切图 Markdown 示例、输出清单及常见错误。无需打开 README；关闭说明不会退出打包工具，打包及时间轴逻辑不变。
+
 ## 每个文物目录必须包含
 
 - `全貌图.png` 或 `全貌图.jpg`
@@ -56,6 +58,8 @@ py -3 .\museum_media_packager.py --build "D:\VSCode\CodeFiles\Git_TD\素材" --o
 
 2026-10-03 验证：GUI 窗口正常启动，PE 子系统为 Windows GUI；仅复制 EXE、移除 PATH 中的 Python 后，31 个文件生成及校验通过，并与源码版逐文件 SHA-256 一致。规范 WAV、名称、字幕和切图时间通过；本机 FFmpeg 非规范 WAV 转换及 `CREATE_NO_WINDOW` 检查通过。测试未改动真实素材或 TF 卡。
 
-本次 EXE 大小 20,402,205 字节，SHA-256 见 `MuseumTFPackager.exe.sha256`。EXE 未签名，Windows 首次运行可能提示安全确认；分发前可核对校验值。
+2026-10-03 说明页增量验证：内置内容、只读显示、滚动和独立关闭通过，完整 EXE 打包及音频转换回归仍通过。主界面点击“使用说明”即可查看，不依赖外部说明文件。
+
+本次 EXE 大小 20,404,797 字节，SHA-256 见 `MuseumTFPackager.exe.sha256`。EXE 未签名，Windows 首次运行可能提示安全确认；分发前可核对校验值。
 
 打包采用 [PyInstaller 官方单文件/无控制台选项](https://pyinstaller.org/en/stable/usage.html)。未重新实现界面或媒体转换逻辑。

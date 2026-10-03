@@ -6,17 +6,36 @@ from pathlib import Path
 import struct
 import subprocess
 import tempfile
+import tkinter as tk
 from unittest.mock import patch
 import wave
 
 from PIL import Image
 
 from museum_media_packager import (
-    build_package, canonical_wav, find_ffmpeg, normalize_wav, sha256, verify_tf,
+    HELP_TEXT, build_package, canonical_wav, find_ffmpeg, normalize_wav, sha256,
+    show_help, verify_tf,
 )
 
 
 def main():
+    gui = tk.Tk()
+    gui.withdraw()
+    try:
+        help_window = show_help(gui)
+        gui.update()
+        body = help_window.winfo_children()[0].winfo_children()[1]
+        text = next(widget for widget in body.winfo_children() if isinstance(widget, tk.Text))
+        assert text.get("1.0", "end-1c") == HELP_TEXT
+        assert text.cget("state") == "disabled"
+        text.yview_moveto(1.0)
+        gui.update()
+        assert text.yview()[0] > 0, "Help must scroll"
+        help_window.destroy()
+        assert gui.winfo_exists(), "Closing help must not close the packager"
+        print("PASS help page: embedded content, read-only, scroll, independent close")
+    finally:
+        gui.destroy()
     exe = Path(__file__).resolve().with_name("MuseumTFPackager.exe")
     binary = exe.read_bytes()
     pe = struct.unpack_from("<I", binary, 0x3C)[0]
