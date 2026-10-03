@@ -87,7 +87,7 @@ def align_batch(request, model_path):
             raise ValueError("音频为全静音，无法校准字幕")
         samples = torchaudio.functional.resample(mono, 48000, 16000).numpy()
         result = model.align(samples, "\n".join(texts), language="zh",
-                             original_split=True, regroup=False, verbose=None, vad=False, token_step=0, fast_mode=True)
+                             original_split=True, regroup=False, verbose=None, vad=False, token_step=100, fast_mode=False)
         if result is None:
             raise ValueError("音频无法定位字幕，请核对文字是否与音频相符")
         try:
@@ -103,6 +103,7 @@ def align_batch(request, model_path):
                        "cues": cues, "warnings": warnings})
     return {"model": "whisper-small", "model_sha256": MODEL_SHA256, "device": "cpu",
             "language": "zh", "engine": "stable-ts 2.19.1 / whisper 20250625",
+            "alignment_mode": "normal / token_step=100",
             "network": "disabled", "tracks": output}
 
 

@@ -1,132 +1,115 @@
-"""Create image-matched female demo narration; never overwrite the source media."""
+"""Create continuous female narration; requires edge-tts and consent to send text to Microsoft."""
 
 import argparse
-from array import array
-import base64
+import asyncio
 import hashlib
 import json
 from pathlib import Path
 import subprocess
 import sys
+import unicodedata
 import wave
 
 
 NARRATION = {
     "01_越王勾践剑": [
-        ["眼前展示的是越王勾践剑。", "先看全貌，剑身修长，剑尖向下。", "两侧轮廓逐渐收束，显得利落而庄重。", "这是以名剑为主题制作的展陈示意图。"],
-        ["现在看剑柄与剑格的细节。", "剑格上蓝绿色装饰，与深色金属形成对比。", "两侧装饰相互呼应，中部轮廓向下突出。", "下方的菱形纹理，让剑身更有层次。"],
-        ["接下来观察剑尖与两侧刃线。", "剑身从宽处逐渐收紧，汇成锐利的尖端。", "明亮的边缘，衬托出中央深色的菱形纹。", "这个近景，突出线条与纹饰之间的对比。"],
-        ["现在看靠近剑格的文字装饰。", "图中两列金色符号，排列在剑身中央。", "真实勾践剑的身份，与剑上的鸟篆铭文有关。", "这里的示意字形，不作为真实铭文释读。"],
-        ["回到全貌，再看剑柄、剑格与剑身。", "三个细节，让我们看清装饰和结构的关系。", "菱形纹、彩色装饰与修长轮廓彼此呼应。", "越王勾践剑的这一组展示，到这里结束。"],
+        ["请把目光停在这道青铜的锋芒上。", "越王勾践剑，带我们走近遥远的春秋时代。", "修长的剑身收拢到尖端，安静，却自有气势。", "不妨从剑柄开始，读一读古人的匠心。"],
+        ["剑格上，蓝绿相映的装饰格外醒目。", "沉稳的金属，遇上宝石般的亮色。", "它让我们想到，兵器也承载着主人的审美。", "菱形纹向下铺开，秩序与锋芒在此相遇。"],
+        ["再沿着明亮的刃线，看向剑尖。", "由宽到窄，力量仿佛被收拢到一个点。", "明暗交错的菱形，像为青铜披上了一层暗锦。", "简练的轮廓背后，是对形制与比例的把握。"],
+        ["靠近剑格，文字为这把剑留下身份的线索。", "真品上的八字鸟篆，指向它的主人勾践。", "优美的文字，也是跨越年代的署名。", "一个名字，让遥远的历史有了清晰的面孔。"],
+        ["回看全剑，彩饰、纹样与线条彼此呼应。", "这道锋芒背后，是冶铸、审美与王者的记忆。", "岁月带走了当年的声音，却留下了青铜。", "今天，我们仍能从这些细节里，与古人相遇。"],
     ],
     "02_四羊方尊": [
-        ["眼前展示的是四羊方尊。", "它是一件商代青铜器，造型庄重而生动。", "展开的口沿、修长的颈部和底座上下呼应。", "这组展陈示意图，将重点带到造型细节。"],
-        ["先看第一张细节图中的羊首。", "卷曲的羊角环绕头部，轮廓清晰有力。", "羊首从器身向外伸出，打破方形的平直。", "动物造型与器物结构，在这里融为一体。"],
-        ["接下来观察肩部和颈部的装饰。", "浮起的兽形纹饰，沿肩部横向展开。", "颈部纵向纹样，与肩部横向装饰形成对照。", "细密底纹，让突出的造型更加醒目。"],
-        ["现在把视线移到腹部与底座。", "腹部纹饰层层展开，中间立起一道棱线。", "下方底座向外展开，承托上部器身。", "连续的纹理，把上下几部分联系起来。"],
-        ["回到全貌，看它整体的比例与节奏。", "方正轮廓中，羊首带来了鲜明的立体变化。", "平面纹饰与立体造型，构成统一的视觉语言。", "四羊方尊的这一组展示，到这里结束。"],
+        ["四只卷角羊，守住了一件青铜器的四个角。", "这就是四羊方尊，一件来自商代的艺术珍品。", "开阔的口沿与厚重的器身，透出庄严的气息。", "细看之后，你会发现庄严之中，也藏着生动。"],
+        ["最先吸引目光的，是向外探出的羊首。", "羊角盘曲，双眼有神，仿佛随时会转过头来。", "柔和的曲线，打破了方形器身的平直。", "羊不只是装饰，它已经成为器物的一部分。"],
+        ["顺着羊首往上看，肩部的纹饰层层展开。", "浮起的兽形与细密底纹，营造出深浅变化。", "颈部的纵线，与肩部的横向装饰相互呼应。", "古人把平面纹样和立体造型，织进同一件作品。"],
+        ["目光向下，腹部与底座又有新的节奏。", "突起的棱线，让繁密纹饰有了清晰的边界。", "宽稳的底座，托起上方丰富的形体。", "一繁一简，一轻一重，整体因此显得安定。"],
+        ["退后一步，四羊方尊的气势再次完整呈现。", "方正与曲线、纹样与雕塑，在这里相互成全。", "青铜留住的不只是形状，还有古人的想象力。", "一件器物，就这样把工艺变成了艺术。"],
     ],
     "03_金缕玉衣": [
-        ["眼前展示的是金缕玉衣。", "它不是日常衣物，而是汉代的贵族葬具。", "全貌呈现出头部、躯干和四肢的轮廓。", "这组示意图，让我们观察玉片的拼接方式。"],
-        ["先看肩部与上臂的连接细节。", "一片片玉片，顺着肩部曲线排列。", "细金丝将相邻玉片连在一起。", "平整玉片的组合，形成了转折的肩部轮廓。"],
-        ["接下来观察头罩与面部。", "玉片分区拼合，勾勒出面部的大致形状。", "中央有鼻部起伏，周围分布着连接点。", "这些细节，体现了从平面到立体的组合。"],
-        ["现在看腰部与腿部的衔接。", "腰部的弧形边缘，连接着下方的玉片。", "金丝沿接缝排列，形成有规律的线条。", "玉片的大小和形状，也随着轮廓变化。"],
-        ["回到全貌，重新观察整套玉衣。", "许多小片，通过连接组成完整的人体外形。", "金缕玉衣，展现了细致的加工与组合思路。", "这一组展示，到这里结束。"],
+        ["这件看似衣服的珍品，并不是用来日常穿着的。", "金缕玉衣，是汉代贵族使用的葬具。", "古人相信玉能守护身体，寄托对不朽的期待。", "这份期待，被化成了一片片玉和一缕缕金丝。"],
+        ["来到肩部，玉片沿着身体的转折排列。", "细金丝穿过连接处，把分散的小片连成整体。", "坚硬的玉，竟被组织成近似衣服的轮廓。", "看似轻巧的连接，背后是耐心细致的加工。"],
+        ["再看头罩，平整玉片勾勒出了面部的起伏。", "鼻部略微隆起，周围的拼接向两侧铺开。", "每一处转折，都需要玉片彼此配合。", "这张安静的面孔，藏着古人对生命的牵挂。"],
+        ["腰部与腿部，让我们看见另一种组合方式。", "弧形边缘顺着身体变化，金丝沿接缝延伸。", "玉片的大小和形状，也随着位置而改变。", "没有一整块玉，只有许多小片共同完成的轮廓。"],
+        ["回到全貌，细碎的玉片已经汇成完整的人形。", "温润的玉与纤细的金，凝结了技艺，也寄托了信念。", "今天看它，我们不必相信玉能让生命不朽。", "却能理解古人对生命、尊严与永恒的想象。"],
     ],
     "04_马踏飞燕": [
-        ["眼前展示的是铜奔马，也称马踏飞燕。", "先看全貌，奔马昂首，四肢向不同方向伸展。", "一只后蹄落在飞鸟上，其余三足腾空。", "这组示意图，突出奔跑瞬间的动感。"],
-        ["先看马头与颈部的近景。", "张开的嘴、竖起的耳朵，构成有力的表情。", "鬃毛沿着颈部排列，加强向前的动势。", "头颈的起伏，让静止的造型显得充满活力。"],
-        ["接下来观察马蹄与飞鸟的接触处。", "马蹄落在鸟背上，支撑起奔马的姿态。", "飞鸟展开双翼，头部向上转动。", "这个细节，是整件造型最醒目的焦点。"],
-        ["现在看马身、四肢与扬起的尾巴。", "前后肢错开伸展，形成一组有节奏的线条。", "饱满的躯干，与细长的腿部形成对照。", "尾部向后扬起，将奔跑的方向继续延伸。"],
-        ["回到全貌，看看这些线条如何连成整体。", "马与鸟相互呼应，让速度仿佛可以被看见。", "从头部到四肢，每个细节都服务于动感。", "铜奔马的这一组展示，到这里结束。"],
+        ["如果把风凝固下来，会是什么模样？", "眼前的铜奔马，仿佛给出了一个答案。", "三足腾空，一足踏鸟，奔跑被定格在青铜里。", "它也被称作马踏飞燕，名字里就带着飞扬的气息。"],
+        ["靠近马头，张开的嘴仿佛正发出一声长嘶。", "竖起的耳朵与昂扬的颈部，让精神跃然眼前。", "鬃毛顺着颈线铺开，像被疾风向后梳过。", "还未看清四蹄，我们已经感到了向前的力量。"],
+        ["真正巧妙的地方，藏在马蹄与飞鸟之间。", "一只马蹄落在鸟背上，其余三足凌空伸展。", "飞鸟转头回望，仿佛惊讶于这突如其来的相遇。", "沉重的青铜，竟让人看出了轻盈。"],
+        ["再看躯干、四肢与扬起的尾巴。", "饱满的身体和细长的腿，构成鲜明的张力。", "前后肢错开伸展，把奔跑的节奏带到眼前。", "尾巴向后扬起，仿佛速度还没有停下来。"],
+        ["回到全貌，马与鸟把一个瞬间变成了永恒。", "无声的青铜里，有风，也有生命的昂扬。", "工匠没有真的让它奔跑，却让我们相信它正在奔跑。", "这正是铜奔马打动人心的地方。"],
     ],
     "05_长信宫灯": [
-        ["眼前展示的是长信宫灯。", "它以跪坐持灯的人物形象，将照明与造型结合。", "全貌中，人物与灯体相互依托。", "这组示意图，带我们观察三处局部。"],
-        ["先看人物的面部、衣袖与持灯姿态。", "面部表情平静，衣褶沿身体展开。", "手臂在灯体旁弯曲，构成连贯的轮廓。", "人物不是附加装饰，而是整体造型的一部分。"],
-        ["接下来观察灯体下部与开口区域。", "横向边缘，和竖向支撑形成清晰的层次。", "暗色开口，与金色表面形成鲜明对比。", "这个近景，让灯与人物的连接更加直观。"],
-        ["现在看灯体上部与人物之间的关系。", "图中上部呈现展开的结构示意。", "真实宫灯的构件可以拆卸，便于清洁。", "示意图用于观察结构，不代替实物测绘。"],
-        ["回到全貌，再看人与灯的整体轮廓。", "照明器具，也能被塑造成优雅的人物形象。", "功能与艺术的结合，是这件文物的看点。", "长信宫灯的这一组展示，到这里结束。"],
+        ["想象一间汉代居室，灯火正在悄悄亮起。", "一位跪坐的宫女托着灯，神情安静而专注。", "这就是长信宫灯，把照明变成了一幅温柔的画面。", "它的动人之处，却不只在于这张面孔。"],
+        ["先走近人物，看看她低垂的目光与舒展的衣袖。", "面部的平静，与衣褶的流动形成细腻的对照。", "弯曲的手臂，让人与灯自然地连在一起。", "实用器具，因此有了人的姿态和温度。"],
+        ["视线移到灯体，开口与边缘构成清晰的层次。", "金色表面围着暗处，让我们不禁想象其中的灯火。", "真品的灯罩可以调节，控制光照的方向。", "一盏灯，已经藏着古人对使用体验的细心考虑。"],
+        ["而灯体上部，还提示着更巧妙的结构。", "真品借助中空的手臂，将烟尘引入灯的内部。", "构件又能拆卸，便于清洁和维护。", "美丽的外形之下，原来还有一套周到的设计。"],
+        ["回看这位持灯的宫女，人物与器物已难分彼此。", "她托起的不只是灯，也托起了古人的生活智慧。", "从一束光出发，艺术、功能与体贴在这里相逢。", "隔着漫长岁月，这份用心依然让人感到温暖。"],
     ],
 }
 
-SPEECH = r"""
-Add-Type -AssemblyName System.Speech
-$request = Get-Content -LiteralPath $env:MUSEUM_NARRATION_REQUEST -Raw -Encoding UTF8 | ConvertFrom-Json
-$speaker = New-Object System.Speech.Synthesis.SpeechSynthesizer
-$speaker.SelectVoice('Microsoft Huihui Desktop')
-$speaker.Rate = 0
-$format = New-Object System.Speech.AudioFormat.SpeechAudioFormatInfo(24000, [System.Speech.AudioFormat.AudioBitsPerSample]::Sixteen, [System.Speech.AudioFormat.AudioChannel]::Mono)
-try {
-    foreach ($item in $request) {
-        $speaker.SetOutputToWaveFile($item.path, $format)
-        $speaker.Speak($item.text)
-        $speaker.SetOutputToNull()
-    }
-} finally { $speaker.Dispose() }
-"""
+VOICE = "zh-CN-XiaoxiaoNeural"
 
 
-def timestamp(frames):
-    milliseconds = frames * 1000 // 24000
+def timestamp(milliseconds):
     seconds, ms = divmod(milliseconds, 1000)
     minutes, sec = divmod(seconds, 60)
     hours, minute = divmod(minutes, 60)
     return f"{hours:02}:{minute:02}:{sec:02},{ms:03}"
 
 
-def generate(source, output):
-    import os
+async def generate(source, output):
+    import edge_tts
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from generate_museum_subtitles import parse_srt, parse_scene_script, render_bitmap
+    from museum_media_packager import find_ffmpeg
+
     if output.exists() or output.is_relative_to(source):
         raise ValueError("Output must be a new directory outside the source")
     assert sorted(p.name for p in source.iterdir() if p.is_dir()) == sorted(NARRATION)
     image_hashes = {str(p.relative_to(source)): hashlib.sha256(p.read_bytes()).hexdigest()
                     for p in source.glob("*/*.bmp")}
     assert len(image_hashes) == 20
+    ffmpeg = find_ffmpeg()
+    if ffmpeg is None:
+        raise FileNotFoundError("The existing packager FFmpeg is required")
+    voices = await edge_tts.list_voices()
+    assert any(v["ShortName"] == VOICE and v["Gender"] == "Female" for v in voices)
     output.mkdir(parents=True)
-    clips = output / "clips"
-    clips.mkdir()
-    request = []
-    for track, scenes in enumerate(NARRATION.values()):
-        assert len(scenes) == 5 and sum(map(len, scenes)) <= 32
-        for scene, texts in enumerate(scenes):
-            for cue, text in enumerate(texts):
-                assert len(text) <= 28
-                request.append({"text": text, "path": str(clips / f"{track}_{scene}_{cue}.wav")})
-    request_path = output / "speech_request.json"
-    request_path.write_text(json.dumps(request, ensure_ascii=False), encoding="utf-8")
-    env = {**os.environ, "MUSEUM_NARRATION_REQUEST": str(request_path)}
-    subprocess.run(["powershell.exe", "-NoProfile", "-EncodedCommand",
-                    base64.b64encode(SPEECH.encode("utf-16-le")).decode()],
-                   env=env, check=True, creationflags=subprocess.CREATE_NO_WINDOW)
-    rows = []
+    rows, choices = [], {}
     for track, (name, scenes) in enumerate(NARRATION.items()):
         target = output / "素材" / name
         target.mkdir(parents=True)
-        pcm, cues, boundaries = bytearray(), [], [0]
-        for scene, texts in enumerate(scenes):
-            # Existing image transitions continue while audio runs: reserve 1.3s before scene narration.
-            pcm.extend(bytes(24000 * 2 * (0 if scene == 0 else 1)))
-            pcm.extend(bytes(24000 * 2 * 3 // 10))
-            for cue, text in enumerate(texts):
-                with wave.open(str(clips / f"{track}_{scene}_{cue}.wav"), "rb") as wav:
-                    assert (wav.getframerate(), wav.getnchannels(), wav.getsampwidth()) == (24000, 1, 2)
-                    data = wav.readframes(wav.getnframes())
-                samples = array("h", data)
-                active = [i for i, value in enumerate(samples) if abs(value) > 32]
-                assert active and max(map(abs, samples)) < 32767
-                # Retain 80ms before and 120ms after speech, removing SAPI's variable tail silence.
-                first, last = max(0, active[0] - 1920), min(len(samples), active[-1] + 2880)
-                data = samples[first:last].tobytes()
-                start = len(pcm) // 2
-                pcm.extend(data)
-                cues.append((start, len(pcm) // 2, text))
-                pcm.extend(bytes(24000 * 2 // 5))
-            # Whole-second scene endpoints keep the existing optional script parser exact.
-            pcm.extend(bytes((-len(pcm)) % (24000 * 2)))
-            boundaries.append(len(pcm) // 2)
-        with wave.open(str(target / "讲解音频.wav"), "wb") as wav:
-            wav.setparams((1, 2, 24000, 0, "NONE", "not compressed"))
-            wav.writeframes(pcm)
+        texts = [text for scene in scenes for text in scene]
+        assert len(scenes) == 5 and len(texts) == 20
+        assert all(len(text) <= 28 for text in texts)
+        boundaries = []
+        mp3 = output / f"AUDIO{track}.mp3"
+        # One request per complete narration: no clip joins or added inter-scene silence.
+        with mp3.open("wb") as audio:
+            async for chunk in edge_tts.Communicate("".join(texts), VOICE, boundary="SentenceBoundary").stream():
+                if chunk["type"] == "audio":
+                    audio.write(chunk["data"])
+                elif chunk["type"] == "SentenceBoundary":
+                    boundaries.append(chunk)
+        (output / f"timing{track}.json").write_text(json.dumps(boundaries, ensure_ascii=False, indent=2), encoding="utf-8")
+        assert len(boundaries) == len(texts), "Speech sentence boundaries do not match the narration"
+        clean = lambda text: "".join(c for c in text if unicodedata.category(c)[0] in "LN")
+        assert all(clean(part["text"]) == clean(text) for part, text in zip(boundaries, texts))
+        subprocess.run([str(ffmpeg), "-hide_banner", "-loglevel", "error", "-y", "-i", str(mp3),
+                        "-ar", "24000", "-ac", "1", "-c:a", "pcm_s16le", str(target / "讲解音频.wav")],
+                       check=True, creationflags=subprocess.CREATE_NO_WINDOW)
+        with wave.open(str(target / "讲解音频.wav"), "rb") as wav:
+            assert (wav.getframerate(), wav.getnchannels(), wav.getsampwidth()) == (24000, 1, 2)
+            duration = wav.getnframes() / 24000
+        cues = [(round(part["offset"] / 10000), round((part["offset"] + part["duration"]) / 10000), text)
+                for part, text in zip(boundaries, texts)]
+        # Sentence metadata can overlap the next onset by 50ms; keep subtitles single-valued.
+        for i in range(len(cues) - 1):
+            start, end, text = cues[i]
+            assert end - cues[i+1][0] <= 100
+            cues[i] = (start, min(end, cues[i+1][0]), text)
         srt = "\n\n".join(f"{i}\n{timestamp(start)} --> {timestamp(end)}\n{text}"
                             for i, (start, end, text) in enumerate(cues, 1)) + "\n"
         (target / "字幕.srt").write_text(srt, encoding="utf-8-sig")
@@ -134,24 +117,29 @@ def generate(source, output):
                  "由实际合成音频自动生成，无需手工填写。图片顺序不变。", "",
                  "| 序号 | 时间区间 | 展示图片 | 对应讲解内容 |", "|---|---|---|---|"]
         roles = ["全貌图.bmp", "细节1.bmp", "细节2.bmp", "细节3.bmp", "全貌图.bmp"]
+        # Existing optional scripts have whole-second fields; exact cuts use scene_cues.json.
+        script_end = round(duration)
+        seconds = [0] + [round(cues[n-1][0] / 1000 * script_end / duration) for n in [5, 9, 13, 17]] + [script_end]
         for i, role in enumerate(roles):
-            left, right = (boundary // 24000 for boundary in boundaries[i:i+2])
+            left, right = seconds[i:i+2]
             lines.append(f"| {i+1} | `{left//60:02}:{left%60:02} – {right//60:02}:{right%60:02}` | **{role}** | {' '.join(scenes[i])} |")
         (target / "图片切换脚本.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
-        sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-        from generate_museum_subtitles import parse_srt, parse_scene_script, render_bitmap
-        parsed = parse_srt(target / "字幕.srt", len(pcm) // 2 * 2, "direct")
-        assert [text for _, _, text in parsed] == [text for scene in scenes for text in scene]
-        assert parse_scene_script(target / "图片切换脚本.md", len(pcm) // 2 * 2) == [n * 2 for n in boundaries[1:-1]]
+        total = round(duration * 48000)
+        parsed = parse_srt(target / "字幕.srt", total, "direct")
+        assert [text for _, _, text in parsed] == texts
+        script_cuts = parse_scene_script(target / "图片切换脚本.md", total)
+        assert all(abs(actual / 48000 - cues[n-1][0] / 1000) < 0.6
+                   for actual, n in zip(script_cuts, [5, 9, 13, 17]))
         for _, _, text in parsed:
             render_bitmap(text)
-        with wave.open(str(target / "讲解音频.wav"), "rb") as wav:
-            assert wav.getnframes() * 2 == len(pcm)
-        rows.append({"folder": name, "voice": "Microsoft Huihui Desktop", "duration_s": boundaries[-1] // 24000,
-                     "cues": len(cues), "scene_cuts_s": [n // 24000 for n in boundaries[1:-1]],
+        choices[name] = {"subtitle_sha256": hashlib.sha256((target / "字幕.srt").read_bytes()).hexdigest(),
+                         "cues": [5, 9, 13, 17]}
+        rows.append({"folder": name, "voice": VOICE, "duration_s": duration,
+                     "cues": len(cues), "scene_cuts_s": [cues[n-1][0]/1000 for n in [5, 9, 13, 17]],
                      "scene_first_cues": [5, 9, 13, 17], "audio_format": "PCM16 / 24000 Hz / mono"})
         print(json.dumps(rows[-1], ensure_ascii=False), flush=True)
-    report = {"artifacts": rows, "image_sha256": image_hashes}
+    (output / "scene_cues.json").write_text(json.dumps(choices, ensure_ascii=False, indent=2), encoding="utf-8")
+    report = {"artifacts": rows, "image_sha256": image_hashes, "added_middle_silence_ms": 0}
     (output / "generation_report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     assert all(hashlib.sha256((source / p).read_bytes()).hexdigest() == digest for p, digest in image_hashes.items())
 
@@ -161,4 +149,4 @@ if __name__ == "__main__":
     parser.add_argument("--source", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    generate(args.source.resolve(), args.output.resolve())
+    asyncio.run(generate(args.source.resolve(), args.output.resolve()))

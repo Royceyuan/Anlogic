@@ -71,6 +71,7 @@ def main():
             args.report.parent.mkdir(parents=True, exist_ok=True)
             args.report.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
         assert report["network"] == "disabled"
+        assert report["alignment_mode"] == "normal / token_step=100"
         for index, track in enumerate(report["tracks"]):
             cues = parse_srt(Path(track["subtitle"]), round(track["duration_s"] * 48000), "direct")
             assert [text for _, _, text in cues] == expected[index]
