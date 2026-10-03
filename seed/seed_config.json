@@ -1,0 +1,17 @@
+{
+  "tool": "TD 6.2.168116",
+  "device": "EG4S20BG256",
+  "project": "hx4s20_secondary_main5e.al",
+  "top": "top_secondary_main5e",
+  "build_script": "scripts/build.ps1",
+  "parameter_script": "scripts/build_secondary_main5e_pr.tcl",
+  "place_seed": 6,
+  "routing_sequence": ["set_param route fix_hold off", "route", "fix_hold", "set_param route fix_hold on", "update_timing -mode final"],
+  "bit": "release/hx4s20_secondary_help_v2.bit",
+  "bit_sha256": "B36B3D6E5E0A4FD77A023F5DB5BF5706127253A54FC7ABC41C37B90484353CDA",
+  "setup_wns_ns": 0.297,
+  "hold_wns_ns": 0.021,
+  "setup_tns_ns": 0,
+  "hold_tns_ns": 0,
+  "note": "Archived successful run configuration and original final reports. Build scripts already use this seed; unspecified placement/routing options use tool defaults. Changed source must be revalidated. P&R database is archived outside the project; run the full build before bitgen."
+}

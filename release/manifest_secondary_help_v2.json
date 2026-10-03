@@ -5,7 +5,7 @@
   "top": "top_secondary_main5e",
   "branch": "secondary-main5e",
   "base_commit": "8f1b02e",
-  "board_validation": "pending",
+  "board_validation": "passed_user_feedback",
   "bit": {
     "path": "release/hx4s20_secondary_help_v2.bit",
     "bytes": 652921,
@@ -20,16 +20,6 @@
     "pixel_pipeline_extra_cycles": 1,
     "rgb_hs_vs_de_aligned": true
   },
-  "preserved_bits": [
-    {
-      "path": "release/hx4s20_secondary_help.bit",
-      "sha256": "DBF31AC8F131DA07294C1940C53C36BFBA9AF63DC0E17668A129B4F7E3613335"
-    },
-    {
-      "path": "release/hx4s20_secondary_main5e_manual_browse.bit",
-      "sha256": "41B81E033E6F282AAC9E572D982BF8E145504FA38111CDC5F22F86021956CA58"
-    }
-  ],
   "layout": {
     "output": [
       1280,
@@ -687,37 +677,37 @@
   ],
   "reports": [
     {
-      "path": "docs/reports/secondary_help_v2_20261002_area.rpt",
+      "path": "seed/secondary_main5e_final.area",
       "bytes": 31453,
       "sha256": "245B237D821242A80427494D1D6BCB3839A6EDB1C8CC607CEE1DE938F867DA4E"
     },
     {
-      "path": "docs/reports/secondary_help_v2_20261002_bitgen.rpt",
+      "path": "seed/bitgen.log",
       "bytes": 4746,
       "sha256": "6B21D7B0808945654DC66C6820DCDFE8AFC93AC802F4446D877AD9B873FA7B92"
     },
     {
-      "path": "docs/reports/secondary_help_v2_20261002_exceptions.rpt",
+      "path": "seed/secondary_main5e_exception.timing",
       "bytes": 1200,
       "sha256": "3720E2335639CD3257D319BB164A129D66AB0483CC75F93185A99A798E363C81"
     },
     {
-      "path": "docs/reports/secondary_help_v2_20261002_implementation.rpt",
+      "path": "seed/console.log",
       "bytes": 334856,
       "sha256": "8A8C49F6117CFD45D117851BC26DE50396441BDA443C98BFFD3B894920388CDB"
     },
     {
-      "path": "docs/reports/secondary_help_v2_20261002_qor.rpt",
+      "path": "seed/secondary_main5e_final.qor",
       "bytes": 1313,
       "sha256": "22A9E91C4E1CB787EDCCF636CC69DD08713BFE57D7E4F7DE518F0B719898C7F8"
     },
     {
-      "path": "docs/reports/secondary_help_v2_20261002_status.rpt",
+      "path": "seed/secondary_main5e_pr.status",
       "bytes": 1832,
       "sha256": "A66E086B0EA270065949059B9B89350C1E4C032ED820E61110348783ACEC62B6"
     },
     {
-      "path": "docs/reports/secondary_help_v2_20261002_timing.rpt",
+      "path": "seed/secondary_main5e_final.timing",
       "bytes": 1120168,
       "sha256": "D35407DA92A69A3E887FD45DBD3CD77EDFFCCC5F575190403BC42CB361539609"
     }
