@@ -46,7 +46,7 @@ MBP1版本1：魔数4D42，20字节头、N字节业务数据、2字节CRC，总�
 
 ## TF素材与必要工具
 
-FAT32根目录12文件：`IMAGE0.BMP`～`IMAGE9.BMP`（展示及简介）、`IMAGEA.BMP`（应急），均1280×720、24位未压缩BMP；`IMAGEB.BMP`为160×90、24位说明背景。所有规范文件在 `assets` 内，源图也保留以支持素材再制作。
+FAT32根目录12文件：`IMAGE0.BMP`～`IMAGE9.BMP`（展示及简介）、`IMAGEA.BMP`（应急），均1280×720、24位未压缩BMP；`IMAGEB.BMP`为160×90、24位说明背景。所有规范文件在 `assets` 内；未参与当前工具/构建的11张历史源PNG已归档。说明背景源PNG仍保留，供字库/说明页生成工具使用。
 
 现有11图写卡命令，在工程根目录执行（F按实际副板卡修改；工具拒绝C/D/E以防误写）：
 
@@ -60,11 +60,18 @@ Get-FileHash -LiteralPath ./assets/secondary_help/IMAGEB.BMP, F:\IMAGEB.BMP
 
 ## 重建与回归
 
-在工程根目录执行：
+手动全流程：
+
+1. 在TD图形界面打开根目录唯一 `hx4s20_secondary_main5e.al`，确认器件 `EG4S20BG256`、顶层 `top_secondary_main5e`。
+2. 从 `src/secondary/top_secondary_main5e.v` 沿实例审核显示、协议、按键及存储逻辑；`secondary_help_font.vh`是实际include，TEMAC的 `_gate.v` 是实际IP依赖，不能因未直接列在文件树而删除。
+3. 在PowerShell手动执行完整构建命令：
 
 ```powershell
+Set-Location -LiteralPath D:\VSCode\CodeFiles\Git_TD\Anlogic2
 ./scripts/build.ps1
 ```
+
+4. 该命令使用成功种子6，依次完成综合、布局布线、hold修复和带检查的bitgen。审核 `_build_secondary_help_v2_20261002/console.log`、最终 `.ts/.status` 及 `bitgen.log`，要求setup/hold WNS非负、TNS=0、DRC通过且明确生成新bit，再核对SHA256并烧录。GUI默认物理设计策略不能当作已验证脚本的替代；新改源码生成的bit需重新上板验收。
 
 默认TD路径 `D:/TD_6.2.1/bin/td_commands_prompt.exe`，可通过 `-TD` 指定其他位置。脚本完整综合、布局布线、修hold，检查时序/警告/源文件新鲜度后生成唯一当前bit。所有build目录已移出，下次脚本自动生成 `_build_secondary_help_v2_20261002`；没有PR数据库时不能单独运行bitgen。成功种子6仍在 `build_secondary_main5e_pr.tcl`，并汇总于 `seed/seed_config.json`，改源码后必须重新验证，不保证同种子必定闭合。
 
@@ -81,6 +88,23 @@ ModelSim从 `sim` 目录执行，例如：
 
 ## 目录与回溯
 
-保留唯一工程入口、README、`src`、`vendor`、`constraints`、正式 `scripts`、回归 `sim`、素材 `assets`、必要 `tools`、当前 `release` 和成功种子 `seed`。`.git`、LICENSE及第三方版权不是清理目标。
+逐目录审核结果：
+
+| 目录/文件 | 保留理由及整理结果 |
+|---|---|
+| 根目录 `.al`、README、LICENSE、Git配置 | 唯一入口、最终介绍、版权及版本控制；保留 |
+| `src` | 当前工程源文件和实际include字库；没有可安全移出的源码 |
+| `vendor` | 当前工程直接引用和TEMAC隐式网表；全部保留 |
+| `constraints` | 当前管脚、时序约束；保留 |
+| `scripts` | 完整构建PS1及综合/bitgen两个Tcl；全部保留 |
+| `sim` | 当前功能、原语和双板重连回归；全部保留，不依赖旧历史提交 |
+| `assets` | 12张规范TF位图和说明背景源图保留；11张已不用的源PNG和可再生说明媒体manifest归档 |
+| `tools` | 安全写卡工具、说明页字体生成源码；均有实际用途，保留 |
+| `seed` | 已闭合种子6、原始时序/资源/DRC依据；完整保留 |
+| `release` | 唯一最新已验收bit及发布校验记录；保留 |
+
+历史build数据库不参与源码重建，当前目录不要求预先存在build缓存。回归源码不是中间编译产物。
 
 移出内容位于 `D:\VSCode\CodeFiles\Git_TD\rubbish\双板软件与旧位流整理_20261003`，CSV清单记录原路径、目标路径、长度和SHA256。可按清单移动回原路径，勿覆盖新文件；归档不随普通Git拉取提供。当前工程具备从源码完整重建的依赖。
+
+本轮进一步审核清单及独立重建证据位于 `D:\VSCode\CodeFiles\Git_TD\rubbish\project_audit_20261003`。说明背景/字库生成工具将来可能再次生成预览图与manifest，它们不属于编译必需文件。
