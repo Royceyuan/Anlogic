@@ -1,15 +1,17 @@
 `timescale 1ns/1ps
 `default_nettype none
 
-// Loading-side experiment only: caller supplies clamped neighbours and Q0.8
+// Trial loading-side arithmetic: caller supplies clamped neighbours and Q0.8
 // fractions. One multiplier is reused across RGB channels and both axes.
-// ponytail: no streaming/row-cache integration until this trial earns its cost.
+// ponytail: multi-cycle preload kernel, not a pixel-clock streaming scaler.
 module rgb565_interpolate #(
 `ifdef SCALE_HORIZONTAL
-    parameter BILINEAR = 0
+    parameter BILINEAR = 0,
 `else
-    parameter BILINEAR = 1
+    parameter BILINEAR = 1,
 `endif
+    // Loader holds both samples until done; default still latches noisy inputs.
+    parameter INPUTS_HELD_STABLE = 0
 ) (
     input wire clk, rst_n, start,
     input wire [15:0] p00, p01, p10, p11,
@@ -28,12 +30,15 @@ reg signed [24:0] product, base;
 wire signed [24:0] sum = base + product;
 wire signed [24:0] rounded = sum + ((BILINEAR && axis==2) ? 25'sd32768 : 25'sd128);
 reg signed [15:0] ca, cb, cc, cd;
+wire [15:0] sample_a = INPUTS_HELD_STABLE ? p00 : a;
+wire [15:0] sample_b = INPUTS_HELD_STABLE ? p01 : b;
+wire [7:0] fraction_x = INPUTS_HELD_STABLE ? fx : x;
 assign busy = state != IDLE;
 always @(*) begin
     case (channel)
-        0: begin ca={11'd0,a[15:11]}; cb={11'd0,b[15:11]}; cc={11'd0,c[15:11]}; cd={11'd0,d[15:11]}; end
-        1: begin ca={10'd0,a[10:5]}; cb={10'd0,b[10:5]}; cc={10'd0,c[10:5]}; cd={10'd0,d[10:5]}; end
-        default: begin ca={11'd0,a[4:0]}; cb={11'd0,b[4:0]}; cc={11'd0,c[4:0]}; cd={11'd0,d[4:0]}; end
+        0: begin ca={11'd0,sample_a[15:11]}; cb={11'd0,sample_b[15:11]}; cc={11'd0,c[15:11]}; cd={11'd0,d[15:11]}; end
+        1: begin ca={10'd0,sample_a[10:5]}; cb={10'd0,sample_b[10:5]}; cc={10'd0,c[10:5]}; cd={10'd0,d[10:5]}; end
+        default: begin ca={11'd0,sample_a[4:0]}; cb={11'd0,sample_b[4:0]}; cc={11'd0,c[4:0]}; cd={11'd0,d[4:0]}; end
     endcase
 end
 always @(posedge clk) begin
@@ -56,7 +61,7 @@ always @(posedge clk) begin
                     base<=$signed(h0)*25'sd256;
                 end else begin
                     operand <= (axis==0) ? cb-ca : cd-cc;
-                    weight <= {1'b0,x};
+                    weight <= {1'b0,fraction_x};
                     base <= ((axis==0) ? ca : cc)*25'sd256;
                 end
                 state<=MULTIPLY;

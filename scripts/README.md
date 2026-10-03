@@ -4,6 +4,7 @@
 
 - `build_museum_main_board.tcl`：完整综合、布局布线、STA、DRC 和数据库导出。
 - `build_museum_main_board_bitgen.tcl`：复查 DRC/时序后生成最终产品 bit。
+- `build_horizontal_interpolation_candidate.tcl` / `bitgen_horizontal_interpolation_candidate.tcl`：仅生成隔离的水平插值试验；当前整机时序未通过，不是可上板发布版本，详见缩放试验报告。
 - `make_bmp_adaptive.ps1`：生成主板可读取的自适应 BMP 素材。
 - `extract_pdf_text.py`：提取板级资料，供工程核查使用。
 - 当前五组文物媒体统一打包入口：`tools/Package_tool/museum_media_packager.py`，说明见该目录 README。

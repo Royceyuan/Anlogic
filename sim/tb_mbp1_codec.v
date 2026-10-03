@@ -1,6 +1,9 @@
 `timescale 1ns / 1ps
 
 module tb_mbp1_codec;
+parameter integer EXHAUSTIVE_CRC = 0;
+reg test_pass = 0;
+integer prior_value, byte_value;
 reg clk = 0;
 always #5 clk = ~clk;
 reg rst = 1;
@@ -89,6 +92,14 @@ task inject_captured;
 endtask
 
 initial begin
+    if (EXHAUSTIVE_CRC) begin
+        for (prior_value=0; prior_value<65536; prior_value=prior_value+1)
+            for (byte_value=0; byte_value<256; byte_value=byte_value+1)
+                if (dut.crc_byte(prior_value[15:0],byte_value[7:0]) !==
+                    crc_byte(prior_value[15:0],byte_value[7:0]))
+                    $fatal(1,"CRC equivalence prior=%04x byte=%02x",prior_value,byte_value);
+        $display("PASS: CRC byte equivalence for all 16777216 input combinations");
+    end
     repeat (3) @(negedge clk);
     rst = 0;
     send = 1;
@@ -152,6 +163,7 @@ initial begin
     for (i = 0; i < 9; i = i + 1)
         check_crc = crc_byte(check_crc, 8'h31 + i);
     if (check_crc !== 16'h29b1) $fatal(1, "CRC standard vector");
+    test_pass=1;
     $display("PASS: MBP1 codec CRC, encode/decode and bad packet rejection");
     $finish;
 end
