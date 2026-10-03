@@ -12,6 +12,12 @@ module tb_fat32_bmp_adaptive_loader #(
     parameter integer HIRES = 0,
     parameter integer IMAGE_ADDR_BITS = 19,
     parameter integer ADAPTIVE_MODE = 1,
+    parameter integer FIXED_MODE = 0,
+    parameter integer HELP_MODE = 0,
+    parameter integer HEADER_OFFSET = 54,
+    parameter integer FILE_TRIM = 0,
+    parameter integer FRAGMENTED = 0,
+    parameter integer WRITE_STALL = 0,
     parameter integer DIAG_PATTERN = 0,
     parameter integer SOURCE_W = 641,
     parameter integer SOURCE_H = 481,
@@ -31,16 +37,19 @@ module tb_fat32_bmp_adaptive_loader #(
     parameter integer RESOURCE_OPT_CONSTANT_MULT = 0
 );
 
-localparam integer IMAGE_PIXELS = IMAGE_W * IMAGE_H;
-localparam integer FRAME_WORDS = IMAGE_PIXELS / 2;
+localparam integer OUTPUT_W = HELP_MODE ? BASE_W : IMAGE_W;
+localparam integer OUTPUT_H = HELP_MODE ? BASE_H : IMAGE_H;
+localparam integer IMAGE_PIXELS = OUTPUT_W * OUTPUT_H;
+localparam integer FRAME_WORDS = HELP_MODE ? 0 : IMAGE_PIXELS / 2;
 localparam integer ROW_BYTES = SOURCE_W * 3;
 localparam integer ROW_PADDING = (4 - (ROW_BYTES & 3)) & 3;
 localparam integer ROW_STRIDE = ROW_BYTES + ROW_PADDING;
-localparam integer BMP_FILE_BYTES = 54 + SOURCE_H * ROW_STRIDE;
+localparam integer BMP_FILE_BYTES = HEADER_OFFSET + SOURCE_H * ROW_STRIDE - FILE_TRIM;
 localparam signed [31:0] BMP_HEIGHT = TOP_DOWN ? -SOURCE_H : SOURCE_H;
 localparam integer VOLUME_LBA = 2048;
 localparam integer FAT_LBA = VOLUME_LBA + 32;
-localparam integer DATA_LBA = VOLUME_LBA + 32 + 2;
+localparam integer FAT_SECTORS = FRAGMENTED ? 2 : 1;
+localparam integer DATA_LBA = VOLUME_LBA + 32 + 2 * FAT_SECTORS;
 localparam integer ROOT_LBA = DATA_LBA;
 localparam integer FIRST_CLUSTER = 3;
 localparam integer SECTORS_PER_CLUSTER = 64;
@@ -74,6 +83,7 @@ wire [15:0] row_pixel;
 wire row_last;
 wire row_ready;
 wire row_input_continue;
+wire row_buffer_continue;
 wire row_overflow;
 wire write_req;
 wire write_req_ack;
@@ -81,7 +91,9 @@ wire write_en;
 wire [31:0] write_data;
 wire [20:0] write_base_addr;
 wire [20:0] write_len;
-wire write_fifo_full = 1'b0;
+integer stall_cycle = 0;
+always @(posedge clk) stall_cycle <= (stall_cycle + 1) % 127;
+wire write_fifo_full = WRITE_STALL && stall_cycle < 32;
 reg write_finish = 1'b0;
 wire frame_done;
 wire writer_error;
@@ -104,6 +116,8 @@ integer source_lba;
 integer write_count;
 integer error_count;
 integer missing_count;
+reg checks_passed = 0;
+reg help_cache_passed = !HELP_MODE;
 
 always #10 clk = ~clk;
 
@@ -113,6 +127,7 @@ fat32_image_loader #(
     .HIRES_WIDTH(IMAGE_W), .HIRES_HEIGHT(IMAGE_H),
     .IMAGE_ADDR_BITS(IMAGE_ADDR_BITS),
     .ADAPTIVE_BMP(ADAPTIVE_MODE),
+    .FIXED_BMP(FIXED_MODE),
     .BMP_MAX_WIDTH(BMP_MAX_WIDTH),
     .MULTI_IMAGE_BMP(MULTI_IMAGE_BMP),
     .RESOURCE_OPT_CONSTANT_MULT(RESOURCE_OPT_CONSTANT_MULT),
@@ -153,15 +168,70 @@ bmp_row_buffer #(
     .COL_BITS(11), .ROW_BITS(11)
 ) u_rows (
     .clk(clk), .rst_n(rst_n), .hires_frame(HIRES != 0),
-    .in_valid(image_wr_en),
+    .in_valid(image_wr_en && !HELP_MODE),
     .in_row(image_wr_row), .in_col(image_wr_col), .in_pixel(image_wr_data),
     .overflow(row_overflow), .out_valid(row_valid), .out_row(row_index),
     .out_pixel(row_pixel), .out_last(row_last), .out_ready(row_ready),
-    .out_row_done(), .input_continue(row_input_continue)
+    .out_row_done(), .input_continue(row_buffer_continue)
 );
+assign row_input_continue = HELP_MODE ? 1'b1 : row_buffer_continue;
 
 generate
-    if (USE_BLOCK_WRITER) begin : g_block_writer
+    if (HELP_MODE) begin : g_help_background
+        reg [10:0] x = 0;
+        reg [9:0] y = 0;
+        wire [23:0] rgb;
+        integer cache_i;
+        reg [15:0] expected_cache;
+        reg [23:0] expected_rgb;
+        secondary_help_overlay u_help (
+            .clk(clk), .rst_n(rst_n), .de(1'b1),
+            .x(x), .y(y), .pre_x(x), .pre_y(y), .base_rgb(24'h123456),
+            .switches_50m(4'b1000), .manual_50m(1'b0),
+            .overview_50m(1'b1), .paused_50m(1'b0), .link_50m(2'd1),
+            .emergency_50m(1'b0), .emergency_bitmap_video(1'b0),
+            .background_ready_50m(load_done), .write_clk(clk),
+            .write_en(image_wr_en), .write_row(image_wr_row << 3),
+            .write_col(image_wr_col << 3), .write_pixel(image_wr_data), .rgb(rgb)
+        );
+        assign write_req = 0;
+        assign write_en = 0;
+        assign write_data = 0;
+        assign write_base_addr = 0;
+        assign write_len = 0;
+        assign row_ready = 1;
+        assign frame_done = load_done;
+        assign writer_error = 0;
+        initial begin
+            wait (load_done);
+            repeat (4) @(posedge clk);
+            for (cache_i = 0; cache_i < IMAGE_PIXELS; cache_i = cache_i + 1) begin
+                if (u_help.backdrop[cache_i] !== expected_pixel(cache_i)) begin
+                    $display("Help cache: FAIL addr=%0d got=%h expected=%h",
+                             cache_i, u_help.backdrop[cache_i], expected_pixel(cache_i));
+                    $stop;
+                end
+            end
+            // Left margin is unmasked by the text cards. Check each cached
+            // row through the actual overlay RGB pipeline at native 8x scale.
+            for (cache_i = 0; cache_i < OUTPUT_H; cache_i = cache_i + 1) begin
+                @(negedge clk);
+                x = 11'd8; y = cache_i * 8;
+                repeat (4) @(posedge clk);
+                @(negedge clk);
+                expected_cache = expected_pixel(cache_i * OUTPUT_W + 1);
+                expected_rgb = {expected_cache[15:11],expected_cache[15:13],
+                                expected_cache[10:5],expected_cache[10:9],
+                                expected_cache[4:0],expected_cache[4:2]};
+                if (rgb !== expected_rgb) begin
+                    $display("Help RGB: FAIL row=%0d got=%h expected=%h",
+                             cache_i, rgb, expected_rgb);
+                    $stop;
+                end
+            end
+            help_cache_passed = 1;
+        end
+    end else if (USE_BLOCK_WRITER) begin : g_block_writer
         bmp_sdram_block_writer #(
             .WIDTH(IMAGE_W), .HEIGHT(IMAGE_H), .ADDR_BITS(21),
             .BLOCK_WORDS(128), .RESTARTABLE(1), .SECTOR_PIXELS(256)
@@ -231,7 +301,8 @@ function integer lba_for_file_sector;
     input integer file_sector;
     begin
         lba_for_file_sector = DATA_LBA +
-                              ((FIRST_CLUSTER + (file_sector / SECTORS_PER_CLUSTER) - 2) *
+                              ((FIRST_CLUSTER + (file_sector / SECTORS_PER_CLUSTER) *
+                                (FRAGMENTED ? 2 : 1) - 2) *
                                SECTORS_PER_CLUSTER) +
                               (file_sector % SECTORS_PER_CLUSTER);
     end
@@ -289,8 +360,8 @@ function [15:0] expected_pixel;
     reg [7:0] green;
     reg [7:0] blue;
     begin
-        destination_x = address % IMAGE_W;
-        destination_y = address / IMAGE_W;
+        destination_x = address % OUTPUT_W;
+        destination_y = address / OUTPUT_W;
         if (DIAG_PATTERN) begin
             if ((destination_x & 63) == 0 || (destination_y & 63) == 0)
                 expected_pixel = 16'hffff;
@@ -303,15 +374,15 @@ function [15:0] expected_pixel;
                 expected_pixel = {red[7:3], green[7:2], blue[7:3]};
             end
         end else begin
-        if (SOURCE_W * IMAGE_H >= SOURCE_H * IMAGE_W) begin
-            fit_w = IMAGE_W;
-            fit_h = (IMAGE_W * SOURCE_H) / SOURCE_W;
+        if (SOURCE_W * OUTPUT_H >= SOURCE_H * OUTPUT_W) begin
+            fit_w = OUTPUT_W;
+            fit_h = (OUTPUT_W * SOURCE_H) / SOURCE_W;
         end else begin
-            fit_w = (IMAGE_H * SOURCE_W) / SOURCE_H;
-            fit_h = IMAGE_H;
+            fit_w = (OUTPUT_H * SOURCE_W) / SOURCE_H;
+            fit_h = OUTPUT_H;
         end
-        offset_x = (IMAGE_W - fit_w) / 2;
-        offset_y = (IMAGE_H - fit_h) / 2;
+        offset_x = (OUTPUT_W - fit_w) / 2;
+        offset_y = (OUTPUT_H - fit_h) / 2;
         if (destination_x < offset_x || destination_x >= offset_x + fit_w ||
             destination_y < offset_y || destination_y >= offset_y + fit_h) begin
             expected_pixel = 16'h0000;
@@ -373,7 +444,7 @@ initial begin
     put_byte(VOLUME_LBA, 13, SECTORS_PER_CLUSTER);
     put_byte(VOLUME_LBA, 14, 8'd32);
     put_byte(VOLUME_LBA, 16, 8'd2);
-    put_le32(VOLUME_LBA, 36, 32'd1);
+    put_le32(VOLUME_LBA, 36, FAT_SECTORS);
     put_le32(VOLUME_LBA, 44, 32'd2);
 
     // Root entry: IMAGE#.BMP or the fixed MAIN-2 ART#D#.BMP slot.
@@ -394,9 +465,10 @@ initial begin
     put_le32(ROOT_LBA, 26, FIRST_CLUSTER);
     put_le32(ROOT_LBA, 28, BMP_FILE_BYTES);
 
-    for (i = FIRST_CLUSTER; i < FIRST_CLUSTER + FILE_CLUSTERS - 1; i = i + 1)
-        put_fat32(i, i + 1);
-    put_fat32(FIRST_CLUSTER + FILE_CLUSTERS - 1, 32'h0fffffff);
+    for (i = 0; i < FILE_CLUSTERS - 1; i = i + 1)
+        put_fat32(FIRST_CLUSTER + i * (FRAGMENTED ? 2 : 1),
+                  FIRST_CLUSTER + (i + 1) * (FRAGMENTED ? 2 : 1));
+    put_fat32(FIRST_CLUSTER + (FILE_CLUSTERS - 1) * (FRAGMENTED ? 2 : 1), 32'h0fffffff);
 
     for (i = 0; i < FILE_SECTORS; i = i + 1) begin
         source_lba = lba_for_file_sector(i);
@@ -408,8 +480,8 @@ initial begin
                 put_byte(source_lba, j, "M");
             else if (file_byte >= 2 && file_byte <= 5)
                 put_byte(source_lba, j, BMP_FILE_BYTES >> ((file_byte - 2) * 8));
-            else if (file_byte == 10)
-                put_byte(source_lba, j, 8'd54);
+            else if (file_byte >= 10 && file_byte <= 13)
+                put_byte(source_lba, j, HEADER_OFFSET >> ((file_byte - 10) * 8));
             else if (file_byte == 14)
                 put_byte(source_lba, j, 8'd40);
             else if (file_byte >= 18 && file_byte <= 21)
@@ -424,8 +496,8 @@ initial begin
             else if (file_byte >= 30 && file_byte <= 33)
                 put_byte(source_lba, j,
                          COMPRESSION >> ((file_byte - 30) * 8));
-            else if (file_byte >= 54 && file_byte < BMP_FILE_BYTES) begin
-                pixel_byte = file_byte - 54;
+            else if (file_byte >= HEADER_OFFSET && file_byte < BMP_FILE_BYTES) begin
+                pixel_byte = file_byte - HEADER_OFFSET;
                 if ((pixel_byte % ROW_STRIDE) < ROW_BYTES) begin
                     source_pixel = pixel_byte / ROW_STRIDE;
                     source_x = (pixel_byte % ROW_STRIDE) / 3;
@@ -467,6 +539,12 @@ always @(negedge clk) begin
                 error_count = error_count + 1;
             end
             written[image_wr_addr] = 1'b1;
+            if (HELP_MODE && (image_wr_row != image_wr_addr / OUTPUT_W ||
+                              image_wr_col != image_wr_addr % OUTPUT_W)) begin
+                $display("Help BMP: coordinate mismatch addr=%0d row=%0d col=%0d",
+                         image_wr_addr, image_wr_row, image_wr_col);
+                error_count = error_count + 1;
+            end
             if (image_wr_data !== expected_pixel(image_wr_addr)) begin
                 $display("Adaptive BMP: data mismatch addr=%0d got=%h expected=%h",
                          image_wr_addr, image_wr_data, expected_pixel(image_wr_addr));
@@ -501,6 +579,7 @@ initial begin
         wait ((load_done || load_error) &&
               (frame_done || writer_error || row_overflow));
     repeat (2) @(posedge clk);
+    if (!EXPECT_ERROR) wait (help_cache_passed);
     for (i = 0; i < IMAGE_PIXELS; i = i + 1)
         if (!written[i])
             missing_count = missing_count + 1;
@@ -513,6 +592,7 @@ initial begin
         end
         $display("Adaptive BMP invalid: PASS bpp=%0d compression=%0d source=%0dx%0d",
                  BITS_PER_PIXEL, COMPRESSION, SOURCE_W, SOURCE_H);
+        checks_passed = 1;
         $finish;
     end
 
@@ -528,7 +608,8 @@ initial begin
     end
 
     $display("Adaptive BMP: PASS source=%0dx%0d top_down=%0d row_padding=%0d output=%0dx%0d",
-             SOURCE_W, SOURCE_H, TOP_DOWN, ROW_PADDING, IMAGE_W, IMAGE_H);
+             SOURCE_W, SOURCE_H, TOP_DOWN, ROW_PADDING, OUTPUT_W, OUTPUT_H);
+    checks_passed = 1;
     $finish;
 end
 

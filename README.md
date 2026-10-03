@@ -9,15 +9,15 @@
 | 唯一TD入口 | `hx4s20_secondary_main5e.al` |
 | 顶层 | `src/secondary/top_secondary_main5e.v`，模块 `top_secondary_main5e` |
 | 管脚/时序约束 | `constraints/top_secondary_main5e.adc`、`constraints/top_secondary_main5e.sdc` |
-| 唯一最新可用bit | `release/hx4s20_secondary_help_v2.bit` |
-| 发布记录 | `release/manifest_secondary_help_v2.json` |
+| 唯一最新可用bit | `release/hx4s20_secondary_help_fixed720.bit` |
+| 发布记录 | `release/manifest_secondary_help_fixed720.json` |
 | 成功布局种子与原始最终报告 | `seed/`，种子6 |
 
-bit SHA256：`B36B3D6E5E0A4FD77A023F5DB5BF5706127253A54FC7ABC41C37B90484353CDA`。用户已确认双栏说明页正常；整理不改RTL、不重新生成bit，不需要重新烧录或更换TF卡。
+bit SHA256：`91A70946F2FA9966D1BAF6466B921C6D6E4C3BE090D8D9C4A62FD0235D5BC25A`。用户已确认双栏说明页正常；清理不改功能RTL；另合并保留远程 `72a8937` 已验收的固定BMP读取和讲解页淡入淡出更新。发布bit来自该远程版本，不用本轮验证输出替换，不更换TF卡。
 
 ## 展示与控制
 
-副屏HDMI输出1280×720。总览轮播文物展示页；接收主板实际状态后切换对应简介，应急优先显示逃生图与路线提示。主板讲解音画字幕在主板处理，副板只显示本地缓存素材和状态，以太网不传媒体文件。
+副屏HDMI输出1280×720。总览轮播文物展示页；接收主板实际状态后切换对应简介，应急优先显示逃生图与路线提示。主板讲解音画字幕在主板处理，副板只显示本地缓存素材和状态，以太网不传媒体文件。讲解页约半秒淡出/淡入，应急直接切页并可抢占转场。媒体严格按固定原生尺寸读取，普通图1280×720、说明背景160×90；副板正式入口不启用通用自适应缩放器。
 
 副板SW3=0自动讲解、1静音手动浏览，由以太网同步至主板；两种模式均保留四键画面控制。切回自动采用音频/字幕轻量恢复，保留图片缓存。断线重连后重新获取主板状态并协调SW3，主板自身SW3仍属于预载编号，不可混淆。
 
@@ -71,11 +71,11 @@ Set-Location -LiteralPath D:\VSCode\CodeFiles\Git_TD\Anlogic2
 ./scripts/build.ps1
 ```
 
-4. 该命令使用成功种子6，依次完成综合、布局布线、hold修复和带检查的bitgen。审核 `_build_secondary_help_v2_20261002/console.log`、最终 `.ts/.status` 及 `bitgen.log`，要求setup/hold WNS非负、TNS=0、DRC通过且明确生成新bit，再核对SHA256并烧录。GUI默认物理设计策略不能当作已验证脚本的替代；新改源码生成的bit需重新上板验收。
+4. 该命令使用成功种子6，依次完成综合、布局布线、hold修复和带检查的bitgen。审核 `_build_secondary_help_fixed720_seed6/console.log`、最终 `.ts/.status` 及 `bitgen.log`，要求setup/hold WNS非负、TNS=0、DRC通过且明确生成新bit，再核对SHA256并烧录。GUI默认物理设计策略不能当作已验证脚本的替代；新改源码生成的bit需重新上板验收。
 
-默认TD路径 `D:/TD_6.2.1/bin/td_commands_prompt.exe`，可通过 `-TD` 指定其他位置。脚本完整综合、布局布线、修hold，检查时序/警告/源文件新鲜度后生成唯一当前bit。所有build目录已移出，下次脚本自动生成 `_build_secondary_help_v2_20261002`；没有PR数据库时不能单独运行bitgen。成功种子6仍在 `build_secondary_main5e_pr.tcl`，并汇总于 `seed/seed_config.json`，改源码后必须重新验证，不保证同种子必定闭合。
+默认TD路径 `D:/TD_6.2.1/bin/td_commands_prompt.exe`，可通过 `-TD` 指定其他位置。脚本完整综合、布局布线、修hold，检查时序/警告/源文件新鲜度后生成唯一当前bit。所有build目录已移出，下次脚本自动生成 `_build_secondary_help_fixed720_seed6`；没有PR数据库时不能单独运行bitgen。成功种子6仍在 `build_secondary_main5e_pr.tcl`，并汇总于 `seed/seed_config.json`，改源码后必须重新验证，不保证同种子必定闭合。
 
-保留bit对应最终资源：LUT11867/19600（60.55%）、FF7127/19600（36.36%）、Slice6727/9800（68.64%）、BRAM9K32/64、BRAM32K13/16、DSP9/29、PLL4/4。setup +0.297ns、hold +0.021ns、TNS=0，原始时序、面积、DRC/bitgen依据保存在 `seed`。
+保留bit对应最终资源：LUT9905/19600（50.54%）、FF6468/19600（33.00%）、Slice5775/9800（58.93%）、BRAM9K20/64、BRAM32K13/16、DSP5/29、PLL4/4。setup +0.309ns、hold +0.022ns、TNS=0，原始时序、面积、DRC/bitgen依据保存在 `seed`。
 
 ModelSim从 `sim` 目录执行，例如：
 
@@ -84,7 +84,7 @@ ModelSim从 `sim` 目录执行，例如：
 & D:\Modelsim\win64\vsim.exe -c -do run_mbp1_reconnect.do -l reconnect.log
 ```
 
-检查退出码、PASS及无FAIL/Fatal/Error。用英文日志名，避免本机中文日志路径启动异常。清理后本轮说明/背景3项及重连1项PASS；主板恢复回归也PASS。仿真源码保留，work库和日志可重新生成。
+检查退出码、PASS及无FAIL/Fatal/Error。用英文日志名，避免本机中文日志路径启动异常。2026-10-03以远程最新版本为基线整理后，独立源码副本通过9组回归、28条PASS，无仿真错误：说明页、官方RAM原语、双板重连、按键、本地控制、固定720p图片流、固定尺寸说明背景、顶层背景加载及讲解切页。完整综合、布局布线、STA、DRC和bitgen通过，setup +0.309ns、hold +0.022ns、TNS均为0。测试bit留在工程外验证目录，不替换远程已验收bit，不要求因本次整理重新上板。仿真源码保留，work库和日志可重新生成。
 
 ## 目录与回溯
 
@@ -97,10 +97,10 @@ ModelSim从 `sim` 目录执行，例如：
 | `vendor` | 当前工程直接引用和TEMAC隐式网表；全部保留 |
 | `constraints` | 当前管脚、时序约束；保留 |
 | `scripts` | 完整构建PS1及综合/bitgen两个Tcl；全部保留 |
-| `sim` | 当前功能、原语和双板重连回归；全部保留，不依赖旧历史提交 |
+| `sim` | 当前功能、原语和双板重连回归；全部保留，不依赖旧历史提交；跨板重连需同级 `Anlogic` |
 | `assets` | 12张规范TF位图和说明背景源图保留；11张已不用的源PNG和可再生说明媒体manifest归档 |
 | `tools` | 安全写卡工具、说明页字体生成源码；均有实际用途，保留 |
-| `seed` | 已闭合种子6、原始时序/资源/DRC依据；完整保留 |
+| `seed` | 当前fixed720种子6、原始时序/资源/DRC依据；旧v2成功配置另留 `seed_config_help_v2.json`，旧bit和重复报告归档 |
 | `release` | 唯一最新已验收bit及发布校验记录；保留 |
 
 历史build数据库不参与源码重建，当前目录不要求预先存在build缓存。回归源码不是中间编译产物。
@@ -108,3 +108,5 @@ ModelSim从 `sim` 目录执行，例如：
 移出内容位于 `D:\VSCode\CodeFiles\Git_TD\rubbish\双板软件与旧位流整理_20261003`，CSV清单记录原路径、目标路径、长度和SHA256。可按清单移动回原路径，勿覆盖新文件；归档不随普通Git拉取提供。当前工程具备从源码完整重建的依赖。
 
 本轮进一步审核清单及独立重建证据位于 `D:\VSCode\CodeFiles\Git_TD\rubbish\project_audit_20261003`。说明背景/字库生成工具将来可能再次生成预览图与manifest，它们不属于编译必需文件。
+
+副板功能源码、约束、工程入口和构建脚本与远程 `72a8937` 一致；在此基线上仅整理重复文件、报告位置及最终介绍，不混入旧版功能实现。旧交接/中间报告不恢复到工程目录。本轮副板只本地提交，不推送远程。
