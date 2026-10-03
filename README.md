@@ -1,6 +1,6 @@
 # 双 FPGA 博物馆双屏展陈终端：主板最终工程介绍
 
-本目录 `Anlogic` 是主板工程，`../Anlogic2` 是副板工程。目标器件为安路HX4S20板载 `EG4S20BG256`，使用TD 6.2.1。本文件是主板唯一工程说明；历史阶段文档、交接、试验报告和中间产物已移入仓库外rubbish。
+本目录 `Anlogic` 是主板工程，`../Anlogic2` 是副板工程。目标器件为安路HX4S20板载 `EG4S20BG256`，使用TD 6.2.1。本文件是主板唯一工程说明；历史阶段文档、交接、试验报告和中间产物已移入工程外rubbish。
 
 ## 工程入口与当前位流
 
@@ -17,7 +17,7 @@
 
 bit SHA-256：`4409952619964B9FB2D138E2D3FB9006DB005E53278404412D8A7F92AB876BE5`。
 
-这是用户反馈整体可用的Flash启动修复版。极低概率80C6仍作为待观察项，不宣称完全消除。整理没有修改RTL或重新编译，不需要重新烧录或写卡；保留了用户原有未提交源码修改，不能将它们宣称为该bit的新综合结果。
+这是用户反馈整体可用的Flash启动修复版。极低概率80C6仍作为待观察项，不宣称完全消除。整理没有修改功能RTL，发布bit不变，不需要重新烧录或写卡。保留了用户原有未提交源码修改；本轮独立重建使用待提交源码副本，不包含这些修改，不能将它们宣称为该bit的新综合结果。
 
 ## 已实现功能
 
@@ -69,12 +69,22 @@ MBP1版本1，20字节头、业务payload及2字节CRC，总长 `22+N`，多字�
 
 ## 构建、时序与验证
 
-在主板工程根目录执行：
+手动全流程：
+
+1. 用 `D:\TD_6.2.1\bin` 中的TD图形界面打开根目录唯一 `.al`，确认器件为 `EG4S20BG256`、顶层为 `dual_fpga_museum_terminal_main_board`。
+2. 在工程文件树审核 `src/top/museum_main_board_top.v`，沿模块实例检查 `src/memory`、`src/video`、`src/audio`、`src/ethernet` 等源码；IP及约束同样必须保留。
+3. 在PowerShell中按下列顺序手动启动完整综合/布局布线，再生成bit。正式构建使用脚本中的成功种子和修hold步骤；不要以GUI默认物理设计策略代替后宣称结果等价。
 
 ```powershell
+Set-Location -LiteralPath D:\VSCode\CodeFiles\Git_TD\Anlogic
 & D:\TD_6.2.1\bin\td_commands_prompt.exe scripts/build_flash_startup_repair.tcl
+# 确认上一步成功，检查 _build_flash_startup_repair/museum_main_board_final.ts
+# setup/hold WNS非负，TNS均为0，再执行：
 & D:\TD_6.2.1\bin\td_commands_prompt.exe scripts/bitgen_flash_startup_repair.tcl
+Get-FileHash -LiteralPath ./release/dual_fpga_museum_terminal_main_board_flash_startup_repair.bit -Algorithm SHA256
 ```
+
+4. 检查TD输出无ERROR，完整构建的DRC通过，bitgen明确输出 `Generate bits file`；确认新bit的文件时间和SHA256后再烧录。只看进程退出码或目录里有旧bit不能证明生成成功。自行修改后产生的新bit不自动继承当前发布bit的上板验收。
 
 启动修复构建包装器复用 `build_museum_main_board.tcl` 及bitgen，四个Tcl都必须保留。所有现有build目录和数据库均已归档；下次生成bit必须先执行第一条完整构建，再执行bitgen，脚本会重新建立构建目录。成功布局种子1及其参数原样保留在构建脚本，并在 `seed/seed_config.json` 汇总；这里只保存原始最终报告，不是可直接bitgen的数据库。种子不保证修改后的源码仍然闭合时序。
 
@@ -87,10 +97,27 @@ MBP1版本1，20字节头、业务payload及2字节CRC，总长 `22+N`，多字�
 & D:\Modelsim\win64\vsim.exe -c -do run_remote_controls.do -l controls.log
 ```
 
-检查退出码、PASS及无FAIL/Fatal/Error；仅退出码0不够。采用英文日志名，避免本机ModelSim中文日志路径启动异常。仿真生成的work目录、modelsim.ini、日志不属于产品源码。本次清理后主板恢复1项、副板说明/背景3项、双端点重连1项PASS；未重新生成bit。
+检查退出码、PASS及无FAIL/Fatal/Error；仅退出码0不够。采用英文日志名，避免本机ModelSim中文日志路径启动异常。仿真生成的work目录、modelsim.ini、日志不属于产品源码。2026-10-03整理后独立源码副本通过6组回归、13条PASS（应用恢复、远程控制、本地手动浏览、名称、字幕叠加、应急恢复），无仿真错误；完整综合、布局布线、STA、DRC及bitgen通过，setup +0.107ns、hold +0.023ns、TNS均为0。测试bit留在工程外验证目录，不替换已上板发布bit。
 
 ## 目录与回溯
 
-只保留工程入口、`src`、`vendor`、`constraints`、正式 `scripts`、产品回归 `sim`、素材 `assets`、当前 `release` 和成功种子 `seed`。`.git`及第三方版权/许可证保留，它们不是中间工程文档。
+逐目录审核结果：
+
+| 目录/文件 | 保留理由及整理结果 |
+|---|---|
+| 根目录 `.al`、README、LICENSE、Git配置 | 工程入口、唯一介绍、版权及版本控制；保留 |
+| `src` | 49个当前工程源文件均被工程入口引用，保留，不改RTL |
+| `constraints` | 当前管脚与时序约束，保留 |
+| `vendor` | 保留工程直接引用、PLL的隐式生成HDL、TEMAC网表、SDRAM include；移出36个未引用例程/重复模块/旧备份 |
+| `scripts` | 四个正式Tcl构成完整综合→布局布线→DRC→bitgen链，全部保留 |
+| `sim` | 保留当前功能回归；8个依赖旧提交的历史对比脚本及7个专用测试台归档 |
+| `seed` | 已闭合种子1、实际参数和原始最终报告，完整保留 |
+| `release` | 唯一已验收bit及校验值；`media/OSDNAME.BIN`作为名称媒体模板保留 |
+| 原 `assets` | 单张历史图片源图不参与构建/仿真，已归档；实际TF素材由卡或独立打包软件提供 |
+| `tools` | 用户独立整理的软件不参与FPGA编译、不上传；旧Python启动BAT已失去调用目标，不属于当前流程 |
+
+工程里没有要求保留任何历史build数据库；重新编译自动生成build目录。回归测试源码不是中间产物，保留便于审核后验证修改。
 
 所有移出内容位于 `D:\VSCode\CodeFiles\Git_TD\rubbish\双板软件与旧位流整理_20261003`；软件、仿真、构建和最终文档整理分别有CSV清单，记录原/目标路径、长度和SHA256。旧文档在 `finalization/Anlogic/docs`，旧工程介绍也留有备份。需要恢复时移动回清单中的原路径，勿覆盖当前文件。归档不随普通Git拉取提供；当前工程自身具备构建所需全部硬件依赖。
+
+本轮进一步审核移出清单及独立重建证据位于 `D:\VSCode\CodeFiles\Git_TD\rubbish\project_audit_20261003`。主板工作区原有未提交源码改动不在本次整理提交中；核验重建以整理后的Git提交内容为准。
