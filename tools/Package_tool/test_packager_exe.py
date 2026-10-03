@@ -15,7 +15,7 @@ import wave
 from PIL import Image
 
 from museum_media_packager import (
-    HELP_TEXT, build_package, canonical_wav, find_ffmpeg, normalize_wav, sha256,
+    HELP_TEXT, RUNTIME, build_package, canonical_wav, find_ffmpeg, normalize_wav, sha256,
     show_help, verify_tf,
 )
 from generate_museum_subtitles import parse_srt
@@ -42,7 +42,7 @@ def main():
         print("PASS help page: embedded content, read-only, scroll, independent close")
     finally:
         gui.destroy()
-    exe = Path(__file__).resolve().with_name("MuseumTFPackager.exe")
+    exe = RUNTIME / "MuseumTFPackager.exe"
     binary = exe.read_bytes()
     pe = struct.unpack_from("<I", binary, 0x3C)[0]
     assert binary[pe:pe + 4] == b"PE\0\0"

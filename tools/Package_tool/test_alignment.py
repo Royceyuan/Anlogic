@@ -10,7 +10,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from align_worker import checked_cues
-from museum_media_packager import find_ffmpeg, find_media, normalize_wav
+from museum_media_packager import RUNTIME, find_ffmpeg, find_media, normalize_wav
 from generate_museum_subtitles import parse_srt
 
 
@@ -36,7 +36,7 @@ def main():
     if args.source is None:
         return
     here = Path(__file__).resolve().parent
-    worker = args.worker or here / "AlignmentWorker" / "AlignmentWorker.exe"
+    worker = args.worker or RUNTIME / "AlignmentWorker" / "AlignmentWorker.exe"
     environment = os.environ.copy()
     environment.pop("PYTHONPATH", None)
     environment.pop("PYTHONHOME", None)
@@ -58,7 +58,7 @@ def main():
         start = time.monotonic()
         command = [str(worker)] if worker.suffix != ".py" else [str(here / "_alignment_runtime" / "Scripts" / "python.exe"), str(worker)]
         result = subprocess.run(command + ["--request", str(request_file), "--result", str(result_file),
-                                 "--model", str(here / "models" / "small.pt")], env=environment,
+                                 "--model", str(RUNTIME / "models" / "small.pt")], env=environment,
                                 capture_output=True, timeout=1800, creationflags=subprocess.CREATE_NO_WINDOW)
         assert result_file.is_file(), result.stderr.decode(errors="replace")
         report = json.loads(result_file.read_text(encoding="utf-8"))

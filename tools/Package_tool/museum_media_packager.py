@@ -19,6 +19,7 @@ from PIL import Image
 
 
 HERE = Path(sys.executable if getattr(sys, "frozen", False) else __file__).resolve().parent
+RUNTIME = HERE / "MuseumTFPackager" if not (HERE / "AlignmentWorker").is_dir() and (HERE / "MuseumTFPackager").is_dir() else HERE
 TOOLS = HERE.parent
 sys.path.insert(0, str(TOOLS))
 
@@ -273,7 +274,7 @@ def canonical_wav(path: Path) -> bool:
 
 def find_ffmpeg() -> Path | None:
     candidates = [
-        str(HERE / "ffmpeg" / "ffmpeg.exe"),
+        str(RUNTIME / "ffmpeg" / "ffmpeg.exe"),
         os.environ.get("FFMPEG"),
         shutil.which("ffmpeg"),
         str(Path(os.environ.get("CONDA_PREFIX", "")) / "Library/bin/ffmpeg.exe")
@@ -327,8 +328,8 @@ def inspect_source(root: Path, timing_mode: str = "direct", align_subtitles: boo
 
 
 def alignment_command() -> list[str]:
-    worker = HERE / "AlignmentWorker" / "AlignmentWorker.exe"
-    model = HERE / "models" / "small.pt"
+    worker = RUNTIME / "AlignmentWorker" / "AlignmentWorker.exe"
+    model = RUNTIME / "models" / "small.pt"
     if not worker.is_file() or not model.is_file():
         raise FileNotFoundError("本地校准组件不完整，请使用完整离线包（AlignmentWorker、models 与 EXE 同目录）")
     return [str(worker), "--model", str(model)]

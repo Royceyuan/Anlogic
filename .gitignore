@@ -33,6 +33,7 @@ tools/Package_tool/ffmpeg/
 tools/Package_tool/offline_licenses/
 tools/Package_tool/MuseumTFPackager_Offline.zip
 tools/Package_tool/offline_bundle_manifest.json
+tools/Package_tool/MuseumTFPackager/
 
 # Editor and OS noise
 .DS_Store

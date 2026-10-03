@@ -2,6 +2,8 @@
 
 这是主板媒体格式的 Windows 图形化检查与打包工具。它不会修改源素材或 FPGA 工程。
 
+当前工程目录按“源码＋独立运行目录”整理：双击 `MuseumTFPackager/MuseumTFPackager.exe`。外层重复 EXE 和运行组件已移入 rubbish；源码、测试、构建脚本、文档与 ZIP 保留。独立离线包全部解压后，仍在解压目录直接双击 EXE。源码检查会查找这个运行目录。
+
 ## 使用方法
 
 1. 双击 `MuseumTFPackager.exe`（不弹终端，无需安装 Python/Pillow）。
@@ -71,6 +73,8 @@ py -3 .\museum_media_packager.py --build "D:\VSCode\CodeFiles\Git_TD\素材" --o
 脚本使用仓库根目录下独立的 `_build_media_packager_venv`，不修改系统 Python；构建缓存位于 `_build_media_packager`，均不参与工程构建或提交。
 
 增加 `-WithAlignment` 构建运行组件和完整 ZIP。构建机需先准备 `_alignment_runtime` 独立环境；本次 Python 3.8.20，固定依赖 stable-ts 2.19.1、openai-whisper 20250625、torch/torchaudio 2.4.1+cpu、numpy 1.24.4、numba 0.58.1、llvmlite 0.41.1、tiktoken 0.7.0、PyInstaller 6.16.0。最终用户无需安装这些。stable-ts 上游已归档，运行不自动更新。
+
+本次整理已归档 `_alignment_runtime` 及外层重复组件。重建校准组件或完整 ZIP 前，应按 `rubbish/整理_20261003_204041` 中的移动清单恢复它们到原路径；软件运行无需恢复。普通主程序构建仍输出外层 EXE，构建后的新产物不会自动替换已验证的解压运行目录。
 
 `build_offline_bundle.py` 验证模型官方 SHA-256，缺失时下载；递归收集 Conda FFmpeg/ffprobe 的 DLL、许可和构建配方，输出 ZIP 和清单。构建机 FFmpeg 路径通过参数给出，最终用户无需 Anaconda。
 
