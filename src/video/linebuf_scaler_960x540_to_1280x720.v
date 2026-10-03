@@ -242,16 +242,12 @@ assign display_epoch = video_epoch ^
                        (video_started && video_de && video_x == 11'd0 &&
                         video_y == 10'd0);
 assign preload_epoch = video_started ? ~video_epoch : video_epoch;
-assign source_row_hit  = in_picture && (slot_valid[0] && slot_epoch[0] == display_epoch &&
-                         (slot_tag0 == mapped_y[9:0]) ? 1'b1 :
-                         slot_valid[1] && slot_epoch[1] == display_epoch &&
-                         (slot_tag1 == mapped_y[9:0]) ? 1'b1 :
-                         slot_valid[2] && slot_epoch[2] == display_epoch &&
-                         (slot_tag2 == mapped_y[9:0]) ? 1'b1 : 1'b0);
-assign source_row_slot = (slot_valid[0] && slot_epoch[0] == display_epoch &&
-                          (slot_tag0 == mapped_y[9:0])) ? 2'd0 :
-                         (slot_valid[1] && slot_epoch[1] == display_epoch &&
-                          (slot_tag1 == mapped_y[9:0])) ? 2'd1 : 2'd2;
+wire hit0 = slot_valid[0] && slot_epoch[0] == display_epoch && slot_tag0 == mapped_y[9:0];
+wire hit1 = slot_valid[1] && slot_epoch[1] == display_epoch && slot_tag1 == mapped_y[9:0];
+wire hit2 = slot_valid[2] && slot_epoch[2] == display_epoch && slot_tag2 == mapped_y[9:0];
+// Existence is parallel; choosing a slot still preserves the old 0,1,2 priority.
+assign source_row_hit = in_picture && (hit0 || hit1 || hit2);
+assign source_row_slot = hit0 ? 2'd0 : hit1 ? 2'd1 : 2'd2;
 
 assign free_slot0 = !slot_valid[0];
 assign free_slot1 = !slot_valid[1];

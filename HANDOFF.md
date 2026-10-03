@@ -1,5 +1,11 @@
 # 双 FPGA 博物馆双屏展陈终端——主板工程交接
 
+## 独立资源候选（2026-10-03，待上板）
+
+源图片尺寸表改用异步读分布式 RAM，行缓存命中存在性改为并行译码，保留原槽位优先级；不调整控制、协议、素材和音画时间轴。固定 seed 1、原时钟及约束完成整机综合、布线、STA/DRC 和 bitgen：LUT 16691、FF 11120、Slice 9321（95.11%），相对已验收纵坐标版减少 390 LUT / 325 FF / 165 Slice，BRAM/DSP/PLL 不增。setup +0.016 ns / hold +0.024 ns，TNS=0，覆盖率99.80%；setup余量薄，不能代替实板验收。
+
+仅烧录独立候选 `release/dual_fpga_museum_terminal_main_board_dimensions_candidate.bit`（SHA256 `01C1721A28CC876D5F2221D126E2A848567A84D83FCFB0129177BFF5E5392FDA`）进行对照，副板无需更换。已验收主板 `7EE6C57A...` 和副板 `B36B3D6E...` 未覆盖；当前生产源码为新候选，重新运行原构建脚本也会使用该源码。回归、资源及完整复现见 `docs/reports/source_dimensions_single_hotspot_20261003.md`。当前未收到此候选的 BOARD PASS。
+
 ## 当前双板上板验收记录（2026-10-02）
 
 后续视口请求合并试验也未合入：19个正常入口26项检查PASS，但固定seed1最终Slice9655（+169），setup -1.540ns。主板生产文件已逐字节恢复，副板未改、无新bit；当前资源仍为已验收的9486 Slice。对照测试、撤回与原始数据见 `docs/reports/viewport_request_single_hotspot_20261002.md`。上一流水线时序起点的综合网表网络实际是transition_mode[2]，不能根据实例名直接归因为Y坐标计算。

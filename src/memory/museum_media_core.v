@@ -271,10 +271,7 @@ reg [4:0] frame_valid;
 reg overview_cache_ready;
 reg initial_frame_published;
 reg preload_select_frame_index;
-reg [15:0] frame_source_width_bcd [0:4];
-reg [15:0] frame_source_height_bcd [0:4];
-reg [15:0] overview_source_width_bcd [0:4];
-reg [15:0] overview_source_height_bcd [0:4];
+wire [31:0] frame_source_dimensions, overview_source_dimensions;
 reg [15:0] published_source_width_bcd;
 reg [15:0] published_source_height_bcd;
 reg [15:0] preload_select_source_width_bcd;
@@ -2079,6 +2076,26 @@ always @(posedge clk_50m or negedge write_rst_n)
     else load_finish_ready_q <= load_active && load_finish_ready &&
                                 !image_load_error && !writer_error && !recovery_busy;
 
+wire dimensions_write = !recovery_busy && load_active &&
+    !image_load_error && !writer_error &&
+    (ENABLE_MAIN5_REMOTE ? load_finish_ready_q : load_finish_ready);
+wire [3:0] dimensions_frame_read_index = ENABLE_MULTI_FRAME_PRELOAD ?
+    desired_image_index : {3'd0, desired_image_index[0]};
+wire [2:0] dimensions_overview_read_index = recovery_video_ff2 ?
+    (museum_preload_valid ? museum_preload_index : 3'd0) : overview_selected_video;
+museum_source_dimensions u_frame_dimensions (
+    .clk(clk_50m), .rst_n(write_rst_n),
+    .wr_en(dimensions_write && (ENABLE_MULTI_FRAME_PRELOAD || load_image_index < 5)),
+    .wr_index(load_image_index), .wr_dimensions({image_width_bcd,image_height_bcd}),
+    .rd_index(dimensions_frame_read_index), .rd_dimensions(frame_source_dimensions)
+);
+museum_source_dimensions u_overview_dimensions (
+    .clk(clk_50m), .rst_n(write_rst_n),
+    .wr_en(dimensions_write && ENABLE_MAIN3 && !load_museum_asset && load_image_index < 5),
+    .wr_index(load_image_index), .wr_dimensions({image_width_bcd,image_height_bcd}),
+    .rd_index({1'b0,dimensions_overview_read_index}), .rd_dimensions(overview_source_dimensions)
+);
+
 always @(posedge clk_50m or negedge write_rst_n) begin
     if (!write_rst_n) begin
         image_load_start <= 1'b0;
@@ -2129,26 +2146,6 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         initial_frame_published <= 1'b0;
         preload_select_frame_index <= 1'b0;
         preload_select_media_index <= 4'd0;
-        frame_source_width_bcd[0] <= 16'd0;
-        frame_source_width_bcd[1] <= 16'd0;
-        frame_source_width_bcd[2] <= 16'd0;
-        frame_source_width_bcd[3] <= 16'd0;
-        frame_source_width_bcd[4] <= 16'd0;
-        frame_source_height_bcd[0] <= 16'd0;
-        frame_source_height_bcd[1] <= 16'd0;
-        frame_source_height_bcd[2] <= 16'd0;
-        frame_source_height_bcd[3] <= 16'd0;
-        frame_source_height_bcd[4] <= 16'd0;
-        overview_source_width_bcd[0] <= 16'd0;
-        overview_source_width_bcd[1] <= 16'd0;
-        overview_source_width_bcd[2] <= 16'd0;
-        overview_source_width_bcd[3] <= 16'd0;
-        overview_source_width_bcd[4] <= 16'd0;
-        overview_source_height_bcd[0] <= 16'd0;
-        overview_source_height_bcd[1] <= 16'd0;
-        overview_source_height_bcd[2] <= 16'd0;
-        overview_source_height_bcd[3] <= 16'd0;
-        overview_source_height_bcd[4] <= 16'd0;
         published_source_width_bcd <= 16'd0;
         published_source_height_bcd <= 16'd0;
         preload_select_source_width_bcd <= 16'd0;
@@ -2309,14 +2306,14 @@ always @(posedge clk_50m or negedge write_rst_n) begin
             frame_valid[desired_image_index]) begin
             preload_select_media_index <= desired_image_index;
             active_image_index <= desired_image_index;
-            preload_select_source_width_bcd <= frame_source_width_bcd[desired_image_index];
-            preload_select_source_height_bcd <= frame_source_height_bcd[desired_image_index];
+            preload_select_source_width_bcd <= frame_source_dimensions[31:16];
+            preload_select_source_height_bcd <= frame_source_dimensions[15:0];
         end else if (ENABLE_DUAL_FRAME_PRELOAD && load_reported && !load_active &&
                      frame_valid[desired_image_index[0]]) begin
             preload_select_frame_index <= desired_image_index[0];
             active_image_index <= {3'd0, desired_image_index[0]};
-            preload_select_source_width_bcd <= frame_source_width_bcd[desired_image_index[0]];
-            preload_select_source_height_bcd <= frame_source_height_bcd[desired_image_index[0]];
+            preload_select_source_width_bcd <= frame_source_dimensions[31:16];
+            preload_select_source_height_bcd <= frame_source_dimensions[15:0];
         end
 
         if (!load_active) begin
@@ -2394,14 +2391,6 @@ always @(posedge clk_50m or negedge write_rst_n) begin
                 frame_valid[load_image_index] <= 1'b1;
             else
                 frame_valid[load_frame_index] <= 1'b1;
-            if (ENABLE_MULTI_FRAME_PRELOAD || (load_image_index < 4'd5)) begin
-                frame_source_width_bcd[load_image_index] <= image_width_bcd;
-                frame_source_height_bcd[load_image_index] <= image_height_bcd;
-            end
-            if (ENABLE_MAIN3 && !load_museum_asset && load_image_index < 4'd5) begin
-                overview_source_width_bcd[load_image_index] <= image_width_bcd;
-                overview_source_height_bcd[load_image_index] <= image_height_bcd;
-            end
             if (!ENABLE_CACHED_PRELOAD || !initial_frame_published)
                 active_image_index <= load_image_index;
             if (VIDEO_SEQUENCE) begin
@@ -3192,8 +3181,8 @@ always @(posedge video_clk or negedge video_rst_n) begin
                 if (display_media_index==VIDEO_FRAME_COUNT) begin
                     osd_artifact<=overview_selected_video;
                     osd_stage<=3'd0;
-                    osd_width_bcd<=overview_source_width_bcd[overview_selected_video];
-                    osd_height_bcd<=overview_source_height_bcd[overview_selected_video];
+                    osd_width_bcd<=overview_source_dimensions[31:16];
+                    osd_height_bcd<=overview_source_dimensions[15:0];
                 end else begin
                     osd_artifact<=osd_lecture_artifact_ff2;
                     osd_stage<=osd_final_full_ff2 ? 3'd5 :
@@ -3206,10 +3195,8 @@ always @(posedge video_clk or negedge video_rst_n) begin
                          display_media_index==VIDEO_FRAME_COUNT) begin
                 osd_artifact<=museum_preload_valid ? museum_preload_index : 3'd0;
                 osd_stage<=3'd0;
-                osd_width_bcd<=overview_source_width_bcd[
-                    museum_preload_valid ? museum_preload_index : 3'd0];
-                osd_height_bcd<=overview_source_height_bcd[
-                    museum_preload_valid ? museum_preload_index : 3'd0];
+                osd_width_bcd<=overview_source_dimensions[31:16];
+                osd_height_bcd<=overview_source_dimensions[15:0];
             end
         end
     end
@@ -3526,6 +3513,40 @@ assign main5_diagnostic = {24'd0, main5_storage, {3'd0, frame_valid},
                             overview_cache_ready}, main5_error,
                             {6'd0, subtitle_format_error_50m, subtitle_file_error_50m}, 64'd0};
 
+endmodule
+
+// Five 32-bit entries with the same asynchronous read as the old FF tables.
+// Only validity needs reset; a stale RAM word cannot escape after reset.
+module museum_source_dimensions (
+    input wire clk, rst_n, wr_en,
+    input wire [3:0] wr_index, rd_index,
+    input wire [31:0] wr_dimensions,
+    output wire [31:0] rd_dimensions
+);
+reg [4:0] valid;
+wire [31:0] raw_dimensions;
+wire write_enable = rst_n && wr_en && wr_index < 4'd5;
+always @(posedge clk or negedge rst_n)
+    if (!rst_n) valid <= 5'd0;
+    else if (write_enable) valid[wr_index] <= 1'b1;
+`ifdef SIM
+    reg [31:0] memory [0:15];
+    always @(posedge clk)
+        if (write_enable) memory[wr_index] <= wr_dimensions;
+    assign raw_dimensions = memory[rd_index];
+`else
+    EG_LOGIC_DRAM #(
+        .DATA_WIDTH_W(32), .DATA_WIDTH_R(32),
+        .ADDR_WIDTH_W(4), .ADDR_WIDTH_R(4),
+        .DATA_DEPTH_W(16), .DATA_DEPTH_R(16),
+        .INIT_FILE("NONE"), .FILL_ALL("NONE")
+    ) u_dimensions (
+        .di(wr_dimensions), .waddr(wr_index), .we(write_enable),
+        .wclk(clk), .raddr(rd_index), .do(raw_dimensions)
+    );
+`endif
+assign rd_dimensions = rd_index < 4'd5 ?
+    (valid[rd_index] ? raw_dimensions : 32'd0) : 32'bx;
 endmodule
 
 `default_nettype wire
