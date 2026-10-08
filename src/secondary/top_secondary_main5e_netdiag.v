@@ -6,9 +6,13 @@ module top_secondary_main5e_netdiag #(
     parameter integer LIGHT_UDP = 1,
     parameter integer MBP1_EXTERNAL_STATUS = 0,
     parameter integer MBP1_CONTROL = 0,
-    parameter integer SECONDARY_CLIENT = 0
+    parameter integer SECONDARY_CLIENT = 0,
+    parameter integer SHARED_TX_CLOCKS = 0
 ) (
     input  wire       clk_50m,
+    input  wire       shared_eth_clk,
+    input  wire       shared_eth_clk_90,
+    input  wire       shared_clock_locked,
     input  wire       key_reset_n,
     input  wire [1:0] debug_sel,
     input  wire       eth_rgmii_rx_clk,
@@ -71,6 +75,17 @@ wire udp_clk_generated;
 assign udp_clk = LIGHT_UDP ? clk_50m : udp_clk_generated;
 wire sys_reset = pll_reset | ~key_reset_n;
 
+generate
+if (SHARED_TX_CLOCKS) begin : g_shared_tx_clock
+    assign pll_reset = !shared_clock_locked;
+    assign clk_125_mac = shared_eth_clk;
+    assign clk_125_udp = shared_eth_clk;
+    assign clk_125_90 = shared_eth_clk_90;
+    // The existing endpoint fixes TRI_SPEED to gigabit and LIGHT_UDP to 50MHz.
+    assign clk_12_5 = 1'b0;
+    assign clk_1_25 = 1'b0;
+    assign clk_25 = 1'b0;
+end else begin : g_original_tx_clock
 clk_gen_rst_gen #(.DEVICE("EG4")) u_clk_gen (
     .reset(1'b0),
     .clk_in(clk_50m),
@@ -82,6 +97,8 @@ clk_gen_rst_gen #(.DEVICE("EG4")) u_clk_gen (
     .clk_1_25_out(clk_1_25),
     .clk_25_out(clk_25)
 );
+end
+endgenerate
 
 udp_clk_gen #(.DEVICE("EG4")) u_udp_clk_gen (
     .reset(1'b0),

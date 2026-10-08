@@ -1,11 +1,25 @@
-param([string]$TD = 'D:\TD_6.2.1\bin\td_commands_prompt.exe')
+param(
+    [string]$TD = 'D:\TD_6.2.1\bin\td_commands_prompt.exe',
+    [ValidateSet('release','shared-clock')][string]$Variant = 'release'
+)
 
 $ErrorActionPreference = 'Stop'
 $projectRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 Set-Location -LiteralPath $projectRoot
+$env:SECONDARY_PROJECT = 'hx4s20_secondary_main5e.al'
+$env:SECONDARY_TOP = 'top_secondary_main5e'
+$env:SECONDARY_SDC = 'constraints/top_secondary_main5e.sdc'
 $buildDir = Join-Path $projectRoot '_build_secondary_help_fixed720_seed6'
 $env:SECONDARY_BUILD = $buildDir
 $env:SECONDARY_BIT = Join-Path $projectRoot 'release/hx4s20_secondary_help_fixed720.bit'
+if ($Variant -eq 'shared-clock') {
+    $env:SECONDARY_PROJECT = 'hx4s20_secondary_shared_clock.al'
+    $env:SECONDARY_TOP = 'top_secondary_shared_clock'
+    $env:SECONDARY_SDC = 'constraints/secondary_shared_clock.sdc'
+    $buildDir = Join-Path $projectRoot '_build_secondary_shared_clock'
+    $env:SECONDARY_BUILD = $buildDir
+    $env:SECONDARY_BIT = Join-Path $projectRoot 'release/hx4s20_secondary_shared_clock.bit'
+}
 New-Item -ItemType Directory -Path $buildDir -Force | Out-Null
 Write-Host "Building secondary board; reports: $buildDir"
 & $TD './scripts/build_secondary_main5e_pr.tcl' 2>&1 |

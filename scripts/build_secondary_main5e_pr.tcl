@@ -1,15 +1,21 @@
 import_device eagle_s20.db -package EG4S20BG256
 set secondary_root .
+set project hx4s20_secondary_main5e.al
+set top top_secondary_main5e
+set sdc constraints/top_secondary_main5e.sdc
+if {[info exists ::env(SECONDARY_PROJECT)]} {set project $::env(SECONDARY_PROJECT)}
+if {[info exists ::env(SECONDARY_TOP)]} {set top $::env(SECONDARY_TOP)}
+if {[info exists ::env(SECONDARY_SDC)]} {set sdc $::env(SECONDARY_SDC)}
 set secondary_build [file join $secondary_root _build_secondary_help_fixed720_seed6]
 if {[info exists ::env(SECONDARY_BUILD)]} {set secondary_build $::env(SECONDARY_BUILD)}
 file mkdir $secondary_build
 cd $secondary_root
-open_project [file join $secondary_root hx4s20_secondary_main5e.al] -single_run
+open_project [file join $secondary_root $project] -single_run
 load_run_param -run syn_1
-elaborate -top top_secondary_main5e
+elaborate -top $top
 read_adc [file join $secondary_root constraints top_secondary_main5e.adc]
 clear_sdc -user
-read_sdc [file join $secondary_root constraints top_secondary_main5e.sdc]
+read_sdc [file join $secondary_root $sdc]
 optimize_rtl
 report_area -file [file join $secondary_build secondary_main5e_rtl.area]
 optimize_gate -packarea [file join $secondary_build secondary_main5e_gate.area]

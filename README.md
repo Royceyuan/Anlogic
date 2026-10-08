@@ -109,4 +109,18 @@ ModelSim从 `sim` 目录执行，例如：
 
 本轮进一步审核清单及独立重建证据位于 `D:\VSCode\CodeFiles\Git_TD\rubbish\project_audit_20261003`。说明背景/字库生成工具将来可能再次生成预览图与manifest，它们不属于编译必需文件。
 
-副板功能源码、约束、工程入口和构建脚本与远程 `72a8937` 一致；在此基线上仅整理重复文件、报告位置及最终介绍，不混入旧版功能实现。旧交接/中间报告不恢复到工程目录。本轮副板只本地提交，不推送远程。
+副板整理基线功能源码来自远程 `72a8937`；本轮副板只本地提交，不推送远程。
+
+## HDMI直通拓展：共享PLL基线已上板通过
+
+2026-10-08用户确认共享PLL候选上板通过。原正式入口默认关闭共享PLL，原发布bit不变；`hx4s20_secondary_shared_clock.al` 是独立时钟验证入口，不是HDMI直通版本。
+
+```powershell
+./scripts/build.ps1 -Variant shared-clock
+```
+
+输出 `release/hx4s20_secondary_shared_clock.bit`，SHA256为 `87AD8E62FA57719CBFAD35B9F1A648722CEE1BC4F86AFC7768E7AA90D9C64D82`。该bit保留原副屏功能，HDMIA仍输出，尚未接收HDMIB。
+
+共享PLL保留存储50MHz及相对8ns偏移、以太网125MHz及相对2ns偏移；采用存储时钟反馈补偿和全局缓冲。实际占用LUT10000（51.02%）、FF6466、Slice5805（59.23%）、BRAM9K20、BRAM32K13、DSP5、PLL3；setup +0.245ns、hold +0.027ns，TNS=0。官方PLL模型对照测试和9组原功能回归通过。
+
+闭合报告保留在 `seed/shared_clock`。本次BOARD PASS只适用于共享PLL版本，不能当作HDMI接收通过。后续按 [直通实施计划](../记录文档/副板_HDMI音视频直通实施计划_20261008.md) 推进独立720p音视频直通，再整合自动切源。

@@ -59,6 +59,7 @@ module top_v66 #(
     parameter integer PRODUCT_TRANSITION_HOLD_CYCLES = 35_000_000,
     parameter integer SOURCE_W = VIDEO_W,
     parameter integer SOURCE_H = VIDEO_H,
+    parameter integer SHARED_MEMORY_CLOCKS = 0,
     parameter integer LINEBUF_SCALE = 0,
     parameter integer LINEBUF_REGISTER_READ = 0,
     parameter integer LINEBUF_NOREG_SYNC_READ = 0,
@@ -99,6 +100,8 @@ module top_v66 #(
     ,parameter integer OVERVIEW_CROP_X0_4 = 384
 ) (
     input  wire        clk_50m,
+    input  wire        shared_mem_clk,
+    input  wire        shared_mem_clk_sft,
     input  wire [3:0]  key_n,
     input  wire [3:0]  sw,
     output wire [3:0]  led,
@@ -1112,10 +1115,17 @@ reset_sync u_video_reset_sync (
     .clk(video_clk), .arst_n(init_done), .srst_n(video_rst_n)
 );
 
+generate
+if (SHARED_MEMORY_CLOCKS) begin : g_shared_memory_clock
+    assign mem_clk = shared_mem_clk;
+    assign mem_clk_sft = shared_mem_clk_sft;
+end else begin : g_original_memory_clock
 sys_pll u_sys_pll (
     .refclk(clk_50m), .reset(1'b0),
     .clk0_out(), .clk1_out(mem_clk), .clk2_out(mem_clk_sft)
 );
+end
+endgenerate
 
 generate
     if (VIDEO_MODE_1280) begin : g_video_pll_1280

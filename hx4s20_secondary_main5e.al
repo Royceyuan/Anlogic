@@ -475,6 +475,8 @@
                     <Attr Name="CompileOrder" Val="126" />
                 </FileInfo>
             </File>
+            <File Path="src/clock/secondary_media_eth_pll.v"><FileInfo><Attr Name="UsedInSyn" Val="true" /><Attr Name="UsedInP&amp;R" Val="true" /><Attr Name="BelongTo" Val="design_1" /><Attr Name="CompileOrder" Val="201" /></FileInfo></File>
+            <File Path="src/secondary/top_secondary_shared_clock.v"><FileInfo><Attr Name="UsedInSyn" Val="true" /><Attr Name="UsedInP&amp;R" Val="true" /><Attr Name="BelongTo" Val="design_1" /><Attr Name="CompileOrder" Val="202" /></FileInfo></File>
         </Verilog>
         <VHDL>
             <File Path="vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/hdmi_tx.vhd">

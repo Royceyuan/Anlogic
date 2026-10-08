@@ -1,0 +1,26 @@
+Location         : D:\VSCode\CodeFiles\Git_TD\Anlogic2
+Running with     : Tang Dynasty v6.2.168116
+                   Copyright (c) 2012-2025 Anlogic Inc.
+Top Model        : top_secondary_shared_clock
+Device           : EG4S20BG256
+Speed            : NA
+
+Timing Mode      : final
+Setup            : WNS   245ps  TNS        0ps  NUM_FEPS     0
+Hold             : WNS    27ps  TNS        0ps  NUM_FEPS     0
+
+Flow Statistics  :
+--------------------------------------------------------------------------------------------------
+     command     |  #calls  |  wall time  |  cpu time(s)  |  used memory(mb)  |  peak memory(mb)  
+--------------------------------------------------------------------------------------------------
+      route      |    1     |  46s(36%)   |    61(36%)    |        970        |        970        
+      place      |    1     |  31s(24%)   |    57(34%)    |        601        |        601        
+  optimize_rtl   |    1     |  24s(19%)   |    23(13%)    |        460        |        536        
+  optimize_gate  |    1     |  21s(16%)   |    21(12%)    |        518        |        536        
+    fix_hold     |    1     |   3s(2%)    |     3(1%)     |        970        |        970        
+  import_device  |    1     |   0s(0%)    |     0(0%)     |        84         |        84         
+    read_adc     |    1     |   0s(0%)    |     0(0%)     |        317        |        317        
+    read_sdc     |    1     |   0s(0%)    |     0(0%)     |        317        |        317        
+--------------------------------------------------------------------------------------------------
+      total      |    8     |    2m5s     |      165      |        970        |        970        
+--------------------------------------------------------------------------------------------------

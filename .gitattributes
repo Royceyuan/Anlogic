@@ -5,6 +5,8 @@
 # Preserve original tool-report checksums across checkout.
 seed/* -text
 seed/*.json text
+seed/shared_clock/* -text
+seed/shared_clock/*.json text
 assets/secondary_exhibit_source/*.png filter=lfs diff=lfs merge=lfs -text
 assets/secondary_exhibit_hero_source/*.png filter=lfs diff=lfs merge=lfs -text
 assets/secondary_emergency_720p_v2/source.png filter=lfs diff=lfs merge=lfs -text

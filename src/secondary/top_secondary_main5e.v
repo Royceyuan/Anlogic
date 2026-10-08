@@ -3,7 +3,9 @@
 
 // Main-board telemetry drives the 720p display; local keys send absolute
 // display and viewport requests over MBP1.
-module top_secondary_main5e (
+module top_secondary_main5e #(
+    parameter integer SHARED_MEDIA_ETH_PLL = 0
+) (
     input wire clk_50m,
     input wire [3:0] sw,
     input wire [3:0] key_n,
@@ -47,8 +49,31 @@ wire [7:0] media_seg_data, media_seg_sel;
 assign seg_data = media_seg_data;
 assign seg_sel = media_seg_sel;
 
-top_secondary_main5e_netdiag #(.SECONDARY_CLIENT(1)) u_network (
+wire shared_mem_clk, shared_mem_clk_sft;
+wire shared_eth_clk, shared_eth_clk_90, shared_clock_locked;
+generate
+    if (SHARED_MEDIA_ETH_PLL) begin : g_shared_clock
+        secondary_media_eth_pll u_pll (
+            .refclk(clk_50m), .reset(1'b0),
+            .mem_clk(shared_mem_clk), .mem_clk_sft(shared_mem_clk_sft),
+            .eth_clk(shared_eth_clk), .eth_clk_90(shared_eth_clk_90),
+            .locked(shared_clock_locked)
+        );
+    end else begin : g_original_clock
+        assign shared_mem_clk = 1'b0;
+        assign shared_mem_clk_sft = 1'b0;
+        assign shared_eth_clk = 1'b0;
+        assign shared_eth_clk_90 = 1'b0;
+        assign shared_clock_locked = 1'b0;
+    end
+endgenerate
+
+top_secondary_main5e_netdiag #(
+    .SECONDARY_CLIENT(1), .SHARED_TX_CLOCKS(SHARED_MEDIA_ETH_PLL)
+) u_network (
     .clk_50m(clk_50m), .key_reset_n(1'b1), .debug_sel(2'b11),
+    .shared_eth_clk(shared_eth_clk), .shared_eth_clk_90(shared_eth_clk_90),
+    .shared_clock_locked(shared_clock_locked),
     .eth_rgmii_rx_clk(eth_rgmii_rx_clk),
     .eth_rgmii_rx_ctl(eth_rgmii_rx_ctl), .eth_rgmii_rxd(eth_rgmii_rxd),
     .eth_rgmii_tx_clk(eth_rgmii_tx_clk),
@@ -106,6 +131,7 @@ top_v66 #(
     .MULTI_IMAGE_BMP(1), .MULTI_FRAME_PRELOAD(1), .VIDEO_FRAME_COUNT(5),
     .FORCE_SEQUENCE_AUTO(1), .AUTO_PERIOD_CYCLES(250_000_000),
     .LINEBUF_SCALE(0), .SECONDARY_STREAMING(1),
+    .SHARED_MEMORY_CLOCKS(SHARED_MEDIA_ETH_PLL),
     .SECONDARY_ENGINEERING(0), .SECONDARY_HELP(1),
     .RESOURCE_OPT_CONSTANT_MULT(1),
     .ENABLE_SUBTITLE(0), .ENABLE_AUDIO_VISUALIZER(0),
@@ -115,6 +141,7 @@ top_v66 #(
     .V_FRONT(5), .V_SYNC(5), .V_BACK(20)
 ) u_display (
     .clk_50m(clk_50m), .key_n(4'b1111), .sw(4'b0001),
+    .shared_mem_clk(shared_mem_clk), .shared_mem_clk_sft(shared_mem_clk_sft),
     .led(led), .seg_data(media_seg_data), .seg_sel(media_seg_sel),
     .sd_clk(sd_clk), .sd_mosi(sd_mosi), .sd_miso(sd_miso), .sd_cs_n(sd_cs_n),
     .vga_hs(), .vga_vs(), .vga_d(),
