@@ -26,7 +26,7 @@ hdmi_relay_phy u_logic(.pclk(pclk),.sclk(sclk),.sampler_rst(rst),.transmitter_rs
 genvar lane;
 generate for(lane=0;lane<4;lane=lane+1) begin : g_lane
     EG_PHY_PAD #(.MODE("IN"),.IOTYPE("LVDS33"),.IDDRMODE("DDRX2"),
-        .IDDRPIPEMODE("PIPED"),.IN_DFFMODE("FF"),.IN_REGSET("RESET"),
+        .IDDRPIPEMODE("PIPED"),.IN_DFFMODE("NONE"),.IN_REGSET("RESET"),
         .INCEMUX("1"),.INRSTMUX("RST"),.INSCLKMUX("CLK"),.INPCLKMUX("CLK"),.SRMODE("ASYNC")) u_rx(
         .ipad(incoming[lane]),.isclk(sclk),.ipclk(pclk),.rst(rst),.ce(1'b1),
         .osclk(1'b0),.opclk(1'b0),.ts(1'b1),.do(4'b0),.opad(),.bpad(),.di(),

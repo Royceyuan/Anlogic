@@ -3,7 +3,9 @@
 
 // Independent board diagnostic. Does not include TF, SDRAM or Ethernet.
 module top_secondary_hdmi_relay_diag #(
-    parameter integer HPD_LOW_CYCLES=10000000
+    parameter integer HPD_LOW_CYCLES=10000000,
+    parameter integer USE_OFFICIAL_EDID=0,
+    parameter integer REQUIRE_SINK_HPD=1
 )(
     input wire clk_50m,
     input wire hdmi_b_clk_p,hdmi_b_d0_p,hdmi_b_d1_p,hdmi_b_d2_p,
@@ -30,18 +32,34 @@ always @(posedge clk_50m) begin
     if(!rst_n) hpd_cycles<=0;
     else if(hpd_cycles!=HPD_LOW_CYCLES-1) hpd_cycles<=hpd_cycles+1'b1;
 end
-wire edid_ready=rst_n && hpd_cycles==HPD_LOW_CYCLES-1;
+wire edid_ready;
 wire edid_request_seen,edid_read_seen;
 wire [7:0] ddc_bus_status;
 wire [3:0] ddc_parser_state;
-assign hdmi_b_sda=sda_low ? 1'b0 : 1'bz;
 // The FPGA owns the upstream EDID. Keep it available independently of the
-// output monitor; a 200 ms low interval requests fresh enumeration after JTAG.
+// output monitor. Default low interval is 200 ms; official EDID uses 2^25
+// 50 MHz cycles (about 671 ms) before asking the PC to enumerate.
 assign hdmi_b_hpd=edid_ready;
-hdmi_edid_720p u_edid(.clk(clk_50m),.rst_n(rst_n),.enable(rst_n),
-    .scl(hdmi_b_scl),.sda(hdmi_b_sda),.sda_low(sda_low),
-    .request_seen(edid_request_seen),.read_seen(edid_read_seen),
-    .bus_status(ddc_bus_status),.parser_state(ddc_parser_state));
+generate if(USE_OFFICIAL_EDID) begin : g_official_edid
+    // Keep the user-board-verified handshake and ROM, not the RGB/DVI path.
+    i2cSlaveTop u_slave(.SYS_CLK(clk_50m),.rst(!rst_n),.scl(hdmi_b_scl),
+        .sda(hdmi_b_sda),.hpd_reset(edid_ready),.LED());
+    wire [7:0] observer_bus;
+    hdmi_edid_720p u_observer(.clk(clk_50m),.rst_n(rst_n),.enable(rst_n),
+        .scl(hdmi_b_scl),.sda(hdmi_b_sda),.sda_low(),
+        .request_seen(edid_request_seen),.read_seen(edid_read_seen),
+        .bus_status(observer_bus),.parser_state(ddc_parser_state));
+    // Observer never drives SDA. Its parser state is not the official FSM.
+    assign ddc_bus_status={observer_bus[7:2],1'b0,observer_bus[0]};
+    assign sda_low=1'b0;
+end else begin : g_original_edid
+    assign edid_ready=rst_n && hpd_cycles==HPD_LOW_CYCLES-1;
+    assign hdmi_b_sda=sda_low ? 1'b0 : 1'bz;
+    hdmi_edid_720p u_edid(.clk(clk_50m),.rst_n(rst_n),.enable(rst_n),
+        .scl(hdmi_b_scl),.sda(hdmi_b_sda),.sda_low(sda_low),
+        .request_seen(edid_request_seen),.read_seen(edid_read_seen),
+        .bus_status(ddc_bus_status),.parser_state(ddc_parser_state));
+end endgenerate
 wire pclk,sclk,pixel_clk,pll_locked,phase_done,clock_valid;
 wire [19:0] measured_edges;
 reg clock_activity_seen;
@@ -100,7 +118,7 @@ wire [3:0] outgoing;
 reg tx_reset_falling=1'b1,tx_reset_output=1'b1;
 always @(negedge sclk or negedge receive_allowed)
     if(!receive_allowed) tx_reset_falling<=1'b1;
-    else tx_reset_falling<=!(format_ok&&sink_ff[1]);
+    else tx_reset_falling<=!(format_ok&&(!REQUIRE_SINK_HPD||sink_ff[1]));
 always @(posedge sclk or negedge receive_allowed)
     if(!receive_allowed) tx_reset_output<=1'b1;
     else tx_reset_output<=tx_reset_falling;

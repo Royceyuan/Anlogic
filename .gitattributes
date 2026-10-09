@@ -13,6 +13,8 @@ seed/hdmi_handshake_diag/* -text
 seed/hdmi_handshake_diag/*.json text
 seed/official_hdmi_loop_baseline/* -text
 seed/official_hdmi_loop_baseline/*.json text
+seed/hdmi_av_diag/* -text
+seed/hdmi_av_diag/*.json text
 assets/secondary_exhibit_source/*.png filter=lfs diff=lfs merge=lfs -text
 assets/secondary_exhibit_hero_source/*.png filter=lfs diff=lfs merge=lfs -text
 assets/secondary_emergency_720p_v2/source.png filter=lfs diff=lfs merge=lfs -text
