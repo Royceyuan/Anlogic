@@ -34,7 +34,9 @@ always @(posedge clk_50m or negedge rst_n) begin
         gray_ff1<=source_gray; gray_ff2<=gray_ff1;
         if(window_cycles==CLOCKS_PER_MS-1) begin
             window_cycles<=0; last_count<=count_now; measured_edges<=count_delta[19:0];
-            if(count_delta>=CLOCKS_PER_MS*148/100 && count_delta<=CLOCKS_PER_MS*149/100) begin
+            // Include the board-passed main board's integer-PLL 75 MHz source.
+            // Frame geometry is still checked independently by the monitor.
+            if(count_delta>=CLOCKS_PER_MS*148/100 && count_delta<=CLOCKS_PER_MS*751/500) begin
                 if(good_windows!=3) good_windows<=good_windows+1'b1;
                 if(good_windows>=2) clock_valid<=1;
             end else begin good_windows<=0; clock_valid<=0; end
@@ -46,7 +48,7 @@ EG_LOGIC_BUFG u_sclk(.i(clocks[0]),.o(sclk));
 EG_LOGIC_BUFG u_pclk(.i(clocks[1]),.o(pclk));
 EG_LOGIC_BUFG u_pixel(.i(clocks[2]),.o(pixel_clk));
 EG_PHY_PLL #(
-    .FIN("74.250000"),.FEEDBK_MODE("NORMAL"),.FEEDBK_PATH("CLKC2_EXT"),
+    .FIN("75.000000"),.FEEDBK_MODE("NORMAL"),.FEEDBK_PATH("CLKC2_EXT"),
     .DPHASE_SOURCE("ENABLE"),.DYNCFG("DISABLE"),
     .STDBY_ENABLE("DISABLE"),.PLLRST_ENA("ENABLE"),.SYNC_ENABLE("DISABLE"),
     .GMC_GAIN(4),.ICP_CURRENT(13),.KVCO(4),.LPF_CAPACITOR(1),.LPF_RESISTOR(4),

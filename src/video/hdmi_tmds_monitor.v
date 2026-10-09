@@ -95,10 +95,14 @@ reg last_hs,last_vs,seen_hs,seen_vs,line_bad;
 reg [12:0] line_symbols;
 reg [21:0] frame_symbols;
 reg [3:0] good_count;
-reg frame_in_range;
+reg frame_in_range,line_in_range,line_timeout;
 always @(posedge clk or negedge rst_n)
-    if(!rst_n) frame_in_range<=0;
-    else frame_in_range<=frame_symbols>=H_TOTAL*V_TOTAL-17 && frame_symbols<=H_TOTAL*V_TOTAL+15;
+    if(!rst_n) begin frame_in_range<=0;line_in_range<=0;line_timeout<=0;end
+    else begin
+        frame_in_range<=frame_symbols>=H_TOTAL*V_TOTAL-17 && frame_symbols<=H_TOTAL*V_TOTAL+15;
+        line_in_range<=line_symbols>=H_TOTAL-5 && line_symbols<=H_TOTAL+3;
+        line_timeout<=line_symbols>H_TOTAL+32;
+    end
 wire hs_rise=sync_valid && !last_hs && sync_value[0];
 wire vs_rise=sync_valid && !last_vs && sync_value[1];
 integer i;
@@ -151,7 +155,7 @@ always @(posedge clk or negedge rst_n) begin
         if(frame_symbols!=22'h3fffff) frame_symbols<=frame_symbols+1'b1;
         if(sync_valid) begin last_hs<=sync_value[0]; last_vs<=sync_value[1]; end
         if(hs_rise) begin
-            if(seen_hs && (line_symbols < H_TOTAL-5 || line_symbols > H_TOTAL+3)) begin
+            if(seen_hs && !line_in_range) begin
                 line_bad<=1; format_ok<=0;
             end
             line_symbols<=0; seen_hs<=1;
@@ -165,7 +169,7 @@ always @(posedge clk or negedge rst_n) begin
                 if(good_count>=GOOD_FRAMES-1) format_ok<=1;
             end else begin good_count<=0; format_ok<=0; end
         end
-        if(line_symbols>H_TOTAL+32) format_ok<=0;
+        if(line_timeout) format_ok<=0;
     end
 end
 endmodule

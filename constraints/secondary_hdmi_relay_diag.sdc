@@ -1,5 +1,6 @@
 create_clock -name clk_50m -period 20 -waveform {0 10} [get_ports {clk_50m}]
-create_clock -name hdmi_b_pixel -period 13.468013 -waveform {0 6.7340065} [get_ports {hdmi_b_clk_p}]
+# Worst-case 75.1 MHz accepted input, including the main board's 75 MHz.
+create_clock -name hdmi_b_pixel -period 13.315 -waveform {0 6.6575} [get_ports {hdmi_b_clk_p}]
 derive_clocks
 set_clock_groups -asynchronous \
     -group [get_clocks {clk_50m}] \

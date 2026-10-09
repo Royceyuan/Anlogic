@@ -92,7 +92,15 @@ initial begin
     source_enabled=0;#30000;
     source_period=13.4814815;source_enabled=1;
     check_phy;
+    source_enabled=0;#30000;
+    source_period=13.333333333;source_enabled=1;
+    check_phy;
+    source_enabled=0;#30000;
+    source_period=13.26259947;source_enabled=1;
+    #50000;
+    if(valid || locked) $fatal(1,"75.4 MHz outside diagnostic range accepted");
     $display("PASS source loss, unsupported frequency and 59.94 Hz reacquisition");
+    $display("PASS 75 MHz main-board source accepted, 75.4 MHz rejected");
     test_pass=1;$finish;
 end
 initial begin #500000;$fatal(1,"PLL/PHY timeout");end

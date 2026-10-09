@@ -7,4 +7,9 @@ vlog -work work_hdmi_diag ../src/common/reset_sync.v ../src/common/seg_hex_displ
 vsim -c -voptargs=+acc -onfinish stop -lib work_hdmi_diag tb_hdmi_relay_diag glbl
 run -all
 if {[examine -radix unsigned /tb_hdmi_relay_diag/test_pass] != 1} {quit -code 1 -f}
+quit -sim
+echo {CASE main-board 75 MHz source}
+vsim -c -voptargs=+acc -onfinish stop -gBIT_PERIOD=1.333333333 -lib work_hdmi_diag tb_hdmi_relay_diag glbl
+run -all
+if {[examine -radix unsigned /tb_hdmi_relay_diag/test_pass] != 1} {quit -code 1 -f}
 quit -f

@@ -2,6 +2,7 @@
 module tb_hdmi_relay_diag;
 reg clk50=0;
 always #10 clk50=!clk50;
+parameter real BIT_PERIOD=1.34680135;
 reg [3:0] incoming=0;
 reg source_enabled=1,sink_hpd=0;
 tri1 sda;
@@ -35,7 +36,7 @@ initial forever begin
         c=x<16 ? (10'h234+y) : 10'h354;
         for(bit_index=0;bit_index<10;bit_index=bit_index+1) begin
             incoming=source_enabled && hpd ? {bit_index<5,c[bit_index],b[bit_index],a[bit_index]} : 0;
-            #1.34680135;
+            #(BIT_PERIOD);
         end
     end
 end
