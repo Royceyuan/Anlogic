@@ -3,6 +3,7 @@ module tb_hdmi_relay_diag;
 reg clk50=0;
 always #10 clk50=!clk50;
 parameter real BIT_PERIOD=1.34680135;
+parameter integer SIMULATE_LANE_SKEW=0;
 reg [3:0] incoming=0;
 reg source_enabled=1,sink_hpd=0;
 tri1 sda;
@@ -22,6 +23,51 @@ defparam dut.HPD_LOW_CYCLES=5000;
 defparam dut.u_monitor.H_TOTAL=32;
 defparam dut.u_monitor.V_TOTAL=16;
 defparam dut.u_monitor.GOOD_FRAMES=2;
+// Board clocks do not arrive at all IOLs with zero skew. Observe the same
+// primitive with small opposite serial/parallel path differences per lane.
+wire [15:0] pin_words,pin_words_delayed;
+assign #0.6 pin_words_delayed=pin_words;
+genvar lane;
+generate if(SIMULATE_LANE_SKEW) begin : g_pin_skew
+    for(lane=0;lane<4;lane=lane+1) begin : g_lane
+        wire pin_pclk,pin_sclk;
+        assign #(lane==1 ? 0.0 : 0.25) pin_pclk=dut.pclk;
+        assign #(lane==1 ? 0.25 : 0.0) pin_sclk=dut.sclk;
+        EG_LOGIC_IDDRx2 u_sample(.pclk(pin_pclk),.sclk(pin_sclk),.d(incoming[lane]),
+            .rst(dut.sample_reset[1]),.q0(pin_words[lane*4]),.q1(pin_words[lane*4+1]),
+            .q2(pin_words[lane*4+2]),.q3(pin_words[lane*4+3]));
+    end
+    initial force dut.nibbles=pin_words_delayed;
+end endgenerate
+reg check_serial=0;
+reg [255:0] input_history [0:3];
+reg [63:0] output_history [0:3];
+reg [255:0] expected_serial;
+integer serial_samples=0,serial_delay=-1,serial_checks=0,hist_lane,hist_offset;
+reg serial_equal;
+always @(dut.sclk) if(check_serial) begin
+    for(hist_lane=0;hist_lane<4;hist_lane=hist_lane+1)
+        input_history[hist_lane]={input_history[hist_lane][254:0],incoming[hist_lane]};
+    #0.02;
+    for(hist_lane=0;hist_lane<4;hist_lane=hist_lane+1)
+        output_history[hist_lane]={output_history[hist_lane][62:0],outgoing[hist_lane]};
+    serial_samples=serial_samples+1;
+    if(serial_samples>100 && serial_delay<0) for(hist_offset=0;hist_offset<64;hist_offset=hist_offset+1) begin
+        serial_equal=1;
+        for(hist_lane=0;hist_lane<4;hist_lane=hist_lane+1) begin
+            expected_serial=input_history[hist_lane]>>hist_offset;
+            if(expected_serial[31:0]!==output_history[hist_lane][31:0]) serial_equal=0;
+        end
+        if(serial_equal && serial_delay<0) serial_delay=hist_offset;
+    end
+    if(serial_delay>=0) begin
+        for(hist_lane=0;hist_lane<4;hist_lane=hist_lane+1) begin
+            expected_serial=input_history[hist_lane]>>serial_delay;
+            if(expected_serial[31:0]!==output_history[hist_lane][31:0]) $fatal(1,"skew case changed serial lane %d",hist_lane);
+        end
+        serial_checks=serial_checks+1;
+    end
+end
 function [9:0] control;
 input vs,hs;
 begin case({vs,hs})
@@ -57,6 +103,11 @@ initial begin
     $display("PASS startup HPD interval and source qualification without downstream HPD");
     sink_hpd=1;
     ready;
+    if(SIMULATE_LANE_SKEW) begin
+        for(hist_lane=0;hist_lane<4;hist_lane=hist_lane+1) begin input_history[hist_lane]=0;output_history[hist_lane]=0;end
+        check_serial=1;wait(serial_checks>=1000);check_serial=0;
+        $display("PASS skewed capture keeps all four serial lanes bit-exact, common delay=%d UI",serial_delay);
+    end
     force dut.heartbeat=27'h4000000;#10;
     if(dut.diagnostic_value!==16'hbc10) $fatal(1,"B page did not separate source clock activity from idle DDC");
     release dut.heartbeat;
@@ -81,5 +132,5 @@ initial begin
     $display("PASS sink/source unplug and reconnect reacquire without board reset");
     test_pass=1;$finish;
 end
-initial begin #4000000;$fatal(1,"diagnostic top timeout");end
+initial begin #4000000;$fatal(1,"diagnostic top timeout clock=%b PLL=%b lane_locks=%b offsets=%h aligned=%b format=%b",dut.clock_valid,dut.pll_locked,dut.u_monitor.lane_lock,dut.bit_offsets,dut.lanes_locked,dut.format_ok);end
 endmodule

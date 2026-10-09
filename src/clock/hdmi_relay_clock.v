@@ -54,7 +54,9 @@ EG_PHY_PLL #(
     .GMC_GAIN(4),.ICP_CURRENT(13),.KVCO(4),.LPF_CAPACITOR(1),.LPF_RESISTOR(4),
     .REFCLK_DIV(1),.FBCLK_DIV(1),
     .CLKC0_ENABLE("ENABLE"),.CLKC0_DIV(2),.CLKC0_CPHASE(1),.CLKC0_FPHASE(4),
-    .CLKC1_ENABLE("ENABLE"),.CLKC1_DIV(4),.CLKC1_CPHASE(3),.CLKC1_FPHASE(4),
+    // Keep parallel capture away from the coincident serial capture edge.
+    // Four VCO fine steps give half a serial-bit margin (0.667 ns at 75 MHz).
+    .CLKC1_ENABLE("ENABLE"),.CLKC1_DIV(4),.CLKC1_CPHASE(3),.CLKC1_FPHASE(0),
     .CLKC2_ENABLE("ENABLE"),.CLKC2_DIV(10),.CLKC2_CPHASE(9),.CLKC2_FPHASE(4)
 ) u_rx_pll(
     .refclk(source_clk),.reset(!rst_n||!clock_valid),.stdby(1'b0),.extlock(pll_locked),

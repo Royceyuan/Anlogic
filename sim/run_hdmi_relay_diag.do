@@ -12,4 +12,9 @@ echo {CASE main-board 75 MHz source}
 vsim -c -voptargs=+acc -onfinish stop -gBIT_PERIOD=1.333333333 -lib work_hdmi_diag tb_hdmi_relay_diag glbl
 run -all
 if {[examine -radix unsigned /tb_hdmi_relay_diag/test_pass] != 1} {quit -code 1 -f}
+quit -sim
+echo {CASE 75 MHz with opposite per-lane IOL clock skew}
+vsim -c -voptargs=+acc -onfinish stop -gBIT_PERIOD=1.333333333 -gSIMULATE_LANE_SKEW=1 -lib work_hdmi_diag tb_hdmi_relay_diag glbl
+run -all
+if {[examine -radix unsigned /tb_hdmi_relay_diag/test_pass] != 1} {quit -code 1 -f}
 quit -f

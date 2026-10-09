@@ -85,17 +85,28 @@ always @(posedge clk_50m) begin
     end
 end
 wire rx_reset_n;
-reset_sync u_sample_reset(.clk(pclk),.arst_n(rst_n&&clock_valid&&pll_locked&&!phase_busy),.srst_n(rx_reset_n));
+wire receive_allowed=rst_n&&clock_valid&&pll_locked&&!phase_busy;
+reset_sync u_sample_reset(.clk(pclk),.arst_n(receive_allowed),.srst_n(rx_reset_n));
+// Release the IOL reset in its serial domain; pclk now intentionally leads
+// sclk, so releasing directly from pclk would leave a short recovery path.
+reg [1:0] sample_reset=2'b11;
+always @(posedge sclk or negedge receive_allowed)
+    if(!receive_allowed) sample_reset<=2'b11;
+    else sample_reset<={sample_reset[0],1'b0};
 wire [15:0] nibbles;
 wire [3:0] outgoing;
-wire transmit_allowed=rx_reset_n&&format_ok&&sink_ff[1];
-reg [1:0] tx_reset=2'b11;
-always @(posedge sclk or negedge transmit_allowed)
-    if(!transmit_allowed) tx_reset<=2'b11;
-    else tx_reset<={tx_reset[0],1'b0};
-wire tx_reset_n=!tx_reset[1];
-hdmi_relay_phy u_phy(.pclk(pclk),.sclk(sclk),.sampler_rst(!rx_reset_n),
-    .transmitter_rst(tx_reset[1]),
+// Sample the pixel-domain enable on the distant falling serial edge, then
+// release the IOL reset on a rising edge. No short pclk->sclk reset release.
+reg tx_reset_falling=1'b1,tx_reset_output=1'b1;
+always @(negedge sclk or negedge receive_allowed)
+    if(!receive_allowed) tx_reset_falling<=1'b1;
+    else tx_reset_falling<=!(format_ok&&sink_ff[1]);
+always @(posedge sclk or negedge receive_allowed)
+    if(!receive_allowed) tx_reset_output<=1'b1;
+    else tx_reset_output<=tx_reset_falling;
+wire tx_reset_n=!tx_reset_output;
+hdmi_relay_phy u_phy(.pclk(pclk),.sclk(sclk),.sampler_rst(sample_reset[1]),
+    .transmitter_rst(tx_reset_output),
     .serial_in({hdmi_b_clk_p,hdmi_b_d2_p,hdmi_b_d1_p,hdmi_b_d0_p}),
     .nibbles(nibbles),.serial_out(outgoing));
 hdmi_tmds_monitor u_monitor(.clk(pclk),.rst_n(rx_reset_n),.nibbles(nibbles[11:0]),
