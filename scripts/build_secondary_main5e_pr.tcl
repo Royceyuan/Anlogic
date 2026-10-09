@@ -3,9 +3,11 @@ set secondary_root .
 set project hx4s20_secondary_main5e.al
 set top top_secondary_main5e
 set sdc constraints/top_secondary_main5e.sdc
+set adc constraints/top_secondary_main5e.adc
 if {[info exists ::env(SECONDARY_PROJECT)]} {set project $::env(SECONDARY_PROJECT)}
 if {[info exists ::env(SECONDARY_TOP)]} {set top $::env(SECONDARY_TOP)}
 if {[info exists ::env(SECONDARY_SDC)]} {set sdc $::env(SECONDARY_SDC)}
+if {[info exists ::env(SECONDARY_ADC)]} {set adc $::env(SECONDARY_ADC)}
 set secondary_build [file join $secondary_root _build_secondary_help_fixed720_seed6]
 if {[info exists ::env(SECONDARY_BUILD)]} {set secondary_build $::env(SECONDARY_BUILD)}
 file mkdir $secondary_build
@@ -13,7 +15,7 @@ cd $secondary_root
 open_project [file join $secondary_root $project] -single_run
 load_run_param -run syn_1
 elaborate -top $top
-read_adc [file join $secondary_root constraints top_secondary_main5e.adc]
+read_adc [file join $secondary_root $adc]
 clear_sdc -user
 read_sdc [file join $secondary_root $sdc]
 optimize_rtl

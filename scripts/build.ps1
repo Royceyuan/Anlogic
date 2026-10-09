@@ -1,6 +1,6 @@
 param(
     [string]$TD = 'D:\TD_6.2.1\bin\td_commands_prompt.exe',
-    [ValidateSet('release','shared-clock')][string]$Variant = 'release'
+    [ValidateSet('release','shared-clock','relay-diag')][string]$Variant = 'release'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -9,6 +9,7 @@ Set-Location -LiteralPath $projectRoot
 $env:SECONDARY_PROJECT = 'hx4s20_secondary_main5e.al'
 $env:SECONDARY_TOP = 'top_secondary_main5e'
 $env:SECONDARY_SDC = 'constraints/top_secondary_main5e.sdc'
+$env:SECONDARY_ADC = 'constraints/top_secondary_main5e.adc'
 $buildDir = Join-Path $projectRoot '_build_secondary_help_fixed720_seed6'
 $env:SECONDARY_BUILD = $buildDir
 $env:SECONDARY_BIT = Join-Path $projectRoot 'release/hx4s20_secondary_help_fixed720.bit'
@@ -20,11 +21,23 @@ if ($Variant -eq 'shared-clock') {
     $env:SECONDARY_BUILD = $buildDir
     $env:SECONDARY_BIT = Join-Path $projectRoot 'release/hx4s20_secondary_shared_clock.bit'
 }
+if ($Variant -eq 'relay-diag') {
+    $env:SECONDARY_PROJECT = 'hx4s20_secondary_hdmi_relay_diag.al'
+    $env:SECONDARY_TOP = 'top_secondary_hdmi_relay_diag'
+    $env:SECONDARY_SDC = 'constraints/secondary_hdmi_relay_diag.sdc'
+    $env:SECONDARY_ADC = 'constraints/secondary_hdmi_relay_diag.adc'
+    $buildDir = Join-Path $projectRoot '_build_secondary_hdmi_relay_diag'
+    $env:SECONDARY_BUILD = $buildDir
+    $env:SECONDARY_BIT = Join-Path $projectRoot 'release/hx4s20_secondary_hdmi_relay_diag.bit'
+}
 New-Item -ItemType Directory -Path $buildDir -Force | Out-Null
 Write-Host "Building secondary board; reports: $buildDir"
 & $TD './scripts/build_secondary_main5e_pr.tcl' 2>&1 |
     Out-File -FilePath (Join-Path $buildDir 'console.log') -Encoding utf8
 if ($LASTEXITCODE -ne 0) { throw 'P&R failed' }
+if (Select-String -LiteralPath (Join-Path $buildDir 'console.log') -Pattern ' ERROR:') {
+    throw 'P&R reported an error; no bit generation attempted'
+}
 & $TD './scripts/build_secondary_main5e_bitgen.tcl' 2>&1 |
     Out-File -FilePath (Join-Path $buildDir 'bitgen.log') -Encoding utf8
 if ($LASTEXITCODE -ne 0) { throw 'Bit generation failed' }
