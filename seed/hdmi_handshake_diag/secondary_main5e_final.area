@@ -1,0 +1,93 @@
+standard
+***Report Model: top_secondary_hdmi_handshake_diag Device: EG4S20BG256***
+
+IO Statistics
+#IO                        28   out of    188   14.89%
+  #input                    4
+  #output                  21
+  #inout                    3
+
+Utilization Statistics
+#lut                      213   out of  19600    1.09%
+#reg                      122   out of  19600    0.62%
+#le                       235
+  #lut only               113   out of    235   48.09%
+  #reg only                22   out of    235    9.36%
+  #lut&reg                100   out of    235   42.55%
+#bram                       0   out of     64    0.00%
+  #bram9k                   0
+  #fifo9k                   0
+#bram32k                    0   out of     16    0.00%
+#dsp                        0   out of     29    0.00%
+#pad                       28   out of    188   14.89%
+  #ireg                     6
+  #oreg                     2
+  #treg                     0
+#pll                        0   out of      4    0.00%
+#gclk                       0   out of     16    0.00%
+
+
+Detailed IO Report
+
+     Name        Direction    Location    IOStandard    IOType    DriveStrength    PullType    PackReg  
+    clk_50m        INPUT         R7        LVCMOS25      PAD           N/A           NONE       NONE    
+  hdmi_a_hpd       INPUT         K2        LVCMOS33      PAD           N/A         PULLDOWN     IREG    
+  hdmi_b_scl       INPUT         P2        LVCMOS33      PAD           N/A           NONE       IREG    
+    key1_n         INPUT         A2        LVCMOS33      PAD           N/A           NONE       IREG    
+  hdmi_b_hpd      OUTPUT         J6        LVCMOS33      PAD            8            NONE       NONE    
+    led[3]        OUTPUT        B12        LVCMOS33      PAD            8            NONE       NONE    
+    led[2]        OUTPUT        C10        LVCMOS33      PAD            8            NONE       NONE    
+    led[1]        OUTPUT         A3        LVCMOS33      PAD            8            NONE       OREG    
+    led[0]        OUTPUT         A4        LVCMOS33      PAD            8            NONE       OREG    
+  seg_data[7]     OUTPUT         A6        LVCMOS33      PAD            8            NONE       NONE    
+  seg_data[6]     OUTPUT         B5        LVCMOS33      PAD            8            NONE       NONE    
+  seg_data[5]     OUTPUT         A7        LVCMOS33      PAD            8            NONE       NONE    
+  seg_data[4]     OUTPUT         A8        LVCMOS33      PAD            8            NONE       NONE    
+  seg_data[3]     OUTPUT         A5        LVCMOS33      PAD            8            NONE       NONE    
+  seg_data[2]     OUTPUT         B6        LVCMOS33      PAD            8            NONE       NONE    
+  seg_data[1]     OUTPUT        C16        LVCMOS33      PAD            8            NONE       NONE    
+  seg_data[0]     OUTPUT        C15        LVCMOS33      PAD            8            NONE       NONE    
+  seg_sel[7]      OUTPUT        F16        LVCMOS33      PAD            8            NONE       NONE    
+  seg_sel[6]      OUTPUT        E16        LVCMOS33      PAD            8            NONE       NONE    
+  seg_sel[5]      OUTPUT        E12        LVCMOS33      PAD            8            NONE       NONE    
+  seg_sel[4]      OUTPUT        E10        LVCMOS33      PAD            8            NONE       NONE    
+  seg_sel[3]      OUTPUT        C13        LVCMOS33      PAD            8            NONE       NONE    
+  seg_sel[2]      OUTPUT        F10        LVCMOS33      PAD            8            NONE       NONE    
+  seg_sel[1]      OUTPUT        E11        LVCMOS33      PAD            8            NONE       NONE    
+  seg_sel[0]      OUTPUT        D11        LVCMOS33      PAD            8            NONE       NONE    
+  hdmi_a_scl       INOUT         P1        LVCMOS33      PAD            8            NONE       IREG    
+  hdmi_a_sda       INOUT         R1        LVCMOS33      PAD            8            NONE       IREG    
+  hdmi_b_sda       INOUT         R2        LVCMOS33      PAD            8            NONE       IREG    
+
+Report Clock Domain Luts:
+
+--------------------------------------------------------------------------------------------------------------
+  Index   |  Name     |  Frequency   |  LUT As Logic   |  LUT As Shifter   |  LUT As Dram   |  BRAM   |  DSP
+--------------------------------------------------------------------------------------------------------------
+  #1      |  clk_50m  |  50MHz       |  87             |  0                |  0             |  0      |  0
+--------------------------------------------------------------------------------------------------------------
+
+Clock Resource Statistics
+Index     ClockNet         Type               DriverType         Driver              Fanout
+#1        clk_50m_dup_1    Global             io                 clk_50m_syn_2.di    79
+
+Report Hierarchy Area:
++--------------------------------------------------------------------------------------------------+
+|Instance |Module                            |le      |lut     |ripple  |seq     |bram    |dsp     |
++--------------------------------------------------------------------------------------------------+
+|top      |top_secondary_hdmi_handshake_diag |235     |165     |48      |130     |0       |0       |
+|  u_keys |key_debounce                      |38      |33      |5       |21      |0       |0       |
+|  u_seg  |seg_hex_display                   |39      |30      |9       |17      |0       |0       |
++--------------------------------------------------------------------------------------------------+
+
+
+DataNet Average Fanout:
+
+   Index     Fanout    Nets  
+    #1         1       194   
+    #2         2        43   
+    #3         3        25   
+    #4         4        7    
+    #5        5-10      29   
+    #6       11-50      10   
+  Average     2.43           

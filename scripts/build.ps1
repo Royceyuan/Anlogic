@@ -1,6 +1,6 @@
 param(
     [string]$TD = 'D:\TD_6.2.1\bin\td_commands_prompt.exe',
-    [ValidateSet('release','shared-clock','relay-diag')][string]$Variant = 'release'
+    [ValidateSet('release','shared-clock','relay-diag','handshake-diag')][string]$Variant = 'release'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -21,14 +21,15 @@ if ($Variant -eq 'shared-clock') {
     $env:SECONDARY_BUILD = $buildDir
     $env:SECONDARY_BIT = Join-Path $projectRoot 'release/hx4s20_secondary_shared_clock.bit'
 }
-if ($Variant -eq 'relay-diag') {
-    $env:SECONDARY_PROJECT = 'hx4s20_secondary_hdmi_relay_diag.al'
-    $env:SECONDARY_TOP = 'top_secondary_hdmi_relay_diag'
-    $env:SECONDARY_SDC = 'constraints/secondary_hdmi_relay_diag.sdc'
-    $env:SECONDARY_ADC = 'constraints/secondary_hdmi_relay_diag.adc'
-    $buildDir = Join-Path $projectRoot '_build_secondary_hdmi_relay_diag'
+if ($Variant -eq 'relay-diag' -or $Variant -eq 'handshake-diag') {
+    $diagName = if ($Variant -eq 'relay-diag') { 'relay' } else { 'handshake' }
+    $env:SECONDARY_PROJECT = "hx4s20_secondary_hdmi_${diagName}_diag.al"
+    $env:SECONDARY_TOP = "top_secondary_hdmi_${diagName}_diag"
+    $env:SECONDARY_SDC = "constraints/secondary_hdmi_${diagName}_diag.sdc"
+    $env:SECONDARY_ADC = "constraints/secondary_hdmi_${diagName}_diag.adc"
+    $buildDir = Join-Path $projectRoot "_build_secondary_hdmi_${diagName}_diag"
     $env:SECONDARY_BUILD = $buildDir
-    $env:SECONDARY_BIT = Join-Path $projectRoot 'release/hx4s20_secondary_hdmi_relay_diag.bit'
+    $env:SECONDARY_BIT = Join-Path $projectRoot "release/hx4s20_secondary_hdmi_${diagName}_diag.bit"
 }
 New-Item -ItemType Directory -Path $buildDir -Force | Out-Null
 Write-Host "Building secondary board; reports: $buildDir"

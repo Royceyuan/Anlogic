@@ -1,0 +1,1104 @@
+Created by          : Tang Dynasty v6.2.168116
+                    : Copyright (c) 2012-2025 Anlogic Inc.
+Generated           : Fri Oct  9 19:48:35 2026
+
+Top Model           : top_secondary_hdmi_handshake_diag
+Device              : EG4S20BG256
+Speed               : NA
+STA coverage        : 100.00%
+Constraint File     : D:/VSCode/CodeFiles/Git_TD/Anlogic2/constraints/secondary_hdmi_handshake_diag.sdc;
+Confidence          : Routed
+Check Corner        : Both (Slow and Fast)
+CRPR Enabled        : Yes
+Report Scheme       : 10 end point(s) per path group, 1 path(s) per end point
+
+
+Check Status
+-------------
+
+Corner   | Max      Min     
+------------------------------------
+Slow     | yes      yes     
+Fast     | yes      yes     
+
+
+Timing Status
+--------------------
+	SWNS: 13.230ns, STNS: 0.000ns
+	HWNS: 0.577ns, HTNS: 0.000ns
+	Period Check WNS: 0.000ns
+
+
+Clock Summary
+--------------------
+
+       Clock-Id:       C-Freq       Fanout   Clock-Name
+--------------------------------------------------------------------------------
+           clk0:       50.000           79   clk_50m
+--------------------------------------------------------------------------------
+
+       Name            Type         Rise(ns)   Fall(ns)          C-Period(ns)     C-Freq(MHz)          R-Period(ns)     R-Freq(MHz)         SWNS(ns)   STNS(ns)         HWNS(ns)   HTNS(ns)         Skew(ns)           Fanout        Max-Level        CC-From    CC-To
+       clk0           local            0.000     10.000                20.000          50.000                 6.770         147.711           13.230      0.000            0.577      0.000            0.480               79                5             no       no
+
+Notes
+----------
+C-Period  :  constraint period
+C-Freq    :  constraint freq
+R-Period  :  report min period
+R-Freq    :  report fmax
+CC-From   :  has path(s) from cross-domain clock
+CC-To     :  has path(s) to cross-domain clock
+
+
+*   Clock R-Period data only takes intra-clock timing. SWNS/STNS/HWNS/HTNS take both intra-clock and inter-clock timing.
+*   If there is mismatch between R-Period and SWNS, check inter-clock timing of this clock as capture clock.
+*   SWNS/STNS/HWNS/HTNS of timing exception (SMCP/SMD) only counted in global Timing Status, not counted in Clock Summary.
+
+Intra clock domain timing
+--------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+Path Group     :     clk_50m -> clk_50m
+Type           :     Self
+From Clock     :     clk_50m
+To Clock       :     clk_50m
+Min Period     :     6.770ns
+Fmax           :     147.711MHz
+
+Statistics:
+Max            : SWNS     13.230ns, STNS      0.000ns,         0 Viol Endpoints,       215 Total Endpoints,      1880 Paths Analyzed
+Min            : HWNS      0.577ns, HTNS      0.000ns,         0 Viol Endpoints,       215 Total Endpoints,      1880 Paths Analyzed
+----------------------------------------------------------------------------------------------------
+
+Max Paths
+----------------------------------------------------------------------------------------------------
+Slack               : 13.230ns
+Begin Point         : phase_ok_reg_syn_77.clk (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : phase_cycles_reg[7]_syn_4.sr (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : setup
+Process             : slow
+Budget              : 20.000ns { clk_50m rising@20.000ns - clk_50m rising@0.000ns }
+Data Path Delay     : 6.419ns (cell 1.456ns (22%), net 4.963ns (78%))
+Clock Skew          : 0.064ns
+Logic Level         : 4 ( LUT4=2  LUT2=1  LUT1=1 )
+Max Fanout          : 34
+Clock Uncertainty   : 0.100ns (sdc uncertainty: 0.000ns, default uncertainty: 0.100ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.890          1.890          pin: clk_50m_syn_2.di
+net (fo=79)                             2.062          3.952          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: phase_ok_reg_syn_77.clk
+launch edge                             0.000    r     3.952               
+--------------------------------------------------------------------  ---------------
+clk2q               x034y021z2          0.146    r     4.098          pin: phase_ok_reg_syn_77.q[0]
+net (fo=3)                              0.749          4.847          net: startup[0],  src/secondary/top_secondary_hdmi_handshake_diag.v(15)
+                                                                      pin: phase_ok_reg_syn_77.a[1]
+LUT1                x034y021z2          0.424    f     5.271       1  pin: phase_ok_reg_syn_77.f[1]
+net (fo=6)                              0.944          6.215          net: phase_ok_reg_syn_9,  src/secondary/top_secondary_hdmi_handshake_diag.v(52)
+                                                                      pin: phase_ok_reg_syn_73.b[0]
+LUT4                x035y022z1          0.333    f     6.548       2  pin: phase_ok_reg_syn_73.f[0]
+net (fo=34)                             0.663          7.211          net: startup_b_n_dup_7,  NOFILE(0)
+                                                                      pin: phase_ok_reg_syn_96.d[0]
+LUT2                x034y019z1          0.205    r     7.416       3  pin: phase_ok_reg_syn_96.f[0]
+net (fo=9)                              1.119          8.535          net: done_n3,  NOFILE(0)
+                                                                      pin: phase_ok_reg_syn_75.d[1]
+LUT4                x034y014z3          0.262    r     8.797       4  pin: phase_ok_reg_syn_75.f[1]
+net (fo=14)                             1.488         10.285          net: phase_ok_i_syn_2,  src/secondary/top_secondary_hdmi_handshake_diag.v(53)
+                                                                      pin: phase_cycles_reg[7]_syn_4.sr
+reg                 x034y016z2          0.086    r    10.371               
+--------------------------------------------------------------------  ---------------
+Arrival                                               10.371               
+
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.700          1.700          pin: clk_50m_syn_2.di
+net (fo=79)                             1.853          3.553          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: phase_cycles_reg[7]_syn_4.clk
+capture edge                           20.000    r    23.553               
+--------------------------------------------------------------------  ---------------
+setup                                  -0.187         23.366               
+clock uncertainty                      -0.100         23.266               
+clock pessimism                         0.335         23.601               
+--------------------------------------------------------------------  ---------------
+Required                                              23.601               
+--------------------------------------------------------------------  ---------------
+Slack                                                 13.230               
+
+Slack               : 13.230ns
+Begin Point         : phase_ok_reg_syn_77.clk (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : phase_cycles_reg[20]_syn_4.sr (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : setup
+Process             : slow
+Budget              : 20.000ns { clk_50m rising@20.000ns - clk_50m rising@0.000ns }
+Data Path Delay     : 6.419ns (cell 1.456ns (22%), net 4.963ns (78%))
+Clock Skew          : 0.064ns
+Logic Level         : 4 ( LUT4=2  LUT2=1  LUT1=1 )
+Max Fanout          : 34
+Clock Uncertainty   : 0.100ns (sdc uncertainty: 0.000ns, default uncertainty: 0.100ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.890          1.890          pin: clk_50m_syn_2.di
+net (fo=79)                             2.062          3.952          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: phase_ok_reg_syn_77.clk
+launch edge                             0.000    r     3.952               
+--------------------------------------------------------------------  ---------------
+clk2q               x034y021z2          0.146    r     4.098          pin: phase_ok_reg_syn_77.q[0]
+net (fo=3)                              0.749          4.847          net: startup[0],  src/secondary/top_secondary_hdmi_handshake_diag.v(15)
+                                                                      pin: phase_ok_reg_syn_77.a[1]
+LUT1                x034y021z2          0.424    f     5.271       1  pin: phase_ok_reg_syn_77.f[1]
+net (fo=6)                              0.944          6.215          net: phase_ok_reg_syn_9,  src/secondary/top_secondary_hdmi_handshake_diag.v(52)
+                                                                      pin: phase_ok_reg_syn_73.b[0]
+LUT4                x035y022z1          0.333    f     6.548       2  pin: phase_ok_reg_syn_73.f[0]
+net (fo=34)                             0.663          7.211          net: startup_b_n_dup_7,  NOFILE(0)
+                                                                      pin: phase_ok_reg_syn_96.d[0]
+LUT2                x034y019z1          0.205    r     7.416       3  pin: phase_ok_reg_syn_96.f[0]
+net (fo=9)                              1.119          8.535          net: done_n3,  NOFILE(0)
+                                                                      pin: phase_ok_reg_syn_75.d[1]
+LUT4                x034y014z3          0.262    r     8.797       4  pin: phase_ok_reg_syn_75.f[1]
+net (fo=14)                             1.488         10.285          net: phase_ok_i_syn_2,  src/secondary/top_secondary_hdmi_handshake_diag.v(53)
+                                                                      pin: phase_cycles_reg[20]_syn_4.sr
+reg                 x034y016z3          0.086    r    10.371               
+--------------------------------------------------------------------  ---------------
+Arrival                                               10.371               
+
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.700          1.700          pin: clk_50m_syn_2.di
+net (fo=79)                             1.853          3.553          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: phase_cycles_reg[20]_syn_4.clk
+capture edge                           20.000    r    23.553               
+--------------------------------------------------------------------  ---------------
+setup                                  -0.187         23.366               
+clock uncertainty                      -0.100         23.266               
+clock pessimism                         0.335         23.601               
+--------------------------------------------------------------------  ---------------
+Required                                              23.601               
+--------------------------------------------------------------------  ---------------
+Slack                                                 13.230               
+
+Slack               : 13.376ns
+Begin Point         : phase_ok_reg_syn_77.clk (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : u_seg/mux1_syn_187.a[0] (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : setup
+Process             : slow
+Budget              : 20.000ns { clk_50m rising@20.000ns - clk_50m rising@0.000ns }
+Data Path Delay     : 6.344ns (cell 1.912ns (30%), net 4.432ns (70%))
+Clock Skew          : 0.064ns
+Logic Level         : 5 ( LUT4=2  LUT5=1  LUT2=1  LUT1=1 )
+Max Fanout          : 34
+Clock Uncertainty   : 0.100ns (sdc uncertainty: 0.000ns, default uncertainty: 0.100ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.890          1.890          pin: clk_50m_syn_2.di
+net (fo=79)                             2.062          3.952          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: phase_ok_reg_syn_77.clk
+launch edge                             0.000    r     3.952               
+--------------------------------------------------------------------  ---------------
+clk2q               x034y021z2          0.146    r     4.098          pin: phase_ok_reg_syn_77.q[0]
+net (fo=3)                              0.749          4.847          net: startup[0],  src/secondary/top_secondary_hdmi_handshake_diag.v(15)
+                                                                      pin: phase_ok_reg_syn_77.a[1]
+LUT1                x034y021z2          0.424    f     5.271       1  pin: phase_ok_reg_syn_77.f[1]
+net (fo=6)                              0.944          6.215          net: phase_ok_reg_syn_9,  src/secondary/top_secondary_hdmi_handshake_diag.v(52)
+                                                                      pin: phase_ok_reg_syn_73.b[0]
+LUT4                x035y022z1          0.333    f     6.548       2  pin: phase_ok_reg_syn_73.f[0]
+net (fo=34)                             0.663          7.211          net: startup_b_n_dup_7,  NOFILE(0)
+                                                                      pin: phase_ok_reg_syn_96.d[0]
+LUT2                x034y019z1          0.205    r     7.416       3  pin: phase_ok_reg_syn_96.f[0]
+net (fo=9)                              1.119          8.535          net: done_n3,  NOFILE(0)
+                                                                      pin: phase_ok_reg_syn_75.d[1]
+LUT4                x034y014z3          0.262    r     8.797       4  pin: phase_ok_reg_syn_75.f[1]
+net (fo=14)                             0.957          9.754          net: phase_ok_i_syn_2,  src/secondary/top_secondary_hdmi_handshake_diag.v(53)
+                                                                      pin: u_seg/mux1_syn_187.a[0]
+LUT5 (reg)          x035y017z3          0.542    f    10.296       5  net: phase_ok,  src/secondary/top_secondary_hdmi_handshake_diag.v(25)
+--------------------------------------------------------------------  ---------------
+Arrival                                               10.296               
+
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.700          1.700          pin: clk_50m_syn_2.di
+net (fo=79)                             1.853          3.553          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: u_seg/mux1_syn_187.clk
+capture edge                           20.000    r    23.553               
+--------------------------------------------------------------------  ---------------
+setup                                  -0.116         23.437               
+clock uncertainty                      -0.100         23.337               
+clock pessimism                         0.335         23.672               
+--------------------------------------------------------------------  ---------------
+Required                                              23.672               
+--------------------------------------------------------------------  ---------------
+Slack                                                 13.376               
+
+Slack               : 13.742ns
+Begin Point         : phase_cycles_reg[12]_syn_4.clk (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : led[1]_syn_58.ce (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : setup
+Process             : slow
+Budget              : 20.000ns { clk_50m rising@20.000ns - clk_50m rising@0.000ns }
+Data Path Delay     : 6.023ns (cell 1.648ns (27%), net 4.375ns (73%))
+Clock Skew          : 0.252ns
+Logic Level         : 4 ( LUT4=2  LUT5=1  LUT3=1 )
+Max Fanout          : 5
+Clock Uncertainty   : 0.100ns (sdc uncertainty: 0.000ns, default uncertainty: 0.100ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.890          1.890          pin: clk_50m_syn_2.di
+net (fo=79)                             2.062          3.952          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: phase_cycles_reg[12]_syn_4.clk
+launch edge                             0.000    r     3.952               
+--------------------------------------------------------------------  ---------------
+clk2q               x031y015z2          0.146    r     4.098          pin: phase_cycles_reg[12]_syn_4.q[0]
+net (fo=5)                              1.620          5.718          net: phase_cycles[14],  src/secondary/top_secondary_hdmi_handshake_diag.v(22)
+                                                                      pin: phase_cycles_reg[22]_syn_4.a[0]
+LUT4                x034y016z1          0.408    f     6.126       1  pin: phase_cycles_reg[22]_syn_4.f[0]
+net (fo=1)                              0.456          6.582          net: phase_ok_reg_syn_19,  src/secondary/top_secondary_hdmi_handshake_diag.v(52)
+                                                                      pin: phase_cycles_reg[20]_syn_4.a[1]
+LUT5                x034y016z3          0.424    f     7.006       2  pin: phase_cycles_reg[20]_syn_4.f[1]
+net (fo=1)                              0.594          7.600          net: phase_ok_reg_syn_21,  src/secondary/top_secondary_hdmi_handshake_diag.v(52)
+                                                                      pin: phase_cycles_reg[8]_syn_4.a[1]
+LUT4                x034y014z1          0.408    f     8.008       3  pin: phase_cycles_reg[8]_syn_4.f[1]
+net (fo=2)                              0.456          8.464          net: done_n8,  NOFILE(0)
+                                                                      pin: done_reg_syn_12.d[0]
+LUT3                x034y011z2          0.262    r     8.726       4  pin: done_reg_syn_12.f[0]
+net (fo=2)                              1.249          9.975          net: done_i4_syn_2,  src/secondary/top_secondary_hdmi_handshake_diag.v(57)
+                                                                      pin: led[1]_syn_58.ce
+PAD (reg)           x033y000            0.000    f     9.975               
+--------------------------------------------------------------------  ---------------
+Arrival                                                9.975               
+
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.700          1.700          pin: clk_50m_syn_2.di
+net (fo=79)                             1.665          3.365          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: led[1]_syn_58.osclk
+capture edge                           20.000    r    23.365               
+--------------------------------------------------------------------  ---------------
+setup                                   0.117         23.482               
+clock uncertainty                      -0.100         23.382               
+clock pessimism                         0.335         23.717               
+--------------------------------------------------------------------  ---------------
+Required                                              23.717               
+--------------------------------------------------------------------  ---------------
+Slack                                                 13.742               
+
+Slack               : 13.761ns
+Begin Point         : phase_ok_reg_syn_77.clk (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : phase_cycles_reg[19]_syn_4.sr (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : setup
+Process             : slow
+Budget              : 20.000ns { clk_50m rising@20.000ns - clk_50m rising@0.000ns }
+Data Path Delay     : 5.888ns (cell 1.456ns (24%), net 4.432ns (76%))
+Clock Skew          : 0.064ns
+Logic Level         : 4 ( LUT4=2  LUT2=1  LUT1=1 )
+Max Fanout          : 34
+Clock Uncertainty   : 0.100ns (sdc uncertainty: 0.000ns, default uncertainty: 0.100ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.890          1.890          pin: clk_50m_syn_2.di
+net (fo=79)                             2.062          3.952          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: phase_ok_reg_syn_77.clk
+launch edge                             0.000    r     3.952               
+--------------------------------------------------------------------  ---------------
+clk2q               x034y021z2          0.146    r     4.098          pin: phase_ok_reg_syn_77.q[0]
+net (fo=3)                              0.749          4.847          net: startup[0],  src/secondary/top_secondary_hdmi_handshake_diag.v(15)
+                                                                      pin: phase_ok_reg_syn_77.a[1]
+LUT1                x034y021z2          0.424    f     5.271       1  pin: phase_ok_reg_syn_77.f[1]
+net (fo=6)                              0.944          6.215          net: phase_ok_reg_syn_9,  src/secondary/top_secondary_hdmi_handshake_diag.v(52)
+                                                                      pin: phase_ok_reg_syn_73.b[0]
+LUT4                x035y022z1          0.333    f     6.548       2  pin: phase_ok_reg_syn_73.f[0]
+net (fo=34)                             0.663          7.211          net: startup_b_n_dup_7,  NOFILE(0)
+                                                                      pin: phase_ok_reg_syn_96.d[0]
+LUT2                x034y019z1          0.205    r     7.416       3  pin: phase_ok_reg_syn_96.f[0]
+net (fo=9)                              1.119          8.535          net: done_n3,  NOFILE(0)
+                                                                      pin: phase_ok_reg_syn_75.d[1]
+LUT4                x034y014z3          0.262    r     8.797       4  pin: phase_ok_reg_syn_75.f[1]
+net (fo=14)                             0.957          9.754          net: phase_ok_i_syn_2,  src/secondary/top_secondary_hdmi_handshake_diag.v(53)
+                                                                      pin: phase_cycles_reg[19]_syn_4.sr
+reg                 x033y017z3          0.086    r     9.840               
+--------------------------------------------------------------------  ---------------
+Arrival                                                9.840               
+
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.700          1.700          pin: clk_50m_syn_2.di
+net (fo=79)                             1.853          3.553          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: phase_cycles_reg[19]_syn_4.clk
+capture edge                           20.000    r    23.553               
+--------------------------------------------------------------------  ---------------
+setup                                  -0.187         23.366               
+clock uncertainty                      -0.100         23.266               
+clock pessimism                         0.335         23.601               
+--------------------------------------------------------------------  ---------------
+Required                                              23.601               
+--------------------------------------------------------------------  ---------------
+Slack                                                 13.761               
+
+Slack               : 13.936ns
+Begin Point         : phase_ok_reg_syn_77.clk (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : phase_cycles_reg[6]_syn_4.sr (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : setup
+Process             : slow
+Budget              : 20.000ns { clk_50m rising@20.000ns - clk_50m rising@0.000ns }
+Data Path Delay     : 5.713ns (cell 1.456ns (25%), net 4.257ns (75%))
+Clock Skew          : 0.064ns
+Logic Level         : 4 ( LUT4=2  LUT2=1  LUT1=1 )
+Max Fanout          : 34
+Clock Uncertainty   : 0.100ns (sdc uncertainty: 0.000ns, default uncertainty: 0.100ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.890          1.890          pin: clk_50m_syn_2.di
+net (fo=79)                             2.062          3.952          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: phase_ok_reg_syn_77.clk
+launch edge                             0.000    r     3.952               
+--------------------------------------------------------------------  ---------------
+clk2q               x034y021z2          0.146    r     4.098          pin: phase_ok_reg_syn_77.q[0]
+net (fo=3)                              0.749          4.847          net: startup[0],  src/secondary/top_secondary_hdmi_handshake_diag.v(15)
+                                                                      pin: phase_ok_reg_syn_77.a[1]
+LUT1                x034y021z2          0.424    f     5.271       1  pin: phase_ok_reg_syn_77.f[1]
+net (fo=6)                              0.944          6.215          net: phase_ok_reg_syn_9,  src/secondary/top_secondary_hdmi_handshake_diag.v(52)
+                                                                      pin: phase_ok_reg_syn_73.b[0]
+LUT4                x035y022z1          0.333    f     6.548       2  pin: phase_ok_reg_syn_73.f[0]
+net (fo=34)                             0.663          7.211          net: startup_b_n_dup_7,  NOFILE(0)
+                                                                      pin: phase_ok_reg_syn_96.d[0]
+LUT2                x034y019z1          0.205    r     7.416       3  pin: phase_ok_reg_syn_96.f[0]
+net (fo=9)                              1.119          8.535          net: done_n3,  NOFILE(0)
+                                                                      pin: phase_ok_reg_syn_75.d[1]
+LUT4                x034y014z3          0.262    r     8.797       4  pin: phase_ok_reg_syn_75.f[1]
+net (fo=14)                             0.782          9.579          net: phase_ok_i_syn_2,  src/secondary/top_secondary_hdmi_handshake_diag.v(53)
+                                                                      pin: phase_cycles_reg[6]_syn_4.sr
+reg                 x033y013z2          0.086    r     9.665               
+--------------------------------------------------------------------  ---------------
+Arrival                                                9.665               
+
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.700          1.700          pin: clk_50m_syn_2.di
+net (fo=79)                             1.853          3.553          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: phase_cycles_reg[6]_syn_4.clk
+capture edge                           20.000    r    23.553               
+--------------------------------------------------------------------  ---------------
+setup                                  -0.187         23.366               
+clock uncertainty                      -0.100         23.266               
+clock pessimism                         0.335         23.601               
+--------------------------------------------------------------------  ---------------
+Required                                              23.601               
+--------------------------------------------------------------------  ---------------
+Slack                                                 13.936               
+
+Slack               : 13.936ns
+Begin Point         : phase_ok_reg_syn_77.clk (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : phase_cycles_reg[10]_syn_4.sr (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : setup
+Process             : slow
+Budget              : 20.000ns { clk_50m rising@20.000ns - clk_50m rising@0.000ns }
+Data Path Delay     : 5.713ns (cell 1.456ns (25%), net 4.257ns (75%))
+Clock Skew          : 0.064ns
+Logic Level         : 4 ( LUT4=2  LUT2=1  LUT1=1 )
+Max Fanout          : 34
+Clock Uncertainty   : 0.100ns (sdc uncertainty: 0.000ns, default uncertainty: 0.100ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.890          1.890          pin: clk_50m_syn_2.di
+net (fo=79)                             2.062          3.952          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: phase_ok_reg_syn_77.clk
+launch edge                             0.000    r     3.952               
+--------------------------------------------------------------------  ---------------
+clk2q               x034y021z2          0.146    r     4.098          pin: phase_ok_reg_syn_77.q[0]
+net (fo=3)                              0.749          4.847          net: startup[0],  src/secondary/top_secondary_hdmi_handshake_diag.v(15)
+                                                                      pin: phase_ok_reg_syn_77.a[1]
+LUT1                x034y021z2          0.424    f     5.271       1  pin: phase_ok_reg_syn_77.f[1]
+net (fo=6)                              0.944          6.215          net: phase_ok_reg_syn_9,  src/secondary/top_secondary_hdmi_handshake_diag.v(52)
+                                                                      pin: phase_ok_reg_syn_73.b[0]
+LUT4                x035y022z1          0.333    f     6.548       2  pin: phase_ok_reg_syn_73.f[0]
+net (fo=34)                             0.663          7.211          net: startup_b_n_dup_7,  NOFILE(0)
+                                                                      pin: phase_ok_reg_syn_96.d[0]
+LUT2                x034y019z1          0.205    r     7.416       3  pin: phase_ok_reg_syn_96.f[0]
+net (fo=9)                              1.119          8.535          net: done_n3,  NOFILE(0)
+                                                                      pin: phase_ok_reg_syn_75.d[1]
+LUT4                x034y014z3          0.262    r     8.797       4  pin: phase_ok_reg_syn_75.f[1]
+net (fo=14)                             0.782          9.579          net: phase_ok_i_syn_2,  src/secondary/top_secondary_hdmi_handshake_diag.v(53)
+                                                                      pin: phase_cycles_reg[10]_syn_4.sr
+reg                 x033y013z3          0.086    r     9.665               
+--------------------------------------------------------------------  ---------------
+Arrival                                                9.665               
+
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.700          1.700          pin: clk_50m_syn_2.di
+net (fo=79)                             1.853          3.553          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: phase_cycles_reg[10]_syn_4.clk
+capture edge                           20.000    r    23.553               
+--------------------------------------------------------------------  ---------------
+setup                                  -0.187         23.366               
+clock uncertainty                      -0.100         23.266               
+clock pessimism                         0.335         23.601               
+--------------------------------------------------------------------  ---------------
+Required                                              23.601               
+--------------------------------------------------------------------  ---------------
+Slack                                                 13.936               
+
+Slack               : 13.954ns
+Begin Point         : phase_ok_reg_syn_77.clk (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : phase_cycles_reg[8]_syn_4.sr (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : setup
+Process             : slow
+Budget              : 20.000ns { clk_50m rising@20.000ns - clk_50m rising@0.000ns }
+Data Path Delay     : 5.695ns (cell 1.456ns (25%), net 4.239ns (75%))
+Clock Skew          : 0.064ns
+Logic Level         : 4 ( LUT4=2  LUT2=1  LUT1=1 )
+Max Fanout          : 34
+Clock Uncertainty   : 0.100ns (sdc uncertainty: 0.000ns, default uncertainty: 0.100ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.890          1.890          pin: clk_50m_syn_2.di
+net (fo=79)                             2.062          3.952          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: phase_ok_reg_syn_77.clk
+launch edge                             0.000    r     3.952               
+--------------------------------------------------------------------  ---------------
+clk2q               x034y021z2          0.146    r     4.098          pin: phase_ok_reg_syn_77.q[0]
+net (fo=3)                              0.749          4.847          net: startup[0],  src/secondary/top_secondary_hdmi_handshake_diag.v(15)
+                                                                      pin: phase_ok_reg_syn_77.a[1]
+LUT1                x034y021z2          0.424    f     5.271       1  pin: phase_ok_reg_syn_77.f[1]
+net (fo=6)                              0.944          6.215          net: phase_ok_reg_syn_9,  src/secondary/top_secondary_hdmi_handshake_diag.v(52)
+                                                                      pin: phase_ok_reg_syn_73.b[0]
+LUT4                x035y022z1          0.333    f     6.548       2  pin: phase_ok_reg_syn_73.f[0]
+net (fo=34)                             0.663          7.211          net: startup_b_n_dup_7,  NOFILE(0)
+                                                                      pin: phase_ok_reg_syn_96.d[0]
+LUT2                x034y019z1          0.205    r     7.416       3  pin: phase_ok_reg_syn_96.f[0]
+net (fo=9)                              1.119          8.535          net: done_n3,  NOFILE(0)
+                                                                      pin: phase_ok_reg_syn_75.d[1]
+LUT4                x034y014z3          0.262    r     8.797       4  pin: phase_ok_reg_syn_75.f[1]
+net (fo=14)                             0.764          9.561          net: phase_ok_i_syn_2,  src/secondary/top_secondary_hdmi_handshake_diag.v(53)
+                                                                      pin: phase_cycles_reg[8]_syn_4.sr
+reg                 x034y014z1          0.086    r     9.647               
+--------------------------------------------------------------------  ---------------
+Arrival                                                9.647               
+
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.700          1.700          pin: clk_50m_syn_2.di
+net (fo=79)                             1.853          3.553          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: phase_cycles_reg[8]_syn_4.clk
+capture edge                           20.000    r    23.553               
+--------------------------------------------------------------------  ---------------
+setup                                  -0.187         23.366               
+clock uncertainty                      -0.100         23.266               
+clock pessimism                         0.335         23.601               
+--------------------------------------------------------------------  ---------------
+Required                                              23.601               
+--------------------------------------------------------------------  ---------------
+Slack                                                 13.954               
+
+Slack               : 14.007ns
+Begin Point         : phase_ok_reg_syn_77.clk (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : phase_cycles_reg[12]_syn_4.sr (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : setup
+Process             : slow
+Budget              : 20.000ns { clk_50m rising@20.000ns - clk_50m rising@0.000ns }
+Data Path Delay     : 5.642ns (cell 1.456ns (25%), net 4.186ns (75%))
+Clock Skew          : 0.064ns
+Logic Level         : 4 ( LUT4=2  LUT2=1  LUT1=1 )
+Max Fanout          : 34
+Clock Uncertainty   : 0.100ns (sdc uncertainty: 0.000ns, default uncertainty: 0.100ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.890          1.890          pin: clk_50m_syn_2.di
+net (fo=79)                             2.062          3.952          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: phase_ok_reg_syn_77.clk
+launch edge                             0.000    r     3.952               
+--------------------------------------------------------------------  ---------------
+clk2q               x034y021z2          0.146    r     4.098          pin: phase_ok_reg_syn_77.q[0]
+net (fo=3)                              0.749          4.847          net: startup[0],  src/secondary/top_secondary_hdmi_handshake_diag.v(15)
+                                                                      pin: phase_ok_reg_syn_77.a[1]
+LUT1                x034y021z2          0.424    f     5.271       1  pin: phase_ok_reg_syn_77.f[1]
+net (fo=6)                              0.944          6.215          net: phase_ok_reg_syn_9,  src/secondary/top_secondary_hdmi_handshake_diag.v(52)
+                                                                      pin: phase_ok_reg_syn_73.b[0]
+LUT4                x035y022z1          0.333    f     6.548       2  pin: phase_ok_reg_syn_73.f[0]
+net (fo=34)                             0.663          7.211          net: startup_b_n_dup_7,  NOFILE(0)
+                                                                      pin: phase_ok_reg_syn_96.d[0]
+LUT2                x034y019z1          0.205    r     7.416       3  pin: phase_ok_reg_syn_96.f[0]
+net (fo=9)                              1.119          8.535          net: done_n3,  NOFILE(0)
+                                                                      pin: phase_ok_reg_syn_75.d[1]
+LUT4                x034y014z3          0.262    r     8.797       4  pin: phase_ok_reg_syn_75.f[1]
+net (fo=14)                             0.711          9.508          net: phase_ok_i_syn_2,  src/secondary/top_secondary_hdmi_handshake_diag.v(53)
+                                                                      pin: phase_cycles_reg[12]_syn_4.sr
+reg                 x031y015z2          0.086    r     9.594               
+--------------------------------------------------------------------  ---------------
+Arrival                                                9.594               
+
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.700          1.700          pin: clk_50m_syn_2.di
+net (fo=79)                             1.853          3.553          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: phase_cycles_reg[12]_syn_4.clk
+capture edge                           20.000    r    23.553               
+--------------------------------------------------------------------  ---------------
+setup                                  -0.187         23.366               
+clock uncertainty                      -0.100         23.266               
+clock pessimism                         0.335         23.601               
+--------------------------------------------------------------------  ---------------
+Required                                              23.601               
+--------------------------------------------------------------------  ---------------
+Slack                                                 14.007               
+
+Slack               : 14.007ns
+Begin Point         : phase_ok_reg_syn_77.clk (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : phase_cycles_reg[15]_syn_4.sr (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : setup
+Process             : slow
+Budget              : 20.000ns { clk_50m rising@20.000ns - clk_50m rising@0.000ns }
+Data Path Delay     : 5.642ns (cell 1.456ns (25%), net 4.186ns (75%))
+Clock Skew          : 0.064ns
+Logic Level         : 4 ( LUT4=2  LUT2=1  LUT1=1 )
+Max Fanout          : 34
+Clock Uncertainty   : 0.100ns (sdc uncertainty: 0.000ns, default uncertainty: 0.100ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.890          1.890          pin: clk_50m_syn_2.di
+net (fo=79)                             2.062          3.952          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: phase_ok_reg_syn_77.clk
+launch edge                             0.000    r     3.952               
+--------------------------------------------------------------------  ---------------
+clk2q               x034y021z2          0.146    r     4.098          pin: phase_ok_reg_syn_77.q[0]
+net (fo=3)                              0.749          4.847          net: startup[0],  src/secondary/top_secondary_hdmi_handshake_diag.v(15)
+                                                                      pin: phase_ok_reg_syn_77.a[1]
+LUT1                x034y021z2          0.424    f     5.271       1  pin: phase_ok_reg_syn_77.f[1]
+net (fo=6)                              0.944          6.215          net: phase_ok_reg_syn_9,  src/secondary/top_secondary_hdmi_handshake_diag.v(52)
+                                                                      pin: phase_ok_reg_syn_73.b[0]
+LUT4                x035y022z1          0.333    f     6.548       2  pin: phase_ok_reg_syn_73.f[0]
+net (fo=34)                             0.663          7.211          net: startup_b_n_dup_7,  NOFILE(0)
+                                                                      pin: phase_ok_reg_syn_96.d[0]
+LUT2                x034y019z1          0.205    r     7.416       3  pin: phase_ok_reg_syn_96.f[0]
+net (fo=9)                              1.119          8.535          net: done_n3,  NOFILE(0)
+                                                                      pin: phase_ok_reg_syn_75.d[1]
+LUT4                x034y014z3          0.262    r     8.797       4  pin: phase_ok_reg_syn_75.f[1]
+net (fo=14)                             0.711          9.508          net: phase_ok_i_syn_2,  src/secondary/top_secondary_hdmi_handshake_diag.v(53)
+                                                                      pin: phase_cycles_reg[15]_syn_4.sr
+reg                 x031y015z3          0.086    r     9.594               
+--------------------------------------------------------------------  ---------------
+Arrival                                                9.594               
+
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.700          1.700          pin: clk_50m_syn_2.di
+net (fo=79)                             1.853          3.553          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: phase_cycles_reg[15]_syn_4.clk
+capture edge                           20.000    r    23.553               
+--------------------------------------------------------------------  ---------------
+setup                                  -0.187         23.366               
+clock uncertainty                      -0.100         23.266               
+clock pessimism                         0.335         23.601               
+--------------------------------------------------------------------  ---------------
+Required                                              23.601               
+--------------------------------------------------------------------  ---------------
+Slack                                                 14.007               
+
+
+
+Min Paths
+----------------------------------------------------------------------------------------------------
+Slack               : 0.577ns
+Begin Point         : u_keys/cnt_0_reg[2]_syn_4.clk (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : u_keys/key_stable_0_reg_syn_27.b[0] (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : hold
+Process             : fast
+Budget              : 0.000ns { clk_50m rising@0.000ns - clk_50m rising@0.000ns }
+Data Path Delay     : 0.783ns (cell 0.428ns (54%), net 0.355ns (46%))
+Clock Skew          : 0.045ns
+Logic Level         : 1 ( LUT3=1 )
+Max Fanout          : 21
+Clock Uncertainty   : 0.100ns (sdc uncertainty: 0.000ns, default uncertainty: 0.100ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.310          1.310          pin: clk_50m_syn_2.di
+net (fo=79)                             1.756          3.066          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: u_keys/cnt_0_reg[2]_syn_4.clk
+launch edge                             0.000    r     3.066               
+--------------------------------------------------------------------  ---------------
+clk2q               x035y029z3          0.109    f     3.175          pin: u_keys/cnt_0_reg[2]_syn_4.q[0]
+net (fo=21)                             0.355          3.530          net: u_keys/key_stable_0,  src/input/key_debounce.v(15)
+                                                                      pin: u_keys/key_stable_0_reg_syn_27.b[0]
+LUT3 (reg)          x034y030z1          0.319    r     3.849       1  net: u_keys/cnt_0[3],  src/input/key_debounce.v(20)
+--------------------------------------------------------------------  ---------------
+Arrival                                                3.849               
+
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.440          1.440          pin: clk_50m_syn_2.di
+net (fo=79)                             1.930          3.370          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: u_keys/key_stable_0_reg_syn_27.clk
+capture edge                            0.000    r     3.370               
+--------------------------------------------------------------------  ---------------
+hold                                    0.061          3.431               
+clock uncertainty                       0.100          3.531               
+clock pessimism                        -0.259          3.272               
+--------------------------------------------------------------------  ---------------
+Required                                               3.272               
+--------------------------------------------------------------------  ---------------
+Slack                                                  0.577               
+
+Slack               : 0.580ns
+Begin Point         : key1_n_syn_4.ipclk (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : phase_ok_reg_syn_73.mi[0] (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : hold
+Process             : fast
+Budget              : 0.000ns { clk_50m rising@0.000ns - clk_50m rising@0.000ns }
+Data Path Delay     : 1.078ns (cell 0.438ns (40%), net 0.640ns (60%))
+Clock Skew          : 0.337ns
+Logic Level         : 0
+Max Fanout          : 1
+Clock Uncertainty   : 0.100ns (sdc uncertainty: 0.000ns, default uncertainty: 0.100ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.310          1.310          pin: clk_50m_syn_2.di
+net (fo=79)                             1.464          2.774          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: key1_n_syn_4.ipclk
+launch edge                             0.000    r     2.774               
+--------------------------------------------------------------------  ---------------
+PAD (clk2q)         x040y011            0.343    r     3.117          pin: key1_n_syn_4.diq[0]
+net (fo=1)                              0.640          3.757          net: u_keys/key_sync0_0,  src/input/key_debounce.v(15)
+                                                                      pin: phase_ok_reg_syn_73.mi[0]
+reg                 x035y022z1          0.095    f     3.852          net: u_keys/key_sync1_0,  src/input/key_debounce.v(15)
+--------------------------------------------------------------------  ---------------
+Arrival                                                3.852               
+
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.440          1.440          pin: clk_50m_syn_2.di
+net (fo=79)                             1.930          3.370          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: phase_ok_reg_syn_73.clk
+capture edge                            0.000    r     3.370               
+--------------------------------------------------------------------  ---------------
+hold                                    0.061          3.431               
+clock uncertainty                       0.100          3.531               
+clock pessimism                        -0.259          3.272               
+--------------------------------------------------------------------  ---------------
+Required                                               3.272               
+--------------------------------------------------------------------  ---------------
+Slack                                                  0.580               
+
+Slack               : 0.586ns
+Begin Point         : heartbeat_reg[0]_syn_4.clk (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : heartbeat_reg[0]_syn_4.d[0] (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : hold
+Process             : fast
+Budget              : 0.000ns { clk_50m rising@0.000ns - clk_50m rising@0.000ns }
+Data Path Delay     : 0.647ns (cell 0.325ns (50%), net 0.322ns (50%))
+Clock Skew          : 0.000ns
+Logic Level         : 1 ( LUT1=1 )
+Max Fanout          : 2
+Clock Uncertainty   : 0.000ns (sdc uncertainty: 0.000ns, default uncertainty: 0.000ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.310          1.310          pin: clk_50m_syn_2.di
+net (fo=79)                             1.756          3.066          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: heartbeat_reg[0]_syn_4.clk
+launch edge                             0.000    r     3.066               
+--------------------------------------------------------------------  ---------------
+clk2q               x035y004z0          0.109    f     3.175          pin: heartbeat_reg[0]_syn_4.q[0]
+net (fo=2)                              0.322          3.497          net: heartbeat[0],  src/secondary/top_secondary_hdmi_handshake_diag.v(21)
+                                                                      pin: heartbeat_reg[0]_syn_4.d[0]
+LUT1 (reg)          x035y004z0          0.216    f     3.713       1  net: heartbeat[0],  src/secondary/top_secondary_hdmi_handshake_diag.v(21)
+--------------------------------------------------------------------  ---------------
+Arrival                                                3.713               
+
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.440          1.440          pin: clk_50m_syn_2.di
+net (fo=79)                             1.930          3.370          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: heartbeat_reg[0]_syn_4.clk
+capture edge                            0.000    r     3.370               
+--------------------------------------------------------------------  ---------------
+hold                                    0.061          3.431               
+clock uncertainty                       0.000          3.431               
+clock pessimism                        -0.304          3.127               
+--------------------------------------------------------------------  ---------------
+Required                                               3.127               
+--------------------------------------------------------------------  ---------------
+Slack                                                  0.586               
+
+Slack               : 0.586ns
+Begin Point         : passed_reg[4]_syn_7.clk (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : passed_reg[4]_syn_7.d[1] (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : hold
+Process             : fast
+Budget              : 0.000ns { clk_50m rising@0.000ns - clk_50m rising@0.000ns }
+Data Path Delay     : 0.647ns (cell 0.325ns (50%), net 0.322ns (50%))
+Clock Skew          : 0.000ns
+Logic Level         : 1 ( LUT4=1 )
+Max Fanout          : 3
+Clock Uncertainty   : 0.000ns (sdc uncertainty: 0.000ns, default uncertainty: 0.000ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.310          1.310          pin: clk_50m_syn_2.di
+net (fo=79)                             1.756          3.066          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: passed_reg[4]_syn_7.clk
+launch edge                             0.000    r     3.066               
+--------------------------------------------------------------------  ---------------
+clk2q               x035y016z0          0.109    f     3.175          pin: passed_reg[4]_syn_7.q[1]
+net (fo=3)                              0.322          3.497          net: passed[4],  src/secondary/top_secondary_hdmi_handshake_diag.v(24)
+                                                                      pin: passed_reg[4]_syn_7.d[1]
+LUT4 (reg)          x035y016z0          0.216    f     3.713       1  net: passed[4],  src/secondary/top_secondary_hdmi_handshake_diag.v(24)
+--------------------------------------------------------------------  ---------------
+Arrival                                                3.713               
+
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.440          1.440          pin: clk_50m_syn_2.di
+net (fo=79)                             1.930          3.370          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: passed_reg[4]_syn_7.clk
+capture edge                            0.000    r     3.370               
+--------------------------------------------------------------------  ---------------
+hold                                    0.061          3.431               
+clock uncertainty                       0.000          3.431               
+clock pessimism                        -0.304          3.127               
+--------------------------------------------------------------------  ---------------
+Required                                               3.127               
+--------------------------------------------------------------------  ---------------
+Slack                                                  0.586               
+
+Slack               : 0.594ns
+Begin Point         : phase_ok_reg_syn_73.clk (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : u_keys/key_press_pulse_reg[0]_syn_4.c[0] (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : hold
+Process             : fast
+Budget              : 0.000ns { clk_50m rising@0.000ns - clk_50m rising@0.000ns }
+Data Path Delay     : 0.800ns (cell 0.430ns (53%), net 0.370ns (47%))
+Clock Skew          : 0.045ns
+Logic Level         : 1 ( LUT3=1 )
+Max Fanout          : 21
+Clock Uncertainty   : 0.100ns (sdc uncertainty: 0.000ns, default uncertainty: 0.100ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.310          1.310          pin: clk_50m_syn_2.di
+net (fo=79)                             1.756          3.066          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: phase_ok_reg_syn_73.clk
+launch edge                             0.000    r     3.066               
+--------------------------------------------------------------------  ---------------
+clk2q               x035y022z1          0.109    f     3.175          pin: phase_ok_reg_syn_73.q[0]
+net (fo=21)                             0.370          3.545          net: u_keys/key_sync1_0,  src/input/key_debounce.v(15)
+                                                                      pin: u_keys/key_press_pulse_reg[0]_syn_4.c[0]
+LUT3 (reg)          x036y028z2          0.321    r     3.866       1  net: key_press[0],  src/secondary/top_secondary_hdmi_handshake_diag.v(18)
+--------------------------------------------------------------------  ---------------
+Arrival                                                3.866               
+
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.440          1.440          pin: clk_50m_syn_2.di
+net (fo=79)                             1.930          3.370          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: u_keys/key_press_pulse_reg[0]_syn_4.clk
+capture edge                            0.000    r     3.370               
+--------------------------------------------------------------------  ---------------
+hold                                    0.061          3.431               
+clock uncertainty                       0.100          3.531               
+clock pessimism                        -0.259          3.272               
+--------------------------------------------------------------------  ---------------
+Required                                               3.272               
+--------------------------------------------------------------------  ---------------
+Slack                                                  0.594               
+
+Slack               : 0.595ns
+Begin Point         : passed_reg[6]_syn_10.clk (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : passed_reg[6]_syn_10.d[0] (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : hold
+Process             : fast
+Budget              : 0.000ns { clk_50m rising@0.000ns - clk_50m rising@0.000ns }
+Data Path Delay     : 0.656ns (cell 0.325ns (49%), net 0.331ns (51%))
+Clock Skew          : 0.000ns
+Logic Level         : 1 ( LUT1=1 )
+Max Fanout          : 3
+Clock Uncertainty   : 0.000ns (sdc uncertainty: 0.000ns, default uncertainty: 0.000ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.310          1.310          pin: clk_50m_syn_2.di
+net (fo=79)                             1.756          3.066          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: passed_reg[6]_syn_10.clk
+launch edge                             0.000    r     3.066               
+--------------------------------------------------------------------  ---------------
+clk2q               x034y015z1          0.109    f     3.175          pin: passed_reg[6]_syn_10.q[0]
+net (fo=3)                              0.331          3.506          net: phase_cycles[0],  src/secondary/top_secondary_hdmi_handshake_diag.v(22)
+                                                                      pin: passed_reg[6]_syn_10.d[0]
+LUT1 (reg)          x034y015z1          0.216    f     3.722       1  net: phase_cycles[0],  src/secondary/top_secondary_hdmi_handshake_diag.v(22)
+--------------------------------------------------------------------  ---------------
+Arrival                                                3.722               
+
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.440          1.440          pin: clk_50m_syn_2.di
+net (fo=79)                             1.930          3.370          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: passed_reg[6]_syn_10.clk
+capture edge                            0.000    r     3.370               
+--------------------------------------------------------------------  ---------------
+hold                                    0.061          3.431               
+clock uncertainty                       0.000          3.431               
+clock pessimism                        -0.304          3.127               
+--------------------------------------------------------------------  ---------------
+Required                                               3.127               
+--------------------------------------------------------------------  ---------------
+Slack                                                  0.595               
+
+Slack               : 0.595ns
+Begin Point         : u_keys/cnt_0_reg[2]_syn_4.clk (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : u_keys/cnt_0_reg[6]_syn_4.b[1] (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : hold
+Process             : fast
+Budget              : 0.000ns { clk_50m rising@0.000ns - clk_50m rising@0.000ns }
+Data Path Delay     : 0.801ns (cell 0.428ns (53%), net 0.373ns (47%))
+Clock Skew          : 0.045ns
+Logic Level         : 1 ( LUT3=1 )
+Max Fanout          : 21
+Clock Uncertainty   : 0.100ns (sdc uncertainty: 0.000ns, default uncertainty: 0.100ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.310          1.310          pin: clk_50m_syn_2.di
+net (fo=79)                             1.756          3.066          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: u_keys/cnt_0_reg[2]_syn_4.clk
+launch edge                             0.000    r     3.066               
+--------------------------------------------------------------------  ---------------
+clk2q               x035y029z3          0.109    f     3.175          pin: u_keys/cnt_0_reg[2]_syn_4.q[0]
+net (fo=21)                             0.373          3.548          net: u_keys/key_stable_0,  src/input/key_debounce.v(15)
+                                                                      pin: u_keys/cnt_0_reg[6]_syn_4.b[1]
+LUT3 (reg)          x034y031z0          0.319    r     3.867       1  net: u_keys/cnt_0[6],  src/input/key_debounce.v(20)
+--------------------------------------------------------------------  ---------------
+Arrival                                                3.867               
+
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.440          1.440          pin: clk_50m_syn_2.di
+net (fo=79)                             1.930          3.370          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: u_keys/cnt_0_reg[6]_syn_4.clk
+capture edge                            0.000    r     3.370               
+--------------------------------------------------------------------  ---------------
+hold                                    0.061          3.431               
+clock uncertainty                       0.100          3.531               
+clock pessimism                        -0.259          3.272               
+--------------------------------------------------------------------  ---------------
+Required                                               3.272               
+--------------------------------------------------------------------  ---------------
+Slack                                                  0.595               
+
+Slack               : 0.602ns
+Begin Point         : u_keys/cnt_0_reg[2]_syn_4.clk (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : u_keys/cnt_0_reg[15]_syn_4.b[0] (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : hold
+Process             : fast
+Budget              : 0.000ns { clk_50m rising@0.000ns - clk_50m rising@0.000ns }
+Data Path Delay     : 0.792ns (cell 0.428ns (54%), net 0.364ns (46%))
+Clock Skew          : 0.029ns
+Logic Level         : 1 ( LUT3=1 )
+Max Fanout          : 21
+Clock Uncertainty   : 0.100ns (sdc uncertainty: 0.000ns, default uncertainty: 0.100ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.310          1.310          pin: clk_50m_syn_2.di
+net (fo=79)                             1.756          3.066          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: u_keys/cnt_0_reg[2]_syn_4.clk
+launch edge                             0.000    r     3.066               
+--------------------------------------------------------------------  ---------------
+clk2q               x035y029z3          0.109    f     3.175          pin: u_keys/cnt_0_reg[2]_syn_4.q[0]
+net (fo=21)                             0.364          3.539          net: u_keys/key_stable_0,  src/input/key_debounce.v(15)
+                                                                      pin: u_keys/cnt_0_reg[15]_syn_4.b[0]
+LUT3 (reg)          x035y032z0          0.319    r     3.858       1  net: u_keys/cnt_0[16],  src/input/key_debounce.v(20)
+--------------------------------------------------------------------  ---------------
+Arrival                                                3.858               
+
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.440          1.440          pin: clk_50m_syn_2.di
+net (fo=79)                             1.930          3.370          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: u_keys/cnt_0_reg[15]_syn_4.clk
+capture edge                            0.000    r     3.370               
+--------------------------------------------------------------------  ---------------
+hold                                    0.061          3.431               
+clock uncertainty                       0.100          3.531               
+clock pessimism                        -0.275          3.256               
+--------------------------------------------------------------------  ---------------
+Required                                               3.256               
+--------------------------------------------------------------------  ---------------
+Slack                                                  0.602               
+
+Slack               : 0.602ns
+Begin Point         : u_keys/cnt_0_reg[2]_syn_4.clk (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : u_keys/cnt_0_reg[15]_syn_4.b[1] (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : hold
+Process             : fast
+Budget              : 0.000ns { clk_50m rising@0.000ns - clk_50m rising@0.000ns }
+Data Path Delay     : 0.792ns (cell 0.428ns (54%), net 0.364ns (46%))
+Clock Skew          : 0.029ns
+Logic Level         : 1 ( LUT3=1 )
+Max Fanout          : 21
+Clock Uncertainty   : 0.100ns (sdc uncertainty: 0.000ns, default uncertainty: 0.100ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.310          1.310          pin: clk_50m_syn_2.di
+net (fo=79)                             1.756          3.066          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: u_keys/cnt_0_reg[2]_syn_4.clk
+launch edge                             0.000    r     3.066               
+--------------------------------------------------------------------  ---------------
+clk2q               x035y029z3          0.109    f     3.175          pin: u_keys/cnt_0_reg[2]_syn_4.q[0]
+net (fo=21)                             0.364          3.539          net: u_keys/key_stable_0,  src/input/key_debounce.v(15)
+                                                                      pin: u_keys/cnt_0_reg[15]_syn_4.b[1]
+LUT3 (reg)          x035y032z0          0.319    r     3.858       1  net: u_keys/cnt_0[15],  src/input/key_debounce.v(20)
+--------------------------------------------------------------------  ---------------
+Arrival                                                3.858               
+
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.440          1.440          pin: clk_50m_syn_2.di
+net (fo=79)                             1.930          3.370          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: u_keys/cnt_0_reg[15]_syn_4.clk
+capture edge                            0.000    r     3.370               
+--------------------------------------------------------------------  ---------------
+hold                                    0.061          3.431               
+clock uncertainty                       0.100          3.531               
+clock pessimism                        -0.275          3.256               
+--------------------------------------------------------------------  ---------------
+Required                                               3.256               
+--------------------------------------------------------------------  ---------------
+Slack                                                  0.602               
+
+Slack               : 0.607ns
+Begin Point         : startup_reg[2]_syn_4.clk (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : startup_reg[2]_syn_4.a[0] (rising edge triggered by clock clk_50m  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : hold
+Process             : fast
+Budget              : 0.000ns { clk_50m rising@0.000ns - clk_50m rising@0.000ns }
+Data Path Delay     : 0.668ns (cell 0.557ns (83%), net 0.111ns (17%))
+Clock Skew          : 0.000ns
+Logic Level         : 1 ( ADDER=1 )
+Max Fanout          : 2
+Clock Uncertainty   : 0.000ns (sdc uncertainty: 0.000ns, default uncertainty: 0.000ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.310          1.310          pin: clk_50m_syn_2.di
+net (fo=79)                             1.756          3.066          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: startup_reg[2]_syn_4.clk
+launch edge                             0.000    r     3.066               
+--------------------------------------------------------------------  ---------------
+ADDER (clk2q)       x034y021z1          0.109    f     3.175          pin: startup_reg[2]_syn_4.q[0]
+net (fo=2)                              0.111          3.286          net: startup[1],  src/secondary/top_secondary_hdmi_handshake_diag.v(15)
+                                                                      pin: startup_reg[2]_syn_4.a[0]
+ADDER (reg)         x034y021z1          0.448    r     3.734       1  net: startup[1],  src/secondary/top_secondary_hdmi_handshake_diag.v(15)
+--------------------------------------------------------------------  ---------------
+Arrival                                                3.734               
+
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.440          1.440          pin: clk_50m_syn_2.di
+net (fo=79)                             1.930          3.370          net: clk_50m_dup_1,  src/secondary/top_secondary_hdmi_handshake_diag.v(9)
+                                                                      pin: startup_reg[2]_syn_4.clk
+capture edge                            0.000    r     3.370               
+--------------------------------------------------------------------  ---------------
+hold                                    0.061          3.431               
+clock uncertainty                       0.000          3.431               
+clock pessimism                        -0.304          3.127               
+--------------------------------------------------------------------  ---------------
+Required                                               3.127               
+--------------------------------------------------------------------  ---------------
+Slack                                                  0.607               
+
+
+Inter clock domain timing
+--------------------------------------------------
+
+IP timing
+--------------------------------------------------
