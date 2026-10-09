@@ -30,14 +30,16 @@ export_db [file join $secondary_build secondary_main5e_gate.db]
 
 set place_seed 6
 if {$top eq "top_secondary_hdmi_av_diag"} {
-    set place_seed 8
-    # Keep the falling/rising pair FFs near A-D0's IOL. This is a physical
+    set place_seed 10
+    # Keep falling/rising pair FFs near the A-D0 and A-clock IOLs. A physical
     # half-cycle path, not an asynchronous path to exempt from STA.
-    set pair_cells [get_cells -hier -regexp {u_relay/u_phy/g_lane\[0\].*(transmit_pair|output_pair).*}]
-    puts "AV lane0 pair cells: $pair_cells"
-    if {[llength $pair_cells]!=6} {error "AV lane0 pair placement no longer matches the netlist"}
-    create_bound av_lane0_pairs -mode fixed -width 2 -height 4 -origin {38 8}
-    add_cells_to_bound -bound av_lane0_pairs -cells $pair_cells
+    foreach {lane origin_y} {0 8 3 28} {
+        set pair_cells [get_cells -hier -regexp [format {u_relay/u_phy/g_lane\[%d\].*(transmit_pair|output_pair).*} $lane]]
+        puts "AV lane$lane pair cells: $pair_cells"
+        if {[llength $pair_cells]!=6} {error "AV lane$lane pair placement no longer matches the netlist"}
+        create_bound av_lane${lane}_pairs -mode fixed -width 2 -height 4 -origin [list 38 $origin_y]
+        add_cells_to_bound -bound av_lane${lane}_pairs -cells $pair_cells
+    }
 }
 set_param place seed $place_seed
 place

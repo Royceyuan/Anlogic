@@ -5,7 +5,7 @@ Reading D:/Modelsim/tcl/vsim/pref.tcl
 # do ./run_hdmi_relay_clock.do
 # D:/TD_6.2.1/sim_release/eg4
 # Model Technology ModelSim SE-64 vlog 10.6e Compiler 2018.06 Jun 23 2018
-# Start time: 21:41:00 on Oct 09,2026
+# Start time: 22:48:54 on Oct 09,2026
 # vlog -work work_hdmi_clock D:/TD_6.2.1/sim_release/eg4/eg_logic_clk.v D:/TD_6.2.1/sim_release/eg4/eg_phy_clk.v D:/TD_6.2.1/sim_release/eg4/eg_phy_pll.v D:/TD_6.2.1/sim_release/eg4/eg_logic_io.v D:/TD_6.2.1/sim_release/eg4/eg_phy_glbl.v 
 # -- Compiling module EG_LOGIC_BUFG
 # -- Compiling module EG_LOGIC_BUFIO
@@ -42,10 +42,10 @@ Reading D:/Modelsim/tcl/vsim/pref.tcl
 # 	EG_LOGIC_ODDRx2
 # 	EG_LOGIC_ODDRx2l
 # 	glbl
-# End time: 21:41:01 on Oct 09,2026, Elapsed time: 0:00:01
+# End time: 22:48:55 on Oct 09,2026, Elapsed time: 0:00:01
 # Errors: 0, Warnings: 0
 # Model Technology ModelSim SE-64 vlog 10.6e Compiler 2018.06 Jun 23 2018
-# Start time: 21:41:01 on Oct 09,2026
+# Start time: 22:48:55 on Oct 09,2026
 # vlog -work work_hdmi_clock ../src/clock/hdmi_relay_clock.v ../src/video/hdmi_relay_phy.v tb_hdmi_relay_clock.v 
 # -- Compiling module hdmi_relay_clock
 # -- Compiling module hdmi_relay_phy
@@ -53,10 +53,10 @@ Reading D:/Modelsim/tcl/vsim/pref.tcl
 # 
 # Top level modules:
 # 	tb_hdmi_relay_clock
-# End time: 21:41:01 on Oct 09,2026, Elapsed time: 0:00:00
+# End time: 22:48:55 on Oct 09,2026, Elapsed time: 0:00:00
 # Errors: 0, Warnings: 0
 # vsim -c -voptargs="+acc" -onfinish stop -lib work_hdmi_clock tb_hdmi_relay_clock glbl 
-# Start time: 21:41:01 on Oct 09,2026
+# Start time: 22:48:55 on Oct 09,2026
 # ** Note: (vsim-3812) Design is being optimized...
 # //  ModelSim SE-64 10.6e Jun 23 2018
 # //
@@ -108,5 +108,5 @@ Reading D:/Modelsim/tcl/vsim/pref.tcl
 #    Time: 364246182300 fs  Iteration: 0  Instance: /tb_hdmi_relay_clock
 # Break in Module tb_hdmi_relay_clock at tb_hdmi_relay_clock.v line 104
 # Stopped at tb_hdmi_relay_clock.v line 104
-# End time: 21:41:03 on Oct 09,2026, Elapsed time: 0:00:02
+# End time: 22:48:57 on Oct 09,2026, Elapsed time: 0:00:02
 # Errors: 0, Warnings: 1

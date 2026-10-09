@@ -8,12 +8,12 @@ IO Statistics
   #inout                    1
 
 Utilization Statistics
-#lut                     1052   out of  19600    5.37%
-#reg                      689   out of  19600    3.52%
-#le                      1212
-  #lut only               523   out of   1212   43.15%
-  #reg only               160   out of   1212   13.20%
-  #lut&reg                529   out of   1212   43.65%
+#lut                     1062   out of  19600    5.42%
+#reg                      698   out of  19600    3.56%
+#le                      1222
+  #lut only               524   out of   1222   42.88%
+  #reg only               160   out of   1222   13.09%
+  #lut&reg                538   out of   1222   44.03%
 #bram                       1   out of     64    1.56%
   #bram9k                   1
   #fifo9k                   0
@@ -77,17 +77,17 @@ Report Clock Domain Luts:
 ---------------------------------------------------------------------------------------------------------------------------------------
   Index   |  Name                              |  Frequency   |  LUT As Logic   |  LUT As Shifter   |  LUT As Dram   |  BRAM   |  DSP
 ---------------------------------------------------------------------------------------------------------------------------------------
-  #1      |  clk_50m                           |  50MHz       |  216            |  0                |  0             |  1      |  0
-  #2      |  hdmi_a_pixel                      |  75MHz       |  14             |  0                |  0             |  0      |  0
-  #3      |  u_relay/u_clock/u_rx_pll.clkc[0]  |  375MHz      |  3              |  0                |  0             |  0      |  0
-  #4      |  u_relay/u_clock/u_rx_pll.clkc[1]  |  187MHz      |  261            |  0                |  0             |  0      |  0
+  #1      |  clk_50m                           |  50MHz       |  217            |  0                |  0             |  1      |  0
+  #2      |  hdmi_a_pixel                      |  75MHz       |  13             |  0                |  0             |  0      |  0
+  #3      |  u_relay/u_clock/u_rx_pll.clkc[0]  |  375MHz      |  8              |  0                |  0             |  0      |  0
+  #4      |  u_relay/u_clock/u_rx_pll.clkc[1]  |  187MHz      |  256            |  0                |  0             |  0      |  0
 ---------------------------------------------------------------------------------------------------------------------------------------
 
 Clock Resource Statistics
 Index     ClockNet                     Type               DriverType         Driver                            Fanout
-#1        clk_50m_dup_1                Global             io                 clk_50m_syn_2.di                  206
-#2        u_relay/u_clock/clocks[1]    Global             pll                u_relay/u_clock/u_rx_pll.clkc1    197
-#3        hdmi_a_clk_p_dup_1           Global             io                 hdmi_a_clk_p_syn_2.di             28
+#1        clk_50m_dup_1                Global             io                 clk_50m_syn_2.di                  208
+#2        u_relay/u_clock/clocks[1]    Global             pll                u_relay/u_clock/u_rx_pll.clkc1    206
+#3        hdmi_a_clk_p_dup_1           Global             io                 hdmi_a_clk_p_syn_2.di             27
 #4        u_relay/u_clock/clocks[0]    Global             pll                u_relay/u_clock/u_rx_pll.clkc0    21
 #5        u_relay/u_clock/clocks[2]    Global             pll                u_relay/u_clock/u_rx_pll.clkc2    0
 
@@ -95,28 +95,28 @@ Report Hierarchy Area:
 +--------------------------------------------------------------------------------------------------------------------+
 |Instance                       |Module                        |le      |lut     |ripple  |seq     |bram    |dsp     |
 +--------------------------------------------------------------------------------------------------------------------+
-|top                            |top_secondary_hdmi_av_diag    |1212    |906     |146     |701     |1       |0       |
-|  u_relay                      |top_secondary_hdmi_relay_diag |1212    |906     |146     |689     |1       |0       |
-|    g_official_edid$u_observer |hdmi_edid_720p                |78      |76      |0       |34      |0       |0       |
-|    g_official_edid$u_slave    |i2cSlaveTop                   |118     |84      |12      |71      |1       |0       |
-|      u2_iic                   |i2c_edid                      |80      |74      |5       |45      |1       |0       |
+|top                            |top_secondary_hdmi_av_diag    |1222    |916     |146     |710     |1       |0       |
+|  u_relay                      |top_secondary_hdmi_relay_diag |1222    |916     |146     |698     |1       |0       |
+|    g_official_edid$u_observer |hdmi_edid_720p                |75      |72      |0       |38      |0       |0       |
+|    g_official_edid$u_slave    |i2cSlaveTop                   |115     |81      |12      |69      |1       |0       |
+|      u2_iic                   |i2c_edid                      |77      |71      |5       |43      |1       |0       |
 |        myedid_new_ram         |myedid_new                    |0       |0       |0       |0       |1       |0       |
-|    u_clock                    |hdmi_relay_clock              |234     |118     |43      |153     |0       |0       |
-|    u_monitor                  |hdmi_tmds_monitor             |549     |486     |59      |296     |0       |0       |
+|    u_clock                    |hdmi_relay_clock              |239     |124     |43      |158     |0       |0       |
+|    u_monitor                  |hdmi_tmds_monitor             |567     |506     |59      |301     |0       |0       |
 |    u_phy                      |hdmi_relay_phy                |18      |9       |0       |18      |0       |0       |
-|    u_seg                      |seg_hex_display               |65      |56      |9       |22      |0       |0       |
-|    u_sample_reset             |reset_sync                    |5       |4       |0       |2       |0       |0       |
+|    u_seg                      |seg_hex_display               |60      |51      |9       |20      |0       |0       |
+|    u_sample_reset             |reset_sync                    |5       |5       |0       |4       |0       |0       |
 +--------------------------------------------------------------------------------------------------------------------+
 
 
 DataNet Average Fanout:
 
    Index     Fanout    Nets  
-    #1         1       765   
-    #2         2       299   
-    #3         3       130   
-    #4         4        84   
-    #5        5-10     109   
-    #6       11-50      55   
-    #7       51-100     4    
-  Average     2.83           
+    #1         1       773   
+    #2         2       303   
+    #3         3       140   
+    #4         4        81   
+    #5        5-10     110   
+    #6       11-50      57   
+    #7       51-100     2    
+  Average     2.82           

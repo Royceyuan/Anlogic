@@ -261,13 +261,13 @@ ModelSim `sim/run_hdmi_handshake_diag.do`共9条PASS，覆盖正常回环、缺�
 
 本节覆盖上面旧诊断的B输入/A输出接线。用户允许最终采用A输入/B输出，条件是保留全部副板功能并回归通过；**本候选仅独立音视频直通，尚未集成博物馆**。
 
-入口`hx4s20_secondary_hdmi_av_diag.al`，顶层`top_secondary_hdmi_av_diag`；位流`release/hx4s20_secondary_hdmi_av_diag.bit`，SHA256 `4C3111667B00055831CEB0DE63F3B362E73AD9BF2E88B69D681794EB4A7DF4D6`。副板根目录复现：`./scripts/build.ps1 -Variant av-diag`；种子8、lane0局部布局约束在构建Tcl中，不能省略这些步骤后冒充相同发布结果。
+入口`hx4s20_secondary_hdmi_av_diag.al`，顶层`top_secondary_hdmi_av_diag`；当前修正版位流`release/hx4s20_secondary_hdmi_av_diag.bit`，SHA256 `695D0D2548BF57671866BD523B9C7845CB68E531558AE7950E0055E2AC4B27D0`。副板根目录复现：`./scripts/build.ps1 -Variant av-diag`；种子10、lane0/3局部布局约束在构建Tcl中，不能省略这些步骤后冒充相同发布结果。
 
 采用已被PC识别的官方HPD/DDC/ROM，复用已通过主板源视频测试的四路原样转发，包含原TMDS时钟、数据岛、ACR及InfoFrame，不走RGB/DVI重编码。共享诊断新增行为默认关闭，旧顶层三种案例19条PASS；PHY RTL未改。官方SDA驱动方式及ROM内容不变，仅适配ROM路径并明确接入启动复位。
 
-资源：LUT1052/19600（5.37%），FF689/19600（3.52%），Slice638/9800（6.51%），BRAM9K1/64，BRAM32K0，DSP0，PLL1/4。内部setup +0.041ns、hold +0.054ns，TNS均0，无多驱动、无异常时序路径。PHY-5079提示50MHz时钟的一段本地走线，已纳入路由STA，未隐藏为假路径。外部高速数据到首级IOL仍为动态校准边界，眼图必须板测。
+资源：LUT1062/19600（5.42%），FF698/19600（3.56%），Slice645/9800（6.58%），BRAM9K1/64，BRAM32K0，DSP0，PLL1/4。内部setup +0.041ns、hold +0.054ns，TNS均0，无多驱动、无异常时序路径。PHY-5079提示50MHz时钟的一段本地走线，已纳入路由STA，未隐藏为假路径。外部高速数据到首级IOL仍为动态校准边界，眼图必须板测。
 
-四组仿真31条PASS：官方EDID/新候选5、旧顶层19、时钟/PHY6、实际PAD数字模式1。读取全部256字节，检查两块校验及音频声明；四路比较2000次，共同延迟11UI，覆盖保护带/TERC4样式载荷。**不是有效LPCM包生成测试，不能据此声称声音上板通过**。PAD检查更正为实际网表IN_DFFMODE=NONE，此前FF测试模式并不准确；固定输入延时6及电气余量尚未板测。报告在`seed/hdmi_av_diag`。
+五组仿真37条PASS：官方EDID/新候选5、旧顶层19、时钟/PHY6、实际PAD数字模式1、监测/像素码碰撞6。读取全部256字节，检查两块校验及音频声明；四路比较2000次，共同延迟11UI，覆盖合法RGB码、前导及保护带/TERC4样式载荷。**不是有效LPCM包生成测试，不能据此声称声音上板通过**。PAD检查使用实际网表IN_DFFMODE=NONE；固定输入延时6及电气余量尚未板测。报告在`seed/hdmi_av_diag`。
 
 ### 接线、操作与预期现象
 
@@ -280,3 +280,11 @@ ModelSim `sim/run_hdmi_handshake_diag.do`共9条PASS，覆盖正常回环、缺�
 数码管仍按A状态→计数→B总线→C发送/偏移轮换，位定义见前文。74.25MHz计数约`1220`，主板75MHz约`124F`；LED1心跳，LED2有效时钟，LED3 PLL，LED4帧格式。B页现在是**被动观测器**，请求拉低位固定0、状态编号不是官方FSM。C页高位`E`表示发送/采样/接收均允许但B口HPD读值0，也可以正常输出，不能要求必须为`F`。若无画面，回报四组页值和LED2～4，不重复更改DP显示设置。
 
 原主/副板正式bit、共享PLL、旧直通及官方对照bit哈希均未变化；主板未改。仅本地commit、不push。独立PC视频/声音通过后才集成并回归TF轮播、双板控制、SW3自动/手动、SW4说明页、应急和断源恢复，未完成前不称`SECONDARY HDMI RELAY BOARD PASS`。
+
+### 2026-10-09 PC源无信号的帧判定修正
+
+前版4C311166/3967cf0板测失败。用户视频读出1220、BFD0、AFEE/AFEF及C777/C711：在部分相位三通道已对齐，但帧未通过，发送复位未释放。不能继续把它当成无源时钟或输出显示器模式问题。
+
+复现出的代码缺陷：普通合法RGB视频码也可等于133保护带码及TERC4码。旧监测只看码值就进入数据岛，误读RGB为HS/VS，破坏行/帧计数。按[HDMI 1.3的5.2.1.1及5.2.3](https://fpga.mit.edu/6205/_static/F23/common_files/week04/CEC_HDMI_Specification.pdf)，加入八字符数据岛前导检查；未放宽1650×750、同偏移、8帧判定或采样约束。原RAW PHY、PLL配置、EDID、端口方向均不变。
+
+测试使用R/G=55（编码133）、B=6d/6c/ba（编码28e/271/2c3）这些均保持零运行差异的合法RGB像素，旧RTL复现锁定但line_bad=1、good=0，新RTL通过；实际前导后的数据岛内同步变化仍可读取，错误帧宽仍被拒绝。顶层改为192×16缩短几何的完整前导/保护带测试；这不是已捕获了PC的实际像素流，也不能断言代码缺陷是唯一实板原因。修正版待上板验证LED4及图像/声音。再测试无需改PC的已确认720p60设置，保持PC→A、B→屏幕；失败时继续回报四组页值。

@@ -77,16 +77,23 @@ always @(posedge clk or negedge rst_n) begin
     end
 end
 reg in_island;
+reg [3:0] island_preamble;
+// Guard/TERC4 words can also be legal RGB symbols. HDMI 5.2.1.1 requires
+// eight control characters (CTL0:3=1010) before an island guard band.
+wire island_begin=island_guard && island_preamble==8 && island_sync[4];
 reg symbol_tick,sync_valid;
 reg [1:0] sync_value;
 always @(posedge clk or negedge rst_n) begin
-    if(!rst_n) begin in_island<=0;symbol_tick<=0;sync_valid<=0;sync_value<=0;end
+    if(!rst_n) begin in_island<=0;island_preamble<=0;symbol_tick<=0;sync_valid<=0;sync_value<=0;end
     else begin
         symbol_tick<=decoded_valid;
         if(decoded_valid) begin
-            if(island_guard) in_island<=1;
+            if(ctrl0[2] && ctrl1==3'b101 && ctrl2==3'b101) begin
+                if(island_preamble<8) island_preamble<=island_preamble+1'b1;
+            end else island_preamble<=0;
+            if(island_begin) in_island<=1;
             else if(ctrl0[2] && ctrl1[2] && ctrl2[2]) in_island<=0;
-            sync_valid<=ctrl0[2] || ((in_island || island_guard) && island_sync[4]);
+            sync_valid<=ctrl0[2] || ((in_island || island_begin) && island_sync[4]);
             sync_value<=ctrl0[2] ? ctrl0[1:0] : island_sync[1:0];
         end
     end

@@ -15,7 +15,7 @@ top_secondary_hdmi_av_diag dut(.clk_50m(clk),.hdmi_a_clk_p(incoming[3]),
     .hdmi_b_d1_p(outgoing[1]),.hdmi_b_d2_p(outgoing[2]),
     .led(led),.seg_data(seg),.seg_sel(sel));
 defparam dut.u_relay.u_clock.CLOCKS_PER_MS=500;
-defparam dut.u_relay.u_monitor.H_TOTAL=32;
+defparam dut.u_relay.u_monitor.H_TOTAL=192;
 defparam dut.u_relay.u_monitor.V_TOTAL=16;
 defparam dut.u_relay.u_monitor.GOOD_FRAMES=2;
 defparam dut.u_relay.g_official_edid.u_slave.u2_iic.myedid_new_ram.inst.INIT_FILE="../vendor/official_hdmi_loop_edid/edid_1280720_with_audio.mif";
@@ -34,18 +34,22 @@ begin case(nibble)
 endcase end endfunction
 integer x,y,bit_index;
 reg [9:0] a,b,c;
+reg hs,vs;
 initial forever begin
     wait(source_enabled&&hpd);
-    for(y=0;y<16;y=y+1) for(x=0;x<32;x=x+1) begin
-        a=x<16 ? (10'h012+x+y) : control(y>=12&&y<14,x>=20&&x<24);
-        b=x<16 ? (10'h123+x) : 10'h354;
-        c=x<16 ? (10'h234+y) : 10'h354;
-        // Guard + TERC4 island-style payload, not a claimed valid audio packet.
-        if(x==24 || x==27) begin b=10'h133;c=10'h133;end
-        if(x==25 || x==26) begin
-            a=terc({2'b00,(y>=12&&y<14),(x>=20&&x<24)});
-            b=terc(y[3:0]);c=terc(x[3:0]);
-        end
+    for(y=0;y<16;y=y+1) for(x=0;x<192;x=x+1) begin
+        hs=x>=112&&x<144;vs=y>=12&&y<14;
+        a=control(vs,hs);b=10'h354;c=10'h354;
+        // Balanced legal RGB words which resemble island guards/TERC4.
+        if(x<96) begin a=x<32 ? 10'h28e : x<64 ? 10'h271 : 10'h2c3;b=10'h133;c=10'h133;end
+        else if(x>=104&&x<112) begin b=10'h0ab;c=10'h0ab;end
+        else if(x==112||x==113||x==146||x==147) begin
+            a=terc({2'b11,vs,hs});b=10'h133;c=10'h133;
+        end else if(x>=114&&x<146) begin
+            // 32-character island-style payload, not a valid LPCM/BCH packet.
+            a=terc({1'b1,x[0],vs,hs});b=terc(y[3:0]);c=terc(x[3:0]);
+        end else if(x>=182&&x<190) b=10'h0ab;
+        else if(x>=190) begin a=10'h2cc;b=10'h133;c=10'h2cc;end
         for(bit_index=0;bit_index<10;bit_index=bit_index+1) begin
             incoming=source_enabled ? {bit_index<5,c[bit_index],b[bit_index],a[bit_index]} : 0;
             #1.34680135;
@@ -130,6 +134,9 @@ initial begin
     repeat(100) @(posedge dut.u_relay.pclk);
     if(led[3:1]!==3'b111 || dut.u_relay.sink_ff[1]) $fatal(1,"unreliable sink HPD gated qualified output");
     $display("PASS A-input/B-output candidate qualifies source without sink-HPD gate");
+    // Start latency search on changing packet words, not a flat color band
+    // whose ten-bit repetition can falsely match multiple pipeline delays.
+    wait(x==118 && bit_index==0);
     for(lane=0;lane<4;lane=lane+1) begin in_history[lane]=0;out_history[lane]=0;end
     checking=1;wait(checks>=2000);checking=0;
     $display("PASS all four lanes including clock and island-style payload keep common delay %d UI",delay);

@@ -10,11 +10,11 @@
 |     Num of violated H-EP  |            0                |
 -----------------------------------------------------------
 | Routing Resource          |                             |
-|     Wire length           |       109760                |
+|     Wire length           |       124312                |
 -----------------------------------------------------------
 | Utilization               |                             |
-|     #slices               |          638                |
-|     slices percentage     |        6.51%                |
+|     #slices               |          645                |
+|     slices percentage     |        6.58%                |
 |     #RAMs                 |            1                |
 |     #DSPs                 |            0                |
 |     #DRAMHARDCON          |            0                |
