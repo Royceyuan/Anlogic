@@ -113,12 +113,21 @@ hdmi_tmds_monitor u_monitor(.clk(pclk),.rst_n(rx_reset_n),.nibbles(nibbles[11:0]
     .lanes_locked(lanes_locked),.format_ok(format_ok),.frame_toggle(frame_toggle),.bit_offsets(bit_offsets));
 assign {hdmi1_clk_p,hdmi1_d2_p,hdmi1_d1_p,hdmi1_d0_p}=outgoing;
 assign led={format_ff[1],pll_ff[1],clock_valid,heartbeat[24]};
-wire [15:0] diagnostic_value=heartbeat[25] ? measured_edges[19:4] :
+reg [2:0] transmit_ff1,transmit_ff2;
+always @(posedge clk_50m)
+    if(!rst_n) begin transmit_ff1<=0;transmit_ff2<=0;end
+    else begin
+        transmit_ff1<={tx_reset_n,!sample_reset[1],receive_allowed};
+        transmit_ff2<=transmit_ff1;
+    end
+wire [15:0] diagnostic_value=&heartbeat[26:25] ?
+    {4'hc,transmit_ff2,sink_ff[1],bit_offsets[7:0]} :
+    heartbeat[25] ? measured_edges[19:4] :
     heartbeat[26] ? {4'hb,ddc_bus_status[7:1],clock_activity_seen,ddc_parser_state} :
     {4'ha,edid_ready,sink_ff[1],edid_read_seen,edid_request_seen,
      clock_valid,pll_ff[1],lock_ff[1],format_ff[1],phase_index};
 seg_hex_display u_seg(.clk(clk_50m),.rst_n(rst_n),
-    // A status, clock count, B bus probe, clock count; 0.67 s per page.
+    // A status, clock count, B bus probe, C TX reset/offsets; 0.67 s per page.
     .value(diagnostic_value),
     .seg_data(seg_data),.seg_sel(seg_sel));
 endmodule

@@ -9,6 +9,12 @@ module hdmi_relay_phy (
     output wire [15:0] nibbles,
     output wire [3:0] serial_out
 );
+reg capture_toggle,serial_toggle;
+always @(posedge pclk or posedge sampler_rst)
+    if(sampler_rst) capture_toggle<=0;
+    else capture_toggle<=!capture_toggle;
+always @(negedge sclk) serial_toggle<=capture_toggle;
+wire first_pair=capture_toggle!=serial_toggle;
 genvar lane;
 generate for(lane=0;lane<4;lane=lane+1) begin : g_lane
     EG_LOGIC_IDDRx2 u_sample (
@@ -16,10 +22,21 @@ generate for(lane=0;lane<4;lane=lane+1) begin : g_lane
         .q2(nibbles[lane*4+2]), .q3(nibbles[lane*4+3]),
         .pclk(pclk), .sclk(sclk), .d(serial_in[lane]), .rst(sampler_rst)
     );
-    EG_LOGIC_ODDRx2 u_transmit (
-        .q(serial_out[lane]), .pclk(pclk), .sclk(sclk), .rst(transmitter_rst),
-        .d0(nibbles[lane*4]), .d1(nibbles[lane*4+1]),
-        .d2(nibbles[lane*4+2]), .d3(nibbles[lane*4+3])
+    // Reuse the board-passed transmitter's single-clock output primitive.
+    // pclk leads sclk by half a bit. A new captured word selects its first
+    // pair; the next falling sclk selects its second. Do not use clock as data.
+    // The common toggle keeps all lanes, including clock, in the same phase.
+    // Register away from the IOL's rising edge instead of a two-clock TX IOL.
+    reg [1:0] transmit_pair,output_pair;
+    // Only the output IOL needs reset. Qualification leaves both pair stages
+    // ample time to fill; resetting them adds a short half-cycle recovery net.
+    always @(negedge sclk)
+        transmit_pair<=first_pair ? nibbles[lane*4+:2] : nibbles[lane*4+2+:2];
+    // Full-cycle path into the output IOL, as in the existing HDMI transmitter.
+    always @(posedge sclk) output_pair<=transmit_pair;
+    EG_LOGIC_ODDR u_transmit (
+        .q(serial_out[lane]), .clk(sclk), .rst(transmitter_rst),
+        .d0(output_pair[0]), .d1(output_pair[1])
     );
 end endgenerate
 endmodule

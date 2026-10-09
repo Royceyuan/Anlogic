@@ -112,6 +112,10 @@ initial begin
     if(dut.diagnostic_value!==16'hbc10) $fatal(1,"B page did not separate source clock activity from idle DDC");
     release dut.heartbeat;
     $display("PASS B-page bus/clock diagnostics preserve a running relay");
+    force dut.heartbeat=27'h6000000;#10;
+    if(dut.diagnostic_value[15:8]!==8'hcf) $fatal(1,"C page missed actual TX reset release");
+    release dut.heartbeat;
+    $display("PASS C-page TX release/receive enable diagnostics");
     $display("PASS diagnostic top qualifies a live stream before enabling all four output lanes");
     force dut.u_monitor.format_ok=1'b0;
     repeat(4) @(posedge clk50);

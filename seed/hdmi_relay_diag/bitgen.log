@@ -4,7 +4,7 @@
    Executable = D:/TD_6.2.1/bin/td_commands_prompt.exe
    Built at =   16:32:07 Jun 12 2025
    Run by =     Administrator
-   Run Date =   Fri Oct  9 17:36:54 2026
+   Run Date =   Fri Oct  9 18:19:40 2026
 
    Run on =     LAPTOP-SFUE3P04
 ============================================================
@@ -26,9 +26,9 @@ RUN-1001 : Database version number 46207
 RUN-1001 : Import flow parameters
 RUN-1001 : Import netlist
 PHY-1001 : Generate detailed routing grids ...
-PHY-1001 : End build routing graph; 2.600779s wall, 2.531250s user + 0.031250s system = 2.562500s CPU (98.5%)
+PHY-1001 : End build routing graph; 2.561081s wall, 2.468750s user + 0.062500s system = 2.531250s CPU (98.8%)
 
-PHY-1001 : Build lut bridge;  0.040543s wall, 0.031250s user + 0.000000s system = 0.031250s CPU (77.1%)
+PHY-1001 : Build lut bridge;  0.037879s wall, 0.046875s user + 0.000000s system = 0.046875s CPU (123.7%)
 
 PHY-1001 : Generate nets ...
 PHY-1001 : net clk_50m_dup_1 will be routed on clock mesh
@@ -37,26 +37,26 @@ PHY-1001 : clock net u_clock/pixel_clk will be merged with clock u_clock/clocks[
 PHY-1001 : clock net u_monitor/clk will be merged with clock u_clock/clocks[1]
 PHY-1001 : clock net u_phy/sclk will be merged with clock u_clock/clocks[0]
 PHY-1001 : eco open net = 0
-PHY-1001 : 39 feed throughs used by 34 nets
+PHY-1001 : 43 feed throughs used by 40 nets
 RUN-1001 : Import phy database
 RUN-1001 : Import timing constraints
 RUN-1001 : Import IO constraints
 RUN-1001 : Import Inst constraints
 RUN-1001 : Import ChipWatcher
 RUN-1001 : Import design success TD_VERSION=6.2.168116 , DB_VERSION=46207
-RUN-1003 : finish command "import_db D:/VSCode/CodeFiles/Git_TD/Anlogic2/_build_secondary_hdmi_relay_diag/secondary_main5e_pr.db" in  3.097421s wall, 2.968750s user + 0.093750s system = 3.062500s CPU (98.9%)
+RUN-1003 : finish command "import_db D:/VSCode/CodeFiles/Git_TD/Anlogic2/_build_secondary_hdmi_relay_diag/secondary_main5e_pr.db" in  2.992723s wall, 2.890625s user + 0.078125s system = 2.968750s CPU (99.2%)
 
-RUN-1004 : used memory is 422 MB, reserved memory is 436 MB, peak memory is 422 MB
+RUN-1004 : used memory is 422 MB, reserved memory is 438 MB, peak memory is 422 MB
 RUN-1002 : start command "bitgen -bit D:\VSCode\CodeFiles\Git_TD\Anlogic2\release\hx4s20_secondary_hdmi_relay_diag.bit"
 RUN-1002 : start command "export_bid top_secondary_hdmi_relay_diag_inst.bid"
 BIT-1003 : Start to generate bitstream. 
 BIT-1002 : Init instances with 24 threads.
-BIT-1002 : Init instances completely, inst num: 704
+BIT-1002 : Init instances completely, inst num: 733
 BIT-1002 : Init pips with 24 threads.
-BIT-1002 : Init pips completely, net num: 1356, pip num: 12614
+BIT-1002 : Init pips completely, net num: 1442, pip num: 13418
 BIT-1002 : Init feedthrough with 24 threads.
-BIT-1002 : Init feedthrough completely, num: 39
+BIT-1002 : Init feedthrough completely, num: 43
 BIT-1003 : Multithreading accelaration with 24 threads.
-BIT-1003 : Generate bitstream completely, there are 38008 bits set as '1'.
+BIT-1003 : Generate bitstream completely, there are 40214 bits set as '1'.
 BIT-1004 : PLL setting string = 0010
 BIT-1004 : Generate bits file D:\VSCode\CodeFiles\Git_TD\Anlogic2\release\hx4s20_secondary_hdmi_relay_diag.bit.

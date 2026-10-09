@@ -67,7 +67,7 @@ begin
     @(negedge pclk);phy_rst=0;checking=1;
     wait(checks>=2000);
     checking=0;phy_rst=1;
-    $display("PASS recovered PLL + DDRx2 at pixel period %0.6f ns, common delay %0d UI",source_period,latency);
+    $display("PASS recovered PLL + DDRx2 RX/DDRx1 TX at pixel period %0.6f ns, common delay %0d UI",source_period,latency);
 end endtask
 task shift;
 input select;

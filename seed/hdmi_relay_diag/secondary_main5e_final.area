@@ -8,12 +8,12 @@ IO Statistics
   #inout                    1
 
 Utilization Statistics
-#lut                     1126   out of  19600    5.74%
-#reg                      635   out of  19600    3.24%
-#le                      1261
-  #lut only               626   out of   1261   49.64%
-  #reg only               135   out of   1261   10.71%
-  #lut&reg                500   out of   1261   39.65%
+#lut                     1210   out of  19600    6.17%
+#reg                      660   out of  19600    3.37%
+#le                      1332
+  #lut only               672   out of   1332   50.45%
+  #reg only               122   out of   1332    9.16%
+  #lut&reg                538   out of   1332   40.39%
 #bram                       0   out of     64    0.00%
   #bram9k                   0
   #fifo9k                   0
@@ -41,13 +41,13 @@ Detailed IO Report
     hdmi_b_d2_p        INPUT         E1         LVDS33       PAD           N/A           NONE        DDRX2    
   hdmi_b_d2_p(n)       INPUT         D1         LVDS33       PAD           N/A           NONE        NONE     
     hdmi_b_scl         INPUT         P2        LVCMOS33      PAD           N/A           NONE        IREG     
-    hdmi1_clk_p       OUTPUT         K1         LVDS33       PAD           NA            NONE        DDRX2    
+    hdmi1_clk_p       OUTPUT         K1         LVDS33       PAD           NA            NONE        DDRX1    
   hdmi1_clk_p(n)      OUTPUT         J1         LVDS33       PAD           NA            NONE        NONE     
-    hdmi1_d0_p        OUTPUT         F5         LVDS33       PAD           NA            NONE        DDRX2    
+    hdmi1_d0_p        OUTPUT         F5         LVDS33       PAD           NA            NONE        DDRX1    
    hdmi1_d0_p(n)      OUTPUT         F4         LVDS33       PAD           NA            NONE        NONE     
-    hdmi1_d1_p        OUTPUT         E3         LVDS33       PAD           NA            NONE        DDRX2    
+    hdmi1_d1_p        OUTPUT         E3         LVDS33       PAD           NA            NONE        DDRX1    
    hdmi1_d1_p(n)      OUTPUT         E4         LVDS33       PAD           NA            NONE        NONE     
-    hdmi1_d2_p        OUTPUT         B3         LVDS33       PAD           NA            NONE        DDRX2    
+    hdmi1_d2_p        OUTPUT         B3         LVDS33       PAD           NA            NONE        DDRX1    
    hdmi1_d2_p(n)      OUTPUT         D3         LVDS33       PAD           NA            NONE        NONE     
     hdmi_b_hpd        OUTPUT         J6        LVCMOS33      PAD            8            NONE        NONE     
       led[3]          OUTPUT        B12        LVCMOS33      PAD            8            NONE        OREG     
@@ -77,41 +77,42 @@ Report Clock Domain Luts:
 -------------------------------------------------------------------------------------------------------------------------------
   Index   |  Name                      |  Frequency   |  LUT As Logic   |  LUT As Shifter   |  LUT As Dram   |  BRAM   |  DSP
 -------------------------------------------------------------------------------------------------------------------------------
-  #1      |  clk_50m                   |  50MHz       |  259            |  0                |  0             |  0      |  0
-  #2      |  hdmi_b_pixel              |  75MHz       |  13             |  0                |  0             |  0      |  0
-  #3      |  u_clock/u_rx_pll.clkc[0]  |  375MHz      |  2              |  0                |  0             |  0      |  0
-  #4      |  u_clock/u_rx_pll.clkc[1]  |  187MHz      |  249            |  0                |  0             |  0      |  0
+  #1      |  clk_50m                   |  50MHz       |  283            |  0                |  0             |  0      |  0
+  #2      |  hdmi_b_pixel              |  75MHz       |  15             |  0                |  0             |  0      |  0
+  #3      |  u_clock/u_rx_pll.clkc[0]  |  375MHz      |  6              |  0                |  0             |  0      |  0
+  #4      |  u_clock/u_rx_pll.clkc[1]  |  187MHz      |  251            |  0                |  0             |  0      |  0
 -------------------------------------------------------------------------------------------------------------------------------
 
 Clock Resource Statistics
 Index     ClockNet              Type               DriverType         Driver                    Fanout
-#1        u_clock/clocks[1]     Global             pll                u_clock/u_rx_pll.clkc1    197
-#2        clk_50m_dup_1         Global             io                 clk_50m_syn_2.di          180
-#3        hdmi_b_clk_p_dup_1    Global             io                 hdmi_b_clk_p_syn_2.di     27
-#4        u_clock/clocks[0]     Global             pll                u_clock/u_rx_pll.clkc0    11
+#1        u_clock/clocks[1]     Global             pll                u_clock/u_rx_pll.clkc1    199
+#2        clk_50m_dup_1         Global             io                 clk_50m_syn_2.di          193
+#3        hdmi_b_clk_p_dup_1    Global             io                 hdmi_b_clk_p_syn_2.di     26
+#4        u_clock/clocks[0]     Global             pll                u_clock/u_rx_pll.clkc0    20
 #5        u_clock/clocks[2]     Global             pll                u_clock/u_rx_pll.clkc2    0
 
 Report Hierarchy Area:
 +------------------------------------------------------------------------------------------------------+
 |Instance         |Module                        |le      |lut     |ripple  |seq     |bram    |dsp     |
 +------------------------------------------------------------------------------------------------------+
-|top              |top_secondary_hdmi_relay_diag |1261    |980     |146     |647     |0       |0       |
-|  u_clock        |hdmi_relay_clock              |237     |125     |43      |155     |0       |0       |
-|  u_edid         |hdmi_edid_720p                |261     |253     |5       |60      |0       |0       |
-|  u_monitor      |hdmi_tmds_monitor             |524     |462     |59      |291     |0       |0       |
-|  u_seg          |seg_hex_display               |59      |50      |9       |14      |0       |0       |
-|  u_sample_reset |reset_sync                    |5       |5       |0       |2       |0       |0       |
+|top              |top_secondary_hdmi_relay_diag |1332    |1064    |146     |672     |0       |0       |
+|  u_clock        |hdmi_relay_clock              |235     |133     |43      |155     |0       |0       |
+|  u_edid         |hdmi_edid_720p                |296     |289     |5       |63      |0       |0       |
+|  u_monitor      |hdmi_tmds_monitor             |552     |493     |59      |293     |0       |0       |
+|  u_phy          |hdmi_relay_phy                |18      |9       |0       |18      |0       |0       |
+|  u_seg          |seg_hex_display               |52      |43      |9       |18      |0       |0       |
+|  u_sample_reset |reset_sync                    |4       |4       |0       |3       |0       |0       |
 +------------------------------------------------------------------------------------------------------+
 
 
 DataNet Average Fanout:
 
    Index     Fanout    Nets  
-    #1         1       826   
-    #2         2       258   
-    #3         3       127   
-    #4         4        76   
-    #5        5-10     138   
-    #6       11-50      49   
-    #7       51-100     7    
-  Average     2.99           
+    #1         1       797   
+    #2         2       361   
+    #3         3       152   
+    #4         4        66   
+    #5        5-10     129   
+    #6       11-50      56   
+    #7       51-100     6    
+  Average     2.95           

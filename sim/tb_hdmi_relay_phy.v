@@ -2,7 +2,7 @@
 module tb_hdmi_relay_phy;
 reg sclk=0,pclk=0,rst=1;
 always #1.5 sclk=!sclk;
-initial begin #1.5; forever begin pclk=!pclk; #3; end end
+initial begin #0.75; forever begin pclk=!pclk; #3; end end
 reg [31:0] random_bits=32'hc9a7613e;
 reg [3:0] serial_in=0;
 integer source_index=0;
@@ -51,7 +51,7 @@ always @(sclk) if(!rst) begin
         checks=checks+1;
     end
     if(checks==1000) begin
-        $display("PASS official DDRx2 models: all four serial lanes bit-exact, common latency=%d UI",latency);
+        $display("PASS DDRx2 RX/single-DDR TX: all four serial lanes bit-exact, common latency=%d UI",latency);
         test_pass=1; $finish;
     end
 end
