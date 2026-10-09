@@ -1,6 +1,21 @@
 # do run_hdmi_handshake_diag.do
 # Model Technology ModelSim SE-64 vlog 10.6e Compiler 2018.06 Jun 23 2018
-# Start time: 19:48:25 on Oct 09,2026
+# Start time: 20:07:28 on Oct 09,2026
+# vlog -work work_hdmi_handshake D:/TD_6.2.1/sim_release/eg4/eg_logic_iobuf.v D:/TD_6.2.1/sim_release/eg4/eg_phy_glbl.v 
+# -- Compiling module EG_LOGIC_IBUF
+# -- Compiling module EG_LOGIC_OBUF
+# -- Compiling module EG_LOGIC_IOTRIBUF
+# -- Compiling module glbl
+# 
+# Top level modules:
+# 	EG_LOGIC_IBUF
+# 	EG_LOGIC_OBUF
+# 	EG_LOGIC_IOTRIBUF
+# 	glbl
+# End time: 20:07:28 on Oct 09,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# Model Technology ModelSim SE-64 vlog 10.6e Compiler 2018.06 Jun 23 2018
+# Start time: 20:07:28 on Oct 09,2026
 # vlog -work work_hdmi_handshake ../src/common/seg_hex_display.v ../src/input/key_debounce.v ../src/secondary/top_secondary_hdmi_handshake_diag.v tb_hdmi_handshake_diag.v 
 # -- Compiling module seg_hex_display
 # -- Compiling module key_debounce
@@ -9,10 +24,10 @@
 # 
 # Top level modules:
 # 	tb_hdmi_handshake_diag
-# End time: 19:48:25 on Oct 09,2026, Elapsed time: 0:00:00
+# End time: 20:07:28 on Oct 09,2026, Elapsed time: 0:00:00
 # Errors: 0, Warnings: 0
-# vsim -c -voptargs="+acc" -onfinish stop -lib work_hdmi_handshake tb_hdmi_handshake_diag 
-# Start time: 19:48:25 on Oct 09,2026
+# vsim -c -voptargs="+acc" -onfinish stop -lib work_hdmi_handshake tb_hdmi_handshake_diag glbl 
+# Start time: 20:07:29 on Oct 09,2026
 # ** Note: (vsim-3812) Design is being optimized...
 # //  ModelSim SE-64 10.6e Jun 23 2018
 # //
@@ -30,17 +45,21 @@
 # Loading work.tb_hdmi_handshake_diag(fast)
 # Loading work.top_secondary_hdmi_handshake_diag(fast)
 # Loading work.key_debounce(fast)
+# Loading work.EG_LOGIC_IOTRIBUF(fast)
 # Loading work.seg_hex_display(fast)
+# Loading work.glbl(fast)
 # PASS ideal external loop checks HPD, SCL and both SDA directions
+# PASS HPD snapshot pages distinguish local PAD and remote input
 # PASS missing cable does not falsely report PASS; KEY1 restarts
 # PASS HPD path failure isolated
+# PASS forced output-PAD low is detected even while internal high is requested
 # PASS SCL path failure isolated
 # PASS SDA directional path failure isolated
 # PASS transient failure after settle stays latched, not masked by final level
 # PASS recovery after transient failure and repeated run
-# ** Note: $finish    : tb_hdmi_handshake_diag.v(54)
-#    Time: 1536011 ns  Iteration: 0  Instance: /tb_hdmi_handshake_diag
-# Break in Module tb_hdmi_handshake_diag at tb_hdmi_handshake_diag.v line 54
-# Stopped at tb_hdmi_handshake_diag.v line 54
-# End time: 19:48:26 on Oct 09,2026, Elapsed time: 0:00:01
+# ** Note: $finish    : tb_hdmi_handshake_diag.v(68)
+#    Time: 1568232 ns  Iteration: 0  Instance: /tb_hdmi_handshake_diag
+# Break in Module tb_hdmi_handshake_diag at tb_hdmi_handshake_diag.v line 68
+# Stopped at tb_hdmi_handshake_diag.v line 68
+# End time: 20:07:30 on Oct 09,2026, Elapsed time: 0:00:01
 # Errors: 0, Warnings: 0

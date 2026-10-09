@@ -31,6 +31,13 @@ if ($Variant -eq 'relay-diag' -or $Variant -eq 'handshake-diag') {
     $env:SECONDARY_BUILD = $buildDir
     $env:SECONDARY_BIT = Join-Path $projectRoot "release/hx4s20_secondary_hdmi_${diagName}_diag.bit"
 }
+if ($Variant -eq 'handshake-diag') {
+    # Reuse the board-passed segment/LED mapping; reject a mistyped pin table.
+    $sharedPinPattern = '\{ (clk_50m|led\[|seg_data\[|seg_sel\[)'
+    $referencePins = @(Get-Content 'constraints/secondary_hdmi_relay_diag.adc' | Where-Object { $_ -match $sharedPinPattern })
+    $probePins = @(Get-Content $env:SECONDARY_ADC | Where-Object { $_ -match $sharedPinPattern })
+    if (@(Compare-Object $referencePins $probePins).Count -ne 0) { throw 'Handshake display/LED pin mapping differs from board-passed reference' }
+}
 New-Item -ItemType Directory -Path $buildDir -Force | Out-Null
 Write-Host "Building secondary board; reports: $buildDir"
 & $TD './scripts/build_secondary_main5e_pr.tcl' 2>&1 |

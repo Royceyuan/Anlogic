@@ -4,23 +4,23 @@ standard
 IO Statistics
 #IO                        28   out of    188   14.89%
   #input                    4
-  #output                  21
-  #inout                    3
+  #output                  20
+  #inout                    4
 
 Utilization Statistics
-#lut                      213   out of  19600    1.09%
-#reg                      122   out of  19600    0.62%
-#le                       235
-  #lut only               113   out of    235   48.09%
-  #reg only                22   out of    235    9.36%
-  #lut&reg                100   out of    235   42.55%
+#lut                      221   out of  19600    1.13%
+#reg                      129   out of  19600    0.66%
+#le                       249
+  #lut only               120   out of    249   48.19%
+  #reg only                28   out of    249   11.24%
+  #lut&reg                101   out of    249   40.56%
 #bram                       0   out of     64    0.00%
   #bram9k                   0
   #fifo9k                   0
 #bram32k                    0   out of     16    0.00%
 #dsp                        0   out of     29    0.00%
 #pad                       28   out of    188   14.89%
-  #ireg                     6
+  #ireg                     7
   #oreg                     2
   #treg                     0
 #pll                        0   out of      4    0.00%
@@ -34,15 +34,14 @@ Detailed IO Report
   hdmi_a_hpd       INPUT         K2        LVCMOS33      PAD           N/A         PULLDOWN     IREG    
   hdmi_b_scl       INPUT         P2        LVCMOS33      PAD           N/A           NONE       IREG    
     key1_n         INPUT         A2        LVCMOS33      PAD           N/A           NONE       IREG    
-  hdmi_b_hpd      OUTPUT         J6        LVCMOS33      PAD            8            NONE       NONE    
     led[3]        OUTPUT        B12        LVCMOS33      PAD            8            NONE       NONE    
     led[2]        OUTPUT        C10        LVCMOS33      PAD            8            NONE       NONE    
     led[1]        OUTPUT         A3        LVCMOS33      PAD            8            NONE       OREG    
     led[0]        OUTPUT         A4        LVCMOS33      PAD            8            NONE       OREG    
   seg_data[7]     OUTPUT         A6        LVCMOS33      PAD            8            NONE       NONE    
-  seg_data[6]     OUTPUT         B5        LVCMOS33      PAD            8            NONE       NONE    
-  seg_data[5]     OUTPUT         A7        LVCMOS33      PAD            8            NONE       NONE    
-  seg_data[4]     OUTPUT         A8        LVCMOS33      PAD            8            NONE       NONE    
+  seg_data[6]     OUTPUT         A7        LVCMOS33      PAD            8            NONE       NONE    
+  seg_data[5]     OUTPUT         A8        LVCMOS33      PAD            8            NONE       NONE    
+  seg_data[4]     OUTPUT         B5        LVCMOS33      PAD            8            NONE       NONE    
   seg_data[3]     OUTPUT         A5        LVCMOS33      PAD            8            NONE       NONE    
   seg_data[2]     OUTPUT         B6        LVCMOS33      PAD            8            NONE       NONE    
   seg_data[1]     OUTPUT        C16        LVCMOS33      PAD            8            NONE       NONE    
@@ -57,6 +56,7 @@ Detailed IO Report
   seg_sel[0]      OUTPUT        D11        LVCMOS33      PAD            8            NONE       NONE    
   hdmi_a_scl       INOUT         P1        LVCMOS33      PAD            8            NONE       IREG    
   hdmi_a_sda       INOUT         R1        LVCMOS33      PAD            8            NONE       IREG    
+  hdmi_b_hpd       INOUT         J6        LVCMOS33      PAD            8            NONE       IREG    
   hdmi_b_sda       INOUT         R2        LVCMOS33      PAD            8            NONE       IREG    
 
 Report Clock Domain Luts:
@@ -64,30 +64,31 @@ Report Clock Domain Luts:
 --------------------------------------------------------------------------------------------------------------
   Index   |  Name     |  Frequency   |  LUT As Logic   |  LUT As Shifter   |  LUT As Dram   |  BRAM   |  DSP
 --------------------------------------------------------------------------------------------------------------
-  #1      |  clk_50m  |  50MHz       |  87             |  0                |  0             |  0      |  0
+  #1      |  clk_50m  |  50MHz       |  86             |  0                |  0             |  0      |  0
 --------------------------------------------------------------------------------------------------------------
 
 Clock Resource Statistics
 Index     ClockNet         Type               DriverType         Driver              Fanout
-#1        clk_50m_dup_1    Global             io                 clk_50m_syn_2.di    79
+#1        clk_50m_dup_1    Global             io                 clk_50m_syn_2.di    81
 
 Report Hierarchy Area:
 +--------------------------------------------------------------------------------------------------+
 |Instance |Module                            |le      |lut     |ripple  |seq     |bram    |dsp     |
 +--------------------------------------------------------------------------------------------------+
-|top      |top_secondary_hdmi_handshake_diag |235     |165     |48      |130     |0       |0       |
-|  u_keys |key_debounce                      |38      |33      |5       |21      |0       |0       |
-|  u_seg  |seg_hex_display                   |39      |30      |9       |17      |0       |0       |
+|top      |top_secondary_hdmi_handshake_diag |249     |173     |48      |138     |0       |0       |
+|  u_keys |key_debounce                      |38      |33      |5       |22      |0       |0       |
+|  u_seg  |seg_hex_display                   |44      |35      |9       |18      |0       |0       |
 +--------------------------------------------------------------------------------------------------+
 
 
 DataNet Average Fanout:
 
    Index     Fanout    Nets  
-    #1         1       194   
-    #2         2        43   
-    #3         3        25   
-    #4         4        7    
-    #5        5-10      29   
+    #1         1       201   
+    #2         2        51   
+    #3         3        29   
+    #4         4        22   
+    #5        5-10      10   
     #6       11-50      10   
-  Average     2.43           
+    #7       51-100     1    
+  Average     2.40           

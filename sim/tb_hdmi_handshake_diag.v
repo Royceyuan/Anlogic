@@ -27,18 +27,32 @@ task result;
 input [7:0] expected;
 begin
     wait(dut.done);#1;
+    force dut.heartbeat=0;#1;
     if(dut.value!=={8'hf0,expected})
         $fatal(1,"handshake mask expected %h got %h",expected,dut.value);
+    release dut.heartbeat;
 end endtask
 reg test_pass=0;
 initial begin
     result(8'hff);
     if(led[3:1]!==3'b111) $fatal(1,"complete PASS LEDs");
     $display("PASS ideal external loop checks HPD, SCL and both SDA directions");
+    force dut.heartbeat=27'h2000000;#1;
+    if(dut.value!==16'he000) $fatal(1,"low HPD snapshot page");
+    force dut.heartbeat=27'h4000000;#1;
+    if(dut.value!==16'he111) $fatal(1,"high HPD snapshot page");
+    release dut.heartbeat;
+    $display("PASS HPD snapshot pages distinguish local PAD and remote input");
     hpd_link=0;scl_link=0;sda_link=0;restart;result(8'h15);
     $display("PASS missing cable does not falsely report PASS; KEY1 restarts");
     scl_link=1;sda_link=1;restart;result(8'h7d);
+    if(led[3:1]!==3'b101 || dut.hpd_high_sample!==2'b10)
+        $fatal(1,"HPD failure must not falsely flag independent DDC tests");
     $display("PASS HPD path failure isolated");
+    hpd_link=1;force dut.hdmi_b_hpd=0;restart;result(8'h7d);
+    if(dut.hpd_high_sample!==2'b00) $fatal(1,"HPD readback was internal request, not actual PAD");
+    release dut.hdmi_b_hpd;
+    $display("PASS forced output-PAD low is detected even while internal high is requested");
     hpd_link=1;scl_link=0;restart;result(8'hf7);
     $display("PASS SCL path failure isolated");
     scl_link=1;sda_link=0;restart;result(8'h9f);

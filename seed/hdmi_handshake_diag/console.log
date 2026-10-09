@@ -4,7 +4,7 @@
    Executable = D:/TD_6.2.1/bin/td_commands_prompt.exe
    Built at =   16:32:07 Jun 12 2025
    Run by =     Administrator
-   Run Date =   Fri Oct  9 19:48:27 2026
+   Run Date =   Fri Oct  9 20:07:31 2026
 
    Run on =     LAPTOP-SFUE3P04
 ============================================================
@@ -203,6 +203,7 @@ RUN-1002 : start command "load_run_param -run syn_1"
 RUN-1002 : start command "elaborate -top top_secondary_hdmi_handshake_diag"
 HDL-1007 : elaborate module top_secondary_hdmi_handshake_diag in src/secondary/top_secondary_hdmi_handshake_diag.v(5)
 HDL-1007 : elaborate module key_debounce in src/input/key_debounce.v(4)
+HDL-1007 : elaborate module EG_LOGIC_IOTRIBUF in D:\TD_6.2.1\arch/eagle_macro.v(125)
 HDL-1007 : elaborate module seg_hex_display in src/common/seg_hex_display.v(4)
 HDL-1200 : Current top model is top_secondary_hdmi_handshake_diag
 HDL-1100 : Inferred 0 RAMs.
@@ -217,9 +218,9 @@ RUN-1002 : start command "set_pin_assignment  seg_data[0]   LOCATION = C15; IOST
 RUN-1002 : start command "set_pin_assignment  seg_data[1]   LOCATION = C16; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; "
 RUN-1002 : start command "set_pin_assignment  seg_data[2]   LOCATION = B6; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; "
 RUN-1002 : start command "set_pin_assignment  seg_data[3]   LOCATION = A5; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; "
-RUN-1002 : start command "set_pin_assignment  seg_data[4]   LOCATION = A8; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; "
-RUN-1002 : start command "set_pin_assignment  seg_data[5]   LOCATION = A7; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; "
-RUN-1002 : start command "set_pin_assignment  seg_data[6]   LOCATION = B5; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; "
+RUN-1002 : start command "set_pin_assignment  seg_data[4]   LOCATION = B5; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; "
+RUN-1002 : start command "set_pin_assignment  seg_data[5]   LOCATION = A8; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; "
+RUN-1002 : start command "set_pin_assignment  seg_data[6]   LOCATION = A7; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; "
 RUN-1002 : start command "set_pin_assignment  seg_data[7]   LOCATION = A6; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; "
 RUN-1002 : start command "set_pin_assignment  seg_sel[0]   LOCATION = D11; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; "
 RUN-1002 : start command "set_pin_assignment  seg_sel[1]   LOCATION = E11; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; "
@@ -243,56 +244,58 @@ RUN-1002 : start command "optimize_rtl"
 RUN-1001 : Open license file D:/TD_6.2.1/license/Anlogic.lic
 SYN-1001 : Stage 1 | Optimize RTL
 SYN-1001 : Stage 1.1 | Check Design Sanity
-SYN-1001 : End Stage 1.1 | Check Design Sanity; Time: 0.000344s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 107, reserved = 101, peak = 107;
+SYN-1001 : End Stage 1.1 | Check Design Sanity; Time: 0.000341s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 107, reserved = 101, peak = 107;
 
-SYN-1079 : finish stage Check Design Sanity. Total instances: 720, Total nets: 1441.
+SYN-1079 : finish stage Check Design Sanity. Total instances: 755, Total nets: 1508.
 
 SYN-1001 : Stage 1.2 | Initialize Design
-SYN-1001 : End Stage 1.2 | Initialize Design; Time: 0.031538s wall, 0.031250s user + 0.000000s system = 0.031250s CPU (99.1%); Memory(MB): used = 108, reserved = 101, peak = 108;
+SYN-1001 : End Stage 1.2 | Initialize Design; Time: 0.032086s wall, 0.031250s user + 0.000000s system = 0.031250s CPU (97.4%); Memory(MB): used = 108, reserved = 101, peak = 108;
 
-SYN-1079 : finish stage Initialize Design. Total instances: 265, Total nets: 971.
+SYN-1079 : finish stage Initialize Design. Total instances: 288, Total nets: 1020.
 
 SYN-1001 : Stage 1.3 | Flatten Module
 SYN-1011 : Flatten model top_secondary_hdmi_handshake_diag
-SYN-1001 : End Stage 1.3 | Flatten Module; Time: 0.002267s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 108, reserved = 101, peak = 108;
+SYN-1001 : End Stage 1.3 | Flatten Module; Time: 0.002262s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 108, reserved = 101, peak = 108;
 
-SYN-1079 : finish stage Flatten Module. Total instances: 263, Total nets: 930.
+SYN-1079 : finish stage Flatten Module. Total instances: 286, Total nets: 979.
 
 SYN-1001 : Stage 1.4 | Uniform Instance
-SYN-1001 : End Stage 1.4 | Uniform Instance; Time: 0.001527s wall, 0.015625s user + 0.000000s system = 0.015625s CPU (1023.4%); Memory(MB): used = 108, reserved = 111, peak = 108;
+SYN-1001 : End Stage 1.4 | Uniform Instance; Time: 0.001358s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 108, reserved = 111, peak = 108;
 
-SYN-1079 : finish stage Uniform Instance. Total instances: 263, Total nets: 930.
+SYN-1079 : finish stage Uniform Instance. Total instances: 286, Total nets: 979.
 
 SYN-1001 : Stage 1.5 | Optimize Design
 SYN-1001 : Bypass 1 mux instances
 SYN-1016 : Merged 6 instances.
 SYN-1016 : Merged 1 instances.
-SYN-1001 : End Stage 1.5 | Optimize Design; Time: 0.127461s wall, 0.125000s user + 0.000000s system = 0.125000s CPU (98.1%); Memory(MB): used = 119, reserved = 104, peak = 123;
+SYN-1001 : End Stage 1.5 | Optimize Design; Time: 0.133831s wall, 0.125000s user + 0.000000s system = 0.125000s CPU (93.4%); Memory(MB): used = 124, reserved = 111, peak = 124;
 
-SYN-1079 : finish stage Optimize Design. Total instances: 276, Total nets: 378.
+SYN-1079 : finish stage Optimize Design. Total instances: 308, Total nets: 409.
 
 SYN-1001 : Stage 1.6 | Optimize Iteratively
+SYN-1021 : Optimized 2 onehot mux instances.
 SYN-1014 : Optimize round 1
-SYN-1020 : Optimized 12 distributor mux.
+SYN-1020 : Optimized 16 distributor mux.
 SYN-1001 : Optimize 1 less-than instances
-SYN-1016 : Merged 9 instances.
-SYN-1015 : Optimize round 1, 49 better
+SYN-1016 : Merged 14 instances.
+SYN-1015 : Optimize round 1, 56 better
 SYN-1014 : Optimize round 2
-SYN-1015 : Optimize round 2, 4 better
+SYN-1044 : Optimized 1 inv instances.
+SYN-1015 : Optimize round 2, 5 better
 SYN-1014 : Optimize round 1
 SYN-1015 : Optimize round 1, 0 better
-SYN-1001 : End Stage 1.6 | Optimize Iteratively; Time: 0.333343s wall, 0.296875s user + 0.015625s system = 0.312500s CPU (93.7%); Memory(MB): used = 103, reserved = 97, peak = 123;
+SYN-1001 : End Stage 1.6 | Optimize Iteratively; Time: 0.330787s wall, 0.343750s user + 0.000000s system = 0.343750s CPU (103.9%); Memory(MB): used = 103, reserved = 97, peak = 124;
 
-SYN-1079 : finish stage Optimize Iteratively. Total instances: 272, Total nets: 372.
+SYN-1079 : finish stage Optimize Iteratively. Total instances: 305, Total nets: 406.
 
 SYN-1001 : Stage 1.7 | Check Design
-SYN-1001 : End Stage 1.7 | Check Design; Time: 0.000080s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 103, reserved = 97, peak = 123;
+SYN-1001 : End Stage 1.7 | Check Design; Time: 0.000094s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 103, reserved = 97, peak = 124;
 
-SYN-1079 : finish stage Check Design. Total instances: 272, Total nets: 372.
+SYN-1079 : finish stage Check Design. Total instances: 305, Total nets: 406.
 
-SYN-1001 : End Stage 1 | Optimize RTL; Time: 0.497089s wall, 0.468750s user + 0.015625s system = 0.484375s CPU (97.4%); Memory(MB): used = 103, reserved = 97, peak = 123;
+SYN-1001 : End Stage 1 | Optimize RTL; Time: 0.501293s wall, 0.515625s user + 0.000000s system = 0.515625s CPU (102.9%); Memory(MB): used = 103, reserved = 97, peak = 124;
 
-SYN-1079 : finish stage Optimize RTL. Total instances: 272, Total nets: 372.
+SYN-1079 : finish stage Optimize RTL. Total instances: 305, Total nets: 406.
 
 RUN-1002 : start command "report_area -file D:/VSCode/CodeFiles/Git_TD/Anlogic2/_build_secondary_hdmi_handshake_diag/secondary_main5e_rtl.area"
 RUN-1001 : standard
@@ -301,49 +304,50 @@ RUN-1001 : standard
 IO Statistics
 #IO                        28
   #input                    4
-  #output                  21
-  #inout                    3
+  #output                  20
+  #inout                    4
 
 Gate Statistics
-#Basic gates              211
-  #and                     46
+#Basic gates              232
+  #and                     50
   #nand                     0
-  #or                       2
+  #or                       5
   #nor                      0
   #xor                      1
   #xnor                     0
   #buf                      0
-  #not                     22
+  #not                     24
   #bufif1                   3
-  #MX21                     9
+  #MX21                    13
   #FADD                     0
-  #DFF                    128
+  #DFF                    136
   #LATCH                    0
 #MACRO_ADD                  7
-#MACRO_EQ                   5
-#MACRO_MUX                 46
+#MACRO_EQ                   9
+#MACRO_MUX                 53
+#MACRO_OTHERS               1
 
 RUN-1002 : start command "optimize_gate -packarea D:/VSCode/CodeFiles/Git_TD/Anlogic2/_build_secondary_hdmi_handshake_diag/secondary_main5e_gate.area"
 RUN-1001 : Open license file D:/TD_6.2.1/license/Anlogic.lic
 SYN-1001 : Stage 2 | Optimize Gate
 SYN-1001 : Stage 2.1 | Map Reg
-SYN-1001 : End Stage 2.1 | Map Reg; Time: 0.005171s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 103, reserved = 97, peak = 123;
+SYN-1001 : End Stage 2.1 | Map Reg; Time: 0.005715s wall, 0.015625s user + 0.000000s system = 0.015625s CPU (273.4%); Memory(MB): used = 103, reserved = 97, peak = 124;
 
-SYN-1079 : finish stage Map Reg. Total instances: 272, Total nets: 372.
+SYN-1079 : finish stage Map Reg. Total instances: 305, Total nets: 406.
 
 SYN-1001 : Stage 2.2 | Map IO
 SYN-2001 : Map 28 IOs to PADs of model 'top_secondary_hdmi_handshake_diag'
-SYN-1001 : End Stage 2.2 | Map IO; Time: 0.039127s wall, 0.046875s user + 0.000000s system = 0.046875s CPU (119.8%); Memory(MB): used = 103, reserved = 97, peak = 123;
+SYN-1001 : End Stage 2.2 | Map IO; Time: 0.040632s wall, 0.031250s user + 0.000000s system = 0.031250s CPU (76.9%); Memory(MB): used = 104, reserved = 97, peak = 124;
 
 SYN-1001 : Stage 2.3 | Map Macro
 RUN-1002 : start command "update_pll_param -module top_secondary_hdmi_handshake_diag"
 SYN-2501 : Processed 0 LOGIC_BUF instances.
 SYN-2571 : Optimize after map_dsp, round 1
 SYN-2571 : Optimize after map_dsp, round 1, 0 better
-SYN-1001 : Throwback 15 control mux instances
+SYN-1001 : Throwback 19 control mux instances
 SYN-2501 : Optimize round 1
-SYN-1016 : Merged 6 instances.
-SYN-2501 : Optimize round 1, 56 better
+SYN-1016 : Merged 8 instances.
+SYN-2501 : Optimize round 1, 68 better
 SYN-2501 : Optimize round 2
 SYN-2501 : Optimize round 2, 0 better
 SYN-2501 : Optimize round 1
@@ -351,23 +355,23 @@ SYN-2501 : Optimize round 1, 0 better
 SYN-2501 : Map 7 macro adder(s)
 SYN-1019 : Optimized 18 mux instances.
 SYN-1016 : Merged 37 instances.
-SYN-1001 : End Stage 2.3 | Map Macro; Time: 0.132621s wall, 0.109375s user + 0.015625s system = 0.125000s CPU (94.3%); Memory(MB): used = 116, reserved = 101, peak = 123;
+SYN-1001 : End Stage 2.3 | Map Macro; Time: 0.134652s wall, 0.125000s user + 0.015625s system = 0.140625s CPU (104.4%); Memory(MB): used = 116, reserved = 101, peak = 124;
 
-SYN-1079 : finish stage Map Macro. Total instances: 538, Total nets: 636.
+SYN-1079 : finish stage Map Macro. Total instances: 583, Total nets: 684.
 
 SYN-1001 : Stage 2.4 | Map Gate
-SYN-3001 : Collect 104 PI 61 PO (19 timing unconstrained) for mapping
-SYN-2581 : Mapping with K=5, #lut = 106 (3.53), #lev = 6 (2.81), #crit_level = 0
+SYN-3001 : Collect 111 PI 65 PO (19 timing unconstrained) for mapping
+SYN-2581 : Mapping with K=5, #lut = 124 (3.44), #lev = 7 (2.93), #crit_level = 0
 SYN-2551 : Post LUT mapping optimization.
-SYN-2581 : Mapping with K=5, #lut = 108 (3.57), #lev = 5 (2.36), #crit_level = 0
-SYN-3001 : Logic optimization opt = 0.14 sec, map = 0.02 sec, post map opt = 0.10 sec.
-SYN-1001 : End Stage 2.4 | Map Gate; Time: 0.320243s wall, 0.312500s user + 0.015625s system = 0.328125s CPU (102.5%); Memory(MB): used = 124, reserved = 108, peak = 124;
+SYN-2581 : Mapping with K=5, #lut = 119 (3.53), #lev = 6 (2.83), #crit_level = 0
+SYN-3001 : Logic optimization opt = 0.15 sec, map = 0.02 sec, post map opt = 0.11 sec.
+SYN-1001 : End Stage 2.4 | Map Gate; Time: 0.343278s wall, 0.343750s user + 0.000000s system = 0.343750s CPU (100.1%); Memory(MB): used = 124, reserved = 107, peak = 124;
 
 SYN-1001 : Packing model "top_secondary_hdmi_handshake_diag" ...
 SYN-4010 : Pack lib has 59 rtl pack models with 26 top pack blocks
 SYN-1014 : Optimize round 1
 SYN-1015 : Optimize round 1, 0 better
-SYN-4002 : Packing 122 DFF/LATCH to SEQ ...
+SYN-4002 : Packing 129 DFF/LATCH to SEQ ...
 SYN-4009 : Pack 3 carry chain into lslice
 SYN-4007 : Packing 56 adder to BLE ...
 SYN-4008 : Packed 56 adder and 30 SEQ to BLE.
@@ -379,7 +383,7 @@ RUN-1002 : start command "start_timer"
 | QoR metrics               |         value               |
 -----------------------------------------------------------
 | Timing                    |                             |
-|     Setup WNS             |        12542                |
+|     Setup WNS             |        12484                |
 |     Setup TNS             |            0                |
 |     Num of violated S-EP  |            0                |
 |     Hold WNS              |          928                |
@@ -387,8 +391,8 @@ RUN-1002 : start command "start_timer"
 |     Num of violated H-EP  |            0                |
 -----------------------------------------------------------
 | Utilization               |                             |
-|     #registers            |           92                |
-|     #luts                 |          108                |
+|     #registers            |           99                |
+|     #luts                 |          119                |
 |     #lut1                 |            4                |
 |     #lut1(~A)             |            4                |
 |     #slices               |           48                |
@@ -407,7 +411,7 @@ RUN-1002 : start command "start_timer"
 |     #max_fanout_keep      |            0                |
 |     #async_reg            |            0                |
 -----------------------------------------------------------
-| Top 10% datanet fanout#   |        17.67                |
+| Top 10% datanet fanout#   |        19.33                |
 | dff(single fanout)->dff   |            0                |
 | dff(single fanout)->dram  |            0                |
 -----------------------------------------------------------
@@ -423,12 +427,12 @@ Note**: Rent shows the rent exponent value of the modules whose rent value excee
         Only modules under top are reported, and the threshold is defined as 0.7.
 
 Logic Level Distribution
--------------------------------------------------------------------------
-  Clock    |  Period            |  0   |  1  |  2    |  3   |  4   |  5
--------------------------------------------------------------------------
-  clk_50m  |  20.000ns (50MHz)  |  31  |  9  |  154  |  29  |  35  |  6
--------------------------------------------------------------------------
-Note: The table count the worst 100000 paths, each endpoint count only one time.(264 paths analyzed)
+-------------------------------------------------------------------------------
+  Clock    |  Period            |  0   |  1  |  2    |  3   |  4  |  5   |  6
+-------------------------------------------------------------------------------
+  clk_50m  |  20.000ns (50MHz)  |  32  |  9  |  160  |  33  |  7  |  32  |  6
+-------------------------------------------------------------------------------
+Note: The table count the worst 100000 paths, each endpoint count only one time.(279 paths analyzed)
 
 Hierarchical Rent Exponent Report
 +--------------------------------------------------------+
@@ -448,38 +452,38 @@ RUN-1001 : standard
 IO Statistics
 #IO                        28   out of    188   14.89%
   #input                    4
-  #output                  21
-  #inout                    3
+  #output                  20
+  #inout                    4
 
 LUT Statistics
-#Total_luts               108
-  #lut4                    86
-  #lut5                    22
+#Total_luts               119
+  #lut4                    99
+  #lut5                    20
   #lut6                     0
   #lut5_mx41                0
   #lut4_alu1b               0
 
 Utilization Statistics
-#lut                      204   out of  19600    1.04%
-#reg                      122   out of  19600    0.62%
+#lut                      215   out of  19600    1.10%
+#reg                      129   out of  19600    0.66%
 #bram                       0   out of     64    0.00%
   #bram9k                   0
   #fifo9k                   0
 #bram32k                    0   out of     16    0.00%
 #dsp                        0   out of     29    0.00%
 #pad                       28   out of    188   14.89%
-  #ireg                     6
+  #ireg                     7
   #oreg                     2
   #treg                     0
 #pll                        0   out of      4    0.00%
 #gclk                       0   out of     16    0.00%
 
-SYN-1001 : End Stage 2 | Optimize Gate; Time: 0.550922s wall, 0.515625s user + 0.031250s system = 0.546875s CPU (99.3%); Memory(MB): used = 125, reserved = 108, peak = 125;
+SYN-1001 : End Stage 2 | Optimize Gate; Time: 0.583505s wall, 0.578125s user + 0.015625s system = 0.593750s CPU (101.8%); Memory(MB): used = 124, reserved = 106, peak = 124;
 
 RUN-1002 : start command "legalize_phy_inst"
 SYN-1001 : Stage 3 | Legalize Phy Inst
 SYN-1011 : Flatten model top_secondary_hdmi_handshake_diag
-SYN-1001 : End Stage 3 | Legalize Phy Inst; Time: 0.000796s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 125, reserved = 108, peak = 125;
+SYN-1001 : End Stage 3 | Legalize Phy Inst; Time: 0.000927s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 124, reserved = 106, peak = 124;
 
 RUN-1002 : start command "update_timing"
 RUN-1002 : start command "start_timer"
@@ -494,7 +498,7 @@ Device           : EG4S20BG256
 Speed            : NA
 
 Timing Mode      : basic
-Setup            : WNS 12542ps  TNS        0ps  NUM_FEPS     0
+Setup            : WNS 12484ps  TNS        0ps  NUM_FEPS     0
 Hold             : WNS   928ps  TNS        0ps  NUM_FEPS     0
 
 Flow Statistics  :
@@ -503,12 +507,12 @@ RUN-1001 : ---------------------------------------------------------------------
 RUN-1001 :      command     |  #calls  |  wall time  |  cpu time(s)  |  used memory(mb)  |  peak memory(mb)  
 RUN-1001 : --------------------------------------------------------------------------------------------------
 RUN-1001 :   import_device  |    1     |   0s(0%)    |     0(0%)     |        83         |        83         
-RUN-1001 :   optimize_gate  |    1     |   0s(0%)    |     0(0%)     |        125        |        125        
-RUN-1001 :   optimize_rtl   |    1     |   0s(0%)    |     0(0%)     |        103        |        123        
+RUN-1001 :   optimize_gate  |    1     |   0s(0%)    |     0(0%)     |        124        |        124        
+RUN-1001 :   optimize_rtl   |    1     |   0s(0%)    |     0(0%)     |        103        |        124        
 RUN-1001 :     read_adc     |    1     |   0s(0%)    |     0(0%)     |        107        |        107        
 RUN-1001 :     read_sdc     |    1     |   0s(0%)    |     0(0%)     |        107        |        107        
 RUN-1001 : --------------------------------------------------------------------------------------------------
-RUN-1001 :       total      |    5     |     0s      |       0       |        125        |        125        
+RUN-1001 :       total      |    5     |     0s      |       0       |        124        |        124        
 RUN-1001 : --------------------------------------------------------------------------------------------------
 RUN-1002 : start command "export_db D:/VSCode/CodeFiles/Git_TD/Anlogic2/_build_secondary_hdmi_handshake_diag/secondary_main5e_gate.db"
 RUN-1001 : Exported flow parameters
@@ -535,45 +539,45 @@ RUN-1001 : Open license file D:/TD_6.2.1/license/Anlogic.lic
 PHY-3001 : Placer runs in 24 thread(s).
 PHY-1001 : Stage 1 | Initialize Design
 PHY-1001 : Stage 1.1 | Build Design
-PHY-1001 : 108 luts, 92 seqs, 29 mslices, 19 lslices, 28 pads, 0 brams, 0 dsps
+PHY-1001 : 119 luts, 99 seqs, 29 mslices, 19 lslices, 28 pads, 0 brams, 0 dsps
 RUN-1002 : start command "legalize_phy_inst"
 SYN-1011 : Flatten model top_secondary_hdmi_handshake_diag
 PHY-1001 : Remove keep and sweep redundant instances ...
-PHY-1001 : 108 luts, 92 seqs, 29 mslices, 19 lslices, 28 pads, 0 brams, 0 dsps
-PHY-1001 : End Stage 1.1 | Build Design; Time: 0.001407s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 126, reserved = 229, peak = 126;
+PHY-1001 : 119 luts, 99 seqs, 29 mslices, 19 lslices, 28 pads, 0 brams, 0 dsps
+PHY-1001 : End Stage 1.1 | Build Design; Time: 0.001558s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 124, reserved = 235, peak = 124;
 
 PHY-1001 : Stage 1.2 | Optimize Design
 OPT-1001 : Stage 1.2.1 | Simplify Lut
-OPT-1001 : End Stage 1.2.1 | Simplify Lut; Time: 0.000360s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 126, reserved = 229, peak = 126;
+OPT-1001 : End Stage 1.2.1 | Simplify Lut; Time: 0.000438s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 124, reserved = 235, peak = 124;
 
 OPT-1001 : Stage 1.2.2 | Sweep
-OPT-1001 : End Stage 1.2.2 | Sweep; Time: 0.000160s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 126, reserved = 229, peak = 126;
+OPT-1001 : End Stage 1.2.2 | Sweep; Time: 0.000191s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 124, reserved = 235, peak = 124;
 
 OPT-1001 : Stage 1.2.3 | Synthesize High-fanout Net
-OPT-1001 : Current memory(MB): used = 126, reserved = 229, peak = 126.
-OPT-1001 : End Stage 1.2.3 | Synthesize High-fanout Net; Time: 0.000041s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 126, reserved = 229, peak = 126;
+OPT-1001 : Current memory(MB): used = 125, reserved = 235, peak = 125.
+OPT-1001 : End Stage 1.2.3 | Synthesize High-fanout Net; Time: 0.000051s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 125, reserved = 235, peak = 125;
 
-OPT-1001 : End physical optimization;  0.000692s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%)
+OPT-1001 : End physical optimization;  0.000822s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%)
 
-PHY-1001 : End Stage 1.2 | Optimize Design; Time: 0.000761s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 126, reserved = 229, peak = 126;
+PHY-1001 : End Stage 1.2 | Optimize Design; Time: 0.000924s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 125, reserved = 235, peak = 125;
 
 PHY-1001 : Stage 1.3 | Initialize Clock
 SYN-4024 : Net "clk_50m_dup_1" drives clk pins.
 SYN-4025 : Tag rtl::Net clk_50m_dup_1 as clock net
 SYN-4026 : Tagged 1 rtl::Net as clock net
 PHY-1001 : Populate physical database on model top_secondary_hdmi_handshake_diag.
-RUN-1001 : There are total 279 instances
-RUN-0007 : 108 luts, 92 seqs, 29 mslices, 19 lslices, 28 pads, 0 brams, 0 dsps
-RUN-1001 : There are total 376 nets
-RUN-1001 : 267 nets have 2 pins
-RUN-1001 : 72 nets have [3 - 5] pins
-RUN-1001 : 23 nets have [6 - 10] pins
+RUN-1001 : There are total 297 instances
+RUN-0007 : 119 luts, 99 seqs, 29 mslices, 19 lslices, 28 pads, 0 brams, 0 dsps
+RUN-1001 : There are total 397 nets
+RUN-1001 : 278 nets have 2 pins
+RUN-1001 : 95 nets have [3 - 5] pins
+RUN-1001 : 10 nets have [6 - 10] pins
 RUN-1001 : 6 nets have [11 - 20] pins
 RUN-1001 : 6 nets have [21 - 99] pins
 RUN-1001 : 2 nets have 100+ pins
-PHY-1001 : End Stage 1.3 | Initialize Clock; Time: 0.001014s wall, 0.000000s user + 0.015625s system = 0.015625s CPU (1540.5%); Memory(MB): used = 126, reserved = 229, peak = 126;
+PHY-1001 : End Stage 1.3 | Initialize Clock; Time: 0.001079s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 125, reserved = 235, peak = 125;
 
-PHY-1001 : End Stage 1 | Initialize Design; Time: 0.003657s wall, 0.000000s user + 0.015625s system = 0.015625s CPU (427.2%); Memory(MB): used = 126, reserved = 229, peak = 126;
+PHY-1001 : End Stage 1 | Initialize Design; Time: 0.004111s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 125, reserved = 235, peak = 125;
 
 PHY-1001 : Stage 2 | Global Placement
 RUN-1001 : Report Control nets information:
@@ -583,7 +587,7 @@ RUN-1001 :   CE   |  SSR  |  ASR  |  DFF Count
 RUN-1001 : -------------------------------------
 RUN-1001 :   No   |  No   |  No   |      1      
 RUN-1001 :   No   |  No   |  Yes  |     23      
-RUN-1001 :   No   |  Yes  |  No   |     42      
+RUN-1001 :   No   |  Yes  |  No   |     49      
 RUN-1001 :   Yes  |  No   |  No   |      1      
 RUN-1001 :   Yes  |  No   |  Yes  |      0      
 RUN-1001 :   Yes  |  Yes  |  No   |     25      
@@ -596,70 +600,70 @@ RUN-1001 :    1    |   3   |     4
 RUN-1001 : -----------------------------
 RUN-0007 : Control Set = 5
 PHY-1001 : Stage 2.1 | Place Fixed Instances
-PHY-1001 : End Stage 2.1 | Place Fixed Instances; Time: 0.001728s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 128, reserved = 229, peak = 128;
+PHY-1001 : End Stage 2.1 | Place Fixed Instances; Time: 0.002264s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 127, reserved = 235, peak = 127;
 
 PHY-1001 : Stage 2.2 | Pre-Place DRC Check
 PHY-1001 : Stage 2.2.1 | Force Route Constraint Check
 PHY-1001 : Check Pass.
-PHY-1001 : End Stage 2.2.1 | Force Route Constraint Check; Time: 0.000062s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 128, reserved = 229, peak = 128;
+PHY-1001 : End Stage 2.2.1 | Force Route Constraint Check; Time: 0.000091s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 127, reserved = 235, peak = 127;
 
-PHY-1001 : End Stage 2.2 | Pre-Place DRC Check; Time: 0.000104s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 128, reserved = 229, peak = 128;
+PHY-1001 : End Stage 2.2 | Pre-Place DRC Check; Time: 0.000150s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 127, reserved = 235, peak = 127;
 
 PHY-1001 : Stage 2.3 | Global Placement Step 1
 PHY-3001 : Target density is 80%
 PHY-1001 : Stage 2.3.1 | Update Timing
 RUN-1002 : start command "start_timer"
-PHY-1001 : SWNS: 12542, STNS: 0, FEP: 0
-PHY-1001 : End Stage 2.3.1 | Update Timing; Time: 0.020352s wall, 0.015625s user + 0.000000s system = 0.015625s CPU (76.8%); Memory(MB): used = 131, reserved = 232, peak = 131;
+PHY-1001 : SWNS: 12484, STNS: 0, FEP: 0
+PHY-1001 : End Stage 2.3.1 | Update Timing; Time: 0.018931s wall, 0.000000s user + 0.015625s system = 0.015625s CPU (82.5%); Memory(MB): used = 130, reserved = 238, peak = 130;
 
 PHY-0007 : Cell area utilization is 1%
 PHY-3001 : Clustering ...
-PHY-3001 : End clustering;  0.000022s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%)
+PHY-3001 : End clustering;  0.000016s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%)
 
 PHY-3001 : Target density is 80%
 PHY-1001 : Stage 2.3.2 | GP Iteration
-PHY-1001 : End Stage 2.3.2 | GP Iteration; Time: 0.151429s wall, 0.453125s user + 0.296875s system = 0.750000s CPU (495.3%); Memory(MB): used = 131, reserved = 232, peak = 131;
+PHY-1001 : End Stage 2.3.2 | GP Iteration; Time: 0.090622s wall, 0.312500s user + 0.281250s system = 0.593750s CPU (655.2%); Memory(MB): used = 131, reserved = 239, peak = 131;
 
-PHY-3001 : Multithread accelerating rate: 4.90
+PHY-3001 : Multithread accelerating rate: 6.47
 TMR-2502 : Net delay update with mode: Placed
 PHY-3001 : No need to merge 9x9 Dsps.
 PHY-1001 : Populate physical database on model top_secondary_hdmi_handshake_diag.
-PHY-1001 : End Stage 2.3 | Global Placement Step 1; Time: 0.188160s wall, 0.500000s user + 0.296875s system = 0.796875s CPU (423.5%); Memory(MB): used = 132, reserved = 232, peak = 132;
+PHY-1001 : End Stage 2.3 | Global Placement Step 1; Time: 0.127830s wall, 0.328125s user + 0.296875s system = 0.625000s CPU (488.9%); Memory(MB): used = 131, reserved = 239, peak = 131;
 
 PHY-1001 : Stage 2.4 | RAM/DSP Legalization and Detailed Placement
 PHY-1001 : Stage 2.4.1 | Legalization
-PHY-3001 : Before Legalized: Len = 11152.2
-PHY-3001 : After Legalized: Len = 11152.2, Over = 0
-PHY-1001 : End Stage 2.4.1 | Legalization; Time: 0.001545s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 132, reserved = 232, peak = 132;
+PHY-3001 : Before Legalized: Len = 13657.9
+PHY-3001 : After Legalized: Len = 13657.9, Over = 0
+PHY-1001 : End Stage 2.4.1 | Legalization; Time: 0.001609s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 131, reserved = 239, peak = 131;
 
-PHY-1001 : End Stage 2.4 | RAM/DSP Legalization and Detailed Placement; Time: 0.001709s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 132, reserved = 232, peak = 132;
+PHY-1001 : End Stage 2.4 | RAM/DSP Legalization and Detailed Placement; Time: 0.001756s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 131, reserved = 239, peak = 131;
 
 PHY-1001 : Stage 2.5 | Global Placement Step 2
 PHY-3001 : Target density is 80%
 PHY-1001 : Stage 2.5.1 | Update Timing
-PHY-1001 : SWNS: 15423, STNS: 0, FEP: 0
-PHY-1001 : End Stage 2.5.1 | Update Timing; Time: 0.001043s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 132, reserved = 232, peak = 132;
+PHY-1001 : SWNS: 14464, STNS: 0, FEP: 0
+PHY-1001 : End Stage 2.5.1 | Update Timing; Time: 0.001066s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 131, reserved = 239, peak = 131;
 
 PHY-1001 : Stage 2.5.2 | GP Iteration
-PHY-1001 : End Stage 2.5.2 | GP Iteration; Time: 0.717316s wall, 0.937500s user + 1.062500s system = 2.000000s CPU (278.8%); Memory(MB): used = 132, reserved = 232, peak = 132;
+PHY-1001 : End Stage 2.5.2 | GP Iteration; Time: 0.430553s wall, 0.687500s user + 0.546875s system = 1.234375s CPU (286.7%); Memory(MB): used = 131, reserved = 239, peak = 131;
 
-PHY-3001 : Multithread accelerating rate: 2.78
-PHY-3001 : Low accelerating rate: 2.78. This may happen when it is heavy-loaded.
-PHY-1001 : End Stage 2.5 | Global Placement Step 2; Time: 0.729833s wall, 0.937500s user + 1.062500s system = 2.000000s CPU (274.0%); Memory(MB): used = 132, reserved = 232, peak = 132;
+PHY-3001 : Multithread accelerating rate: 2.86
+PHY-3001 : Low accelerating rate: 2.86. This may happen when it is heavy-loaded.
+PHY-1001 : End Stage 2.5 | Global Placement Step 2; Time: 0.443387s wall, 0.703125s user + 0.546875s system = 1.250000s CPU (281.9%); Memory(MB): used = 131, reserved = 239, peak = 131;
 
 PHY-1001 : Stage 2.6 | RAM/DSP Detailed Placement
-PHY-1001 : End Stage 2.6 | RAM/DSP Detailed Placement; Time: 0.000129s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 132, reserved = 232, peak = 132;
+PHY-1001 : End Stage 2.6 | RAM/DSP Detailed Placement; Time: 0.000133s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 131, reserved = 239, peak = 131;
 
 PHY-1001 : Stage 2.7 | Optimize Design
 OPT-1001 : Start physical optimization ...
-OPT-1001 : Total overflow 7.84 peak overflow 3.09
+OPT-1001 : Total overflow 13.69 peak overflow 1.94
 OPT-1001 : Stage 2.7.1 | Synthesize High-fanout Net
 OPT-1001 : Start high-fanout net optimization in pre-pack flow with medium effort ...
 OPT-1001 : Update timing in Manhattan mode
-OPT-1001 : End timing update;  0.008803s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%)
+OPT-1001 : End timing update;  0.009039s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%)
 
-OPT-1001 : Start: SWNS 15714 STNS 0 NUM_FEPS 0
-OPT-1001 : Total overflow 7.84 peak overflow 3.09
+OPT-1001 : Start: SWNS 15814 STNS 0 NUM_FEPS 0
+OPT-1001 : Total overflow 13.69 peak overflow 1.94
 PHY-1001 : Populate physical database on model top_secondary_hdmi_handshake_diag.
 OPT-1001 : 1 high-fanout net processed.
 PHY-3001 : Start incremental placement ...
@@ -667,18 +671,18 @@ PHY-1001 : Populate physical database on model top_secondary_hdmi_handshake_diag
 PHY-3001 : Target density is 80%
 PHY-3001 : Target density is 80%
 PHY-1001 : Stage 2.7.1.1 | Update Timing
-PHY-1001 : SWNS: 15714, STNS: 0, FEP: 0
-PHY-1001 : End Stage 2.7.1.1 | Update Timing; Time: 0.001177s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 132, reserved = 232, peak = 132;
+PHY-1001 : SWNS: 15814, STNS: 0, FEP: 0
+PHY-1001 : End Stage 2.7.1.1 | Update Timing; Time: 0.001445s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 132, reserved = 239, peak = 132;
 
 PHY-1001 : Stage 2.7.1.2 | GP Iteration
-PHY-1001 : End Stage 2.7.1.2 | GP Iteration; Time: 0.100069s wall, 0.187500s user + 0.062500s system = 0.250000s CPU (249.8%); Memory(MB): used = 132, reserved = 232, peak = 132;
+PHY-1001 : End Stage 2.7.1.2 | GP Iteration; Time: 0.133011s wall, 0.296875s user + 0.078125s system = 0.375000s CPU (281.9%); Memory(MB): used = 132, reserved = 239, peak = 132;
 
-PHY-3001 : Multithread accelerating rate: 2.47
-PHY-3001 : Low accelerating rate: 2.47. This may happen when it is heavy-loaded.
-PHY-3001 : Final: Len = 9169.2, Over = 4.25
-PHY-3001 : End incremental placement;  0.108258s wall, 0.187500s user + 0.062500s system = 0.250000s CPU (230.9%)
+PHY-3001 : Multithread accelerating rate: 2.78
+PHY-3001 : Low accelerating rate: 2.78. This may happen when it is heavy-loaded.
+PHY-3001 : Final: Len = 9546.4, Over = 3.59375
+PHY-3001 : End incremental placement;  0.142619s wall, 0.296875s user + 0.078125s system = 0.375000s CPU (262.9%)
 
-OPT-1001 : Total overflow 8.09 peak overflow 2.62
+OPT-1001 : Total overflow 14.75 peak overflow 3.66
 RUN-1001 : HFN opt statistic
 RUN-1001 : ------------------------------------------------------
 RUN-1001 :   DriverCell type  |  HFN count  |  Duplicated count  
@@ -686,128 +690,129 @@ RUN-1001 : ------------------------------------------------------
 RUN-1001 :         REG        |      0      |         0          
 RUN-1001 :        LUT6        |      0      |         0          
 RUN-1001 :        LUT5        |      0      |         0          
-RUN-1001 :        LUT4        |      1      |         9          
+RUN-1001 :        LUT4        |      1      |         6          
 RUN-1001 :        LUT3        |      0      |         0          
 RUN-1001 :        LUT2        |      0      |         0          
-RUN-1001 :        TOTAL       |      1      |         9          
+RUN-1001 :        TOTAL       |      1      |         6          
 RUN-1001 : ------------------------------------------------------
-OPT-1001 : End high-fanout net optimization;  0.128422s wall, 0.203125s user + 0.062500s system = 0.265625s CPU (206.8%)
+OPT-1001 : End high-fanout net optimization;  0.163622s wall, 0.296875s user + 0.093750s system = 0.390625s CPU (238.7%)
 
 OPT-1001 : Update timing in Manhattan mode
-OPT-1001 : End timing update;  0.009847s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%)
+OPT-1001 : End timing update;  0.010469s wall, 0.015625s user + 0.000000s system = 0.015625s CPU (149.2%)
 
-OPT-1001 : Current memory(MB): used = 132, reserved = 232, peak = 132.
-OPT-1001 : End Stage 2.7.1 | Synthesize High-fanout Net; Time: 0.139378s wall, 0.203125s user + 0.062500s system = 0.265625s CPU (190.6%); Memory(MB): used = 132, reserved = 232, peak = 132;
+OPT-1001 : Current memory(MB): used = 132, reserved = 239, peak = 132.
+OPT-1001 : End Stage 2.7.1 | Synthesize High-fanout Net; Time: 0.175250s wall, 0.312500s user + 0.093750s system = 0.406250s CPU (231.8%); Memory(MB): used = 132, reserved = 239, peak = 132;
 
 OPT-1001 : Stage 2.7.2 | Global Optimization
 OPT-1001 : Start global optimization ...
-OPT-0007 : Start: SWNS 16114 STNS 0 NUM_FEPS 0
+OPT-0007 : Start: SWNS 16040 STNS 0 NUM_FEPS 0
 OPT-1001 : Start congestion update ...
 RUN-1001 : Generating global routing grids ...
 RUN-1001 : Building simple global routing graph ...
 PHY-1001 : Generate routing nets ...
-PHY-1001 : Reuse net number 0/188.
+PHY-1001 : Reuse net number 0/200.
 PHY-1001 : Global iterations in 24 thread ...
-PHY-1002 : len = 9496, over cnt = 13(0%), over = 41, worst = 9
-PHY-1002 : len = 9800, over cnt = 9(0%), over = 14, worst = 3
-PHY-1002 : len = 10008, over cnt = 5(0%), over = 5, worst = 1
-PHY-1002 : len = 10152, over cnt = 0(0%), over = 0, worst = 0
-PHY-1001 : End global iterations;  0.017144s wall, 0.015625s user + 0.000000s system = 0.015625s CPU (91.1%)
+PHY-1002 : len = 10096, over cnt = 19(0%), over = 56, worst = 6
+PHY-1002 : len = 10488, over cnt = 13(0%), over = 17, worst = 2
+PHY-1002 : len = 10672, over cnt = 6(0%), over = 6, worst = 1
+PHY-1002 : len = 10800, over cnt = 0(0%), over = 0, worst = 0
+PHY-1001 : End global iterations;  0.020632s wall, 0.000000s user + 0.015625s system = 0.015625s CPU (75.7%)
 
 PHY-1001 : Congestion index:
-PHY-1001 : top1  = 13.12(S 21.21, N 18.19, E 9.61, W 12.76, I 0.00, O 0.00)
-PHY-1001 : top5  = 4.80(S 7.18, N 5.45, E 2.29, W 4.40, I 0.00, O 0.00)
-PHY-1001 : top10 = 2.47(S 3.58, N 2.71, E 1.14, W 2.19, I 0.00, O 0.00)
-PHY-1001 : top15 = 1.65(S 2.39, N 1.81, E 0.76, W 1.46, I 0.00, O 0.00)
-OPT-1001 : End congestion update;  0.055515s wall, 0.046875s user + 0.015625s system = 0.062500s CPU (112.6%)
+PHY-1001 : top1  = 15.41(S 22.50, N 19.57, E 9.83, W 15.43, I 0.00, O 0.00)
+PHY-1001 : top5  = 5.06(S 7.77, N 5.75, E 2.47, W 5.34, I 0.00, O 0.00)
+PHY-1001 : top10 = 2.69(S 3.87, N 2.86, E 1.23, W 2.66, I 0.00, O 0.00)
+PHY-1001 : top15 = 1.79(S 2.58, N 1.91, E 0.82, W 1.77, I 0.00, O 0.00)
+OPT-1001 : End congestion update;  0.062199s wall, 0.046875s user + 0.015625s system = 0.062500s CPU (100.5%)
 
 OPT-1001 : Overall commit ratio -1.00
-OPT-1001 : End global optimization;  0.055652s wall, 0.046875s user + 0.015625s system = 0.062500s CPU (112.3%)
+OPT-1001 : End global optimization;  0.062347s wall, 0.046875s user + 0.015625s system = 0.062500s CPU (100.2%)
 
-OPT-1001 : Current memory(MB): used = 152, reserved = 233, peak = 152.
-OPT-1001 : End Stage 2.7.2 | Global Optimization; Time: 0.057138s wall, 0.046875s user + 0.015625s system = 0.062500s CPU (109.4%); Memory(MB): used = 152, reserved = 233, peak = 152;
+OPT-1001 : Current memory(MB): used = 153, reserved = 132, peak = 153.
+OPT-1001 : End Stage 2.7.2 | Global Optimization; Time: 0.064543s wall, 0.046875s user + 0.015625s system = 0.062500s CPU (96.8%); Memory(MB): used = 153, reserved = 132, peak = 153;
 
-OPT-0007 : End flow prepack: SWNS 16114 STNS 0 NUM_FEPS 0
-OPT-1001 : End physical optimization;  0.197774s wall, 0.343750s user + 0.109375s system = 0.453125s CPU (229.1%)
+OPT-0007 : End flow prepack: SWNS 16040 STNS 0 NUM_FEPS 0
+OPT-1001 : End physical optimization;  0.241249s wall, 0.359375s user + 0.109375s system = 0.468750s CPU (194.3%)
 
-PHY-1001 : End Stage 2.7 | Optimize Design; Time: 0.197836s wall, 0.343750s user + 0.109375s system = 0.453125s CPU (229.0%); Memory(MB): used = 152, reserved = 233, peak = 152;
+PHY-1001 : End Stage 2.7 | Optimize Design; Time: 0.241307s wall, 0.359375s user + 0.109375s system = 0.468750s CPU (194.3%); Memory(MB): used = 153, reserved = 132, peak = 153;
 
 PHY-1001 : Stage 2.8 | Place Packing
 PHY-1001 : Stage 2.8.1 | Packing
 SYN-4007 : Packing 0 MUX to BLE ...
 SYN-4008 : Packed 0 MUX and 0 SEQ to BLE.
-SYN-4007 : Packing 117 LUT to BLE ...
-SYN-4008 : Packed 117 LUT and 38 SEQ to BLE.
-SYN-4003 : Packing 54 remaining SEQ's ...
-SYN-4005 : Packed 32 SEQ with LUT/SLICE
-SYN-4006 : 51 single LUT's are left
-SYN-4006 : 22 single SEQ's are left
-SYN-4011 : Packing model "top_secondary_hdmi_handshake_diag" (AL_USER_NORMAL) with 139/218 primitive instances ...
+SYN-4007 : Packing 125 LUT to BLE ...
+SYN-4008 : Packed 125 LUT and 42 SEQ to BLE.
+SYN-4003 : Packing 57 remaining SEQ's ...
+SYN-4005 : Packed 29 SEQ with LUT/SLICE
+SYN-4006 : 59 single LUT's are left
+SYN-4006 : 28 single SEQ's are left
+SYN-4011 : Packing model "top_secondary_hdmi_handshake_diag" (AL_USER_NORMAL) with 153/232 primitive instances ...
 PHY-1001 : Populate physical database on model top_secondary_hdmi_handshake_diag.
-RUN-1001 : There are total 155 instances
-RUN-1001 : 62 mslices, 62 lslices, 28 pads, 0 brams, 0 dsps
-RUN-1001 : There are total 347 nets
-RUN-1001 : 226 nets have 2 pins
-RUN-1001 : 77 nets have [3 - 5] pins
-RUN-1001 : 25 nets have [6 - 10] pins
-RUN-1001 : 13 nets have [11 - 20] pins
-RUN-1001 : 5 nets have [21 - 99] pins
+RUN-1001 : There are total 161 instances
+RUN-1001 : 65 mslices, 65 lslices, 28 pads, 0 brams, 0 dsps
+RUN-1001 : There are total 361 nets
+RUN-1001 : 231 nets have 2 pins
+RUN-1001 : 100 nets have [3 - 5] pins
+RUN-1001 : 15 nets have [6 - 10] pins
+RUN-1001 : 8 nets have [11 - 20] pins
+RUN-1001 : 6 nets have [21 - 99] pins
 RUN-1001 : 1 nets have 100+ pins
 PHY-3001 : Target density is 80%
 RUN-1002 : start command "start_timer"
-PHY-1001 : End Stage 2.8.1 | Packing; Time: 0.039252s wall, 0.046875s user + 0.000000s system = 0.046875s CPU (119.4%); Memory(MB): used = 155, reserved = 233, peak = 155;
+PHY-1001 : End Stage 2.8.1 | Packing; Time: 0.042182s wall, 0.046875s user + 0.000000s system = 0.046875s CPU (111.1%); Memory(MB): used = 155, reserved = 135, peak = 155;
 
 PHY-1001 : Stage 2.8.2 | Post Pack GP
 PHY-3001 : Target density is 80%
 PHY-3001 : Cell area utilization is 1%
-PHY-3001 : After packing: Len = 9298.8, Over = 3.75
+PHY-3001 : After packing: Len = 9822.6, Over = 5.25
 PHY-3001 : Target density is 80%
 PHY-1001 : Stage 2.8.2.1 | Update Timing
-PHY-1001 : SWNS: 16597, STNS: 0, FEP: 0
-PHY-1001 : End Stage 2.8.2.1 | Update Timing; Time: 0.001010s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 155, reserved = 233, peak = 155;
+PHY-1001 : SWNS: 16318, STNS: 0, FEP: 0
+PHY-1001 : End Stage 2.8.2.1 | Update Timing; Time: 0.000950s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 155, reserved = 135, peak = 155;
 
 PHY-1001 : Stage 2.8.2.2 | GP Iteration
-PHY-1001 : End Stage 2.8.2.2 | GP Iteration; Time: 0.271554s wall, 0.734375s user + 0.359375s system = 1.093750s CPU (402.8%); Memory(MB): used = 155, reserved = 233, peak = 155;
+PHY-1001 : End Stage 2.8.2.2 | GP Iteration; Time: 0.106790s wall, 0.187500s user + 0.109375s system = 0.296875s CPU (278.0%); Memory(MB): used = 155, reserved = 135, peak = 155;
 
-PHY-3001 : Multithread accelerating rate: 4.02
-PHY-1001 : End Stage 2.8.2 | Post Pack GP; Time: 0.275962s wall, 0.734375s user + 0.359375s system = 1.093750s CPU (396.3%); Memory(MB): used = 155, reserved = 233, peak = 155;
+PHY-3001 : Multithread accelerating rate: 2.75
+PHY-3001 : Low accelerating rate: 2.75. This may happen when it is heavy-loaded.
+PHY-1001 : End Stage 2.8.2 | Post Pack GP; Time: 0.111627s wall, 0.187500s user + 0.109375s system = 0.296875s CPU (266.0%); Memory(MB): used = 155, reserved = 135, peak = 155;
 
-PHY-1001 : End Stage 2.8 | Place Packing; Time: 0.315371s wall, 0.781250s user + 0.359375s system = 1.140625s CPU (361.7%); Memory(MB): used = 155, reserved = 233, peak = 155;
+PHY-1001 : End Stage 2.8 | Place Packing; Time: 0.153944s wall, 0.234375s user + 0.109375s system = 0.343750s CPU (223.3%); Memory(MB): used = 155, reserved = 135, peak = 155;
 
 PHY-1001 : Stage 2.9 | Legalization
-PHY-3001 : Before Legalized: Len = 9226.3
-PHY-3001 : After Legalized: Len = 11480.8, Over = 0
-PHY-1001 : End Stage 2.9 | Legalization; Time: 0.003550s wall, 0.000000s user + 0.015625s system = 0.015625s CPU (440.1%); Memory(MB): used = 155, reserved = 233, peak = 155;
+PHY-3001 : Before Legalized: Len = 9719.7
+PHY-3001 : After Legalized: Len = 12802.6, Over = 0
+PHY-1001 : End Stage 2.9 | Legalization; Time: 0.003644s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 155, reserved = 135, peak = 155;
 
 PHY-1001 : Stage 2.10 | Global Placement Step 3
 PHY-3001 : Target density is 80%
 PHY-1001 : Stage 2.10.1 | Update Timing
-PHY-1001 : SWNS: 16450, STNS: 0, FEP: 0
-PHY-1001 : End Stage 2.10.1 | Update Timing; Time: 0.008851s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 155, reserved = 233, peak = 155;
+PHY-1001 : SWNS: 15957, STNS: 0, FEP: 0
+PHY-1001 : End Stage 2.10.1 | Update Timing; Time: 0.009137s wall, 0.015625s user + 0.000000s system = 0.015625s CPU (171.0%); Memory(MB): used = 155, reserved = 135, peak = 155;
 
 PHY-1001 : Stage 2.10.2 | GP Iteration
-PHY-1001 : End Stage 2.10.2 | GP Iteration; Time: 0.052331s wall, 0.109375s user + 0.046875s system = 0.156250s CPU (298.6%); Memory(MB): used = 155, reserved = 233, peak = 155;
+PHY-1001 : End Stage 2.10.2 | GP Iteration; Time: 0.141274s wall, 0.406250s user + 0.078125s system = 0.484375s CPU (342.9%); Memory(MB): used = 155, reserved = 135, peak = 155;
 
-PHY-3001 : Multithread accelerating rate: 2.95
-PHY-3001 : Low accelerating rate: 2.95. This may happen when it is heavy-loaded.
-PHY-1001 : End Stage 2.10 | Global Placement Step 3; Time: 0.062102s wall, 0.109375s user + 0.046875s system = 0.156250s CPU (251.6%); Memory(MB): used = 155, reserved = 233, peak = 155;
+PHY-3001 : Multithread accelerating rate: 3.41
+PHY-3001 : Low accelerating rate: 3.41. This may happen when it is heavy-loaded.
+PHY-1001 : End Stage 2.10 | Global Placement Step 3; Time: 0.151376s wall, 0.421875s user + 0.078125s system = 0.500000s CPU (330.3%); Memory(MB): used = 155, reserved = 135, peak = 155;
 
 PHY-1001 : Stage 2.11 | Final Legalization
-PHY-3001 : Before Legalized: Len = 9534.4
-PHY-3001 : After Legalized: Len = 11251.8, Over = 0
-PHY-1001 : End Stage 2.11 | Final Legalization; Time: 0.003439s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 155, reserved = 233, peak = 155;
+PHY-3001 : Before Legalized: Len = 9976.7
+PHY-3001 : After Legalized: Len = 11375.6, Over = 0
+PHY-1001 : End Stage 2.11 | Final Legalization; Time: 0.003419s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 155, reserved = 135, peak = 155;
 
-PHY-1001 : End Stage 2 | Global Placement; Time: 1.507763s wall, 2.671875s user + 1.890625s system = 4.562500s CPU (302.6%); Memory(MB): used = 155, reserved = 233, peak = 155;
+PHY-1001 : End Stage 2 | Global Placement; Time: 1.133181s wall, 2.046875s user + 1.140625s system = 3.187500s CPU (281.3%); Memory(MB): used = 155, reserved = 135, peak = 155;
 
 PHY-1001 : Stage 3 | Detailed Placement
 PHY-1001 : Stage 3.1 | SLICE Detailed Placement
 PHY-1001 : Stage 3.1.1 | Spreading
-PHY-3001 : End spreading;  0.001201s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%)
+PHY-3001 : End spreading;  0.001081s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%)
 
-PHY-1001 : End Stage 3.1.1 | Spreading; Time: 0.001255s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 155, reserved = 233, peak = 155;
+PHY-1001 : End Stage 3.1.1 | Spreading; Time: 0.001138s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 155, reserved = 135, peak = 155;
 
-PHY-3001 : Final: Len = 11251.8, Over = 0
-PHY-1001 : End Stage 3.1 | SLICE Detailed Placement; Time: 0.003351s wall, 0.015625s user + 0.000000s system = 0.015625s CPU (466.3%); Memory(MB): used = 155, reserved = 233, peak = 155;
+PHY-3001 : Final: Len = 11375.6, Over = 0
+PHY-1001 : End Stage 3.1 | SLICE Detailed Placement; Time: 0.003072s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 155, reserved = 135, peak = 155;
 
 PHY-3001 : End Detailed Place; 
 PHY-1001 : Stage 3.2 | Optimize Design
@@ -819,20 +824,20 @@ OPT-1001 : Clean unloaded insts before merging registers
 PHY-1001 : Populate physical database on model top_secondary_hdmi_handshake_diag.
 PHY-1001 : Populate physical database on model top_secondary_hdmi_handshake_diag.
 OPT-1001 : Total overflow 0.00 peak overflow 0.00
-OPT-1001 : End optimize duplicated nets. Total 8 instances are merged and 26 sinks are reconnected,  0.003030s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%)
+OPT-1001 : End optimize duplicated nets. Total 6 instances are merged and 0 sinks are reconnected,  0.003154s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%)
 
-OPT-1001 : End high-fanout net optimization;  0.003086s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%)
+OPT-1001 : End high-fanout net optimization;  0.003206s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%)
 
 OPT-1001 : Update timing in Manhattan mode
 RUN-1002 : start command "start_timer"
-OPT-1001 : End timing update;  0.017538s wall, 0.015625s user + 0.000000s system = 0.015625s CPU (89.1%)
+OPT-1001 : End timing update;  0.019713s wall, 0.015625s user + 0.000000s system = 0.015625s CPU (79.3%)
 
-OPT-1001 : Current memory(MB): used = 155, reserved = 233, peak = 155.
-OPT-1001 : End Stage 3.2.1 | Physical Optimization; Time: 0.021657s wall, 0.015625s user + 0.000000s system = 0.015625s CPU (72.1%); Memory(MB): used = 155, reserved = 233, peak = 155;
+OPT-1001 : Current memory(MB): used = 156, reserved = 135, peak = 156.
+OPT-1001 : End Stage 3.2.1 | Physical Optimization; Time: 0.024074s wall, 0.031250s user + 0.000000s system = 0.031250s CPU (129.8%); Memory(MB): used = 156, reserved = 135, peak = 156;
 
 OPT-1001 : Stage 3.2.2 | Synthesize High-fanout Net
 OPT-1001 : Start high-fanout net optimization in post-pack flow with medium effort ...
-OPT-1001 : Start: SWNS 16400 STNS 0 NUM_FEPS 0
+OPT-1001 : Start: SWNS 16207 STNS 0 NUM_FEPS 0
 OPT-1001 : Total overflow 0.00 peak overflow 0.00
 PHY-1001 : Populate physical database on model top_secondary_hdmi_handshake_diag.
 OPT-1001 : 0 high-fanout net processed.
@@ -845,80 +850,82 @@ RUN-1001 :       LSLICE       |      0      |         0
 RUN-1001 :       MSLICE       |      0      |         0          
 RUN-1001 :        TOTAL       |      0      |         0          
 RUN-1001 : ------------------------------------------------------
-OPT-1001 : End high-fanout net optimization;  0.003875s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%)
+OPT-1001 : End high-fanout net optimization;  0.004013s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%)
 
-OPT-1001 : Current memory(MB): used = 155, reserved = 233, peak = 155.
-OPT-1001 : End Stage 3.2.2 | Synthesize High-fanout Net; Time: 0.004964s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 155, reserved = 233, peak = 155;
+OPT-1001 : Current memory(MB): used = 156, reserved = 135, peak = 156.
+OPT-1001 : End Stage 3.2.2 | Synthesize High-fanout Net; Time: 0.005126s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 156, reserved = 135, peak = 156;
 
 OPT-1001 : Stage 3.2.3 | Optimize Path
 OPT-1001 : Start path based optimization ...
-OPT-0007 : Start: SWNS 16400 STNS 0 NUM_FEPS 0 with mode 0
+OPT-0007 : Start: SWNS 16207 STNS 0 NUM_FEPS 0 with mode 0
 OPT-0007 : Skip optimization due to slack greater than threshold 3000
-OPT-1001 : Current memory(MB): used = 155, reserved = 233, peak = 155.
-OPT-1001 : End Stage 3.2.3 | Optimize Path; Time: 0.001158s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 155, reserved = 233, peak = 155;
+OPT-1001 : Current memory(MB): used = 156, reserved = 135, peak = 156.
+OPT-1001 : End Stage 3.2.3 | Optimize Path; Time: 0.001114s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 156, reserved = 135, peak = 156;
 
 OPT-1001 : Stage 3.2.4 | Optimize Duplicated Nets
-OPT-1001 : Start: WNS 16400 TNS 0 NUM_FEPS 0
+OPT-1001 : Start: WNS 16207 TNS 0 NUM_FEPS 0
 OPT-1001 : Clean unloaded insts before merging registers
 PHY-1001 : Populate physical database on model top_secondary_hdmi_handshake_diag.
 PHY-1001 : Populate physical database on model top_secondary_hdmi_handshake_diag.
 OPT-1001 : Total overflow 0.00 peak overflow 0.00
-OPT-1001 : End optimize duplicated nets. Total 0 instances are merged and 9 sinks are reconnected,  0.003441s wall, 0.015625s user + 0.000000s system = 0.015625s CPU (454.1%)
+OPT-1001 : End optimize duplicated nets. Total 0 instances are merged and 0 sinks are reconnected,  0.003573s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%)
 
 OPT-1001 : Update timing in Manhattan mode
 RUN-1002 : start command "start_timer"
-OPT-1001 : End timing update;  0.017173s wall, 0.015625s user + 0.000000s system = 0.015625s CPU (91.0%)
+OPT-1001 : End timing update;  0.018642s wall, 0.015625s user + 0.000000s system = 0.015625s CPU (83.8%)
 
-OPT-1001 : Current memory(MB): used = 155, reserved = 233, peak = 155.
-OPT-1001 : End Stage 3.2.4 | Optimize Duplicated Nets; Time: 0.021676s wall, 0.031250s user + 0.000000s system = 0.031250s CPU (144.2%); Memory(MB): used = 155, reserved = 233, peak = 155;
+OPT-1001 : Current memory(MB): used = 156, reserved = 135, peak = 156.
+OPT-1001 : End Stage 3.2.4 | Optimize Duplicated Nets; Time: 0.023329s wall, 0.015625s user + 0.000000s system = 0.015625s CPU (67.0%); Memory(MB): used = 156, reserved = 135, peak = 156;
 
 OPT-1001 : Stage 3.2.5 | Swap Pins
 OPT-1001 : Start pin optimization...
 OPT-0007 : Skip optimization due to slack greater than threshold 3000
-OPT-1001 : Current memory(MB): used = 155, reserved = 233, peak = 155.
-OPT-1001 : End Stage 3.2.5 | Swap Pins; Time: 0.000896s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 155, reserved = 233, peak = 155;
+OPT-1001 : Current memory(MB): used = 156, reserved = 135, peak = 156.
+OPT-1001 : End Stage 3.2.5 | Swap Pins; Time: 0.000973s wall, 0.015625s user + 0.000000s system = 0.015625s CPU (n/a%); Memory(MB): used = 156, reserved = 135, peak = 156;
 
-OPT-0007 : End flow postpack: SWNS 16400 STNS 0 NUM_FEPS 0
+OPT-0007 : End flow postpack: SWNS 16207 STNS 0 NUM_FEPS 0
 RUN-1001 : Generating global routing grids ...
 PHY-1001 : Generate routing nets ...
-PHY-1001 : Reuse net number 4/246.
+PHY-1001 : Reuse net number 4/264.
 PHY-1001 : Global iterations in 24 thread ...
-PHY-1002 : len = 11000, over cnt = 30(0%), over = 52, worst = 6
-PHY-1002 : len = 11304, over cnt = 12(0%), over = 13, worst = 2
-PHY-1002 : len = 11464, over cnt = 0(0%), over = 0, worst = 0
-PHY-1001 : End global iterations;  0.025291s wall, 0.031250s user + 0.000000s system = 0.031250s CPU (123.6%)
+PHY-1002 : len = 11544, over cnt = 30(0%), over = 48, worst = 4
+PHY-1002 : len = 11752, over cnt = 9(0%), over = 11, worst = 2
+PHY-1002 : len = 11856, over cnt = 1(0%), over = 1, worst = 1
+PHY-1002 : len = 11872, over cnt = 0(0%), over = 0, worst = 0
+PHY-1001 : End global iterations;  0.022849s wall, 0.015625s user + 0.000000s system = 0.015625s CPU (68.4%)
 
 PHY-1001 : Congestion index:
-PHY-1001 : top1  = 17.52(S 21.98, N 21.55, E 14.31, W 17.82, I 0.00, O 0.00)
-PHY-1001 : top5  = 6.20(S 7.91, N 6.56, E 3.90, W 6.74, I 0.00, O 0.00)
-PHY-1001 : top10 = 3.17(S 3.94, N 3.27, E 1.94, W 3.36, I 0.00, O 0.00)
-PHY-1001 : top15 = 2.12(S 2.63, N 2.18, E 1.30, W 2.24, I 0.00, O 0.00)
+PHY-1001 : top1  = 17.48(S 24.31, N 20.24, E 15.17, W 16.83, I 0.00, O 0.00)
+PHY-1001 : top5  = 6.33(S 8.50, N 6.67, E 4.26, W 6.00, I 0.00, O 0.00)
+PHY-1001 : top10 = 3.20(S 4.24, N 3.32, E 2.12, W 2.99, I 0.00, O 0.00)
+PHY-1001 : top15 = 2.14(S 2.83, N 2.22, E 1.42, W 2.00, I 0.00, O 0.00)
 RUN-1001 : QoR Analysis:
-OPT-0007 :   SWNS 16400 STNS 0 NUM_FEPS 0
+OPT-0007 :   SWNS 16207 STNS 0 NUM_FEPS 0
 RUN-1001 :   No local congestion issue, and most congested 1% tile average routing util is 17.068966
 RUN-1001 :   Top critical paths
-RUN-1001 :       #1 path slack 16400ps with logic level 5 
-RUN-1001 :       #2 path slack 16471ps with logic level 5 
-RUN-1001 :       #3 path slack 16475ps with logic level 5 
-OPT-1001 : End physical optimization;  0.090140s wall, 0.078125s user + 0.000000s system = 0.078125s CPU (86.7%)
+RUN-1001 :       #1 path slack 16207ps with logic level 6 
+RUN-1001 :       #2 path slack 16225ps with logic level 6 
+RUN-1001 :       #3 path slack 16257ps with logic level 6 
+RUN-1001 :       #4 path slack 16258ps with logic level 6 
+OPT-1001 : End physical optimization;  0.092889s wall, 0.093750s user + 0.000000s system = 0.093750s CPU (100.9%)
 
-PHY-1001 : End Stage 3.2 | Optimize Design; Time: 0.090224s wall, 0.078125s user + 0.000000s system = 0.078125s CPU (86.6%); Memory(MB): used = 156, reserved = 233, peak = 156;
+PHY-1001 : End Stage 3.2 | Optimize Design; Time: 0.092959s wall, 0.093750s user + 0.000000s system = 0.093750s CPU (100.9%); Memory(MB): used = 156, reserved = 135, peak = 156;
 
-PHY-1001 : End Stage 3 | Detailed Placement; Time: 0.094192s wall, 0.093750s user + 0.000000s system = 0.093750s CPU (99.5%); Memory(MB): used = 156, reserved = 233, peak = 156;
+PHY-1001 : End Stage 3 | Detailed Placement; Time: 0.096651s wall, 0.093750s user + 0.000000s system = 0.093750s CPU (97.0%); Memory(MB): used = 156, reserved = 135, peak = 156;
 
 PHY-1001 : Stage 4 | Optimize Design
 PHY-3001 : Start incremental legalization ...
 PHY-1001 : Populate physical database on model top_secondary_hdmi_handshake_diag.
 PHY-3001 : Target density is 80%
 PHY-3001 : Target density is 80%
-PHY-3001 : Initial: Len = 10475.2, Over = 0
+PHY-3001 : Initial: Len = 10911.4, Over = 0
 PHY-1001 : Stage 4.1 | Spreading
-PHY-3001 : End spreading;  0.001266s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%)
+PHY-3001 : End spreading;  0.001187s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%)
 
-PHY-1001 : End Stage 4.1 | Spreading; Time: 0.001346s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 156, reserved = 233, peak = 156;
+PHY-1001 : End Stage 4.1 | Spreading; Time: 0.001250s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 157, reserved = 135, peak = 157;
 
-PHY-3001 : Final: Len = 10475.2, Over = 0
-PHY-3001 : End incremental legalization;  0.011117s wall, 0.015625s user + 0.000000s system = 0.015625s CPU (140.5%)
+PHY-3001 : Final: Len = 10911.4, Over = 0
+PHY-3001 : End incremental legalization;  0.011474s wall, 0.015625s user + 0.000000s system = 0.015625s CPU (136.2%)
 
 RUN-1002 : start command "report_qor -step place -file place.qor"
 RUN-1001 : Generating global routing grids ...
@@ -926,70 +933,70 @@ RUN-1001 : Generating global routing grids ...
 | QoR metrics               |         value               |
 -----------------------------------------------------------
 | Timing                    |                             |
-|     Setup WNS             |        16400                |
+|     Setup WNS             |        16207                |
 |     Setup TNS             |            0                |
 |     Num of violated S-EP  |            0                |
-|     FMAX                  |   277.778MHz                |
+|     FMAX                  |   263.644MHz                |
 |     SWNS path clock period |      20000ps                |
 |     Hold WNS              |          364                |
 |     Hold TNS              |            0                |
 |     Num of violated H-EP  |            0                |
 -----------------------------------------------------------
 | Routing Resource          |                             |
-|     Wire length           |        10422                |
+|     Wire length           |        10855                |
 -----------------------------------------------------------
 | Utilization               |                             |
-|     #slices               |          122                |
-|     slices percentage     |        1.24%                |
+|     #slices               |          128                |
+|     slices percentage     |        1.31%                |
 |     #RAMs                 |            0                |
 |     #DSPs                 |            0                |
 |     #DRAMHARDCON          |            0                |
 -----------------------------------------------------------
 | Congestion                |                             |
-|     Top 1% tile util      |           10                |
+|     Top 1% tile util      |           13                |
 |     Top 1% tile avg util  |       17.07%                |
 |     Over 100% util #tile  |            0                |
 -----------------------------------------------------------
 Report place stage QoR done.
 
-PHY-1001 : End Stage 4 | Optimize Design; Time: 0.048531s wall, 0.046875s user + 0.000000s system = 0.046875s CPU (96.6%); Memory(MB): used = 156, reserved = 233, peak = 156;
+PHY-1001 : End Stage 4 | Optimize Design; Time: 0.049305s wall, 0.046875s user + 0.000000s system = 0.046875s CPU (95.1%); Memory(MB): used = 157, reserved = 135, peak = 157;
 
 PHY-1001 : Stage 5 | DRC Check
 PHY-1001 : Stage 5.1 | Force Route Constraint Check
 PHY-1001 : Check Pass.
-PHY-1001 : End Stage 5.1 | Force Route Constraint Check; Time: 0.000089s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 156, reserved = 233, peak = 156;
+PHY-1001 : End Stage 5.1 | Force Route Constraint Check; Time: 0.000094s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 157, reserved = 135, peak = 157;
 
 PHY-1001 : Stage 5.2 | Duplicated SelfDriven Check
 PHY-1001 : Check pass.
-PHY-1001 : End Stage 5.2 | Duplicated SelfDriven Check; Time: 0.000310s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 156, reserved = 233, peak = 156;
+PHY-1001 : End Stage 5.2 | Duplicated SelfDriven Check; Time: 0.000329s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 157, reserved = 135, peak = 157;
 
 PHY-1001 : Stage 5.3 | Clock Rule Check
-PHY-1001 : End Stage 5.3 | Clock Rule Check; Time: 0.000021s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 156, reserved = 233, peak = 156;
+PHY-1001 : End Stage 5.3 | Clock Rule Check; Time: 0.000024s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 157, reserved = 135, peak = 157;
 
-PHY-1001 : End Stage 5 | DRC Check; Time: 0.008954s wall, 0.015625s user + 0.000000s system = 0.015625s CPU (174.5%); Memory(MB): used = 156, reserved = 233, peak = 156;
+PHY-1001 : End Stage 5 | DRC Check; Time: 0.008535s wall, 0.015625s user + 0.000000s system = 0.015625s CPU (183.1%); Memory(MB): used = 157, reserved = 135, peak = 157;
 
 OPT-1001 : QoR tracer report on placement steps:
     SWNS [   incr ]    STNS [   incr ]    FEPS [   incr ]    CRIT [   incr ]      CELL [     incr ]        WL [     incr ]    CONG [   incr ]    PDES [   incr ]   RT(s) [   incr ]   MEM(mb) [     incr ]
-       0 [      0 ]       0 [      0 ]       0 [      0 ]       0 [      0 ]       279 [        0 ]         0 [        0 ]    0.00 [   0.00 ]       0 [      0 ]       0 [      0 ]       126 [        0 ] : preplace:simplify_lut
-       0 [      0 ]       0 [      0 ]       0 [      0 ]       0 [      0 ]       279 [        0 ]         0 [        0 ]    0.00 [   0.00 ]       0 [      0 ]       0 [      0 ]       126 [        0 ] : preplace:sweep
-       0 [      0 ]       0 [      0 ]       0 [      0 ]       0 [      0 ]       279 [        0 ]         0 [        0 ]    0.00 [   0.00 ]       0 [      0 ]       0 [      0 ]       126 [        0 ] : preplace:hfn_opt
-   15423 [  15423 ]       0 [      0 ]       0 [      0 ]   15760 [  15760 ]       279 [        0 ]     11093 [    11093 ]    0.00 [   0.00 ]       0 [      0 ]       0 [      0 ]       132 [        6 ] : step1_gp
-   15423 [      0 ]       0 [      0 ]       0 [      0 ]   15760 [      0 ]       279 [        0 ]     11093 [        0 ]    0.00 [   0.00 ]       0 [      0 ]       0 [      0 ]       132 [        0 ] : step1_legal
-   15714 [    291 ]       0 [      0 ]       0 [      0 ]   15864 [    104 ]       279 [        0 ]      8478 [    -2615 ]    0.00 [   0.00 ]       0 [      0 ]       0 [      0 ]       132 [        0 ] : step2_gp
-   16114 [    400 ]       0 [      0 ]       0 [      0 ]   16264 [    400 ]       288 [        9 ]      9085 [      607 ]    0.00 [   0.00 ]       0 [      0 ]       1 [      1 ]       132 [        0 ] : prepack:hfn_opt
-   16114 [      0 ]       0 [      0 ]       0 [      0 ]   16264 [      0 ]       288 [        0 ]      9085 [        0 ]   12.69 [  12.69 ]       0 [      0 ]       1 [      0 ]       152 [       20 ] : prepack:global_opt
-   16597 [    483 ]       0 [      0 ]       0 [      0 ]   16780 [    516 ]       155 [     -133 ]      9244 [      159 ]   12.69 [   0.00 ]       0 [      0 ]       1 [      0 ]       155 [        3 ] : pack
-   16400 [   -197 ]       0 [      0 ]       0 [      0 ]   16600 [   -180 ]       155 [        0 ]     11197 [     1953 ]   12.69 [   0.00 ]       0 [      0 ]       1 [      0 ]       155 [        0 ] : post_pack_place
-   16400 [      0 ]       0 [      0 ]       0 [      0 ]   16600 [      0 ]       155 [        0 ]     11197 [        0 ]   12.69 [   0.00 ]       0 [      0 ]       1 [      0 ]       155 [        0 ] : post_pack_spreading
-   16400 [      0 ]       0 [      0 ]       0 [      0 ]   16590 [    -10 ]       153 [       -2 ]     10422 [     -775 ]   12.69 [   0.00 ]       0 [      0 ]       1 [      0 ]       155 [        0 ] : postpack:optimize_equivalent_quick
-   16400 [      0 ]       0 [      0 ]       0 [      0 ]   16590 [      0 ]       153 [        0 ]     10422 [        0 ]   12.69 [   0.00 ]       0 [      0 ]       1 [      0 ]       155 [        0 ] : postpack:hfn_opt
-   16400 [      0 ]       0 [      0 ]       0 [      0 ]   16590 [      0 ]       153 [        0 ]     10422 [        0 ]   12.69 [   0.00 ]       0 [      0 ]       1 [      0 ]       155 [        0 ] : postpack:path_opt
-   16400 [      0 ]       0 [      0 ]       0 [      0 ]   16590 [      0 ]       153 [        0 ]     10422 [        0 ]   12.69 [   0.00 ]       0 [      0 ]       1 [      0 ]       155 [        0 ] : postpack:optimize_equivalent
-   16400 [      0 ]       0 [      0 ]       0 [      0 ]   16590 [      0 ]       153 [        0 ]     10422 [        0 ]   12.69 [   0.00 ]       0 [      0 ]       1 [      0 ]       155 [        0 ] : postpack:pin_opt
+       0 [      0 ]       0 [      0 ]       0 [      0 ]       0 [      0 ]       297 [        0 ]         0 [        0 ]    0.00 [   0.00 ]       0 [      0 ]       0 [      0 ]       124 [        0 ] : preplace:simplify_lut
+       0 [      0 ]       0 [      0 ]       0 [      0 ]       0 [      0 ]       297 [        0 ]         0 [        0 ]    0.00 [   0.00 ]       0 [      0 ]       0 [      0 ]       124 [        0 ] : preplace:sweep
+       0 [      0 ]       0 [      0 ]       0 [      0 ]       0 [      0 ]       297 [        0 ]         0 [        0 ]    0.00 [   0.00 ]       0 [      0 ]       0 [      0 ]       125 [        1 ] : preplace:hfn_opt
+   14464 [  14464 ]       0 [      0 ]       0 [      0 ]   14564 [  14564 ]       297 [        0 ]     13584 [    13584 ]    0.00 [   0.00 ]       0 [      0 ]       0 [      0 ]       131 [        6 ] : step1_gp
+   14464 [      0 ]       0 [      0 ]       0 [      0 ]   14564 [      0 ]       297 [        0 ]     13584 [        0 ]    0.00 [   0.00 ]       0 [      0 ]       0 [      0 ]       131 [        0 ] : step1_legal
+   15814 [   1350 ]       0 [      0 ]       0 [      0 ]   15890 [   1326 ]       297 [        0 ]      9439 [    -4145 ]    0.00 [   0.00 ]       0 [      0 ]       0 [      0 ]       131 [        0 ] : step2_gp
+   16040 [    226 ]       0 [      0 ]       0 [      0 ]   16156 [    266 ]       303 [        6 ]      9480 [       41 ]    0.00 [   0.00 ]       0 [      0 ]       0 [      0 ]       132 [        1 ] : prepack:hfn_opt
+   16040 [      0 ]       0 [      0 ]       0 [      0 ]   16156 [      0 ]       303 [        0 ]      9480 [        0 ]   15.03 [  15.03 ]       0 [      0 ]       0 [      0 ]       153 [       21 ] : prepack:global_opt
+   16318 [    278 ]       0 [      0 ]       0 [      0 ]   16501 [    345 ]       161 [     -142 ]      9765 [      285 ]   15.03 [   0.00 ]       0 [      0 ]       0 [      0 ]       155 [        2 ] : pack
+   16207 [   -111 ]       0 [      0 ]       0 [      0 ]   16333 [   -168 ]       161 [        0 ]     11318 [     1553 ]   15.03 [   0.00 ]       0 [      0 ]       1 [      1 ]       155 [        0 ] : post_pack_place
+   16207 [      0 ]       0 [      0 ]       0 [      0 ]   16333 [      0 ]       161 [        0 ]     11318 [        0 ]   15.03 [   0.00 ]       0 [      0 ]       1 [      0 ]       155 [        0 ] : post_pack_spreading
+   16207 [      0 ]       0 [      0 ]       0 [      0 ]   16333 [      0 ]       159 [       -2 ]     10855 [     -463 ]   15.03 [   0.00 ]       0 [      0 ]       1 [      0 ]       156 [        1 ] : postpack:optimize_equivalent_quick
+   16207 [      0 ]       0 [      0 ]       0 [      0 ]   16333 [      0 ]       159 [        0 ]     10855 [        0 ]   15.03 [   0.00 ]       0 [      0 ]       1 [      0 ]       156 [        0 ] : postpack:hfn_opt
+   16207 [      0 ]       0 [      0 ]       0 [      0 ]   16333 [      0 ]       159 [        0 ]     10855 [        0 ]   15.03 [   0.00 ]       0 [      0 ]       1 [      0 ]       156 [        0 ] : postpack:path_opt
+   16207 [      0 ]       0 [      0 ]       0 [      0 ]   16333 [      0 ]       159 [        0 ]     10855 [        0 ]   15.03 [   0.00 ]       0 [      0 ]       1 [      0 ]       156 [        0 ] : postpack:optimize_equivalent
+   16207 [      0 ]       0 [      0 ]       0 [      0 ]   16333 [      0 ]       159 [        0 ]     10855 [        0 ]   15.03 [   0.00 ]       0 [      0 ]       1 [      0 ]       156 [        0 ] : postpack:pin_opt
 
-RUN-1003 : finish command "place" in  1.702210s wall, 2.843750s user + 1.906250s system = 4.750000s CPU (279.0%)
+RUN-1003 : finish command "place" in  1.328141s wall, 2.250000s user + 1.140625s system = 3.390625s CPU (255.3%)
 
-RUN-1004 : used memory is 156 MB, reserved memory is 233 MB, peak memory is 156 MB
+RUN-1004 : used memory is 157 MB, reserved memory is 135 MB, peak memory is 157 MB
 RUN-1002 : start command "update_timing -mode manhattan"
 RUN-1002 : start command "start_timer"
 RUN-1002 : start command "report_area -io_info -file D:/VSCode/CodeFiles/Git_TD/Anlogic2/_build_secondary_hdmi_handshake_diag/secondary_main5e_place.area"
@@ -999,23 +1006,23 @@ RUN-1001 : standard
 IO Statistics
 #IO                        28   out of    188   14.89%
   #input                    4
-  #output                  21
-  #inout                    3
+  #output                  20
+  #inout                    4
 
 Utilization Statistics
-#lut                      213   out of  19600    1.09%
-#reg                      122   out of  19600    0.62%
-#le                       235
-  #lut only               113   out of    235   48.09%
-  #reg only                22   out of    235    9.36%
-  #lut&reg                100   out of    235   42.55%
+#lut                      221   out of  19600    1.13%
+#reg                      129   out of  19600    0.66%
+#le                       249
+  #lut only               120   out of    249   48.19%
+  #reg only                28   out of    249   11.24%
+  #lut&reg                101   out of    249   40.56%
 #bram                       0   out of     64    0.00%
   #bram9k                   0
   #fifo9k                   0
 #bram32k                    0   out of     16    0.00%
 #dsp                        0   out of     29    0.00%
 #pad                       28   out of    188   14.89%
-  #ireg                     6
+  #ireg                     7
   #oreg                     2
   #treg                     0
 #pll                        0   out of      4    0.00%
@@ -1026,17 +1033,17 @@ RUN-1002 : start command "set_param route fix_hold off"
 RUN-1002 : start command "route"
 RUN-1001 : Open license file D:/TD_6.2.1/license/Anlogic.lic
 PHY-1001 : Route runs in 24 thread(s)
-RUN-1001 : There are total 153 instances
-RUN-1001 : 60 mslices, 62 lslices, 28 pads, 0 brams, 0 dsps
-RUN-1001 : There are total 339 nets
-RUN-1001 : 222 nets have 2 pins
-RUN-1001 : 75 nets have [3 - 5] pins
-RUN-1001 : 28 nets have [6 - 10] pins
-RUN-1001 : 6 nets have [11 - 20] pins
-RUN-1001 : 7 nets have [21 - 99] pins
+RUN-1001 : There are total 159 instances
+RUN-1001 : 63 mslices, 65 lslices, 28 pads, 0 brams, 0 dsps
+RUN-1001 : There are total 355 nets
+RUN-1001 : 229 nets have 2 pins
+RUN-1001 : 102 nets have [3 - 5] pins
+RUN-1001 : 10 nets have [6 - 10] pins
+RUN-1001 : 7 nets have [11 - 20] pins
+RUN-1001 : 6 nets have [21 - 99] pins
 RUN-1001 : 1 nets have 100+ pins
 RUN-1002 : start command "start_timer"
-PHY-1001 : 60 mslices, 62 lslices, 28 pads, 0 brams, 0 dsps
+PHY-1001 : 63 mslices, 65 lslices, 28 pads, 0 brams, 0 dsps
 
 PHY-1001 : Stage 1 | Global Routing
 PHY-1001 : Start global routing, caller is route ...
@@ -1046,33 +1053,33 @@ RUN-1001 : Generate nets statistics:
 RUN-1001 : ---------------------------
 RUN-1001 :        Type       |  Nets  
 RUN-1001 : ---------------------------
-RUN-1001 :   TotalRouteNets  |  267   
-RUN-1001 :   DontRouteNets   |   42   
-RUN-1001 :     RouteNets     |  225   
-RUN-1001 :     RouteSinks    |  429   
+RUN-1001 :   TotalRouteNets  |  283   
+RUN-1001 :   DontRouteNets   |   40   
+RUN-1001 :     RouteNets     |  243   
+RUN-1001 :     RouteSinks    |  466   
 RUN-1001 : ---------------------------
 PHY-1001 : Global iterations in 24 thread ...
-PHY-1002 : len = 10984, over cnt = 28(0%), over = 49, worst = 6
-PHY-1002 : len = 11272, over cnt = 12(0%), over = 13, worst = 2
-PHY-1002 : len = 11376, over cnt = 5(0%), over = 5, worst = 1
-PHY-1002 : len = 11464, over cnt = 0(0%), over = 0, worst = 0
-PHY-1001 : End global iterations;  0.027787s wall, 0.031250s user + 0.000000s system = 0.031250s CPU (112.5%)
+PHY-1002 : len = 11544, over cnt = 30(0%), over = 48, worst = 4
+PHY-1002 : len = 11752, over cnt = 9(0%), over = 11, worst = 2
+PHY-1002 : len = 11856, over cnt = 1(0%), over = 1, worst = 1
+PHY-1002 : len = 11872, over cnt = 0(0%), over = 0, worst = 0
+PHY-1001 : End global iterations;  0.023379s wall, 0.031250s user + 0.000000s system = 0.031250s CPU (133.7%)
 
 PHY-1001 : Congestion index:
-PHY-1001 : top1  = 17.42(S 21.55, N 21.55, E 14.31, W 17.74, I 0.00, O 0.00)
-PHY-1001 : top5  = 6.25(S 7.86, N 6.56, E 3.90, W 6.74, I 0.00, O 0.00)
-PHY-1001 : top10 = 3.17(S 3.92, N 3.27, E 1.94, W 3.36, I 0.00, O 0.00)
-PHY-1001 : top15 = 2.11(S 2.61, N 2.18, E 1.30, W 2.24, I 0.00, O 0.00)
-PHY-1001 : End global routing;  0.041663s wall, 0.031250s user + 0.000000s system = 0.031250s CPU (75.0%)
+PHY-1001 : top1  = 17.48(S 24.31, N 20.24, E 15.17, W 16.83, I 0.00, O 0.00)
+PHY-1001 : top5  = 6.33(S 8.50, N 6.67, E 4.26, W 6.00, I 0.00, O 0.00)
+PHY-1001 : top10 = 3.20(S 4.24, N 3.32, E 2.12, W 2.99, I 0.00, O 0.00)
+PHY-1001 : top15 = 2.14(S 2.83, N 2.22, E 1.42, W 2.00, I 0.00, O 0.00)
+PHY-1001 : End global routing;  0.037596s wall, 0.031250s user + 0.000000s system = 0.031250s CPU (83.1%)
 
-PHY-1001 : End Stage 1 | Global Routing; Time: 0.041724s wall, 0.031250s user + 0.000000s system = 0.031250s CPU (74.9%); Memory(MB): used = 156, reserved = 233, peak = 156;
+PHY-1001 : End Stage 1 | Global Routing; Time: 0.037654s wall, 0.031250s user + 0.000000s system = 0.031250s CPU (83.0%); Memory(MB): used = 157, reserved = 135, peak = 157;
 
 PHY-1001 : Stage 2 | Detail Routing
 PHY-1001 : Stage 2.1 | Build Routing Design
 PHY-1001 : Routing in high effort: false
 PHY-1001 : Routing Mode: normal
 PHY-1001 : Generate detailed routing grids ...
-PHY-1001 : End build routing graph; 2.654205s wall, 2.500000s user + 0.109375s system = 2.609375s CPU (98.3%)
+PHY-1001 : End build routing graph; 2.688839s wall, 2.562500s user + 0.078125s system = 2.640625s CPU (98.2%)
 
 PHY-1001 : Generate nets ...
 PHY-1001 : net clk_50m_dup_1 will be routed on clock mesh
@@ -1080,9 +1087,9 @@ RUN-1001 : Generate nets statistics:
 RUN-1001 : -----------------------------
 RUN-1001 :         Type        |  Nets  
 RUN-1001 : -----------------------------
-RUN-1001 :        Route        |  267   
+RUN-1001 :        Route        |  283   
 RUN-1001 :      DontRoute      |   72   
-RUN-1001 :      RouteSinks     |  786   
+RUN-1001 :      RouteSinks     |  818   
 RUN-1001 :   RouteEntitySinks  |   0    
 RUN-1001 :       Lut2Dff       |   0    
 RUN-1001 :       Ram2Dff       |   0    
@@ -1099,82 +1106,86 @@ RUN-1001 : ----------------
 RUN-1001 :   Idx  |  Name  
 RUN-1001 : ----------------
 RUN-1001 : ----------------
-PHY-1001 : End Stage 2.1 | Build Routing Design; Time: 2.663661s wall, 2.500000s user + 0.109375s system = 2.609375s CPU (98.0%); Memory(MB): used = 438, reserved = 417, peak = 438;
+PHY-1001 : End Stage 2.1 | Build Routing Design; Time: 2.697807s wall, 2.562500s user + 0.078125s system = 2.640625s CPU (97.9%); Memory(MB): used = 439, reserved = 418, peak = 439;
 
 RUN-1001 : Top Percentage Crit. Net Stat.
 RUN-1001 : --------------------------------------------------------
 RUN-1001 :   Top %  |  Net Count  |  Avg. Fanout  |   Avg. Slack   
 RUN-1001 : --------------------------------------------------------
-RUN-1001 :     1    |      3      |   5.333333    |  16400.000000  
-RUN-1001 :     2    |      6      |   4.166667    |  16411.833333  
-RUN-1001 :     3    |     10      |   3.600000    |  16435.500000  
-RUN-1001 :     4    |     13      |   3.615385    |  16448.692308  
-RUN-1001 :     5    |     16      |   3.625000    |  16464.812500  
-RUN-1001 :     6    |     20      |   3.700000    |  16496.200000  
-RUN-1001 :     7    |     23      |   4.086957    |  16521.130435  
-RUN-1001 :     8    |     27      |   5.111111    |  16547.333333  
-RUN-1001 :     9    |     30      |   4.966667    |  16565.400000  
-RUN-1001 :    10    |     33      |   4.787879    |  16582.272727  
+RUN-1001 :     1    |      3      |   6.333333    |  16207.000000  
+RUN-1001 :     2    |      7      |   3.714286    |  16209.571429  
+RUN-1001 :     3    |     10      |   3.700000    |  16214.200000  
+RUN-1001 :     4    |     14      |   3.214286    |  16221.928571  
+RUN-1001 :     5    |     17      |   3.235294    |  16236.588235  
+RUN-1001 :     6    |     21      |   2.952381    |  16258.333333  
+RUN-1001 :     7    |     24      |   2.958333    |  16273.875000  
+RUN-1001 :     8    |     28      |   2.892857    |  16303.428571  
+RUN-1001 :     9    |     31      |   2.935484    |  16332.645161  
+RUN-1001 :    10    |     35      |   4.771429    |  16367.114286  
 RUN-1001 : --------------------------------------------------------
 PHY-1001 : Stage 2.2 | Clock Nets Routing
 PHY-1001 : Routed 0% nets.
-PHY-1001 : len = 4768, over cnt = 0(0%), over = 0, worst = 0, crit = 0
-PHY-1001 : End Stage 2.2 | Clock Nets Routing; Time: 0.017253s wall, 0.015625s user + 0.015625s system = 0.031250s CPU (181.1%); Memory(MB): used = 441, reserved = 420, peak = 441;
+PHY-1001 : len = 4856, over cnt = 0(0%), over = 0, worst = 0, crit = 0
+PHY-1001 : End Stage 2.2 | Clock Nets Routing; Time: 0.016077s wall, 0.015625s user + 0.000000s system = 0.015625s CPU (97.2%); Memory(MB): used = 442, reserved = 420, peak = 442;
 
 PHY-1001 : Stage 2.3 | Routing Initialization
-PHY-1001 : Mark 1% net(place mode slack < 16400ps) as critical nets.
+PHY-1001 : Mark 1% net(place mode slack < 16207ps) as critical nets.
 PHY-1001 : Stage 2.3.1 | Normal Nets Routing
 
-PHY-1001 : Routed 78% nets.
-PHY-1001 : len = 20216, over cnt = 22(0%), over = 22, worst = 1, crit = 0
-PHY-1001 : End Stage 2.3.1 | Normal Nets Routing; Time: 0.262477s wall, 0.234375s user + 0.015625s system = 0.250000s CPU (95.2%); Memory(MB): used = 449, reserved = 428, peak = 449;
+PHY-1001 : Routed 79% nets.
+PHY-1001 : len = 20896, over cnt = 14(0%), over = 14, worst = 1, crit = 0
+PHY-1001 : End Stage 2.3.1 | Normal Nets Routing; Time: 0.324438s wall, 0.328125s user + 0.031250s system = 0.359375s CPU (110.8%); Memory(MB): used = 451, reserved = 430, peak = 451;
 
 PHY-1001 : Stage 2.3.2 | Update Timing
 RUN-1002 : start command "start_timer"
 TMR-2502 : Net delay update with mode: Routed
-PHY-1001 : 0/267(0%) critical/total net(s).
-PHY-1001 : Setup: WNS(ns) = 13.382, TNS(ns) = 0.000, FEP = 0 | Hold: WNS(ns) = 0.577, TNS(ns) = 0.000, FEP = 0.
-PHY-1001 : End Stage 2.3.2 | Update Timing; Time: 0.023509s wall, 0.031250s user + 0.000000s system = 0.031250s CPU (132.9%); Memory(MB): used = 449, reserved = 428, peak = 449;
+PHY-1001 : 0/283(0%) critical/total net(s).
+PHY-1001 : Setup: WNS(ns) = 13.659, TNS(ns) = 0.000, FEP = 0 | Hold: WNS(ns) = 0.397, TNS(ns) = 0.000, FEP = 0.
+PHY-1001 : End Stage 2.3.2 | Update Timing; Time: 0.026271s wall, 0.031250s user + 0.000000s system = 0.031250s CPU (119.0%); Memory(MB): used = 452, reserved = 430, peak = 452;
 
-PHY-1001 : End Stage 2.3 | Routing Initialization; Time: 0.288677s wall, 0.265625s user + 0.015625s system = 0.281250s CPU (97.4%); Memory(MB): used = 449, reserved = 428, peak = 449;
+PHY-1001 : End Stage 2.3 | Routing Initialization; Time: 0.353671s wall, 0.359375s user + 0.031250s system = 0.390625s CPU (110.4%); Memory(MB): used = 452, reserved = 430, peak = 452;
 
 PHY-1001 : Stage 2.4 | Routing Optimization
-PHY-1001 : Build lut bridge;  0.045229s wall, 0.046875s user + 0.000000s system = 0.046875s CPU (103.6%)
+PHY-1001 : Build lut bridge;  0.043933s wall, 0.046875s user + 0.000000s system = 0.046875s CPU (106.7%)
 
 PHY-1001 : Stage 2.4.1 | Phase 1
 PHY-1001 : Stage 2.4.1.1 | Setup TimeOptimization
-PHY-1001 : len = 20216, over cnt = 22(0%), over = 22, worst = 1, crit = 0
-PHY-1001 : End Stage 2.4.1.1 | Setup TimeOptimization; Time: 0.004479s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 454, reserved = 433, peak = 454;
+PHY-1001 : len = 20896, over cnt = 14(0%), over = 14, worst = 1, crit = 0
+PHY-1001 : End Stage 2.4.1.1 | Setup TimeOptimization; Time: 0.005078s wall, 0.000000s user + 0.015625s system = 0.015625s CPU (307.7%); Memory(MB): used = 457, reserved = 436, peak = 457;
 
 PHY-1001 : Stage 2.4.1.2 | Rip-up And ReRoute
-PHY-1001 : Iter 1: len = 20136, over cnt = 5(0%), over = 5, worst = 1, crit = 0, time(s) = 0.04
-PHY-1001 : Iter 2: len = 20160, over cnt = 5(0%), over = 5, worst = 1, crit = 0, time(s) = 0.01
-PHY-1001 : Iter 3: len = 20160, over cnt = 4(0%), over = 4, worst = 1, crit = 0, time(s) = 0.01
-PHY-1001 : Iter 4: len = 20232, over cnt = 0(0%), over = 0, worst = 0, crit = 0, time(s) = 0.02
-PHY-1001 : End Stage 2.4.1.2 | Rip-up And ReRoute; Time: 0.089620s wall, 0.203125s user + 0.031250s system = 0.234375s CPU (261.5%); Memory(MB): used = 455, reserved = 433, peak = 455;
+PHY-1001 : Iter 1: len = 20960, over cnt = 5(0%), over = 5, worst = 1, crit = 0, time(s) = 0.01
+PHY-1001 : Iter 2: len = 20960, over cnt = 5(0%), over = 5, worst = 1, crit = 0, time(s) = 0.01
+PHY-1001 : Iter 3: len = 20960, over cnt = 5(0%), over = 5, worst = 1, crit = 0, time(s) = 0.01
+PHY-1001 : Iter 4: len = 20976, over cnt = 1(0%), over = 1, worst = 1, crit = 0, time(s) = 0.01
+PHY-1001 : Iter 5: len = 20976, over cnt = 1(0%), over = 1, worst = 1, crit = 0, time(s) = 0.01
+PHY-1001 : Iter 6: len = 20976, over cnt = 1(0%), over = 1, worst = 1, crit = 0, time(s) = 0.01
+PHY-1001 : Iter 7: len = 20976, over cnt = 1(0%), over = 1, worst = 1, crit = 0, time(s) = 0.01
+PHY-1001 : Iter 8: len = 20992, over cnt = 0(0%), over = 0, worst = 0, crit = 0, time(s) = 0.01
+PHY-1001 : End Stage 2.4.1.2 | Rip-up And ReRoute; Time: 0.105125s wall, 0.250000s user + 0.046875s system = 0.296875s CPU (282.4%); Memory(MB): used = 457, reserved = 436, peak = 457;
 
 PHY-1001 : Stage 2.4.1.3 | Update Timing
 RUN-1002 : start command "start_timer"
-PHY-1001 : 0/267(0%) critical/total net(s).
-PHY-1001 : Setup: WNS(ns) = 13.230, TNS(ns) = 0.000, FEP = 0 | Hold: WNS(ns) = 0.577, TNS(ns) = 0.000, FEP = 0.
-PHY-1001 : End Stage 2.4.1.3 | Update Timing; Time: 0.023505s wall, 0.015625s user + 0.000000s system = 0.015625s CPU (66.5%); Memory(MB): used = 455, reserved = 433, peak = 455;
+PHY-1001 : 0/283(0%) critical/total net(s).
+PHY-1001 : Setup: WNS(ns) = 13.659, TNS(ns) = 0.000, FEP = 0 | Hold: WNS(ns) = 0.397, TNS(ns) = 0.000, FEP = 0.
+PHY-1001 : End Stage 2.4.1.3 | Update Timing; Time: 0.027925s wall, 0.031250s user + 0.000000s system = 0.031250s CPU (111.9%); Memory(MB): used = 457, reserved = 436, peak = 457;
 
 PHY-1001 : Stage 2.4.1.4 | Commit Data
 PHY-1001 : Commit better result to database ...
-PHY-1001 : 7 feed throughs used by 5 nets
-PHY-1001 : End Stage 2.4.1.4 | Commit Data; Time: 0.019605s wall, 0.015625s user + 0.000000s system = 0.015625s CPU (79.7%); Memory(MB): used = 459, reserved = 438, peak = 459;
+PHY-1001 : 3 feed throughs used by 3 nets
+PHY-1001 : End Stage 2.4.1.4 | Commit Data; Time: 0.022085s wall, 0.015625s user + 0.000000s system = 0.015625s CPU (70.7%); Memory(MB): used = 462, reserved = 440, peak = 462;
 
-PHY-1001 : End Stage 2.4.1 | Phase 1; Time: 0.138608s wall, 0.250000s user + 0.031250s system = 0.281250s CPU (202.9%); Memory(MB): used = 459, reserved = 438, peak = 459;
+PHY-1001 : End Stage 2.4.1 | Phase 1; Time: 0.161571s wall, 0.296875s user + 0.062500s system = 0.359375s CPU (222.4%); Memory(MB): used = 462, reserved = 440, peak = 462;
 
-PHY-1001 : End Stage 2.4 | Routing Optimization; Time: 0.196961s wall, 0.312500s user + 0.031250s system = 0.343750s CPU (174.5%); Memory(MB): used = 459, reserved = 438, peak = 459;
+PHY-1001 : End Stage 2.4 | Routing Optimization; Time: 0.221489s wall, 0.359375s user + 0.062500s system = 0.421875s CPU (190.5%); Memory(MB): used = 462, reserved = 440, peak = 462;
 
-PHY-1003 : Routed, final wirelength = 20232
-PHY-1001 : Current memory(MB): used = 459, reserved = 438, peak = 459.
-PHY-1001 : End export database. 0.002825s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%)
+PHY-1003 : Routed, final wirelength = 20992
+PHY-1001 : Current memory(MB): used = 462, reserved = 440, peak = 462.
+PHY-1001 : End export database. 0.003128s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%)
 
-PHY-1001 : End detail routing;  3.271212s wall, 3.187500s user + 0.171875s system = 3.359375s CPU (102.7%)
+PHY-1001 : End detail routing;  3.402237s wall, 3.421875s user + 0.171875s system = 3.593750s CPU (105.6%)
 
-PHY-1001 : End Stage 2 | Detail Routing; Time: 3.271335s wall, 3.187500s user + 0.171875s system = 3.359375s CPU (102.7%); Memory(MB): used = 459, reserved = 438, peak = 459;
+PHY-1001 : End Stage 2 | Detail Routing; Time: 3.402356s wall, 3.421875s user + 0.171875s system = 3.593750s CPU (105.6%); Memory(MB): used = 462, reserved = 440, peak = 462;
 
 PHY-1001 : Stage 3 | Report Route Qor
 RUN-1002 : start command "report_qor -step route -file route.qor"
@@ -1183,19 +1194,19 @@ RUN-1002 : start command "start_timer"
 | QoR metrics               |         value               |
 -----------------------------------------------------------
 | Timing                    |                             |
-|     Setup WNS             |        13230                |
+|     Setup WNS             |        13659                |
 |     Setup TNS             |            0                |
 |     Num of violated S-EP  |            0                |
-|     Hold WNS              |          577                |
+|     Hold WNS              |          397                |
 |     Hold TNS              |            0                |
 |     Num of violated H-EP  |            0                |
 -----------------------------------------------------------
 | Routing Resource          |                             |
-|     Wire length           |        20232                |
+|     Wire length           |        20992                |
 -----------------------------------------------------------
 | Utilization               |                             |
-|     #slices               |          122                |
-|     slices percentage     |        1.24%                |
+|     #slices               |          128                |
+|     slices percentage     |        1.31%                |
 |     #RAMs                 |            0                |
 |     #DSPs                 |            0                |
 |     #DRAMHARDCON          |            0                |
@@ -1207,29 +1218,29 @@ RUN-1002 : start command "start_timer"
 RUN-1002 : start command "report_timing_summary -file final_timing.rpt"
 OPT-1001 : QoR tracer report on route step:
     SWNS [   incr ]    STNS [   incr ]  S-FEPS [   incr ]    HWNS [   incr ]      HTNS [     incr ]    H-FEPS [     incr ]    CELL [   incr ]      WL [   incr ]   RT(s) [   incr ]   MEM(mb) [     incr ]
-   13382 [      0 ]       0 [      0 ]       0 [      0 ]     577 [      0 ]         0 [        0 ]         0 [        0 ]     153 [      0 ]   20216 [      0 ]       3 [      0 ]       449 [        0 ] : dr_initialization
-   13382 [      0 ]       0 [      0 ]       0 [      0 ]     577 [      0 ]         0 [        0 ]         0 [        0 ]     153 [      0 ]   20216 [      0 ]       3 [      0 ]       454 [        5 ] : dr_timing_opt_phase1
-   13230 [   -152 ]       0 [      0 ]       0 [      0 ]     577 [      0 ]         0 [        0 ]         0 [        0 ]     153 [      0 ]   20232 [     16 ]       3 [      0 ]       459 [        5 ] : dr_opt_phase1
-   13230 [      0 ]       0 [      0 ]       0 [      0 ]     577 [      0 ]         0 [        0 ]         0 [        0 ]     153 [      0 ]   20232 [      0 ]       3 [      0 ]       459 [        0 ] : multi_try_opt
+   13659 [      0 ]       0 [      0 ]       0 [      0 ]     397 [      0 ]         0 [        0 ]         0 [        0 ]     159 [      0 ]   20896 [      0 ]       3 [      0 ]       452 [        0 ] : dr_initialization
+   13659 [      0 ]       0 [      0 ]       0 [      0 ]     397 [      0 ]         0 [        0 ]         0 [        0 ]     159 [      0 ]   20896 [      0 ]       3 [      0 ]       457 [        5 ] : dr_timing_opt_phase1
+   13659 [      0 ]       0 [      0 ]       0 [      0 ]     397 [      0 ]         0 [        0 ]         0 [        0 ]     159 [      0 ]   20992 [     96 ]       3 [      0 ]       462 [        5 ] : dr_opt_phase1
+   13659 [      0 ]       0 [      0 ]       0 [      0 ]     397 [      0 ]         0 [        0 ]         0 [        0 ]     159 [      0 ]   20992 [      0 ]       3 [      0 ]       462 [        0 ] : multi_try_opt
 
-PHY-1001 : End Stage 3 | Report Route Qor; Time: 0.053039s wall, 0.031250s user + 0.000000s system = 0.031250s CPU (58.9%); Memory(MB): used = 459, reserved = 438, peak = 459;
+PHY-1001 : End Stage 3 | Report Route Qor; Time: 0.053606s wall, 0.062500s user + 0.000000s system = 0.062500s CPU (116.6%); Memory(MB): used = 462, reserved = 440, peak = 462;
 
 PHY-1001 : Stage 4 | Routing DRC
 PHY-1001 : Start multi-drive drc check......
 PHY-1001 : No multi-drive.
 PHY-1001 : Stage 4.1 | Clock Net Status Check
 PHY-1001 : All clock nets do not utilize local routing resource.
-PHY-1001 : End Stage 4.1 | Clock Net Status Check; Time: 0.000079s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 459, reserved = 438, peak = 459;
+PHY-1001 : End Stage 4.1 | Clock Net Status Check; Time: 0.000092s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 462, reserved = 440, peak = 462;
 
 PHY-1001 : Stage 4.2 | Abnormal Timing Path check
 PHY-1001 : No abnormal timing path.
-PHY-1001 : End Stage 4.2 | Abnormal Timing Path check; Time: 0.000764s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 459, reserved = 438, peak = 459;
+PHY-1001 : End Stage 4.2 | Abnormal Timing Path check; Time: 0.000782s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 462, reserved = 440, peak = 462;
 
-PHY-1001 : End Stage 4 | Routing DRC; Time: 0.004566s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 459, reserved = 438, peak = 459;
+PHY-1001 : End Stage 4 | Routing DRC; Time: 0.004359s wall, 0.000000s user + 0.000000s system = 0.000000s CPU (n/a%); Memory(MB): used = 462, reserved = 440, peak = 462;
 
-RUN-1003 : finish command "route" in  3.415197s wall, 3.296875s user + 0.171875s system = 3.468750s CPU (101.6%)
+RUN-1003 : finish command "route" in  3.539965s wall, 3.562500s user + 0.171875s system = 3.734375s CPU (105.5%)
 
-RUN-1004 : used memory is 459 MB, reserved memory is 438 MB, peak memory is 459 MB
+RUN-1004 : used memory is 462 MB, reserved memory is 440 MB, peak memory is 462 MB
 RUN-1002 : start command "fix_hold"
 
 PHY-1001 : Stage 5 | Hold Fix
@@ -1238,17 +1249,17 @@ PHY-1034 : Refresh detailed routing grids ...
 PHY-1001 : Generate nets ...
 PHY-1001 : net clk_50m_dup_1 will be routed on clock mesh
 PHY-1001 : eco open net = 0
-PHY-1001 : End Stage 5.1 | Load Design Data; Time: 0.035390s wall, 0.031250s user + 0.000000s system = 0.031250s CPU (88.3%); Memory(MB): used = 460, reserved = 438, peak = 460;
+PHY-1001 : End Stage 5.1 | Load Design Data; Time: 0.036382s wall, 0.046875s user + 0.000000s system = 0.046875s CPU (128.8%); Memory(MB): used = 462, reserved = 440, peak = 462;
 
 PHY-1001 : Stage 5.2 | Hold Fix Optimization
 RUN-1002 : start command "start_timer"
-PHY-1001 : Timing info: SWNS 13.230ns | STNS 0.000ns | HWNS 0.577ns | HTNS 0.000ns.
-PHY-1001 : End timing refresh.  0.023285s wall, 0.015625s user + 0.015625s system = 0.031250s CPU (134.2%)
+PHY-1001 : Timing info: SWNS 13.659ns | STNS 0.000ns | HWNS 0.397ns | HTNS 0.000ns.
+PHY-1001 : End timing refresh.  0.023666s wall, 0.015625s user + 0.000000s system = 0.015625s CPU (66.0%)
 
-PHY-1001 : End Stage 5.2 | Hold Fix Optimization; Time: 0.023331s wall, 0.015625s user + 0.015625s system = 0.031250s CPU (133.9%); Memory(MB): used = 460, reserved = 438, peak = 460;
+PHY-1001 : End Stage 5.2 | Hold Fix Optimization; Time: 0.023718s wall, 0.015625s user + 0.000000s system = 0.015625s CPU (65.9%); Memory(MB): used = 462, reserved = 440, peak = 462;
 
-PHY-1001 : 7 feed throughs used by 5 nets
-PHY-1001 : End Stage 5 | Hold Fix; Time: 0.090978s wall, 0.078125s user + 0.015625s system = 0.093750s CPU (103.0%); Memory(MB): used = 460, reserved = 438, peak = 460;
+PHY-1001 : 3 feed throughs used by 3 nets
+PHY-1001 : End Stage 5 | Hold Fix; Time: 0.090883s wall, 0.093750s user + 0.000000s system = 0.093750s CPU (103.2%); Memory(MB): used = 462, reserved = 440, peak = 462;
 
 RUN-1002 : start command "set_param route fix_hold on"
 RUN-1002 : start command "update_timing -mode final"
@@ -1260,23 +1271,23 @@ RUN-1001 : standard
 IO Statistics
 #IO                        28   out of    188   14.89%
   #input                    4
-  #output                  21
-  #inout                    3
+  #output                  20
+  #inout                    4
 
 Utilization Statistics
-#lut                      213   out of  19600    1.09%
-#reg                      122   out of  19600    0.62%
-#le                       235
-  #lut only               113   out of    235   48.09%
-  #reg only                22   out of    235    9.36%
-  #lut&reg                100   out of    235   42.55%
+#lut                      221   out of  19600    1.13%
+#reg                      129   out of  19600    0.66%
+#le                       249
+  #lut only               120   out of    249   48.19%
+  #reg only                28   out of    249   11.24%
+  #lut&reg                101   out of    249   40.56%
 #bram                       0   out of     64    0.00%
   #bram9k                   0
   #fifo9k                   0
 #bram32k                    0   out of     16    0.00%
 #dsp                        0   out of     29    0.00%
 #pad                       28   out of    188   14.89%
-  #ireg                     6
+  #ireg                     7
   #oreg                     2
   #treg                     0
 #pll                        0   out of      4    0.00%
@@ -1286,32 +1297,33 @@ Utilization Statistics
 DataNet Average Fanout:
 
    Index     Fanout    Nets  
-    #1         1       194   
-    #2         2        43   
-    #3         3        25   
-    #4         4        7    
-    #5        5-10      29   
+    #1         1       201   
+    #2         2        51   
+    #3         3        29   
+    #4         4        22   
+    #5        5-10      10   
     #6       11-50      10   
-  Average     2.43           
+    #7       51-100     1    
+  Average     2.40           
 
 RUN-1002 : start command "report_qor -step route -file D:/VSCode/CodeFiles/Git_TD/Anlogic2/_build_secondary_hdmi_handshake_diag/secondary_main5e_final.qor"
 -----------------------------------------------------------
 | QoR metrics               |         value               |
 -----------------------------------------------------------
 | Timing                    |                             |
-|     Setup WNS             |        13230                |
+|     Setup WNS             |        13659                |
 |     Setup TNS             |            0                |
 |     Num of violated S-EP  |            0                |
-|     Hold WNS              |          577                |
+|     Hold WNS              |          397                |
 |     Hold TNS              |            0                |
 |     Num of violated H-EP  |            0                |
 -----------------------------------------------------------
 | Routing Resource          |                             |
-|     Wire length           |        20232                |
+|     Wire length           |        20992                |
 -----------------------------------------------------------
 | Utilization               |                             |
-|     #slices               |          122                |
-|     slices percentage     |        1.24%                |
+|     #slices               |          128                |
+|     slices percentage     |        1.31%                |
 |     #RAMs                 |            0                |
 |     #DSPs                 |            0                |
 |     #DRAMHARDCON          |            0                |
@@ -1330,24 +1342,24 @@ Device           : EG4S20BG256
 Speed            : NA
 
 Timing Mode      : final
-Setup            : WNS 13230ps  TNS        0ps  NUM_FEPS     0
-Hold             : WNS   577ps  TNS        0ps  NUM_FEPS     0
+Setup            : WNS 13659ps  TNS        0ps  NUM_FEPS     0
+Hold             : WNS   397ps  TNS        0ps  NUM_FEPS     0
 
 Flow Statistics  :
 RUN-1001 : Flow Statistics:
 RUN-1001 : --------------------------------------------------------------------------------------------------
 RUN-1001 :      command     |  #calls  |  wall time  |  cpu time(s)  |  used memory(mb)  |  peak memory(mb)  
 RUN-1001 : --------------------------------------------------------------------------------------------------
-RUN-1001 :       route      |    1     |   3s(75%)   |    3(50%)     |        459        |        459        
-RUN-1001 :       place      |    1     |   1s(25%)   |    3(50%)     |        156        |        156        
-RUN-1001 :     fix_hold     |    1     |   0s(0%)    |     0(0%)     |        460        |        460        
+RUN-1001 :       route      |    1     |   3s(75%)   |    3(50%)     |        462        |        462        
+RUN-1001 :       place      |    1     |   1s(25%)   |    3(50%)     |        157        |        157        
+RUN-1001 :     fix_hold     |    1     |   0s(0%)    |     0(0%)     |        462        |        462        
 RUN-1001 :   import_device  |    1     |   0s(0%)    |     0(0%)     |        83         |        83         
-RUN-1001 :   optimize_gate  |    1     |   0s(0%)    |     0(0%)     |        125        |        125        
-RUN-1001 :   optimize_rtl   |    1     |   0s(0%)    |     0(0%)     |        103        |        123        
+RUN-1001 :   optimize_gate  |    1     |   0s(0%)    |     0(0%)     |        124        |        124        
+RUN-1001 :   optimize_rtl   |    1     |   0s(0%)    |     0(0%)     |        103        |        124        
 RUN-1001 :     read_adc     |    1     |   0s(0%)    |     0(0%)     |        107        |        107        
 RUN-1001 :     read_sdc     |    1     |   0s(0%)    |     0(0%)     |        107        |        107        
 RUN-1001 : --------------------------------------------------------------------------------------------------
-RUN-1001 :       total      |    8     |     4s      |       6       |        460        |        460        
+RUN-1001 :       total      |    8     |     4s      |       6       |        462        |        462        
 RUN-1001 : --------------------------------------------------------------------------------------------------
 RUN-1002 : start command "export_db D:/VSCode/CodeFiles/Git_TD/Anlogic2/_build_secondary_hdmi_handshake_diag/secondary_main5e_pr.db"
 RUN-1001 : Exported flow parameters

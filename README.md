@@ -211,7 +211,7 @@ Set-Location -LiteralPath D:\VSCode\CodeFiles\Git_TD\Anlogic2
 输出 `release/hx4s20_secondary_hdmi_handshake_diag.bit`，SHA256：
 
 ```text
-1AE4B2300F8208B7D3893951E2EE57D660DCB68FAD1CC58312D84773C43ACCB5
+8D02AC70B2A3E41D635EA72DD8C90075F368BA405D1CF95323B261BFE3B992BE
 ```
 
 操作顺序：
@@ -219,15 +219,15 @@ Set-Location -LiteralPath D:\VSCode\CodeFiles\Git_TD\Anlogic2
 1. 断开副板HDMIA的显示器线、HDMIB的电脑线。电脑原Type-C→DP连接可保持。
 2. 用一根普通HDMI线连接**同一块副板的HDMIA和HDMIB**；不是两块板之间。USB/JTAG和副板供电保持正常。不接任何额外电源。
 3. 通过JTAG临时加载本握手诊断bit，**不写Flash、不改主板**。本bit没有TMDS视频输出，显示器不参与测试。
-4. 等约5秒，数码管应停止在`F0FF`，丝印LED2/3/4常亮、LED1心跳。按KEY1可重测。重复2次，并确认拔掉回环线后按KEY1不会仍报F0FF；缺线典型F015，但浮空/硬件差异可使失败码不同。
-5. 回报最终四位；非F0FF还请回报LED状态。测完重新JTAG加载原视频诊断bit`29ED6C95`或已通过的副板正式bit，不把本bit当正式功能版使用。
+4. 等约5秒，数码管轮换结果页`F0MM`、低电平快照页`E0LR`、高电平快照页`E1LR`、结果页，每页约0.67秒。全通过应为`F0FF / E000 / E111`，丝印LED2/3/4常亮、LED1心跳。按KEY1可重测。重复2次，并确认拔掉回环线后按KEY1不会仍报F0FF；缺线典型F015，但浮空/硬件差异可使失败码不同。
+5. 回报F0、E0、E1三组四位和LED状态。测完重新JTAG加载原视频诊断bit`29ED6C95`或已通过的副板正式bit，不把本bit当正式功能版使用。
 
 八个阶段各约0.5秒，阶段开始允许10ms稳定时间，随后每个50MHz周期累积检查；任何不匹配保持失败至该轮结束，不因最后一刻电平恢复而掩盖。完成显示`F0MM`，`MM`为通过位掩码，下面bit号从低位0到高位7：
 
 | bit | 检查路径/状态 |
 |---|---|
-| 0 | HDMIB的HPD输出低，经线缆回到HDMIA输入应低 |
-| 1 | HDMIB的HPD输出高，经线缆回到HDMIA输入应高 |
+| 0 | HDMIB的HPD请求低，本地PAD及经线缆回到HDMIA输入均应低 |
+| 1 | HDMIB的HPD请求高，本地PAD及经线缆回到HDMIA输入均应高 |
 | 2 | SCL释放后，A/B两侧FPGA输入均高 |
 | 3 | A侧开漏拉低SCL，A/B两侧FPGA输入均低 |
 | 4 | SDA两侧释放后，A/B两侧FPGA输入均高 |
@@ -235,8 +235,14 @@ Set-Location -LiteralPath D:\VSCode\CodeFiles\Git_TD\Anlogic2
 | 6 | B侧开漏拉低SDA，A/B两侧FPGA输入均低 |
 | 7 | 最后释放全部DDC线，A/B输入均高且A侧HPD输入高 |
 
-测试中显示`DPXY`：P=阶段0～7；X低三位为A侧HPD/SCL/SDA输入，Y低两位为B侧SCL/SDA输入。LED2只表示本轮完成，LED3表示HPD两项通过，LED4表示DDC及最后释放检查通过。失效掩码为`FF XOR MM`；例如仿真中HPD断路得到F07D，SCL断路F0F7，SDA断路F09F。
+测试中显示`DPXY`：P=阶段0～7；X低三位为A侧HPD/SCL/SDA输入，Y低三位为B侧HPD本地PAD/SCL/SDA输入。LED2只表示本轮完成，LED3表示HPD两项通过，LED4只表示独立DDC检查2～6通过，不再被同时检查HPD的最后一项污染。失效掩码为`FF XOR MM`；例如仿真中HPD断路得到F07D，SCL断路F0F7，SDA断路F09F。
+
+E页的L/R均为0或1：L=HDMIB本地HPD PAD数字回读，R=HDMIA对端HPD输入。E0页是请求低时的快照，正常E000；E1页是请求高时的快照，正常E111。E110表示本地引脚高、另一端仍低；E100表示内部请求高但两端都读低；E101表示本地低、另一端高，需检查接线/其他驱动。快照冻结首个失败采样；没有失败则保留该阶段最后有效采样，不是测量电压值。原始网表确认J6为BI PAD、输出使能ts=0、输入diq接pins_ff1[5]，未把回读优化成内部请求。
 
 **证据边界：** 本诊断检查实际引脚经两侧接口和线缆后的静态数字电平传播，不执行EDID读取，不证明100kHz I²C波形、连接电脑后的电压/负载、TMDS端接或完整HDMI合规。失败定位到某条信号通路，不能单凭失败码断言某个芯片/连接器损坏；路径包含A/B两端、转换器、线缆和接收GPIO。F0FF也不是PC/音视频上板通过标志。
 
-ModelSim `sim/run_hdmi_handshake_diag.do`共7条PASS，覆盖正常回环、缺线、HPD/SCL/SDA断路、短时故障锁存及KEY1重复测试，Errors/Warnings均0。TD种子6完成布局、STA、DRC与bitgen，内部setup +13.230ns、hold +0.577ns、TNS=0，无多驱动或异常时序；仅外部异步慢速探针输入至同步器设置例外。LUT213/19600、FF122/19600、Slice122/9800，不用PLL/BRAM/DSP；50MHz局部时钟布线提示已由内部STA覆盖。报告在 `seed/hdmi_handshake_diag`，原视频/正式/共享PLL bit哈希均不变。副板仅本地commit、不push。
+ModelSim `sim/run_hdmi_handshake_diag.do`共9条PASS，覆盖正常回环、缺线、HPD/SCL/SDA断路、短时故障锁存、KEY1重复测试，以及HPD快照/外部强制PAD低电平与内部拉高请求的区分，Errors/Warnings均0。TD种子6完成布局、STA、DRC与bitgen，内部setup +13.659ns、hold +0.397ns、TNS=0，无多驱动或异常时序；仅外部异步慢速探针输入至同步器设置例外。LUT221/19600、FF129/19600、Slice128/9800，不用PLL/BRAM/DSP；50MHz局部时钟布线提示已由内部STA覆盖。报告在 `seed/hdmi_handshake_diag`，原视频/正式/共享PLL bit哈希均不变。副板仅本地commit、不push。
+
+首版握手诊断`1AE4B230`/`a871997`实板记录：用户反复读出`F97U`，LED2亮、LED3/4灭。检查发现该新增ADC手抄段线4/5/6为A8/A7/B5，正确参考应为B5/A8/A7；该错误会把逻辑0显示成9、逻辑D显示成U，F/7不变，故**内部F07D被显示成F97U**，与LED一致。这是新增诊断引入的错误，不是用户误读。撤回此前猜测F097的解释；实际提示HPD低通过、高失败，SCL/SDA单独测试均通过，而旧LED4因最后HPD相关测试失败同时熄灭。
+
+本次修正段线约束，并在build.ps1增加与已上板通过参考ADC的显示/LED映射比较；故意注入错误段线位置可被门槛拒绝。增加HPD本地实际引脚回读及快照，不更改已经正常的视频路径。当前仅定位到回环中的HPD高传播异常，未确定输出脚、接头、线缆、输入脚或电压负载中的具体根因，不能据此要求换芯片/改板。
