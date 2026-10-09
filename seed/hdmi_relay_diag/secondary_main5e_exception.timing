@@ -1,11 +1,11 @@
 Created by          : Tang Dynasty v6.2.168116
                     : Copyright (c) 2012-2025 Anlogic Inc.
-Generated           : Fri Oct  9 12:38:48 2026
+Generated           : Fri Oct  9 13:18:59 2026
 
 Top Model           : top_secondary_hdmi_relay_diag
 Device              : EG4S20BG256
 Speed               : NA
-STA coverage        : 99.89%
+STA coverage        : 99.90%
 Constraint File     : D:/VSCode/CodeFiles/Git_TD/Anlogic2/constraints/secondary_hdmi_relay_diag.sdc;
 Confidence          : Routed
 Check Corner        : Both (Slow and Fast)

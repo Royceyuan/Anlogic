@@ -23,11 +23,14 @@ reg [2:0] lane_lock;
 reg [9:0] aligned [0:2];
 reg [3:0] aligned_offset [0:2];
 reg aligned_valid;
+reg [19:0] shifted_word [0:2];
+reg [3:0] shifted_offset [0:2];
+reg shifted_valid;
 wire [9:0] candidate [0:2];
 genvar g;
 generate for(g=0;g<3;g=g+1) begin : g_lane
     assign joined[g]=reservoir[g] | ({10'd0,nibbles[g*4+:4]} << bits_used);
-    assign candidate[g]=({raw_word[g],previous_word[g]} >> offsets[g]);
+    assign candidate[g]=shifted_word[g] >> {shifted_offset[g][3:2],2'b00};
 end endgenerate
 // Raw relay has no per-lane symbol deskew. Reject a phase which captures
 // adjacent bits on different lanes, rather than forwarding corrupt pixels.
@@ -57,19 +60,30 @@ begin case(word)
     10'h163:terc4=5'h1e; 10'h2c3:terc4=5'h1f;
     default:terc4=0;
 endcase end endfunction
-wire [2:0] ctrl0=control(aligned[0]);
-wire [2:0] ctrl1=control(aligned[1]);
-wire [2:0] ctrl2=control(aligned[2]);
-wire [4:0] island_sync=terc4(aligned[0]);
-wire island_guard=(aligned[1]==10'h133 && aligned[2]==10'h133);
+reg [2:0] ctrl0,ctrl1,ctrl2;
+reg [4:0] island_sync;
+reg island_guard,decoded_valid;
+// Keep ten-bit code decoding out of the state/mux path at 185.625 MHz.
+always @(posedge clk or negedge rst_n) begin
+    if(!rst_n) begin
+        ctrl0<=0;ctrl1<=0;ctrl2<=0;island_sync<=0;island_guard<=0;decoded_valid<=0;
+    end else begin
+        decoded_valid<=aligned_valid && lanes_locked;
+        if(aligned_valid && lanes_locked) begin
+            ctrl0<=control(aligned[0]);ctrl1<=control(aligned[1]);ctrl2<=control(aligned[2]);
+            island_sync<=terc4(aligned[0]);
+            island_guard<=aligned[1]==10'h133 && aligned[2]==10'h133;
+        end
+    end
+end
 reg in_island;
 reg symbol_tick,sync_valid;
 reg [1:0] sync_value;
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n) begin in_island<=0;symbol_tick<=0;sync_valid<=0;sync_value<=0;end
     else begin
-        symbol_tick<=aligned_valid && lanes_locked;
-        if(aligned_valid && lanes_locked) begin
+        symbol_tick<=decoded_valid;
+        if(decoded_valid) begin
             if(island_guard) in_island<=1;
             else if(ctrl0[2] && ctrl1[2] && ctrl2[2]) in_island<=0;
             sync_valid<=ctrl0[2] || ((in_island || island_guard) && island_sync[4]);
@@ -90,10 +104,11 @@ wire vs_rise=sync_valid && !last_vs && sync_value[1];
 integer i;
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n) begin
-        bits_used<=0; raw_valid<=0; aligned_valid<=0; lane_lock<=0;
+        bits_used<=0; raw_valid<=0; aligned_valid<=0; shifted_valid<=0; lane_lock<=0;
         for(i=0;i<3;i=i+1) begin
             reservoir[i]<=0; raw_word[i]<=0; previous_word[i]<=0;
             offsets[i]<=0; hits[i]<=0; aligned[i]<=0; aligned_offset[i]<=0;
+            shifted_word[i]<=0;shifted_offset[i]<=0;
         end
     end else begin
         raw_valid<=bits_used>=6;
@@ -103,10 +118,15 @@ always @(posedge clk or negedge rst_n) begin
             if(bits_used>=6) begin raw_word[i]<=joined[i][9:0]; reservoir[i]<=joined[i]>>10; end
             else reservoir[i]<=joined[i];
         end
-        aligned_valid<=raw_valid;
+        shifted_valid<=raw_valid;
+        aligned_valid<=shifted_valid;
         if(raw_valid) for(i=0;i<3;i=i+1) begin
-            previous_word[i]<=raw_word[i]; aligned[i]<=candidate[i];
-            aligned_offset[i]<=offsets[i];
+            previous_word[i]<=raw_word[i];
+            shifted_word[i]<={raw_word[i],previous_word[i]} >> offsets[i][1:0];
+            shifted_offset[i]<=offsets[i];
+        end
+        if(shifted_valid) for(i=0;i<3;i=i+1) begin
+            aligned[i]<=candidate[i];aligned_offset[i]<=shifted_offset[i];
         end
         if(aligned_valid) for(i=0;i<3;i=i+1) begin
             if(!lane_lock[i] && aligned_offset[i]==offsets[i]) begin

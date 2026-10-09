@@ -4,7 +4,8 @@
 // No HDCP responder. SDA is open drain; never drive a logic one.
 module hdmi_edid_720p (
     input wire clk, rst_n, enable, scl, sda,
-    output reg sda_low
+    output reg sda_low,
+    output reg request_seen, read_seen
 );
 function [7:0] edid_byte;
     input [7:0] address;
@@ -159,10 +160,11 @@ always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         state<=IDLE; after_ack<=IGNORE; bit_index<=0; rx_shift<=0;
         tx_shift<=0; offset<=0; segment<=0;
-        ack_value<=0; master_ack<=0; sda_low<=0;
+        ack_value<=0; master_ack<=0; sda_low<=0; request_seen<=0; read_seen<=0;
     end else if (!enable) begin
         state<=IDLE; sda_low<=0; bit_index<=0;
     end else if (start_seen) begin
+        request_seen<=1;
         state<=RX_ADDR; bit_index<=0; rx_shift<=0; sda_low<=0;
     end else if (stop_seen) begin state<=IDLE; sda_low<=0; end
     else case(state)
@@ -171,8 +173,10 @@ always @(posedge clk or negedge rst_n) begin
             if (bit_index==7) begin
                 bit_index<=0; state<=ACK_SETUP; ack_value<=1;
                 if (state==RX_ADDR) begin
-                    if (incoming[7:1]==7'h50 && segment==0)
+                    if (incoming[7:1]==7'h50 && segment==0) begin
                         after_ack<=incoming[0] ? TX_DATA : RX_POINTER;
+                        if(incoming[0]) read_seen<=1;
+                    end
                     else if (incoming==8'h60) after_ack<=RX_SEGMENT;
                     else begin ack_value<=0; after_ack<=IGNORE; end
                 end else if (state==RX_POINTER) begin

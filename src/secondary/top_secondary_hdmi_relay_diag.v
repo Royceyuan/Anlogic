@@ -2,7 +2,9 @@
 `default_nettype none
 
 // Independent board diagnostic. Does not include TF, SDRAM or Ethernet.
-module top_secondary_hdmi_relay_diag(
+module top_secondary_hdmi_relay_diag #(
+    parameter integer HPD_LOW_CYCLES=10000000
+)(
     input wire clk_50m,
     input wire hdmi_b_clk_p,hdmi_b_d0_p,hdmi_b_d1_p,hdmi_b_d2_p,
     input wire hdmi_b_scl,
@@ -23,10 +25,20 @@ always @(posedge clk_50m) begin
     else begin heartbeat<=heartbeat+1'b1; sink_ff<={sink_ff[0],hdmi_a_hpd}; end
 end
 wire sda_low;
+reg [23:0] hpd_cycles;
+always @(posedge clk_50m) begin
+    if(!rst_n) hpd_cycles<=0;
+    else if(hpd_cycles!=HPD_LOW_CYCLES-1) hpd_cycles<=hpd_cycles+1'b1;
+end
+wire edid_ready=rst_n && hpd_cycles==HPD_LOW_CYCLES-1;
+wire edid_request_seen,edid_read_seen;
 assign hdmi_b_sda=sda_low ? 1'b0 : 1'bz;
-assign hdmi_b_hpd=rst_n&&sink_ff[1];
-hdmi_edid_720p u_edid(.clk(clk_50m),.rst_n(rst_n),.enable(hdmi_b_hpd),
-    .scl(hdmi_b_scl),.sda(hdmi_b_sda),.sda_low(sda_low));
+// The FPGA owns the upstream EDID. Keep it available independently of the
+// output monitor; a 200 ms low interval requests fresh enumeration after JTAG.
+assign hdmi_b_hpd=edid_ready;
+hdmi_edid_720p u_edid(.clk(clk_50m),.rst_n(rst_n),.enable(rst_n),
+    .scl(hdmi_b_scl),.sda(hdmi_b_sda),.sda_low(sda_low),
+    .request_seen(edid_request_seen),.read_seen(edid_read_seen));
 wire pclk,sclk,pixel_clk,pll_locked,phase_done,clock_valid;
 wire [19:0] measured_edges;
 reg phase_step;
@@ -69,10 +81,14 @@ wire rx_reset_n;
 reset_sync u_sample_reset(.clk(pclk),.arst_n(rst_n&&clock_valid&&pll_locked&&!phase_busy),.srst_n(rx_reset_n));
 wire [15:0] nibbles;
 wire [3:0] outgoing;
-wire tx_reset_n;
-reset_sync u_transmit_reset(.clk(sclk),.arst_n(rx_reset_n&&format_ok&&sink_ff[1]),.srst_n(tx_reset_n));
+wire transmit_allowed=rx_reset_n&&format_ok&&sink_ff[1];
+reg [1:0] tx_reset=2'b11;
+always @(posedge sclk or negedge transmit_allowed)
+    if(!transmit_allowed) tx_reset<=2'b11;
+    else tx_reset<={tx_reset[0],1'b0};
+wire tx_reset_n=!tx_reset[1];
 hdmi_relay_phy u_phy(.pclk(pclk),.sclk(sclk),.sampler_rst(!rx_reset_n),
-    .transmitter_rst(!tx_reset_n),
+    .transmitter_rst(tx_reset[1]),
     .serial_in({hdmi_b_clk_p,hdmi_b_d2_p,hdmi_b_d1_p,hdmi_b_d0_p}),
     .nibbles(nibbles),.serial_out(outgoing));
 hdmi_tmds_monitor u_monitor(.clk(pclk),.rst_n(rx_reset_n),.nibbles(nibbles[11:0]),
@@ -80,7 +96,10 @@ hdmi_tmds_monitor u_monitor(.clk(pclk),.rst_n(rx_reset_n),.nibbles(nibbles[11:0]
 assign {hdmi1_clk_p,hdmi1_d2_p,hdmi1_d1_p,hdmi1_d0_p}=outgoing;
 assign led={format_ff[1],pll_ff[1],clock_valid,heartbeat[24]};
 seg_hex_display u_seg(.clk(clk_50m),.rst_n(rst_n),
-    .value({phase_index,1'b0,phase_busy,lock_ff[1],format_ff[1],measured_edges[19:12]}),
+    // Alternate handshake/status (A...) with the complete clock count / 16.
+    .value(heartbeat[25] ? measured_edges[19:4] :
+        {4'ha,edid_ready,sink_ff[1],edid_read_seen,edid_request_seen,
+         clock_valid,pll_ff[1],lock_ff[1],format_ff[1],phase_index}),
     .seg_data(seg_data),.seg_sel(seg_sel));
 endmodule
 `default_nettype wire

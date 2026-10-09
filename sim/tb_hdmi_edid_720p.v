@@ -4,7 +4,8 @@ reg clk=0, rst_n=0, enable=1, scl=1, master_low=0;
 always #10 clk=!clk;
 wire slave_low;
 wire sda = !(master_low || slave_low);
-hdmi_edid_720p dut(.clk(clk),.rst_n(rst_n),.enable(enable),.scl(scl),.sda(sda),.sda_low(slave_low));
+wire request_seen,read_seen;
+hdmi_edid_720p dut(.clk(clk),.rst_n(rst_n),.enable(enable),.scl(scl),.sda(sda),.sda_low(slave_low),.request_seen(request_seen),.read_seen(read_seen));
 task start_i2c;
 begin scl=0; master_low=0; #1000; scl=1; #1000; master_low=1; #1000; scl=0; end
 endtask
@@ -46,6 +47,7 @@ initial begin
     end
     stop_i2c;
     if(sum0%256 || sum1%256) $fatal(1,"EDID checksums");
+    if(!request_seen || !read_seen) $fatal(1,"EDID diagnostic flags missed read transaction");
     $display("PASS EDID both blocks, repeated start, sequential read and NACK");
     start_i2c; send_byte(8'h60,1); send_byte(1,1); stop_i2c;
     start_i2c; send_byte(8'ha1,0); stop_i2c;
