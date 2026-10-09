@@ -18,7 +18,7 @@ module top_secondary_hdmi_relay_diag #(
 reg [15:0] startup=0;
 always @(posedge clk_50m) if(startup!=16'hffff) startup<=startup+1'b1;
 wire rst_n=&startup;
-reg [25:0] heartbeat;
+reg [26:0] heartbeat;
 reg [1:0] sink_ff;
 always @(posedge clk_50m) begin
     if(!rst_n) begin heartbeat<=0; sink_ff<=0; end
@@ -32,15 +32,22 @@ always @(posedge clk_50m) begin
 end
 wire edid_ready=rst_n && hpd_cycles==HPD_LOW_CYCLES-1;
 wire edid_request_seen,edid_read_seen;
+wire [7:0] ddc_bus_status;
+wire [3:0] ddc_parser_state;
 assign hdmi_b_sda=sda_low ? 1'b0 : 1'bz;
 // The FPGA owns the upstream EDID. Keep it available independently of the
 // output monitor; a 200 ms low interval requests fresh enumeration after JTAG.
 assign hdmi_b_hpd=edid_ready;
 hdmi_edid_720p u_edid(.clk(clk_50m),.rst_n(rst_n),.enable(rst_n),
     .scl(hdmi_b_scl),.sda(hdmi_b_sda),.sda_low(sda_low),
-    .request_seen(edid_request_seen),.read_seen(edid_read_seen));
+    .request_seen(edid_request_seen),.read_seen(edid_read_seen),
+    .bus_status(ddc_bus_status),.parser_state(ddc_parser_state));
 wire pclk,sclk,pixel_clk,pll_locked,phase_done,clock_valid;
 wire [19:0] measured_edges;
+reg clock_activity_seen;
+always @(posedge clk_50m)
+    if(!rst_n) clock_activity_seen<=0;
+    else if(measured_edges!=0) clock_activity_seen<=1;
 reg phase_step;
 reg [5:0] settle_cycles;
 hdmi_relay_clock u_clock(.clk_50m(clk_50m),.rst_n(rst_n),.source_clk(hdmi_b_clk_p),
@@ -95,11 +102,13 @@ hdmi_tmds_monitor u_monitor(.clk(pclk),.rst_n(rx_reset_n),.nibbles(nibbles[11:0]
     .lanes_locked(lanes_locked),.format_ok(format_ok),.frame_toggle(frame_toggle),.bit_offsets(bit_offsets));
 assign {hdmi1_clk_p,hdmi1_d2_p,hdmi1_d1_p,hdmi1_d0_p}=outgoing;
 assign led={format_ff[1],pll_ff[1],clock_valid,heartbeat[24]};
+wire [15:0] diagnostic_value=heartbeat[25] ? measured_edges[19:4] :
+    heartbeat[26] ? {4'hb,ddc_bus_status[7:1],clock_activity_seen,ddc_parser_state} :
+    {4'ha,edid_ready,sink_ff[1],edid_read_seen,edid_request_seen,
+     clock_valid,pll_ff[1],lock_ff[1],format_ff[1],phase_index};
 seg_hex_display u_seg(.clk(clk_50m),.rst_n(rst_n),
-    // Alternate handshake/status (A...) with the complete clock count / 16.
-    .value(heartbeat[25] ? measured_edges[19:4] :
-        {4'ha,edid_ready,sink_ff[1],edid_read_seen,edid_request_seen,
-         clock_valid,pll_ff[1],lock_ff[1],format_ff[1],phase_index}),
+    // A status, clock count, B bus probe, clock count; 0.67 s per page.
+    .value(diagnostic_value),
     .seg_data(seg_data),.seg_sel(seg_sel));
 endmodule
 `default_nettype wire

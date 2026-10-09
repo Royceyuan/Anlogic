@@ -5,7 +5,9 @@
 module hdmi_edid_720p (
     input wire clk, rst_n, enable, scl, sda,
     output reg sda_low,
-    output reg request_seen, read_seen
+    output reg request_seen, read_seen,
+    output wire [7:0] bus_status,
+    output wire [3:0] parser_state
 );
 function [7:0] edid_byte;
     input [7:0] address;
@@ -146,6 +148,9 @@ reg [2:0] bit_index;
 reg [7:0] rx_shift, tx_shift, offset, segment;
 reg ack_value, master_ack;
 reg [2:0] scl_sync, sda_sync;
+reg [1:0] monitor_arm,low_seen,edge_seen;
+assign bus_status={scl_sync[2],sda_sync[2],low_seen,edge_seen,sda_low,enable};
+assign parser_state=state;
 wire scl_rise = scl_sync[2:1] == 2'b01;
 wire scl_fall = scl_sync[2:1] == 2'b10;
 wire start_seen = &scl_sync[2:1] && sda_sync[2:1] == 2'b10;
@@ -155,6 +160,17 @@ wire [7:0] next_byte = edid_byte(offset);
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin scl_sync<=3'b111; sda_sync<=3'b111; end
     else begin scl_sync<={scl_sync[1:0],scl}; sda_sync<={sda_sync[1:0],sda}; end
+end
+// Observe the existing synchronizers; never drive or otherwise change DDC.
+// Ignore their reset-fill transition so a line held low at boot is not
+// misreported as a real bus edge.
+always @(posedge clk or negedge rst_n) begin
+    if(!rst_n) begin monitor_arm<=0;low_seen<=0;edge_seen<=0;end
+    else if(monitor_arm!=3) monitor_arm<=monitor_arm+1'b1;
+    else begin
+        low_seen<=low_seen | ~{scl_sync[2],sda_sync[2]};
+        edge_seen<=edge_seen | {scl_sync[2]^scl_sync[1],sda_sync[2]^sda_sync[1]};
+    end
 end
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin

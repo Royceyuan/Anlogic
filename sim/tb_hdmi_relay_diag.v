@@ -56,6 +56,10 @@ initial begin
     $display("PASS startup HPD interval and source qualification without downstream HPD");
     sink_hpd=1;
     ready;
+    force dut.heartbeat=27'h4000000;#10;
+    if(dut.diagnostic_value!==16'hbc10) $fatal(1,"B page did not separate source clock activity from idle DDC");
+    release dut.heartbeat;
+    $display("PASS B-page bus/clock diagnostics preserve a running relay");
     $display("PASS diagnostic top qualifies a live stream before enabling all four output lanes");
     force dut.u_monitor.format_ok=1'b0;
     repeat(4) @(posedge clk50);
