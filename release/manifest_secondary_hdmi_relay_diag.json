@@ -1,6 +1,6 @@
 {
   "release": "hdmi_relay_passive_ddc_probe_20261009",
-  "status": "simulation_passed_board_test_pending",
+  "status": "board_tested_no_input_observed",
   "baseline_commit": "3ff1753",
   "project": "hx4s20_secondary_hdmi_relay_diag.al",
   "top": "top_secondary_hdmi_relay_diag",
@@ -16,6 +16,7 @@
   "reports": "seed/hdmi_relay_diag",
   "tests": {"edid": 3, "phy": 1, "clock_phy": 4, "monitor": 3, "diagnostic_top": 5},
   "previous_board_result": "9E7502AC/3ff1753 failed: AC00 and 0000. Display screenshots were independent Type-C/DP, not proof of FPGA HDMI input mode. PC HDMI to B and A to monitor confirmed. Root cause not confirmed.",
+  "current_board_result": "AC00 -> 0000 -> BC00 -> 0000, unchanged after reported unplug/replug. DDC observed high with no low/edge history; no nonzero clock-count history. B-port HPD is an output command, not PC plug detection. Root cause remains unconfirmed; next check is same-cable PC HDMI to monitor bypass.",
   "diagnostic_pages": "A status, clock count / 16, B bus levels/low history/edges/source clock history/parser state, clock count / 16; 0.67 s per page",
   "functions": "Independent HDMIB to HDMIA raw audio/video relay; no TF/local display/Ethernet/fallback integration.",
   "board_pass": false
