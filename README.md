@@ -1,346 +1,137 @@
-# 双 FPGA 博物馆双屏展陈终端：副板最终工程介绍
+# 双FPGA双屏博物馆展陈与应急信息终端——副板工程
 
-本目录 `Anlogic2` 是副板，`../Anlogic` 是主板。分支 `secondary-main5e`，目标器件 `EG4S20BG256`，使用TD 6.2.168116。本文件是副板唯一工程说明；阶段交接、历史文档与中间产物已归档，第三方许可证仍保留。
+适用安路HX4S20C（EG4S20BG256）。实现本地展陈、主板状态联动、以太网画面控制、自动/手动同步、说明页、PC HDMI音视频直通及断源回退。2026-10-10用户确认集成现象正常并要求整理推送；未记录的播放时长、冷启动次数不补写为通过。
 
-## 工程入口与位流
+## 1. 唯一入口与已验证bit
 
-| 项目 | 路径 |
-|---|---|
-| 唯一TD入口 | `hx4s20_secondary_main5e.al` |
-| 顶层 | `src/secondary/top_secondary_main5e.v`，模块 `top_secondary_main5e` |
-| 管脚/时序约束 | `constraints/top_secondary_main5e.adc`、`constraints/top_secondary_main5e.sdc` |
-| 唯一最新可用bit | `release/hx4s20_secondary_help_fixed720.bit` |
-| 发布记录 | `release/manifest_secondary_help_fixed720.json` |
-| 成功布局种子与原始最终报告 | `seed/`，种子6 |
+- TD入口：`dual_fpga_museum_terminal_secondary_board.al`。
+- RTL顶层：`src/secondary/top_secondary_hdmi_museum.v`，模块名`top_secondary_hdmi_museum`。
+- 已上板bit：`release/dual_fpga_museum_terminal_secondary_board.bit`，654090字节。
+- SHA256：`85E5C239BFF500C794896F1BF0FE5233DC0A51244F9C91A16DB86230955DC458`。
+- 发布信息：`release/manifest_secondary_board.json`。
 
-bit SHA256：`91A70946F2FA9966D1BAF6466B921C6D6E4C3BE090D8D9C4A62FD0235D5BC25A`。用户已确认双栏说明页正常；清理不改功能RTL；另合并保留远程 `72a8937` 已验收的固定BMP读取和讲解页淡入淡出更新。发布bit来自该远程版本，不用本轮验证输出替换，不更换TF卡。
+整理不改变硬件RTL行为；bit只移动并改名，字节及校验值不变。旧入口和旧bit在Git历史/rubbish保留，不作为当前工程入口。
 
-## 展示与控制
+整理后已完成从零综合、布局布线、STA/DRC和bitgen；setup/hold仍为+0.039/+0.030ns。重编结果与发布bit逐字节比较，仅头部生成时间3个字符不同，其余字节、配置CRC和数据完全一致。发布bit未被覆盖，记录见`seed/hdmi_museum/cleanup_verification.json`。
 
-副屏HDMI输出1280×720。总览轮播文物展示页；接收主板实际状态后切换对应简介，应急优先显示逃生图与路线提示。主板讲解音画字幕在主板处理，副板只显示本地缓存素材和状态，以太网不传媒体文件。讲解页约半秒淡出/淡入，应急直接切页并可抢占转场。媒体严格按固定原生尺寸读取，普通图1280×720、说明背景160×90；副板正式入口不启用通用自适应缩放器。
+## 2. 接线、视频和优先级
 
-副板SW3=0自动讲解、1静音手动浏览，由以太网同步至主板；两种模式均保留四键画面控制。切回自动采用音频/字幕轻量恢复，保留图片缓存。断线重连后重新获取主板状态并协调SW3，主板自身SW3仍属于预载编号，不可混淆。
+显示器始终接副板 **HDMIB**；电脑自身HDMI输出接 **HDMIA**；双板网线、主板已验证版本保持不变。本地页面也从B输出。电脑选择AnlogicHDMI目标，输出1280×720、60/59.94Hz、RGB8、SDR；不要把独立DP连接的显示器设置当作FPGA输入。电脑解码本地视频，FPGA转发HDMI，不需要以太网视频软件。
 
-副板SW4=0正常展示、1双栏操作说明。说明页左栏显示主板按键与拨码，右栏显示副板四组按键和拨码，底部显示通信与主板实际状态；当前控制组突出显示，字重统一。SW4只切本地页面，不断网、不复位、不重载；说明页中四键仍控制主板。应急优先于说明页，解除后跟随SW4恢复。
+声音选择AnlogicHDMI对应HDMI设备，双声道48kHz24-bit LPCM，由B送显示器，不经副板功放。显示器须有音频播放能力。暂不支持1080p输入、HDCP、HDR、深色或压缩音频位流。
 
-副板SW2:SW1控制分组：
+无有效信源时，原轮播、简介、说明页或应急页跟随最新状态。有合格信源连续8帧通过后，外部音视频始终优先，包括应急、说明页状态；FPGA不会替电脑打开逃生视频。直通期间TF、SDRAM刷新、本地扫描、以太网、按键和拨码继续运行，本地页面暂不显示。断源回到**当前**本地状态，不需KEY4、不重载全部素材。允许显示器重锁时短暂黑屏，不承诺无缝。
+
+LED/数码管保留原媒体加载意义，不是独立诊断的A/B/C页，LED4也不是外部帧锁定指示。
+
+## 3. TF素材与说明字库
+
+使用FAT32，将下列最终素材按原名放在TF根目录。现有源文件已齐全，不需要Python生成工具：
+
+| 文件 | 工程内来源 | 格式/用途 |
+|---|---|---|
+| IMAGE0.BMP～IMAGE4.BMP | assets/secondary_exhibit_720p_tf | 轮播，1280×720，24-bit未压缩BMP |
+| IMAGE5.BMP～IMAGE9.BMP | assets/secondary_exhibit_720p_tf | 文物简介背景，同上 |
+| IMAGEA.BMP | assets/secondary_emergency_720p_v2 | 应急图，同上 |
+| IMAGEB.BMP | assets/secondary_help | 说明背景，160×90，24-bit未压缩BMP |
+
+说明文字由FPGA叠加，中文ROM已在`src/secondary/secondary_help_font.vh`中，可直接综合。背景源PNG及辅助生成工具移入rubbish；仅在重新设计字库/背景时需恢复，不影响当前编译。不要混入旧尺寸或压缩BMP；上下方向、行填充和跨簇读取已有回归。
+
+## 4. 副板控制与通信
+
+四键控制主板画面，不选副板轮播素材。主板转场、应急或恢复期间可拒绝当前命令，后续正常状态仍能控制。
 
 | SW2:SW1 | KEY1 | KEY2 | KEY3 | KEY4 |
 |---|---|---|---|---|
 | 00 | 标准 | 明亮 | 高对比 | 柔和 |
 | 01 | 亮度减 | 亮度加 | 对比度减 | 对比度加 |
-| 10 | 饱和度减 | 饱和度加 | 色温偏冷 | 色温偏暖 |
-| 11 | 左 | 右 | 上 | 下 |
+| 10 | 饱和度减 | 饱和度加 | 色温减 | 色温加 |
+| 11 | 左移 | 右移 | 上移 | 下移 |
 
-参数按既定档位变化，主板按百分比显示；平移每次20源像素，允许1×/2×和播放/暂停。1×平移露底，2×移动观察窗口。转场、应急、启动或恢复中暂不控制，后续正常状态可继续发送。副板无额外大步拨码功能。
+SW3=0请求自动讲解，=1请求手动浏览；以主板实际回报为准，重连后重新核对模式。SW4=0正常页面，=1操作说明，四键仍有效；不作为通讯开关或大步开关。有外部视频时说明页暂不显示，断源才显示当前本地状态。
 
-主板KEY1总览循环高亮、展示时1×/2×；KEY2总览进入、自动暂停/继续、手动退出且不重载；KEY3总览切OSD、自动切波形、手动循环全貌和细节1～3；KEY4完整应用恢复。主板SW1～3选择预载0～4，SW4控制应急。主板四键功能不是副板四组按键功能。
+参数每次一档，当前索引范围亮度0～6、对比度0～4、饱和度0～5、色温0～6，主板显示百分比。平移每次20源像素，基于实际回报发绝对值，X限±240、Y限±135，仅在主板允许的图片状态及1×/2×下请求。手动切图、暂停、退出和恢复由主板已有按键实现；副板四键仍按上表操作。
 
-## 双板通信
+固定副板`192.168.10.2:5000`，主板`192.168.10.1:5000`，MBP1不变。协议编码见`src/ethernet/mbp1_codec.v`，会话/ACK/去重/重连见`mbp1_secondary_endpoint.v`。控制0x13=预设、0x14=四项参数、0x15=视口、0x17=自动/手动；不按按键次数推测主板状态，使用实际心跳/显示回报。
 
-固定UDP/ARP千兆直连：主板 `192.168.10.1:5000`、MAC `02:48:58:34:20:01`；副板 `192.168.10.2:5000`、MAC `02:48:58:34:20:02`，掩码255.255.255.0。TEMAC/RGMII/FIFO使用官方模块，精简UDP位于 `src/ethernet/mbp1_fixed_udp.v`。必须保留IP配置及旁边的综合网表、跨时钟FIFO和约束。
+## 5. 源码结构与切源
 
-MBP1版本1：魔数4D42，20字节头、N字节业务数据、2字节CRC，总长22+N，多字节整数大端。CRC-16/CCITT-FALSE覆盖头与业务数据，poly=0x1021、init=0xFFFF、xorout=0、不反射。消息编号（十六进制）：HELLO01、心跳02、查询03、ACK04、播放状态12、预设13、四参数14、视口15、画面状态16、浏览模式17、浏览图片18、诊断31。
-
-副板主动握手并每500ms心跳，按主板实际状态产生绝对值控制，等匹配ACK再更新；不能按按键次数猜主板是否暂停或进入讲解。忙请求结束本次事务；重连重新获取状态并同步SW3，同boot_id也须恢复。实际字段定义与发送条件以 `mbp1_codec.v`、`mbp1_secondary_endpoint.v`、`secondary_main5e_keys.v` 和 `secondary_main5e_status_adapter.v` 为准。应急断线保持逃生图，当前应急画面未增加失联提示。
-
-## TF素材与必要工具
-
-FAT32根目录12文件：`IMAGE0.BMP`～`IMAGE9.BMP`（展示及简介）、`IMAGEA.BMP`（应急），均1280×720、24位未压缩BMP；`IMAGEB.BMP`为160×90、24位说明背景。所有规范文件在 `assets` 内；未参与当前工具/构建的11张历史源PNG已归档。说明背景源PNG仍保留，供字库/说明页生成工具使用。
-
-现有11图写卡命令，在工程根目录执行（F按实际副板卡修改；工具拒绝C/D/E以防误写）：
-
-```powershell
-./tools/copy_secondary_native720_to_sd.ps1 -DriveLetter F
-Copy-Item -LiteralPath ./assets/secondary_help/IMAGEB.BMP -Destination F:\IMAGEB.BMP
-Get-FileHash -LiteralPath ./assets/secondary_help/IMAGEB.BMP, F:\IMAGEB.BMP
-```
-
-写卡工具逐文件核验11图SHA；IMAGEB须核对两行SHA相等，再安全弹卡。未授权时不要重写卡。`tools/prepare_secondary_help.py` 是说明字库生成源码，需要Python和Pillow，保留以便修改说明页；正常运行、现有源码构建或烧录不需要Python。重生成字库会修改 `secondary_help_font.vh`，必须重新综合并验收。其余历史媒体/电脑诊断脚本已归档。
-
-## 重建与回归
-
-手动全流程：
-
-1. 在TD图形界面打开根目录唯一 `hx4s20_secondary_main5e.al`，确认器件 `EG4S20BG256`、顶层 `top_secondary_main5e`。
-2. 从 `src/secondary/top_secondary_main5e.v` 沿实例审核显示、协议、按键及存储逻辑；`secondary_help_font.vh`是实际include，TEMAC的 `_gate.v` 是实际IP依赖，不能因未直接列在文件树而删除。
-3. 在PowerShell手动执行完整构建命令：
-
-```powershell
-Set-Location -LiteralPath D:\VSCode\CodeFiles\Git_TD\Anlogic2
-./scripts/build.ps1
-```
-
-4. 该命令使用成功种子6，依次完成综合、布局布线、hold修复和带检查的bitgen。审核 `_build_secondary_help_fixed720_seed6/console.log`、最终 `.ts/.status` 及 `bitgen.log`，要求setup/hold WNS非负、TNS=0、DRC通过且明确生成新bit，再核对SHA256并烧录。GUI默认物理设计策略不能当作已验证脚本的替代；新改源码生成的bit需重新上板验收。
-
-默认TD路径 `D:/TD_6.2.1/bin/td_commands_prompt.exe`，可通过 `-TD` 指定其他位置。脚本完整综合、布局布线、修hold，检查时序/警告/源文件新鲜度后生成唯一当前bit。所有build目录已移出，下次脚本自动生成 `_build_secondary_help_fixed720_seed6`；没有PR数据库时不能单独运行bitgen。成功种子6仍在 `build_secondary_main5e_pr.tcl`，并汇总于 `seed/seed_config.json`，改源码后必须重新验证，不保证同种子必定闭合。
-
-保留bit对应最终资源：LUT9905/19600（50.54%）、FF6468/19600（33.00%）、Slice5775/9800（58.93%）、BRAM9K20/64、BRAM32K13/16、DSP5/29、PLL4/4。setup +0.309ns、hold +0.022ns、TNS=0，原始时序、面积、DRC/bitgen依据保存在 `seed`。
-
-ModelSim从 `sim` 目录执行，例如：
-
-```powershell
-& D:\Modelsim\win64\vsim.exe -c -do run_secondary_help.do -l help.log
-& D:\Modelsim\win64\vsim.exe -c -do run_mbp1_reconnect.do -l reconnect.log
-```
-
-检查退出码、PASS及无FAIL/Fatal/Error。用英文日志名，避免本机中文日志路径启动异常。2026-10-03以远程最新版本为基线整理后，独立源码副本通过9组回归、28条PASS，无仿真错误：说明页、官方RAM原语、双板重连、按键、本地控制、固定720p图片流、固定尺寸说明背景、顶层背景加载及讲解切页。完整综合、布局布线、STA、DRC和bitgen通过，setup +0.309ns、hold +0.022ns、TNS均为0。测试bit留在工程外验证目录，不替换远程已验收bit，不要求因本次整理重新上板。仿真源码保留，work库和日志可重新生成。
-
-## 目录与回溯
-
-逐目录审核结果：
-
-| 目录/文件 | 保留理由及整理结果 |
+| 文件/目录 | 作用 |
 |---|---|
-| 根目录 `.al`、README、LICENSE、Git配置 | 唯一入口、最终介绍、版权及版本控制；保留 |
-| `src` | 当前工程源文件和实际include字库；没有可安全移出的源码 |
-| `vendor` | 当前工程直接引用和TEMAC隐式网表；全部保留 |
-| `constraints` | 当前管脚、时序约束；保留 |
-| `scripts` | 完整构建PS1及综合/bitgen两个Tcl；全部保留 |
-| `sim` | 当前功能、原语和双板重连回归；全部保留，不依赖旧历史提交；跨板重连需同级 `Anlogic` |
-| `assets` | 12张规范TF位图和说明背景源图保留；11张已不用的源PNG和可再生说明媒体manifest归档 |
-| `tools` | 安全写卡工具、说明页字体生成源码；均有实际用途，保留 |
-| `seed` | 当前fixed720种子6、原始时序/资源/DRC依据；旧v2成功配置另留 `seed_config_help_v2.json`，旧bit和重复报告归档 |
-| `release` | 唯一最新已验收bit及发布校验记录；保留 |
-
-历史build数据库不参与源码重建，当前目录不要求预先存在build缓存。回归源码不是中间编译产物。
-
-移出内容位于 `D:\VSCode\CodeFiles\Git_TD\rubbish\双板软件与旧位流整理_20261003`，CSV清单记录原路径、目标路径、长度和SHA256。可按清单移动回原路径，勿覆盖新文件；归档不随普通Git拉取提供。当前工程具备从源码完整重建的依赖。
-
-本轮进一步审核清单及独立重建证据位于 `D:\VSCode\CodeFiles\Git_TD\rubbish\project_audit_20261003`。说明背景/字库生成工具将来可能再次生成预览图与manifest，它们不属于编译必需文件。
-
-副板整理基线功能源码来自远程 `72a8937`；本轮副板只本地提交，不推送远程。
-
-## HDMI直通拓展：共享PLL基线已上板通过
-
-2026-10-08用户确认共享PLL候选上板通过。原正式入口默认关闭共享PLL，原发布bit不变；`hx4s20_secondary_shared_clock.al` 是独立时钟验证入口，不是HDMI直通版本。
-
-```powershell
-./scripts/build.ps1 -Variant shared-clock
-```
-
-输出 `release/hx4s20_secondary_shared_clock.bit`，SHA256为 `87AD8E62FA57719CBFAD35B9F1A648722CEE1BC4F86AFC7768E7AA90D9C64D82`。该bit保留原副屏功能，HDMIA仍输出，尚未接收HDMIB。
-
-共享PLL保留存储50MHz及相对8ns偏移、以太网125MHz及相对2ns偏移；采用存储时钟反馈补偿和全局缓冲。实际占用LUT10000（51.02%）、FF6466、Slice5805（59.23%）、BRAM9K20、BRAM32K13、DSP5、PLL3；setup +0.245ns、hold +0.027ns，TNS=0。官方PLL模型对照测试和9组原功能回归通过。
-
-闭合报告保留在 `seed/shared_clock`。本次BOARD PASS只适用于共享PLL版本，不能当作HDMI接收通过。后续按 [直通实施计划](../记录文档/副板_HDMI音视频直通实施计划_20261008.md) 推进独立720p音视频直通，再整合自动切源。
-
-## HDMI直通：独立诊断版本，待上板验证
-
-2026-10-09新增 `hx4s20_secondary_hdmi_relay_diag.al`，顶层为 `top_secondary_hdmi_relay_diag`。这是单独验证 **电脑 HDMI → 副板 HDMIB → HDMIA → 显示器** 的入口，不是原副板工程的替代版本。原正式和共享PLL的两个已通过bit均保留；主板工程未改，副板没有push。
-
-```powershell
-Set-Location -LiteralPath D:\VSCode\CodeFiles\Git_TD\Anlogic2
-./scripts/build.ps1 -Variant relay-diag
-```
-
-输出 `release/hx4s20_secondary_hdmi_relay_diag.bit`。当前SHA256：
-
-```text
-29ED6C953F4DBEB0B4402425DFD9C638BEB73B779CF52E57F3B7081EA834EC5E
-```
-
-### 实现与验证边界
-
-- 使用官方IDDRx2接收，四条通道（包括TMDS时钟）共同分成双位数据、寄存后用原工程已有的单时钟ODDR发送。原样重发串行位流，音频数据岛不剥离。无需SDRAM帧缓存、DSP或BRAM。
-- 内置只读E-DDC：256字节EDID，仅声明720p60/59.94、RGB8及双声道48kHz/16-bit LPCM，不支持HDCP、HDR、深色或1080p。声明能力不是实际音视频通过的证据。
-- 接收端在配置后先保持上游HPD低约200ms，再拉高；EDID服务独立于输出显示器HPD。下游HPD只控制实际输出，使电脑枚举不被下游握手卡住。EDID请求/读地址被记录为诊断标志，标志并不证明电气层已经完整读出EDID。
-- 约3ms时钟测量就绪后锁定接收PLL；三通道符号对齐一致，连续8帧总时序正确才使能输出。不合格时每约200ms步进采样相位并重新训练；下游断开或源时钟停止会关闭输出。
-- 诊断版时钟识别范围为74.0～75.1MHz，覆盖标准74.25/74.176MHz以及当前已通过主板的整数PLL 75MHz输出。75MHz只是辅助板间测试能力，EDID不变，仍仅声明标准720p；行/帧总时序仍检查1650×750，没有取消格式拒绝。STA按上限75.1MHz而非较慢的74.25MHz约束。
-- 监测器只是使能判据，不是RGB解码、逐像素合法性检查或误码率测量。真实线缆、输入电平、抖动和像素/声音正确性仍需板测。
-- 本独立bit没有TF、SDRAM、本地图片、说明页和以太网功能；没有信号时黑屏/显示器无信号属预期。正式版本后续才整合自动切源和回退。
-
-时序边界必须明确：`secondary_hdmi_relay_diag.sdc`只对三根外部TMDS数据输入到首级IOL采样器设置例外，因为运行时动态调整采样相位，没有固定外部建立/保持关系。**串行输入眼图余量未由STA证明**，不能称为全链路时序已证明。DDR并行输出、接收监测、发送器及复位的内部路径仍接受STA；50MHz与外部接收域的真实CDC使用同步器。该边界和板测依据应随最终作品保留。
-
-独立诊断实际资源：LUT1210/19600（6.17%）、FF660/19600（3.37%）、Slice685/9800（6.99%）、PLL1/4、GCLK4/16、BRAM9K/BRAM32K/DSP均0。**这些不是完整副板集成后的资源用量。** 内部setup +0.165ns、hold +0.054ns、TNS均0，无多驱动及异常时序路径。50MHz板载时钟存在工具PHY-5079局部布线提示，路径已被STA覆盖，没有新增忽略内部路径的例外。种子6和原始报告/日志保存在 `seed/hdmi_relay_diag`。
-
-六组HDMI仿真共33条PASS：EDID校验、重复起始/连续读取/分段边界/NACK及诊断标志，另覆盖空闲/上电卡低/实际边沿检测；官方DDR模型四通道位级一致；官方PLL联合模型60/59.94/75MHz、相移、失源及75.4/148.5MHz拒绝；含音频数据岛的控制同步、错误总时序/不同通道位偏移拒绝；顶层用74.25、75MHz及带逐通道时钟偏斜的75MHz三种案例验证HPD、B/C页、使能、重训、插拔，偏斜案例另检查1000次四通道逐位输出一致。新增实际PAD模式对照，检查DDRx2接收/DDRx1发送与逻辑模型一致，75MHz转发时钟周期/占空比正确。顶层测试缩短HPD/时钟计数窗口及帧尺寸，生产参数不变。TD自带PLL仿真模型的load_reg端口宽度与综合原语不同，有一条已知宽度警告；连接恒为0，不启用动态参数加载。
-
-从 `sim` 运行 `run_hdmi_edid_720p.do`、`run_hdmi_relay_phy.do`、`run_hdmi_relay_clock.do`、`run_hdmi_tmds_monitor.do`、`run_hdmi_relay_diag.do`、`run_hdmi_relay_pad.do`，均需退出码0、PASS且无Fatal/Error。
-
-### 上板操作及预期现象
-
-1. 优先通过JTAG临时加载上述诊断bit，不先覆盖已经稳定的Flash版本；主板不用改。
-2. 显示器接副板 **HDMIA**，电脑输出接副板 **HDMIB**，勿接反。电脑选复制或扩展，活动信号设1280×720、60Hz或59.94Hz，RGB8；禁用HDR和受保护视频。首次可先测试桌面/自制彩条。
-3. 烧录后拔插一次电脑到B口的HDMI线，使其重新枚举。FPGA自身EDID名称为 `FPGA-720P`，并非要求给实体显示器改名。稳定输入经8帧判定后，显示器应显示电脑画面；相位重训可能多等几个约200ms周期。实际HDMI输入尚未通过板测，不能保证本机自动选择的分辨率。
-4. 测音频时电脑播放设备选该HDMI设备，设置双声道、48kHz、16-bit LPCM；显示器须能接收HDMI音频并有扬声器或音频输出。声音不经过副板本地功放。用闪屏与短音同步的本地视频检查音画相对同步。
-5. 检查连续5分钟画面/声音、10次B口拔插、3次冷启动；拔源时停止输出，重插后应重新训练，无需整板复位。不支持的时序应保持无输出。
-
-诊断数码管低四位每约0.67秒按 `A页 → 时钟页 → B页 → C页` 轮换，记下四组数；不方便录像可直接文字回复：
-
-- 状态页 `A H R P`：`A`固定页标识；`H`的位3=上游HPD就绪、位2=下游显示器HPD、位1=收到EDID读地址、位0=收到DDC起始；`R`的位3=输入时钟频段有效、位2=PLL锁定、位1=三通道对齐、位0=帧格式有效；`P`为相位扫描编号。它们都是十六进制。
-- 时钟页显示每1ms源边沿计数除以16的十六进制值，标准74.25MHz约为 `1220`，主板75MHz约为 `124F`；不是分辨率。如果仍为 `0000`，表示计数不足16，不能武断地认定就是完全零边沿。
-- 总线页 `B X Y S`：`XY`是一字节掩码：位7=SCL当前高/低，位6=SDA当前高/低，位5=SCL曾低，位4=SDA曾低，位3=SCL曾跳变，位2=SDA曾跳变，位1=FPGA当前请求拉低SDA，位0=曾测到非零源时钟计数；`S`为EDID状态机编号（0空闲，1收地址，7发送数据，B忽略）。低电平/边沿标志在烧录启动后累计，跳变记录排除了同步器复位填充的假边沿；SDA跳变可能来自电脑也可能来自FPGA应答，不能单凭标志证明电脑通信正常。
-- 总线例子：`BC00`=SCL/SDA均高，未记录低电平、跳变或源时钟计数；`B300`=SCL/SDA均低且曾低，但未记录实际跳变；`BFD0`=当前均高，两线曾低且跳变，曾有源时钟计数，解析器空闲。B页只是数字逻辑电平观察，不是电压/波形测量；FPGA引脚没看到跳变不等于电脑插口绝对没发信号。
-- 发送页 `C T O1 O0`：`T`位3=发送复位已释放、位2=采样复位已释放、位1=接收允许、位0=显示器HPD采样高。`O1/O0`是通道1/0的符号位偏移。完整数字允许时为 `CFxx`，后两位不要求为00；它不证明HDMIA物理波形正常。
-- 例：`AC00`表示内部请求向电脑输出HPD高、显示器侧HPD输入采样高，但没看到EDID访问/接收锁定；它不证明电脑插口实际收到HPD，也不是电脑插线检测。`AF00`表示收到EDID读请求但输入接收未锁定；`AFF0`表示EDID请求、时钟、PLL、对齐及格式均有效（相位0）。没有EDID读取也可能是电脑使用缓存，需结合时钟页判断。
-
-LED按ADC信号定义：`led[0]`/A4心跳，`led[1]`/A3时钟频段有效，`led[2]`/C10 PLL锁定，`led[3]`/B12格式有效，不沿用旧正式bit的LED含义。
-
-实板记录：`BF52A118`/`94d0726`未通过，LED1心跳、其余灭、数码管0000。`9E7502AC`/`3ff1753`仍为AC00/0000，尚未修好实板故障。后续用户明确：G52 Max同时通过Type-C→DP连接电脑，之前的2560×1440/180Hz及改为720p60截图属于独立DP通道，不能作为PC→FPGA HDMI输入格式证据；此前据此排查分辨率的判断撤回。用户确认电脑自身HDMI口→副板HDMIB，副板HDMIA→显示器HDMI。当前版只增加现有同步器上的被动DDC/时钟观测，不改音视频转发、按键、EDID内容、电平标准或显示器设置，仍待定位根因。
-
-板级疑点记录：提供的HDMI原理图将DDC转换器标为TXB0104PWR，配置1kΩ/1.5kΩ上拉；[TI数据手册7.3.5](https://www.ti.com/lit/ds/symlink/txb0104.pdf)明确其不适用于I²C开漏接口，外部上拉应大于50kΩ。这仅说明原理图存在值得核实的兼容性疑点，**实物型号、模拟电平与波形均未确认，不能判定该器件就是故障根因**。不擅自要求焊接改板，不把SDA改为推挽输出。
-
-旧定位版`3B43B732`/`2c630e2`用电脑作源时为`AC00 → 0000 → BC00 → 0000`，插拔后用户报告不变。旁路同一电脑HDMI口/线直连屏幕可以显示，排除该源口/线/屏幕基本输出故障。改用主板HDMIA→副板HDMIB，副板HDMIA→屏幕时为`AD00 → 124F → BFD0 → 124F`：已看到75MHz时钟和DDC引脚低电平/跳变，但没有读地址标志，不能称作成功EDID通信；旧版74.0～74.5MHz门槛使PLL保持复位，解释了这次板间测试无信号，不解释电脑作源时为何没有输入。主板源码`hdmi_pixel_clock_pll.v`明确配置75MHz，与计数一致。
-
-75MHz兼容版`D0E16F2E`/`356ba58`板测仍无信号：A页为ADCx且x持续0～F，计数124F，LED2/3常亮、LED4灭，B页用户记录为“db50”（未将此读数擅自解释成其他值）。时钟与PLL已通过，当前停在通道对齐之前。
-
-本次仿真复现：给三个IOL的串行/并行时钟加入相反方向的0.25ns路径差，旧同相配置出现`clock=1 PLL=1 lane_locks=111 offsets=353 aligned=0 format=0`。这只是一个可复现且与现场阶段相符的失效场景，**不是实测板上偏斜，也不能据此宣布已确认全部根因**。将并行时钟细相位由4改为0，使其在75MHz下领先串行时钟约0.667ns，避开捕获临界边沿；两路运行时相移仍保持相同增量。该案例修正后可对齐、通过帧判定，并保持四通道逐位一致，共同延迟11UI。前/后证据保留在 `seed/hdmi_relay_diag/capture_skew_before.log` 与 `capture_skew_after.log`。
-
-同时将IOL采样复位在串行域两级释放，发送允许在串行下降沿采样、上升沿释放复位，避免新相位关系下不足一个周期的复位恢复路径。格式、同偏移及8帧判定未绕过，SDA/HPD/EDID、主板及正式副板/共享PLL bit均不变。
-
-相位版`4A8B6343`/`44f21d2`实际板测为 `ACF0 → 124F → BC10 → 124F`，LED2/3/4常亮但仍无信号。这确认输入频率、PLL、同偏移及帧格式判定通过，不证明接收像素完全无误或输出端正常。该版综合后网表数字仿真中，注入已确认的格式有效条件，发送复位正常释放且时钟转发有跳变；未复现板上无信号，没有把故障根因写成已确定。
-
-当前`29ED6C95`保留接收/PLL/EDID，将两时钟ODDRx2发送改为共享捕获相位标记、下降沿双位选择、上升沿寄存、单时钟ODDR输出，不将时钟信号直接用作数据选择。第一次未寄存的候选存在半周期复位/输出setup违例，bitgen门槛拒绝；增加输出寄存、删除不必要的双位流水复位后按原约束闭合，不添加时序例外。四路共同延迟在联合模型中仍为11UI，音视频相对位流不变。原正式/共享PLL bit不变，主板不改，副板仅本地commit，不push。
-
-用户确认`29ED6C95`/`c63d996`在主板HDMIA→副板HDMIB、副板HDMIA→屏幕接线下显示主板内容正常，读数ADF0/124F/BD50/CF22。**主板作为源的视频直通已通过，不能据此宣布电脑输入或音频通过，也未确认旧发送故障的精确物理机理。** 该独立版本不含以太网，副板不能控制主板属预期。
-
-换电脑作源后为AC00/0000/BC00/C100，Windows未新增显示目标，NVIDIA严格检测也没有发现。电脑HDMI直连显示器能识别第三个目标。代码核验显示主板HDMI核的EDID读取触发固定0，可以自主发送75MHz视频；板间测试没有验证PC依赖的HPD/DDC识别。只读Windows/PnP及NVIDIA未缓存连接列表均只有现有内屏/DP目标；这不等于测量到HPD实际电压。未发现EDID应答依赖输入视频时钟的死锁，EDID模块重复仿真通过；PC输入根因仍未确认。
-
-请回报电脑是否识别、画面/声音是否正常以及数码管低四位。独立直通上板通过后再接入原副板自动切源；该诊断阶段通过不等于整套副板新增功能通过。
-
-## 无需拆壳的HDMI握手线回环诊断
-
-新增独立入口 `hx4s20_secondary_hdmi_handshake_diag.al` / `top_secondary_hdmi_handshake_diag`，只用于上述PC不枚举问题的定位，不是视频直通的替代实现。HDMI标准相同不意味着接收端的握手和电气层已经由板间视频实验验证。当前没有可安全接触的测量点，因此利用现成GPIO和一根普通HDMI线进行外部电平传播检查；不要求拆壳、短接、注入5V或更换已正常的视频位流。
-
-```powershell
-Set-Location -LiteralPath D:\VSCode\CodeFiles\Git_TD\Anlogic2
-./scripts/build.ps1 -Variant handshake-diag
-```
-
-输出 `release/hx4s20_secondary_hdmi_handshake_diag.bit`，SHA256：
-
-```text
-8D02AC70B2A3E41D635EA72DD8C90075F368BA405D1CF95323B261BFE3B992BE
-```
-
-操作顺序：
-
-1. 断开副板HDMIA的显示器线、HDMIB的电脑线。电脑原Type-C→DP连接可保持。
-2. 用一根普通HDMI线连接**同一块副板的HDMIA和HDMIB**；不是两块板之间。USB/JTAG和副板供电保持正常。不接任何额外电源。
-3. 通过JTAG临时加载本握手诊断bit，**不写Flash、不改主板**。本bit没有TMDS视频输出，显示器不参与测试。
-4. 等约5秒，数码管轮换结果页`F0MM`、低电平快照页`E0LR`、高电平快照页`E1LR`、结果页，每页约0.67秒。全通过应为`F0FF / E000 / E111`，丝印LED2/3/4常亮、LED1心跳。按KEY1可重测。重复2次，并确认拔掉回环线后按KEY1不会仍报F0FF；缺线典型F015，但浮空/硬件差异可使失败码不同。
-5. 回报F0、E0、E1三组四位和LED状态。测完重新JTAG加载原视频诊断bit`29ED6C95`或已通过的副板正式bit，不把本bit当正式功能版使用。
-
-八个阶段各约0.5秒，阶段开始允许10ms稳定时间，随后每个50MHz周期累积检查；任何不匹配保持失败至该轮结束，不因最后一刻电平恢复而掩盖。完成显示`F0MM`，`MM`为通过位掩码，下面bit号从低位0到高位7：
-
-| bit | 检查路径/状态 |
-|---|---|
-| 0 | HDMIB的HPD请求低，本地PAD及经线缆回到HDMIA输入均应低 |
-| 1 | HDMIB的HPD请求高，本地PAD及经线缆回到HDMIA输入均应高 |
-| 2 | SCL释放后，A/B两侧FPGA输入均高 |
-| 3 | A侧开漏拉低SCL，A/B两侧FPGA输入均低 |
-| 4 | SDA两侧释放后，A/B两侧FPGA输入均高 |
-| 5 | A侧开漏拉低SDA，A/B两侧FPGA输入均低 |
-| 6 | B侧开漏拉低SDA，A/B两侧FPGA输入均低 |
-| 7 | 最后释放全部DDC线，A/B输入均高且A侧HPD输入高 |
-
-测试中显示`DPXY`：P=阶段0～7；X低三位为A侧HPD/SCL/SDA输入，Y低三位为B侧HPD本地PAD/SCL/SDA输入。LED2只表示本轮完成，LED3表示HPD两项通过，LED4只表示独立DDC检查2～6通过，不再被同时检查HPD的最后一项污染。失效掩码为`FF XOR MM`；例如仿真中HPD断路得到F07D，SCL断路F0F7，SDA断路F09F。
-
-E页的L/R均为0或1：L=HDMIB本地HPD PAD数字回读，R=HDMIA对端HPD输入。E0页是请求低时的快照，正常E000；E1页是请求高时的快照，正常E111。E110表示本地引脚高、另一端仍低；E100表示内部请求高但两端都读低；E101表示本地低、另一端高，需检查接线/其他驱动。快照冻结首个失败采样；没有失败则保留该阶段最后有效采样，不是测量电压值。原始网表确认J6为BI PAD、输出使能ts=0、输入diq接pins_ff1[5]，未把回读优化成内部请求。
-
-**证据边界：** 本诊断检查实际引脚经两侧接口和线缆后的静态数字电平传播，不执行EDID读取，不证明100kHz I²C波形、连接电脑后的电压/负载、TMDS端接或完整HDMI合规。失败定位到某条信号通路，不能单凭失败码断言某个芯片/连接器损坏；路径包含A/B两端、转换器、线缆和接收GPIO。F0FF也不是PC/音视频上板通过标志。
-
-ModelSim `sim/run_hdmi_handshake_diag.do`共9条PASS，覆盖正常回环、缺线、HPD/SCL/SDA断路、短时故障锁存、KEY1重复测试，以及HPD快照/外部强制PAD低电平与内部拉高请求的区分，Errors/Warnings均0。TD种子6完成布局、STA、DRC与bitgen，内部setup +13.659ns、hold +0.397ns、TNS=0，无多驱动或异常时序；仅外部异步慢速探针输入至同步器设置例外。LUT221/19600、FF129/19600、Slice128/9800，不用PLL/BRAM/DSP；50MHz局部时钟布线提示已由内部STA覆盖。报告在 `seed/hdmi_handshake_diag`，原视频/正式/共享PLL bit哈希均不变。副板仅本地commit、不push。
-
-首版握手诊断`1AE4B230`/`a871997`实板记录：用户反复读出`F97U`，LED2亮、LED3/4灭。检查发现该新增ADC手抄段线4/5/6为A8/A7/B5，正确参考应为B5/A8/A7；该错误会把逻辑0显示成9、逻辑D显示成U，F/7不变，故**内部F07D被显示成F97U**，与LED一致。这是新增诊断引入的错误，不是用户误读。撤回此前猜测F097的解释；实际提示HPD低通过、高失败，SCL/SDA单独测试均通过，而旧LED4因最后HPD相关测试失败同时熄灭。
-
-本次修正段线约束，并在build.ps1增加与已上板通过参考ADC的显示/LED映射比较；故意注入错误段线位置可被门槛拒绝。增加HPD本地实际引脚回读及快照，不更改已经正常的视频路径。当前仅定位到回环中的HPD高传播异常，未确定输出脚、接头、线缆、输入脚或电压负载中的具体根因，不能据此要求换芯片/改板。
-
-## 新获得的官方环出源码基线（非正式版本）
-
-2026-10-09用户提供 `HX4S20_Contest_202606/2_Example/HDMI环出实验/eg4s324_hdmi_loop`。新AL指定BG256，但目录中旧 `hdmi_loop.bit` 文件头明确为CG324、2021/10/29；旧报告也使用V11/U4等旧封装引脚。因此旧bit不能直接作为当前板的位流。按当前官方RTL和ADC重建 `release/hx4s20_secondary_official_hdmi_loop_baseline.bit`，SHA256 `329A33F541815AB64FBFDD59208D2FACD06D94880160BDF3581D213A6E728F98`，文件头EG4S20BG256。
-
-接线为**PC→HDMIA输入，HDMIB输出→屏幕**。RTL功能未改，仅独立快照中处理工程路径/XML、EDID初始化文件路径；旧SDC含不存在的顶层音频端口和过时实例路径，替换为实际50MHz/74.25MHz时钟及真实输入采样边界约束。原项目/bit未覆盖。源码仍有串行bitslip setup -0.831ns、TNS -4.067ns/6端点，hold +0.096ns、TNS=0；这是应用户要求保留的官方基线对照，**不是时序闭合的正式发布，不允许把它标为完整BOARD PASS**。资源LUT820、FF873、Slice630、BRAM9K1、PLL2，报告在 `seed/official_hdmi_loop_baseline`。
-
-复现命令：`./scripts/build_official_hdmi_loop.ps1`；依赖用户提供的原官方源码包，可用 `-ExampleRoot` 指定位置。脚本不改官方原文件、不把来源目录中的旧bit复制成新位流、不放宽内部时序来隐藏违例。原始基线仅临时JTAG测试，不写Flash。没有数码管页或博物馆功能；只看PC枚举及两颗官方LED。官方ROM名称AnlogicHDMI，首选720p60，两个EDID块校验均0。官方RGB/DVI重编码顶层不能保证HDMI音频环出。
-
-用户已确认该BG256基线能让电脑识别A口；截图中的AnlogicHDMI活动模式为1280×720、60Hz、RGB8、SDR，但屏幕无输出。原源码和原生IO报告均有B口四路发送，不能把无画面未经验证地解释为“没有B输出代码”。此证据只确认A口握手通过，尚未确定B口无画面的原因，也不能把前期两板回环失败认定为“两板均损坏”。后续先A输入/B输出独立音视频验证；用户仍偏好最终B输入/A输出，但允许在保留全部博物馆功能并验收后采用A输入/B输出，不提前定版。
-
-## 当前候选：HDMIA输入、HDMIB输出
-
-> 以下为独立直通诊断。2026-10-10集成候选见本文“博物馆与HDMI集成候选”章节；独立695D0D25 bit已通过且保留，不覆盖为集成版。
-
-本节覆盖上面旧诊断的B输入/A输出接线。用户允许最终采用A输入/B输出，条件是保留全部副板功能并回归通过；**本候选仅独立音视频直通，尚未集成博物馆**。
-
-入口`hx4s20_secondary_hdmi_av_diag.al`，顶层`top_secondary_hdmi_av_diag`；当前修正版位流`release/hx4s20_secondary_hdmi_av_diag.bit`，SHA256 `695D0D2548BF57671866BD523B9C7845CB68E531558AE7950E0055E2AC4B27D0`。副板根目录复现：`./scripts/build.ps1 -Variant av-diag`；种子10、lane0/3局部布局约束在构建Tcl中，不能省略这些步骤后冒充相同发布结果。
-
-采用已被PC识别的官方HPD/DDC/ROM，复用已通过主板源视频测试的四路原样转发，包含原TMDS时钟、数据岛、ACR及InfoFrame，不走RGB/DVI重编码。共享诊断新增行为默认关闭，旧顶层三种案例19条PASS；PHY RTL未改。官方SDA驱动方式及ROM内容不变，仅适配ROM路径并明确接入启动复位。
-
-资源：LUT1062/19600（5.42%），FF698/19600（3.56%），Slice645/9800（6.58%），BRAM9K1/64，BRAM32K0，DSP0，PLL1/4。内部setup +0.041ns、hold +0.054ns，TNS均0，无多驱动、无异常时序路径。PHY-5079提示50MHz时钟的一段本地走线，已纳入路由STA，未隐藏为假路径。外部高速数据到首级IOL仍为动态校准边界，眼图必须板测。
-
-五组仿真37条PASS：官方EDID/新候选5、旧顶层19、时钟/PHY6、实际PAD数字模式1、监测/像素码碰撞6。读取全部256字节，检查两块校验及音频声明；四路比较2000次，共同延迟11UI，覆盖合法RGB码、前导及保护带/TERC4样式载荷。**不是有效LPCM包生成测试，不能据此声称声音上板通过**。PAD检查使用实际网表IN_DFFMODE=NONE；固定输入延时6及电气余量尚未板测。报告在`seed/hdmi_av_diag`。
-
-### 接线、操作与预期现象
-
-1. 先JTAG临时烧录本候选，保留原博物馆Flash。**电脑HDMI→副板HDMIA，副板HDMIB→显示器HDMI**。G52 Max原DP连接可保持；显示器选择板卡所接HDMI输入。
-2. 电脑输出目标选**AnlogicHDMI**，活动信号1280×720、60Hz、RGB8、SDR；用户截图已确认该目标正确，不再调整G52的DP通道。若烧录后没有重新枚举，拔插电脑→A口线一次。官方HPD先低约671ms，然后就绪。
-3. 有效时钟经PLL、同偏移及连续8帧判定后，B口应输出电脑桌面/本地视频；相位重训每步约200ms。预期稳定播放、不周期性黑屏；实际稳定时间由板测记录。
-4. 音频输出选AnlogicHDMI对应设备，先用**双声道48kHz、24-bit LPCM**（官方ROM声明09/04/04），不使用压缩位流、HDR或HDCP内容。声音由B口送显示器，不经副板本地功放；显示器须支持HDMI音频且未静音。确认连续声音后再用闪屏/短音同步视频检查同步。
-5. 拔A口源再插回，应停止输出后重训。**此独立候选没有本地轮播回退，断源黑屏属于当前步骤预期**，不提供以太网控制或说明页。完整集成才要求有源外部优先、断源恢复现有页面，同时控制持续工作。
-
-数码管仍按A状态→计数→B总线→C发送/偏移轮换，位定义见前文。74.25MHz计数约`1220`，主板75MHz约`124F`；LED1心跳，LED2有效时钟，LED3 PLL，LED4帧格式。B页现在是**被动观测器**，请求拉低位固定0、状态编号不是官方FSM。C页高位`E`表示发送/采样/接收均允许但B口HPD读值0，也可以正常输出，不能要求必须为`F`。若无画面，回报四组页值和LED2～4，不重复更改DP显示设置。
-
-原主/副板正式bit、共享PLL、旧直通及官方对照bit哈希均未变化；主板未改。仅本地commit、不push。独立PC视频/声音通过后才集成并回归TF轮播、双板控制、SW3自动/手动、SW4说明页、应急和断源恢复，未完成前不称`SECONDARY HDMI RELAY BOARD PASS`。
-
-### 2026-10-09 PC源无信号的帧判定修正
-
-验收更新（2026-10-10）：用户确认695D0D25版本显示扩展桌面及本地视频，无花屏、无周期性黑屏，声音同步。独立PC→HDMIA、HDMIB→屏幕的音视频已通过；测试时长、插拔和冷启动次数未提供，不补写通过。该bit保留为集成前基线，SHA256不变。博物馆切源/回退及原功能尚未集成，不等同于最终`SECONDARY HDMI RELAY BOARD PASS`。以下为修复过程记录。
-
-## 博物馆与HDMI集成候选（2026-10-10，待上板）
-
-集成前按用户要求先提交独立板测记录：`3042df5`；主板未改，副板未push。当前新增入口`hx4s20_secondary_hdmi_museum.al`，顶层`top_secondary_hdmi_museum`；bit为`release/hx4s20_secondary_hdmi_museum.bit`，SHA256 `85E5C239BFF500C794896F1BF0FE5233DC0A51244F9C91A16DB86230955DC458`，654090字节，EG4S20BG256。复现命令：副板根目录`./scripts/build.ps1 -Variant hdmi-museum`。源码审查/GUI打开用该AL；复现通过的布局必须保留构建Tcl的种子7和局部布局步骤，不把另一GUI默认策略的结果当成本报告。
-
-### 接线和既定功能
-
-- 显示器始终接副板**HDMIB**，电脑HDMI接**HDMIA**；本地页面也从B输出。主板保持原bit和接线，双板网线照旧。不需要电脑以太网软件。
-- 无有效输入：原轮播、简介、说明页、应急页照常按最新状态运行。
-- 有效720p60/59.94Hz RGB8输入连续8帧通过后：外部音视频优先；即使应急或SW4说明页开启，也不强制切回本地。电脑决定播放何种视频，FPGA不自动打开电脑逃生视频。
-- 输入丢失/不合格：自动回到当前本地状态，不整板复位、不重载全部TF素材。以太网、按键、SW3自动/手动和SW4说明页逻辑在直通期间继续运行；本地内容只是暂不显示。
-- 输入EDID及HPD复用已通过版本，仍为AnlogicHDMI/720p、双声道48kHz24-bit LPCM。声音通过B口到显示器，不经过副板本地功放。本地输出仍是原视频模式。
-- LED/数码管保留原媒体加载含义，**不再轮换独立直通诊断A/B/C页，也不能沿用其LED4帧有效含义**。
-
-### 单输出与安全切换
-
-不复用两组已经串行化的GPIO。原本地RGB最终像素及75/375MHz时钟被导出，原厂家TMDS编码器复用，原toggle/shift发送结构改为四路共同双位总线；外部IDDR采样/分组相位和原始四路位流保持。两路在一套四路ODDR输出前选择，共用原生CSB可切换全局时钟。
-
-切换仅复位HDMI输出IOL：先静音8个50MHz周期，再切时钟，目标就绪后稳定等待至少1ms，等待同步空白/控制指示，再经4个串行周期释放。输入时钟停高或停低均可返回本地，不等待已停止时钟的边沿。允许显示器重新锁定时短暂黑屏，控制器等待时间不等于显示器重新锁定耗时，不承诺无缝。
-
-原共享PLL、媒体、存储刷新、扫描时序、网络和状态机未随输出切源复位。本地视频时钟始终75MHz；外部随输入74.25MHz/59.94Hz变化。共享行为`EXTERNAL_HDMI_PHY`、`EXTERNAL_TRANSMITTER`默认0；旧入口保持原连接和行为，旧正式/共享PLL/695D0D25位流均未覆盖。
-
-### 资源、时序与验证边界
-
-| 资源 | 共享PLL已通过基线 | 当前集成候选 | 增量 |
-|---|---:|---:|---:|
-| LUT | 10000 | 10966（55.95%） | +966 |
-| FF | 6466 | 7100（36.22%） | +634 |
-| Slice | 5805 | 6314（64.43%） | +509 |
-| BRAM9K | 20/64 | 21/64 | +1 |
-| BRAM32K | 13/16 | 13/16 | 0 |
-| DSP | 5/29 | 5/29 | 0 |
-| PLL | 3/4 | 4/4 | +1 |
-| GCLK | 4/16 | 10/16 | +6 |
-
-setup +0.039ns、hold +0.030ns，TNS均0；CSB输出两种时钟分别定义为tx_local_serial、tx_external_serial，报告有本地→本地TX和外部→外部TX路径。系统50MHz与共享PLL相关，保持完整时序检查，不把hold违例直接当作CDC屏蔽。初版共享PLL被布局到左上，产生约-1.54ns hold；全局缓冲或工具预布线修复未解决（该器件不支持后者）。固定共享PLL到已验证左下x000y000、接收PLL到已验证左上x000y071后消除大偏斜；两组DDR分组寄存器局部放置，闭合剩余短路径，没有改PLL分频/相位，也未放宽时序。
-
-DRC无多驱动、无异常时序路径。保留并披露原厂家SDRAM非法位置提示PHY-7002和一个本地时钟段PHY-5079，实际重定位后的路径已纳入路由STA。三路外部数据首级动态相位训练的采样眼图例外与旧版相同，其电气余量仍需板测。
-
-13组仿真54条PASS：切源6、集成AV6、厂家本地发送器等价1、按键1、状态1、页面切换1、真实BRAM说明页1、MBP1端点1、帧存储对齐2、共享PLL1、媒体加载9、旧AV5、旧relay19。集成测试采用缩短几何、真实PLL/IOL/CSB/编码器模型及本地后台时钟模型，证明源切换不停止后台；真正的媒体、网络和交互模块独立回归，不把模型当成完整双板验收。厂商VHDL启动算术未知值警告保留；发送器比较在暖机后拒绝未知输出。外部四路比较覆盖合法RGB、控制、保护带/TERC4样式载荷，不是实际有效LPCM/BCH包生成或SDF、电气验证。报告在`seed/hdmi_museum`。
-
-### 上板短检查
-
-1. 先JTAG临时烧录集成候选；B接屏幕、A暂不接电脑，TF卡及双板网线保留。检查轮播/简介，SW4说明页及关闭后恢复；四键调参/平移、SW3自动/手动和网线重连模式同步仍正常。
-2. 接A口电脑，沿用已确认AnlogicHDMI 720p60、RGB8、SDR及HDMI音频输出。观察连续视频/声音无花屏、周期性黑屏、不同步。
-3. 视频播放时用副板按键控制主板、切SW3；主板行为应响应。SW4本地说明页此时只在后台更新，不覆盖外部视频。
-4. 拔电脑→A口线，允许屏幕重新锁定，随后应显示当前模式/说明页或主板应急对应本地页面，不需要KEY4或重新上电；重接A再次进入直通。
-5. 无源应急及退出、本地TF正常；有源应急外部视频优先，断源后显示当前应急。冷启动和反复插拔次数、显示器锁定时间由实测记录，不预先写通过。
-
-仅当上述完整功能回归通过，才能回复`SECONDARY HDMI RELAY BOARD PASS`并作为集成正式版。当前只完成工程、仿真及STA交付，不提前替用户签收，不push。
-
-### 独立直通阶段的历史修复记录（695D0D25）
-
-前版4C311166/3967cf0板测失败。用户视频读出1220、BFD0、AFEE/AFEF及C777/C711：在部分相位三通道已对齐，但帧未通过，发送复位未释放。不能继续把它当成无源时钟或输出显示器模式问题。
-
-复现出的代码缺陷：普通合法RGB视频码也可等于133保护带码及TERC4码。旧监测只看码值就进入数据岛，误读RGB为HS/VS，破坏行/帧计数。按[HDMI 1.3的5.2.1.1及5.2.3](https://fpga.mit.edu/6205/_static/F23/common_files/week04/CEC_HDMI_Specification.pdf)，加入八字符数据岛前导检查；未放宽1650×750、同偏移、8帧判定或采样约束。原RAW PHY、PLL配置、EDID、端口方向均不变。
-
-测试使用R/G=55（编码133）、B=6d/6c/ba（编码28e/271/2c3）这些均保持零运行差异的合法RGB像素，旧RTL复现锁定但line_bad=1、good=0，新RTL通过；实际前导后的数据岛内同步变化仍可读取，错误帧宽仍被拒绝。顶层改为192×16缩短几何的完整前导/保护带测试；这不是已捕获了PC的实际像素流，也不能断言代码缺陷是唯一实板原因。修正版待上板验证LED4及图像/声音。再测试无需改PC的已确认720p60设置，保持PC→A、B→屏幕；失败时继续回报四组页值。
+| src/secondary/top_secondary_hdmi_museum.v | 产品顶层，终端/接收/输出连接 |
+| src/secondary/top_secondary_main5e.v | 原媒体、网络和按键终端 |
+| src/secondary/top_secondary_main5e_netdiag.v | 实际MAC/MBP1连接，不能按diag字样删除 |
+| src/secondary/secondary_main5e_keys.v | 四键分组和SW3重连同步 |
+| src/secondary/secondary_main5e_status_adapter.v | 主板实际状态到本地页 |
+| src/memory/sdram_bmp_row_top_v66.v | TF、SDRAM、扫描、叠加；历史模块名top_v66保留 |
+| src/storage、src/memory | FAT32、行缓存、打包、SDRAM/FIFO |
+| src/secondary/secondary_help_overlay.v、secondary_help_font.vh | 两栏说明、中文ROM、底部状态 |
+| src/clock/secondary_media_eth_pll.v | 媒体/以太网共享PLL |
+| src/clock/hdmi_relay_clock.v | 输入测频、接收PLL、相位训练 |
+| src/secondary/top_secondary_hdmi_relay_diag.v | 集成版接收核，不是无关诊断 |
+| src/video/hdmi_relay_phy.v、hdmi_tmds_monitor.v | 四路采样、分组、符号和帧检查 |
+| src/video/secondary_hdmi_local_pairs.v | 厂家RGB编码及原toggle/shift发送结构 |
+| src/video/secondary_hdmi_source_switch.v | 静音、CSB时钟选择、一套ODDR |
+| vendor | 必需厂家IP、加密RTL、初始化文件和版权 |
+| sim | 当前回归源码/夹具，不是额外AL入口 |
+
+本地与外部在一套输出ODDR**之前**选择，不在两套串行GPIO后复用。外部保留原四路TMDS时钟、视频、控制、数据岛、ACR和InfoFrame，不经SDRAM、不单独延迟音频。先输出复位8个50MHz周期，切钟后目标就绪等待至少1ms及空白/控制指示，再经4个串行周期释放。停止在高/低电平的源时钟不阻塞回退，其余系统不跟随复位。
+
+`EXTERNAL_HDMI_PHY`、`EXTERNAL_TRANSMITTER`默认0，保留既有接口语义。不要按历史阶段名删掉AL引用的源文件。sim中的独立AV参考顶层只用于回归。
+
+官方EDID来自`HX4S20_Contest_202606/2_Example/HDMI环出实验/eg4s324_hdmi_loop`中的iic/al_ip，复用已通过握手及ROM，仅适配初始化路径。所需厂家副本均在vendor，保留源码版权；编译不依赖工程外官方例程或rubbish。
+
+## 6. 代码审查、手动构建与生成bit
+
+工具：`D:\TD_6.2.1\bin\td_commands_prompt.exe`（已验证6.2.168116），`D:\Modelsim\win64\vsim.exe`。
+
+1. TD打开唯一AL，进入TOP_MODULE审查RTL，AL列出完整源文件/约束。
+2. PowerShell进入工程根目录，运行：
+
+~~~powershell
+.\scripts\build.ps1
+~~~
+
+执行综合、合法化、布局、布线、hold修复、STA、DRC和bitgen。新bit/报告输出到`build/`，**不自动覆盖已上板release bit**；可用`-TD`指定编译器路径。
+
+3. 手动TD Tcl：从工程根目录执行`source scripts/synthesize_and_route.tcl`，成功后执行`source scripts/generate_bitstream.tcl`。
+4. 种子**7**；ADC固定共享PLL x000y000、接收PLL x000y071；DDR lane0/1的2×4局部布局在构建Tcl。GUI默认布局不包含全部步骤，不能当成已验证策略。
+5. bitgen拒绝setup/hold违例、TNS非0、多驱动/异常路径、陈旧数据库或缺失依赖。新bit板测后再发布，不把编译成功等同于上板通过。
+
+发布STA：setup +0.039ns、hold +0.030ns，TNS均0；tx_local_serial、tx_external_serial两种模式和各自源到TX都检查。相关50MHz域未作为假CDC屏蔽。外部首级动态采样眼图仍须实板验证。原厂SDRAM位置提示PHY-7002及一个局部时钟段PHY-5079保留并披露，重定位后实际路径纳入STA；无多驱动/异常路径，PLL分频/相位未为闭合时序更改。
+
+## 7. 资源、回归与成功种子
+
+| 资源 | 已验证版本占用 |
+|---|---:|
+| LUT | 10966/19600，55.95% |
+| FF | 7100/19600，36.22% |
+| Slice | 6314/9800，64.43% |
+| BRAM9K | 21/64 |
+| BRAM32K | 13/16 |
+| DSP | 5/29 |
+| PLL | 4/4 |
+| GCLK | 10/16 |
+
+`seed/hdmi_museum`保留当前成功种子7的资源、两模式STA、DRC、bitgen和13组54条PASS证据；其余seed为历史成功记录，不是另一个入口。报告旧路径是生成时的记录，不是当前编译依赖。
+
+回归覆盖切源、AV、本地厂家发送器等价、按键、状态、说明页、切页、MBP1重连、帧缓存、PLL和BMP异常格式。例：
+
+~~~powershell
+cd sim
+& D:\Modelsim\win64\vsim.exe -c -do .\run_secondary_hdmi_museum.do
+& D:\Modelsim\win64\vsim.exe -c -do .\run_secondary_hdmi_source_switch.do
+& D:\Modelsim\win64\vsim.exe -c -do .\run_secondary_main5e_endpoint.do
+~~~
+
+`sim/run_secondary_frame_store_alignment.do`从工程根目录运行，其余按do中的相对路径从sim运行。仿真库/日志可重新生成。集成AV测试使用缩短几何及媒体/网络时钟模型，实际模块独立回归，不是全系统电气/SDF验证。原厂VHDL启动未知值警告保留，暖机后比较拒绝未知输出；数据岛样式比较不是有效LPCM/BCH包生成，实际声音同步来自用户板测。
+
+## 8. 验收与整理边界
+
+- B接屏幕、A无源：轮播/简介、SW4、应急及退出、双板四键和SW3正常。
+- 接A电脑：音视频正常，副板仍控制主板，本地说明/应急不抢占。
+- 拔A：重锁后回当前本地页，不按KEY4重载；重插恢复直通。
+- 网线重连后SW3同步；主板暂停/恢复、手动→自动等按原行为检查。
+- 已验证bit字节不变；未提供的量化长测/冷启动记录不虚构。
+
+历史入口、旧bit、构建数据库、日志、转储、仿真缓存和辅助工具已移动到rubbish而非删除。成功种子、所有AL依赖、包含文件、TEMAC配置/门级文件、EDID MIF、最终TF素材、回归源码保留。审查代码和完整手动构建不依赖rubbish。

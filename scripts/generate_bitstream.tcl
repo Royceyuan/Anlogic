@@ -1,10 +1,8 @@
 import_device eagle_s20.db -package EG4S20BG256
 set root .
-set project_file hx4s20_secondary_main5e.al
-set top top_secondary_main5e
-if {[info exists ::env(SECONDARY_PROJECT)]} {set project_file $::env(SECONDARY_PROJECT)}
-if {[info exists ::env(SECONDARY_TOP)]} {set top $::env(SECONDARY_TOP)}
-set build [file join $root _build_secondary_help_fixed720_seed6]
+set project_file dual_fpga_museum_terminal_secondary_board.al
+set top top_secondary_hdmi_museum
+set build [file join $root build]
 if {[info exists ::env(SECONDARY_BUILD)]} {set build $::env(SECONDARY_BUILD)}
 set status [file join $build secondary_main5e_pr.status]
 set log [file join $build console.log]
@@ -18,14 +16,12 @@ set f [open [file join $root $project_file] r]; set project [read $f]; close $f
 set required_files [list $project_file vendor/anlogic_lab6/sdram/enc_file/global_def.v vendor/anlogic_hx4s20_udp/par_ph1demo/al_ip/TEMAC_CORE_gate.v]
 foreach {entry path} [regexp -all -inline {<File Path="([^"]+)"} $project] {lappend required_files $path}
 lappend required_files src/secondary/secondary_help_font.vh
-if {$top in {top_secondary_hdmi_av_diag top_secondary_hdmi_museum}} {
-    lappend required_files vendor/official_hdmi_loop_edid/edid_1280720_with_audio.mif
-}
+lappend required_files vendor/official_hdmi_loop_edid/edid_1280720_with_audio.mif
 foreach file $required_files {if {![file exists [file join $root $file]] || [file mtime [file join $root $file]] > [file mtime $db]} {set good 0}}
 if {!$good} {puts "REFUSED: stale P&R, warnings, or failed timing"; exit}
 cd $root
 import_db $db
-set bit [file join $root release hx4s20_secondary_help_fixed720.bit]
+set bit [file join $build dual_fpga_museum_terminal_secondary_board.bit]
 if {[info exists ::env(SECONDARY_BIT)]} {set bit $::env(SECONDARY_BIT)}
 bitgen -bit $bit
 exit

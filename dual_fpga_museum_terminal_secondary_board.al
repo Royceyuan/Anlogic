@@ -2,7 +2,7 @@
 <Project Version="3" Minor="2" Path=".">
     <Project_Created_Time />
     <TD_Version>6.2.168116</TD_Version>
-    <Name>hx4s20_secondary_shared_clock</Name>
+    <Name>dual_fpga_museum_terminal_secondary_board</Name>
     <HardWare>
         <Family>EG4</Family>
         <Device>EG4S20BG256</Device>
@@ -477,7 +477,18 @@
             </File>
             <File Path="src/clock/secondary_media_eth_pll.v"><FileInfo><Attr Name="UsedInSyn" Val="true" /><Attr Name="UsedInP&amp;R" Val="true" /><Attr Name="BelongTo" Val="design_1" /><Attr Name="CompileOrder" Val="201" /></FileInfo></File>
             <File Path="src/secondary/top_secondary_shared_clock.v"><FileInfo><Attr Name="UsedInSyn" Val="true" /><Attr Name="UsedInP&amp;R" Val="true" /><Attr Name="BelongTo" Val="design_1" /><Attr Name="CompileOrder" Val="202" /></FileInfo></File>
-        </Verilog>
+        <File Path="src/clock/hdmi_relay_clock.v"><FileInfo><Attr Name="UsedInSyn" Val="true" /><Attr Name="UsedInP&amp;R" Val="true" /><Attr Name="BelongTo" Val="design_1" /><Attr Name="CompileOrder" Val="220" /></FileInfo></File>
+<File Path="src/video/hdmi_relay_phy.v"><FileInfo><Attr Name="UsedInSyn" Val="true" /><Attr Name="UsedInP&amp;R" Val="true" /><Attr Name="BelongTo" Val="design_1" /><Attr Name="CompileOrder" Val="221" /></FileInfo></File>
+<File Path="src/video/hdmi_edid_720p.v"><FileInfo><Attr Name="UsedInSyn" Val="true" /><Attr Name="UsedInP&amp;R" Val="true" /><Attr Name="BelongTo" Val="design_1" /><Attr Name="CompileOrder" Val="222" /></FileInfo></File>
+<File Path="src/video/hdmi_tmds_monitor.v"><FileInfo><Attr Name="UsedInSyn" Val="true" /><Attr Name="UsedInP&amp;R" Val="true" /><Attr Name="BelongTo" Val="design_1" /><Attr Name="CompileOrder" Val="223" /></FileInfo></File>
+<File Path="src/secondary/top_secondary_hdmi_relay_diag.v"><FileInfo><Attr Name="UsedInSyn" Val="true" /><Attr Name="UsedInP&amp;R" Val="true" /><Attr Name="BelongTo" Val="design_1" /><Attr Name="CompileOrder" Val="224" /></FileInfo></File>
+<File Path="vendor/official_hdmi_loop_edid/myedid_new.v"><FileInfo><Attr Name="UsedInSyn" Val="true" /><Attr Name="UsedInP&amp;R" Val="true" /><Attr Name="BelongTo" Val="design_1" /><Attr Name="CompileOrder" Val="225" /></FileInfo></File>
+<File Path="vendor/official_hdmi_loop_edid/i2c_edid.v"><FileInfo><Attr Name="UsedInSyn" Val="true" /><Attr Name="UsedInP&amp;R" Val="true" /><Attr Name="BelongTo" Val="design_1" /><Attr Name="CompileOrder" Val="226" /></FileInfo></File>
+<File Path="vendor/official_hdmi_loop_edid/i2cSlaveTop.v"><FileInfo><Attr Name="UsedInSyn" Val="true" /><Attr Name="UsedInP&amp;R" Val="true" /><Attr Name="BelongTo" Val="design_1" /><Attr Name="CompileOrder" Val="227" /></FileInfo></File>
+<File Path="src/video/secondary_hdmi_local_pairs.v"><FileInfo><Attr Name="UsedInSyn" Val="true" /><Attr Name="UsedInP&amp;R" Val="true" /><Attr Name="BelongTo" Val="design_1" /><Attr Name="CompileOrder" Val="228" /></FileInfo></File>
+<File Path="src/video/secondary_hdmi_source_switch.v"><FileInfo><Attr Name="UsedInSyn" Val="true" /><Attr Name="UsedInP&amp;R" Val="true" /><Attr Name="BelongTo" Val="design_1" /><Attr Name="CompileOrder" Val="229" /></FileInfo></File>
+<File Path="src/secondary/top_secondary_hdmi_museum.v"><FileInfo><Attr Name="UsedInSyn" Val="true" /><Attr Name="UsedInP&amp;R" Val="true" /><Attr Name="BelongTo" Val="design_1" /><Attr Name="CompileOrder" Val="230" /></FileInfo></File>
+</Verilog>
         <VHDL>
             <File Path="vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/hdmi_tx.vhd">
                 <FileInfo>
@@ -521,7 +532,7 @@
             </File>
         </VHDL>
         <ADC_FILE>
-            <File Path="constraints/top_secondary_main5e.adc">
+            <File Path="constraints/secondary_hdmi_museum.adc">
                 <FileInfo>
                     <Attr Name="UsedInSyn" Val="true" />
                     <Attr Name="UsedInP&amp;R" Val="true" />
@@ -531,7 +542,7 @@
             </File>
         </ADC_FILE>
         <SDC_FILE>
-            <File Path="constraints/secondary_shared_clock.sdc">
+            <File Path="constraints/secondary_hdmi_museum.sdc">
                 <FileInfo>
                     <Attr Name="UsedInSyn" Val="true" />
                     <Attr Name="UsedInP&amp;R" Val="true" />
@@ -558,8 +569,8 @@
         </FileSet>
     </FileSets>
     <TOP_MODULE>
-        <LABEL>top_secondary_shared_clock</LABEL>
-        <MODULE>top_secondary_shared_clock</MODULE>
+        <LABEL>top_secondary_hdmi_museum</LABEL>
+        <MODULE>top_secondary_hdmi_museum</MODULE>
         <CREATEINDEX>user</CREATEINDEX>
     </TOP_MODULE>
     <Property>

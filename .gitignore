@@ -1,6 +1,7 @@
 # Anlogic TD build outputs
 _media_*/
 _build_*/
+/build/
 Runs/
 *.bid
 *.area

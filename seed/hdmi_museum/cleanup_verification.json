@@ -1,0 +1,19 @@
+{
+  "date": "2026-10-10",
+  "project": "dual_fpga_museum_terminal_secondary_board.al",
+  "build_command": "./scripts/build.ps1",
+  "tool": "Tang Dynasty 6.2.168116",
+  "complete_clean_rebuild": true,
+  "timing_ns": {"setup_wns": 0.039, "hold_wns": 0.030, "setup_tns": 0, "hold_tns": 0},
+  "released_sha256": "85E5C239BFF500C794896F1BF0FE5233DC0A51244F9C91A16DB86230955DC458",
+  "rebuilt_sha256": "5BD369B3FC2E7D6757DD1C807CB48A05C221E733D34D02B45A6824D28CE24E91",
+  "bytes_each": 654090,
+  "different_byte_count": 3,
+  "different_offsets": [158, 160, 161],
+  "difference_scope": "Only ASCII header Date changed from 2026/10/10 13:57 to 2026/10/10 17:20; every other byte identical, including configuration CRC and data.",
+  "rtl_ip_rom_constraint_bytes_unchanged": true,
+  "post_move_tests": {"av_reference": 5, "integrated_av": 6},
+  "released_bit_not_overwritten": true,
+  "rebuild_database_logs_and_bit_archived_to_rubbish": true,
+  "archive": "D:/VSCode/CodeFiles/Git_TD/rubbish/副板整理_20261010_11a979c6"
+}
