@@ -11,20 +11,18 @@
 | 系统集成 | `src/top/museum_main_board_top.v` |
 | 管脚约束 | `constraints/museum_main_board_pins.adc` |
 | 时序约束 | `constraints/museum_main_board_timing.sdc` |
-| 当前B口候选bit | `release/dual_fpga_museum_terminal_main_board_hdmi_b.bit` |
-| 已验收A口bit（回退用） | `release/dual_fpga_museum_terminal_main_board_flash_startup_repair.bit` |
-| bit校验值 | `release/dual_fpga_museum_terminal_main_board_flash_startup_repair.sha256` |
+| 唯一当前已验收bit | `release/dual_fpga_museum_terminal_main_board_hdmi_b.bit` |
+| bit校验值 | `release/dual_fpga_museum_terminal_main_board_hdmi_b.sha256` |
+| 必要素材制作软件 | `tools/MuseumTFPackager/MuseumTFPackager.exe`，须保留整个同级运行目录 |
 | 成功种子及最终报告 | B口：`seed/hdmi_b/`，种子4；旧A口：`seed/`，种子1 |
 
-已验收A口bit SHA-256：`4409952619964B9FB2D138E2D3FB9006DB005E53278404412D8A7F92AB876BE5`。
-
-这是用户反馈整体可用的Flash启动修复版。极低概率80C6仍作为待观察项，不宣称完全消除。整理没有修改功能RTL，发布bit不变，不需要重新烧录或写卡。保留了用户原有未提交源码修改；本轮独立重建使用待提交源码副本，不包含这些修改，不能将它们宣称为该bit的新综合结果。
+当前B口bit SHA-256：`29351E9BCBB3420392381AF14B8D0ECF3EF3EFD50C3BE0EB6EB95EF2B342AACF`。2026-10-10用户上板确认“没问题”；本轮整理不改变bit，不需要重新烧录或写卡。此前极低概率80C6仍是待观察项，不把这次接口验收宣称为完全消除该问题。用户原有未提交源码修改完整保留，不夹带提交，也不将其宣称为当前bit的构建输入。
 
 ### 当前HDMIB输出变更
 
 2026-10-10按用户要求，将主板输出从HDMIA迁移至HDMIB。仅修改ADC中的六个物理管脚，顶层及媒体RTL不变：CLK=C3、D2=E1、D1=F1、D0=G5、DDC SCL=P2、SDA=R2。内部`hdmi1_*`仍是同一组逻辑信号名，不表示当前物理A口。
 
-新bit为`release/dual_fpga_museum_terminal_main_board_hdmi_b.bit`，旧A口bit及校验值保留用于回退，不被bitgen覆盖。烧录新bit后，将主屏HDMI线移到主板HDMIB；原HDMIA不再提供博物馆输出。TF卡、以太网接线和副板bit不变；所有按键、拨码、图片顺序、转场及音画字幕时间轴保持原逻辑。新的物理输出需要上板验证后才能标记为通过。
+当前主屏HDMI线连接主板HDMIB；原HDMIA不再提供博物馆输出。TF卡、以太网接线和副板bit不变；所有按键、拨码、图片顺序、转场及音画字幕时间轴保持原逻辑。旧A口bit及校验值移入工程外rubbish，可从归档或Git历史回溯，不再混在当前release中。
 
 B口bit SHA-256：`29351E9BCBB3420392381AF14B8D0ECF3EF3EFD50C3BE0EB6EB95EF2B342AACF`。以已提交基线`9a3e939`的独立源码副本构建，91个源码/IP文件与基线一致，未夹带工作区原有改动。完整综合、布局布线、DRC及bitgen完成；setup +0.146ns、hold +0.024ns，TNS均为0。6组功能回归合计13条PASS。B口的成功种子4与原始报告保存在`seed/hdmi_b`；构建先导出并重开gate检查点，再按种子4布局，与本次闭合流程一致，不依赖工程外缓存。
 
@@ -64,9 +62,13 @@ SW1～3组成预载编号0～4；无效编号不允许误入讲解。KEY1高亮�
 
 FAT32卡根目录需要31个规范文件：`IMAGE0.BMP`～`IMAGE4.BMP`、每件 `ARTnD1.BMP`～`ARTnD3.BMP`、`AUDIO0.WAV`～`AUDIO4.WAV`、`SUB0.BIN`～`SUB4.BIN`及 `OSDNAME.BIN`。图片为规范24位未压缩BMP，软件处理上限1920×1080，保持宽高比；板内使用RGB565和SDRAM缓存。音频为PCM16、48kHz、双声道。不要把SRT、模型或软件直接放进TF根目录。
 
-打包软件已由用户独立移动，不再属于本工程目录，也不是FPGA构建依赖。在实际软件目录双击 `MuseumTFPackager.exe`，无需Python、不弹终端。选择五个文物文件夹的根目录，每件放全貌、细节1～3、WAV和SRT；必要时勾选本地字幕校准，在“设置切图句”指定四个阶段开始的字幕句，再生成素材包。试听后将输出 `TF_CARD` 内31文件写卡；名称位图自动生成。软件内置“使用说明”。
+打包软件是完整产品交付的必要配套工具，保留并随仓库提供于`tools/MuseumTFPackager`；虽不参与FPGA综合，也不能当作残留移走。双击其中的 `MuseumTFPackager.exe`，无需安装Python、不弹终端。选择五个文物文件夹的根目录，每件放全貌、细节1～3、WAV和SRT；必要时勾选本地字幕校准，在“设置切图句”指定四个阶段开始的字幕句，再生成素材包。试听后将输出 `TF_CARD` 内31文件写卡；名称位图自动生成。软件内置“使用说明”。
 
 完整运行目录中的 `AlignmentWorker`、`models`、`ffmpeg`、DLL与许可证不可拆散，不能只留EXE。校准本机运行、保留原字幕文字，不保证每句绝对准确；检查输出提示并试听。软件源码、开发环境和重复ZIP已归档，修改软件时按清单恢复原路径。
+
+从远程复现需要Git LFS，不能只下载缺少LFS对象的源码ZIP：安装Git及Git LFS，检出`Yan_Chen_Double`后在仓库执行`git lfs install`、`git lfs pull`。模型`models/small.pt`和EXE/DLL等必须是实际文件，不能是以`version https://git-lfs.github.com/spec/v1`开头的指针。软件完整性清单为`offline_bundle_manifest.json`，主程序SHA-256见`MuseumTFPackager.exe.sha256`。软件使用目标Windows电脑的微软雅黑，不分发Windows字体。
+
+完整复现顺序：准备五组原始图片/WAV/SRT和名称 → 软件界面生成并检查TF素材 → 写入FAT32 TF卡 → 打开本目录唯一`.al`审核代码并按下节脚本完整编译 → 烧录主板bit → HDMIB接主屏、网线接已验证副板 → 检查五栏/名称、音画字幕、自动/手动、缩放暂停平移、应急及重连。软件程序、语音模型和DLL不要写入TF卡；现成bit可以直接验收，也保留完整FPGA源码用于重新生成。此交付包含软件可运行包，不把归档的打包软件开发环境宣称为本目录内可直接重编EXE的源码工程。
 
 当前五件新女声源素材在 `../素材`，已用实际软件校准并写卡回读。图片顺序不变；第5、9、13、17句分别作为细节1～3及最终全貌切点。软件检查不替代真实音画/字幕上板验收。
 
@@ -99,7 +101,7 @@ Get-FileHash -LiteralPath ./release/dual_fpga_museum_terminal_main_board_hdmi_b.
 
 启动修复构建包装器复用 `build_museum_main_board.tcl` 及bitgen，四个Tcl都必须保留。下次生成bit必须先执行第一条完整构建，再执行bitgen，脚本会重新建立构建目录。当前B口使用成功种子4，参数见`seed/hdmi_b/seed_config.json`；旧A口种子1的参数与报告仍在`seed/seed_config.json`及根级报告中用于回溯。这里只保存原始最终报告，不是可直接bitgen的数据库。种子不保证修改后的源码仍然闭合时序。
 
-保留bit对应报告：LUT16960/19600（86.53%）、FF11427/19600（58.30%）、Slice9540/9800（97.35%）、BRAM9K43/64、BRAM32K10/16、DSP13/29、PLL4/4。setup +0.107ns、hold +0.023ns，TNS=0。原始依据在 `seed/` 的final.area、final.qor、final.ts、final.timing及bitgen.log；余量较紧，不放宽时序来宣称通过。
+当前bit的资源/时序见上文B口统计及`seed/hdmi_b`原始报告，setup +0.146ns、hold +0.024ns，TNS=0。根级`seed/`保留旧A口的成功证据（setup +0.107ns、hold +0.023ns），不是当前bit的报告；其中旧bit路径是历史记录，不能作为当前构建依赖。
 
 `sim` 保留产品回归源码和 `.do`。ModelSim从 `sim` 目录执行，例如：
 
@@ -122,13 +124,13 @@ Get-FileHash -LiteralPath ./release/dual_fpga_museum_terminal_main_board_hdmi_b.
 | `vendor` | 保留工程直接引用、PLL的隐式生成HDL、TEMAC网表、SDRAM include；移出36个未引用例程/重复模块/旧备份 |
 | `scripts` | 四个正式Tcl构成完整综合→布局布线→DRC→bitgen链，全部保留 |
 | `sim` | 保留当前功能回归；8个依赖旧提交的历史对比脚本及7个专用测试台归档 |
-| `seed` | 已闭合种子1、实际参数和原始最终报告，完整保留 |
+| `seed` | 当前B口种子4、旧A口成功种子1及原始证据全部保留 |
 | `release` | 唯一已验收bit及校验值；`media/OSDNAME.BIN`作为名称媒体模板保留 |
 | 原 `assets` | 单张历史图片源图不参与构建/仿真，已归档；实际TF素材由卡或独立打包软件提供 |
-| `tools` | 用户独立整理的软件不参与FPGA编译、不上传；旧Python启动BAT已失去调用目标，不属于当前流程 |
+| `tools` | 完整素材打包软件、模型、校准运行组件及许可证是必要交付，保留并使用Git LFS上传；运行组件内的Python文件不是历史开发脚本，不拆除 |
 
 工程里没有要求保留任何历史build数据库；重新编译自动生成build目录。回归测试源码不是中间产物，保留便于审核后验证修改。
 
 所有移出内容位于 `D:\VSCode\CodeFiles\Git_TD\rubbish\双板软件与旧位流整理_20261003`；软件、仿真、构建和最终文档整理分别有CSV清单，记录原/目标路径、长度和SHA256。旧文档在 `finalization/Anlogic/docs`，旧工程介绍也留有备份。需要恢复时移动回清单中的原路径，勿覆盖当前文件。归档不随普通Git拉取提供；当前工程自身具备构建所需全部硬件依赖。
 
-本轮进一步审核移出清单及独立重建证据位于 `D:\VSCode\CodeFiles\Git_TD\rubbish\project_audit_20261003`。主板工作区原有未提交源码改动不在本次整理提交中；核验重建以整理后的Git提交内容为准。
+此前进一步审核及独立重建证据位于`rubbish/project_audit_20261003`。本次2026-10-10整理归档为`D:\VSCode\CodeFiles\Git_TD\rubbish\主板整理_20261010_1234c41`，最终仅移出旧A口bit及校验文件。软件曾暂移后已按用户要求完整恢复原路径，归档中有恢复记录；没有删除软件。核验当前工程依赖和发布bit不变；不因纯文件整理重复修改布局。主板工作区原有未提交源码改动不在本次整理提交中。

@@ -9,3 +9,13 @@ seed/*.json text
 seed/hdmi_b/* -text -whitespace
 seed/hdmi_b/*.json text whitespace
 tools/Package_tool/*.exe filter=lfs diff=lfs merge=lfs -text
+
+# Complete offline packager: preserve runtime bytes; large binaries use LFS.
+tools/MuseumTFPackager/** -text -whitespace
+tools/MuseumTFPackager/**/*.exe filter=lfs diff=lfs merge=lfs -text
+tools/MuseumTFPackager/**/*.dll filter=lfs diff=lfs merge=lfs -text
+tools/MuseumTFPackager/**/*.pyd filter=lfs diff=lfs merge=lfs -text
+tools/MuseumTFPackager/**/*.pt filter=lfs diff=lfs merge=lfs -text
+tools/MuseumTFPackager/**/*.zip filter=lfs diff=lfs merge=lfs -text
+tools/MuseumTFPackager/**/*.npz filter=lfs diff=lfs merge=lfs -text
+tools/MuseumTFPackager/**/*.tiktoken filter=lfs diff=lfs merge=lfs -text

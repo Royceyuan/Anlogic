@@ -31,10 +31,12 @@
   "baseline_source_vendor_files_verified": 91,
   "rtl_changed": false,
   "sdc_changed": false,
-  "board_pass": false,
+  "board_pass": true,
+  "board_pass_evidence": "User confirmed the delivered HDMIB bit works with '没问题' on 2026-10-10; no unstated test counts or durations claimed.",
   "regression_pass_count": 13,
   "regression_do_files": ["run_remote_controls.do", "run_application_recovery.do", "run_local_manual_test.do", "run_museum_subtitle_overlay.do", "run_emergency_recovery.do", "run_museum_name_loader.do"],
   "regression_limits": "Module simulations and baseline source identity do not verify the changed physical HDMI output on hardware.",
   "drc_notes": "No multi-drive or abnormal timing paths; existing SDRAM initial-location and one local SDRAM clock route warnings remain. No timing exceptions added.",
-  "rollback_bit": "release/dual_fpga_museum_terminal_main_board_flash_startup_repair.bit"
+  "rollback_commit": "9a3e939",
+  "rollback_archive": "D:/VSCode/CodeFiles/Git_TD/rubbish/主板整理_20261010_1234c41/release/dual_fpga_museum_terminal_main_board_flash_startup_repair.bit"
 }

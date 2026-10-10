@@ -1,0 +1,65 @@
+# This file created by conda-build 3.24.0
+# meta.yaml template originally from:
+# D:\a\1\s\recipe, last modified Fri Jun  2 08:44:07 2023
+# ------------------------------------------------
+
+package:
+  name: dav1d
+  version: 1.2.1
+source:
+  sha256: 2dd85860d213479672b1c708e31593446e8c2b53ff41e2ca25a2eafb718424e2
+  url: https://code.videolan.org/videolan/dav1d/-/archive/1.2.1/dav1d-1.2.1.tar.gz
+build:
+  number: '0'
+  run_exports:
+    - dav1d >=1.2.1,<1.2.2.0a0
+  string: hcfcfb64_0
+requirements:
+  build:
+    - bzip2 1.0.8 h8ffe710_4
+    - ca-certificates 2023.5.7 h56e8100_0
+    - libexpat 2.5.0 h63175ca_1
+    - libffi 3.4.2 h8ffe710_5
+    - libsqlite 3.42.0 hcfcfb64_0
+    - libzlib 1.2.13 hcfcfb64_4
+    - meson 1.1.1 pyhd8ed1ab_0
+    - nasm 2.14.02 h8ffe710_1
+    - ninja 1.11.1 h91493d7_0
+    - openssl 3.1.1 hcfcfb64_1
+    - python 3.11.3 h2628c8c_0_cpython
+    - setuptools 67.7.2 pyhd8ed1ab_0
+    - tk 8.6.12 h8ffe710_0
+    - tzdata 2023c h71feb2d_0
+    - ucrt 10.0.22621.0 h57928b3_0
+    - vc 14.3 hb25d44b_16
+    - vc14_runtime 14.34.31931 h5081d32_16
+    - vs2015_runtime 14.34.31931 hed1258a_16
+    - vs2019_win-64 19.29.30139 he1865b1_16
+    - vswhere 3.1.4 h57928b3_0
+    - xz 5.2.6 h8d14728_0
+  host:
+    - ucrt 10.0.22621.0 h57928b3_0
+    - vc 14.3 hb25d44b_16
+    - vc14_runtime 14.34.31931 h5081d32_16
+  run:
+    - ucrt >=10.0.20348.0
+    - vc >=14.2,<15
+    - vc14_runtime >=14.29.30139
+test:
+  commands:
+    - dav1d -v
+    - if not exist %PREFIX%\\Library\\bin\\dav1d.dll exit 1
+    - if not exist %PREFIX%\\Library\\lib\\dav1d.lib exit 1
+    - if not exist %PREFIX%\\Library\\include\\dav1d\\dav1d.h exit 1
+    - if not exist %PREFIX%\\Library\\lib\\pkgconfig\\dav1d.pc exit 1
+about:
+  home: https://code.videolan.org/videolan/dav1d
+  license: BSD-2-Clause
+  license_family: BSD
+  license_file: COPYING
+  summary: dav1d is the fastest AV1 decoder on all platforms
+extra:
+  copy_test_source_files: true
+  final: true
+  recipe-maintainers:
+    - jaimergp
