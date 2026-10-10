@@ -29,11 +29,17 @@ flow_status -file [file join $secondary_build secondary_main5e_syn.status]
 export_db [file join $secondary_build secondary_main5e_gate.db]
 
 set place_seed 6
-if {$top eq "top_secondary_hdmi_av_diag"} {
-    set place_seed 10
-    # Keep falling/rising pair FFs near the A-D0 and A-clock IOLs. A physical
+if {$top eq "top_secondary_hdmi_museum"} {set place_seed 7}
+if {$top in {top_secondary_hdmi_av_diag top_secondary_hdmi_museum}} {
+    if {$top eq "top_secondary_hdmi_av_diag"} {
+        set place_seed 10
+        set pair_regions {0 8 3 28}
+    } else {
+        set pair_regions {0 8 1 12}
+    }
+    # Keep falling/rising pair FFs near their source IOLs. A physical
     # half-cycle path, not an asynchronous path to exempt from STA.
-    foreach {lane origin_y} {0 8 3 28} {
+    foreach {lane origin_y} $pair_regions {
         set pair_cells [get_cells -hier -regexp [format {u_relay/u_phy/g_lane\[%d\].*(transmit_pair|output_pair).*} $lane]]
         puts "AV lane$lane pair cells: $pair_cells"
         if {[llength $pair_cells]!=6} {error "AV lane$lane pair placement no longer matches the netlist"}

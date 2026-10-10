@@ -4,7 +4,8 @@
 // Main-board telemetry drives the 720p display; local keys send absolute
 // display and viewport requests over MBP1.
 module top_secondary_main5e #(
-    parameter integer SHARED_MEDIA_ETH_PLL = 0
+    parameter integer SHARED_MEDIA_ETH_PLL = 0,
+    parameter integer EXTERNAL_HDMI_PHY = 0
 ) (
     input wire clk_50m,
     input wire [3:0] sw,
@@ -20,6 +21,9 @@ module top_secondary_main5e #(
     output wire hdmi1_d2_p,
     output wire hdmi1_d1_p,
     output wire hdmi1_d0_p,
+    output wire local_video_clk, local_serial_clk, local_video_rst_n,
+    output wire local_hs, local_vs, local_de,
+    output wire [23:0] local_rgb,
     input wire eth_rgmii_rx_clk,
     input wire eth_rgmii_rx_ctl,
     input wire [3:0] eth_rgmii_rxd,
@@ -132,6 +136,7 @@ top_v66 #(
     .FORCE_SEQUENCE_AUTO(1), .AUTO_PERIOD_CYCLES(250_000_000),
     .LINEBUF_SCALE(0), .SECONDARY_STREAMING(1),
     .SHARED_MEMORY_CLOCKS(SHARED_MEDIA_ETH_PLL),
+    .EXTERNAL_HDMI_PHY(EXTERNAL_HDMI_PHY),
     .SECONDARY_ENGINEERING(0), .SECONDARY_HELP(1),
     .RESOURCE_OPT_CONSTANT_MULT(1),
     .ENABLE_SUBTITLE(0), .ENABLE_AUDIO_VISUALIZER(0),
@@ -148,6 +153,9 @@ top_v66 #(
     .hdmi1_clk_p(hdmi1_clk_p), .hdmi1_d2_p(hdmi1_d2_p),
     .hdmi1_d1_p(hdmi1_d1_p), .hdmi1_d0_p(hdmi1_d0_p),
     .hdmi1_ddc_scl(), .hdmi1_ddc_sda(),
+    .local_video_clk(local_video_clk), .local_serial_clk(local_serial_clk),
+    .local_video_rst_n(local_video_rst_n),
+    .local_hs(local_hs), .local_vs(local_vs), .local_de(local_de), .local_rgb(local_rgb),
     .uart_rxd(1'b1), .uart_txd(),
     .secondary_cmd_valid(cmd_valid), .secondary_cmd_type(cmd_type),
     .secondary_cmd_artifact_id(cmd_artifact_id),

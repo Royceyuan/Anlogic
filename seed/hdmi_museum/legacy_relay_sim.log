@@ -1,0 +1,236 @@
+Reading D:/Modelsim/tcl/vsim/pref.tcl
+
+# 10.6e
+
+# do ./run_hdmi_relay_diag.do
+# D:/TD_6.2.1/sim_release/eg4
+# Model Technology ModelSim SE-64 vlog 10.6e Compiler 2018.06 Jun 23 2018
+# Start time: 13:54:21 on Oct 10,2026
+# vlog -work work_hdmi_diag D:/TD_6.2.1/sim_release/eg4/eg_logic_clk.v D:/TD_6.2.1/sim_release/eg4/eg_phy_pll.v D:/TD_6.2.1/sim_release/eg4/eg_logic_io.v D:/TD_6.2.1/sim_release/eg4/eg_phy_glbl.v 
+# -- Compiling module EG_LOGIC_BUFG
+# -- Compiling module EG_LOGIC_BUFIO
+# -- Compiling module EG_LOGIC_BUFGMUX
+# -- Compiling module EG_PHY_PLL
+# -- Compiling module prediv_mux
+# -- Compiling module eg_dphase_sel
+# -- Compiling module eg_clko_premux
+# -- Compiling module eg_clko_ctrl
+# -- Compiling module eg_pll_div128
+# -- Compiling module eg_pll_div2
+# -- Compiling module EG_LOGIC_IDELAY
+# -- Compiling module EG_LOGIC_IDDR
+# -- Compiling module EG_LOGIC_ODDR
+# -- Compiling module EG_LOGIC_IDDRx2
+# -- Compiling module EG_LOGIC_ODELAY
+# -- Compiling module EG_LOGIC_ODDRx2
+# -- Compiling module EG_LOGIC_ODDRx2l
+# -- Compiling module glbl
+# 
+# Top level modules:
+# 	EG_LOGIC_BUFG
+# 	EG_LOGIC_BUFIO
+# 	EG_LOGIC_BUFGMUX
+# 	EG_PHY_PLL
+# 	EG_LOGIC_IDELAY
+# 	EG_LOGIC_IDDR
+# 	EG_LOGIC_IDDRx2
+# 	EG_LOGIC_ODELAY
+# 	EG_LOGIC_ODDRx2
+# 	EG_LOGIC_ODDRx2l
+# 	glbl
+# End time: 13:54:21 on Oct 10,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# Model Technology ModelSim SE-64 vlog 10.6e Compiler 2018.06 Jun 23 2018
+# Start time: 13:54:21 on Oct 10,2026
+# vlog -work work_hdmi_diag ../src/common/reset_sync.v ../src/common/seg_hex_display.v ../src/clock/hdmi_relay_clock.v ../src/video/hdmi_edid_720p.v ../src/video/hdmi_relay_phy.v ../src/video/hdmi_tmds_monitor.v ../src/secondary/top_secondary_hdmi_relay_diag.v tb_hdmi_relay_diag.v 
+# -- Compiling module reset_sync
+# -- Compiling module seg_hex_display
+# -- Compiling module hdmi_relay_clock
+# -- Compiling module hdmi_edid_720p
+# -- Compiling module hdmi_relay_phy
+# -- Compiling module hdmi_tmds_monitor
+# -- Compiling module top_secondary_hdmi_relay_diag
+# -- Compiling module tb_hdmi_relay_diag
+# 
+# Top level modules:
+# 	tb_hdmi_relay_diag
+# End time: 13:54:21 on Oct 10,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# vsim -c -voptargs="+acc" -onfinish stop -lib work_hdmi_diag tb_hdmi_relay_diag glbl 
+# Start time: 13:54:21 on Oct 10,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# ** Note: (vopt-143) Recognized 1 FSM in module "hdmi_edid_720p(fast)".
+# ** Warning: tb_hdmi_relay_diag.v(13): (vopt-2685) [TFMPC] - Too few port connections for 'dut'.  Expected 21, found 16.
+# ** Warning: tb_hdmi_relay_diag.v(13): (vopt-2718) [TFMPC] - Missing connection for port 'relay_pairs'.
+# ** Warning: tb_hdmi_relay_diag.v(13): (vopt-2718) [TFMPC] - Missing connection for port 'application_rst_n'.
+# ** Warning: tb_hdmi_relay_diag.v(13): (vopt-2718) [TFMPC] - Missing connection for port 'relay_blank'.
+# ** Warning: tb_hdmi_relay_diag.v(13): (vopt-2718) [TFMPC] - Missing connection for port 'relay_valid'.
+# ** Warning: tb_hdmi_relay_diag.v(13): (vopt-2718) [TFMPC] - Missing connection for port 'relay_sclk'.
+# //  ModelSim SE-64 10.6e Jun 23 2018
+# //
+# //  Copyright 1991-2018 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  ModelSim SE-64 and its associated documentation contain trade
+# //  secrets and commercial or financial information that are the property of
+# //  Mentor Graphics Corporation and are privileged, confidential,
+# //  and exempt from disclosure under the Freedom of Information Act,
+# //  5 U.S.C. Section 552. Furthermore, this information
+# //  is prohibited from disclosure under the Trade Secrets Act,
+# //  18 U.S.C. Section 1905.
+# //
+# Loading work.tb_hdmi_relay_diag(fast)
+# Loading work.top_secondary_hdmi_relay_diag(fast)
+# Loading work.hdmi_edid_720p(fast)
+# Loading work.hdmi_relay_clock(fast)
+# Loading work.EG_LOGIC_BUFG(fast)
+# Loading work.EG_PHY_PLL(fast)
+# Loading work.eg_dphase_sel(fast)
+# Loading work.eg_dphase_sel(fast__1)
+# Loading work.prediv_mux(fast)
+# Loading work.eg_pll_div2(fast)
+# Loading work.eg_clko_premux(fast)
+# Loading work.eg_pll_div128(fast)
+# Loading work.eg_pll_div128(fast__1)
+# Loading work.eg_pll_div128(fast__2)
+# Loading work.eg_pll_div128(fast__3)
+# Loading work.eg_clko_ctrl(fast)
+# Loading work.reset_sync(fast)
+# Loading work.hdmi_relay_phy(fast)
+# Loading work.EG_LOGIC_IDDRx2(fast)
+# Loading work.EG_LOGIC_ODDR(fast)
+# Loading work.hdmi_tmds_monitor(fast)
+# Loading work.seg_hex_display(fast)
+# Loading work.glbl(fast)
+# ** Warning: (vsim-3015) ../src/clock/hdmi_relay_clock.v(61): [PCDPC] - Port size (5) does not match connection size (1) for port 'load_reg'. The port definition is at: D:/TD_6.2.1/sim_release/eg4/eg_phy_pll.v(25).
+#    Time: 0 fs  Iteration: 0  Instance: /tb_hdmi_relay_diag/dut/u_clock/u_rx_pll File: D:/TD_6.2.1/sim_release/eg4/eg_phy_pll.v
+# ******************** : The Attribute            REFCLK_DIV on pll instance tb_hdmi_relay_diag.dut.u_clock.u_rx_pll.para_int_range_chk is set to           1.  Legal values for this attribute are           1 to         128.
+# ******************** : The Attribute             FBCLK_DIV on pll instance tb_hdmi_relay_diag.dut.u_clock.u_rx_pll.para_int_range_chk is set to           1.  Legal values for this attribute are           1 to         128.
+# ******************** : The Attribute             CLKC0_DIV on pll instance tb_hdmi_relay_diag.dut.u_clock.u_rx_pll.para_int_range_chk is set to           2.  Legal values for this attribute are           1 to         128.
+# ******************** : The Attribute             CLKC1_DIV on pll instance tb_hdmi_relay_diag.dut.u_clock.u_rx_pll.para_int_range_chk is set to           4.  Legal values for this attribute are           1 to         128.
+# ******************** : The Attribute             CLKC2_DIV on pll instance tb_hdmi_relay_diag.dut.u_clock.u_rx_pll.para_int_range_chk is set to          10.  Legal values for this attribute are           1 to         128.
+# ******************** : The Attribute             CLKC3_DIV on pll instance tb_hdmi_relay_diag.dut.u_clock.u_rx_pll.para_int_range_chk is set to           1.  Legal values for this attribute are           1 to         128.
+# ******************** : The Attribute             CLKC4_DIV on pll instance tb_hdmi_relay_diag.dut.u_clock.u_rx_pll.para_int_range_chk is set to           1.  Legal values for this attribute are           1 to         128.
+# PASS startup HPD interval and source qualification without downstream HPD
+# PASS B-page bus/clock diagnostics preserve a running relay
+# PASS C-page TX release/receive enable diagnostics
+# PASS diagnostic top qualifies a live stream before enabling all four output lanes
+# PASS bounded phase retune releases reset and requalifies without a stuck wait
+# PASS sink/source unplug and reconnect reacquire without board reset
+# ** Note: $finish    : tb_hdmi_relay_diag.v(137)
+#    Time: 1592008035600 fs  Iteration: 0  Instance: /tb_hdmi_relay_diag
+# Break in Module tb_hdmi_relay_diag at tb_hdmi_relay_diag.v line 137
+# Stopped at tb_hdmi_relay_diag.v line 137
+# End time: 13:54:24 on Oct 10,2026, Elapsed time: 0:00:03
+# Errors: 0, Warnings: 7
+# CASE main-board 75 MHz source
+# vsim -c -voptargs="+acc" -onfinish stop -lib work_hdmi_diag tb_hdmi_relay_diag glbl -gBIT_PERIOD=1.333333333 
+# Start time: 13:54:24 on Oct 10,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# ** Note: (vopt-143) Recognized 1 FSM in module "hdmi_edid_720p(fast)".
+# ** Warning: tb_hdmi_relay_diag.v(13): (vopt-2685) [TFMPC] - Too few port connections for 'dut'.  Expected 21, found 16.
+# ** Warning: tb_hdmi_relay_diag.v(13): (vopt-2718) [TFMPC] - Missing connection for port 'relay_pairs'.
+# ** Warning: tb_hdmi_relay_diag.v(13): (vopt-2718) [TFMPC] - Missing connection for port 'application_rst_n'.
+# ** Warning: tb_hdmi_relay_diag.v(13): (vopt-2718) [TFMPC] - Missing connection for port 'relay_blank'.
+# ** Warning: tb_hdmi_relay_diag.v(13): (vopt-2718) [TFMPC] - Missing connection for port 'relay_valid'.
+# ** Warning: tb_hdmi_relay_diag.v(13): (vopt-2718) [TFMPC] - Missing connection for port 'relay_sclk'.
+# Loading work.tb_hdmi_relay_diag(fast)
+# Loading work.top_secondary_hdmi_relay_diag(fast)
+# Loading work.hdmi_edid_720p(fast)
+# Loading work.hdmi_relay_clock(fast)
+# Loading work.EG_LOGIC_BUFG(fast)
+# Loading work.EG_PHY_PLL(fast)
+# Loading work.eg_dphase_sel(fast)
+# Loading work.eg_dphase_sel(fast__1)
+# Loading work.prediv_mux(fast)
+# Loading work.eg_pll_div2(fast)
+# Loading work.eg_clko_premux(fast)
+# Loading work.eg_pll_div128(fast)
+# Loading work.eg_pll_div128(fast__1)
+# Loading work.eg_pll_div128(fast__2)
+# Loading work.eg_pll_div128(fast__3)
+# Loading work.eg_clko_ctrl(fast)
+# Loading work.reset_sync(fast)
+# Loading work.hdmi_relay_phy(fast)
+# Loading work.EG_LOGIC_IDDRx2(fast)
+# Loading work.EG_LOGIC_ODDR(fast)
+# Loading work.hdmi_tmds_monitor(fast)
+# Loading work.seg_hex_display(fast)
+# Loading work.glbl(fast)
+# ** Warning: (vsim-3015) ../src/clock/hdmi_relay_clock.v(61): [PCDPC] - Port size (5) does not match connection size (1) for port 'load_reg'. The port definition is at: D:/TD_6.2.1/sim_release/eg4/eg_phy_pll.v(25).
+#    Time: 0 fs  Iteration: 0  Instance: /tb_hdmi_relay_diag/dut/u_clock/u_rx_pll File: D:/TD_6.2.1/sim_release/eg4/eg_phy_pll.v
+# ******************** : The Attribute            REFCLK_DIV on pll instance tb_hdmi_relay_diag.dut.u_clock.u_rx_pll.para_int_range_chk is set to           1.  Legal values for this attribute are           1 to         128.
+# ******************** : The Attribute             FBCLK_DIV on pll instance tb_hdmi_relay_diag.dut.u_clock.u_rx_pll.para_int_range_chk is set to           1.  Legal values for this attribute are           1 to         128.
+# ******************** : The Attribute             CLKC0_DIV on pll instance tb_hdmi_relay_diag.dut.u_clock.u_rx_pll.para_int_range_chk is set to           2.  Legal values for this attribute are           1 to         128.
+# ******************** : The Attribute             CLKC1_DIV on pll instance tb_hdmi_relay_diag.dut.u_clock.u_rx_pll.para_int_range_chk is set to           4.  Legal values for this attribute are           1 to         128.
+# ******************** : The Attribute             CLKC2_DIV on pll instance tb_hdmi_relay_diag.dut.u_clock.u_rx_pll.para_int_range_chk is set to          10.  Legal values for this attribute are           1 to         128.
+# ******************** : The Attribute             CLKC3_DIV on pll instance tb_hdmi_relay_diag.dut.u_clock.u_rx_pll.para_int_range_chk is set to           1.  Legal values for this attribute are           1 to         128.
+# ******************** : The Attribute             CLKC4_DIV on pll instance tb_hdmi_relay_diag.dut.u_clock.u_rx_pll.para_int_range_chk is set to           1.  Legal values for this attribute are           1 to         128.
+# PASS startup HPD interval and source qualification without downstream HPD
+# PASS B-page bus/clock diagnostics preserve a running relay
+# PASS C-page TX release/receive enable diagnostics
+# PASS diagnostic top qualifies a live stream before enabling all four output lanes
+# PASS bounded phase retune releases reset and requalifies without a stuck wait
+# PASS sink/source unplug and reconnect reacquire without board reset
+# ** Note: $finish    : tb_hdmi_relay_diag.v(137)
+#    Time: 1589700456100 fs  Iteration: 0  Instance: /tb_hdmi_relay_diag
+# Break in Module tb_hdmi_relay_diag at tb_hdmi_relay_diag.v line 137
+# Stopped at tb_hdmi_relay_diag.v line 137
+# End time: 13:54:27 on Oct 10,2026, Elapsed time: 0:00:03
+# Errors: 0, Warnings: 7
+# CASE 75 MHz with opposite per-lane IOL clock skew
+# vsim -c -voptargs="+acc" -onfinish stop -lib work_hdmi_diag tb_hdmi_relay_diag glbl -gSIMULATE_LANE_SKEW=1 -gBIT_PERIOD=1.333333333 
+# Start time: 13:54:27 on Oct 10,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# ** Warning: tb_hdmi_relay_diag.v(13): (vopt-2685) [TFMPC] - Too few port connections for 'dut'.  Expected 21, found 16.
+# ** Warning: tb_hdmi_relay_diag.v(13): (vopt-2718) [TFMPC] - Missing connection for port 'relay_pairs'.
+# ** Warning: tb_hdmi_relay_diag.v(13): (vopt-2718) [TFMPC] - Missing connection for port 'application_rst_n'.
+# ** Warning: tb_hdmi_relay_diag.v(13): (vopt-2718) [TFMPC] - Missing connection for port 'relay_blank'.
+# ** Warning: tb_hdmi_relay_diag.v(13): (vopt-2718) [TFMPC] - Missing connection for port 'relay_valid'.
+# ** Warning: tb_hdmi_relay_diag.v(13): (vopt-2718) [TFMPC] - Missing connection for port 'relay_sclk'.
+# ** Note: (vopt-143) Recognized 1 FSM in module "hdmi_edid_720p(fast)".
+# Loading work.tb_hdmi_relay_diag(fast)
+# Loading work.top_secondary_hdmi_relay_diag(fast)
+# Loading work.hdmi_edid_720p(fast)
+# Loading work.hdmi_relay_clock(fast)
+# Loading work.EG_LOGIC_BUFG(fast)
+# Loading work.EG_PHY_PLL(fast)
+# Loading work.eg_dphase_sel(fast)
+# Loading work.eg_dphase_sel(fast__1)
+# Loading work.prediv_mux(fast)
+# Loading work.eg_pll_div2(fast)
+# Loading work.eg_clko_premux(fast)
+# Loading work.eg_pll_div128(fast)
+# Loading work.eg_pll_div128(fast__1)
+# Loading work.eg_pll_div128(fast__2)
+# Loading work.eg_pll_div128(fast__3)
+# Loading work.eg_clko_ctrl(fast)
+# Loading work.reset_sync(fast)
+# Loading work.hdmi_relay_phy(fast)
+# Loading work.EG_LOGIC_IDDRx2(fast)
+# Loading work.EG_LOGIC_ODDR(fast)
+# Loading work.hdmi_tmds_monitor(fast)
+# Loading work.seg_hex_display(fast)
+# Loading work.glbl(fast)
+# ** Warning: (vsim-3015) ../src/clock/hdmi_relay_clock.v(61): [PCDPC] - Port size (5) does not match connection size (1) for port 'load_reg'. The port definition is at: D:/TD_6.2.1/sim_release/eg4/eg_phy_pll.v(25).
+#    Time: 0 fs  Iteration: 0  Instance: /tb_hdmi_relay_diag/dut/u_clock/u_rx_pll File: D:/TD_6.2.1/sim_release/eg4/eg_phy_pll.v
+# ******************** : The Attribute            REFCLK_DIV on pll instance tb_hdmi_relay_diag.dut.u_clock.u_rx_pll.para_int_range_chk is set to           1.  Legal values for this attribute are           1 to         128.
+# ******************** : The Attribute             FBCLK_DIV on pll instance tb_hdmi_relay_diag.dut.u_clock.u_rx_pll.para_int_range_chk is set to           1.  Legal values for this attribute are           1 to         128.
+# ******************** : The Attribute             CLKC0_DIV on pll instance tb_hdmi_relay_diag.dut.u_clock.u_rx_pll.para_int_range_chk is set to           2.  Legal values for this attribute are           1 to         128.
+# ******************** : The Attribute             CLKC1_DIV on pll instance tb_hdmi_relay_diag.dut.u_clock.u_rx_pll.para_int_range_chk is set to           4.  Legal values for this attribute are           1 to         128.
+# ******************** : The Attribute             CLKC2_DIV on pll instance tb_hdmi_relay_diag.dut.u_clock.u_rx_pll.para_int_range_chk is set to          10.  Legal values for this attribute are           1 to         128.
+# ******************** : The Attribute             CLKC3_DIV on pll instance tb_hdmi_relay_diag.dut.u_clock.u_rx_pll.para_int_range_chk is set to           1.  Legal values for this attribute are           1 to         128.
+# ******************** : The Attribute             CLKC4_DIV on pll instance tb_hdmi_relay_diag.dut.u_clock.u_rx_pll.para_int_range_chk is set to           1.  Legal values for this attribute are           1 to         128.
+# PASS startup HPD interval and source qualification without downstream HPD
+# PASS skewed capture keeps all four serial lanes bit-exact, common delay=         11 UI
+# PASS B-page bus/clock diagnostics preserve a running relay
+# PASS C-page TX release/receive enable diagnostics
+# PASS diagnostic top qualifies a live stream before enabling all four output lanes
+# PASS bounded phase retune releases reset and requalifies without a stuck wait
+# PASS sink/source unplug and reconnect reacquire without board reset
+# ** Note: $finish    : tb_hdmi_relay_diag.v(137)
+#    Time: 1589700456100 fs  Iteration: 0  Instance: /tb_hdmi_relay_diag
+# Break in Module tb_hdmi_relay_diag at tb_hdmi_relay_diag.v line 137
+# Stopped at tb_hdmi_relay_diag.v line 137
+# End time: 13:54:30 on Oct 10,2026, Elapsed time: 0:00:03
+# Errors: 0, Warnings: 7

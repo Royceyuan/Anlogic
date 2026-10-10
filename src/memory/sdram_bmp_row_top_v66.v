@@ -60,6 +60,7 @@ module top_v66 #(
     parameter integer SOURCE_W = VIDEO_W,
     parameter integer SOURCE_H = VIDEO_H,
     parameter integer SHARED_MEMORY_CLOCKS = 0,
+    parameter integer EXTERNAL_HDMI_PHY = 0,
     parameter integer LINEBUF_SCALE = 0,
     parameter integer LINEBUF_REGISTER_READ = 0,
     parameter integer LINEBUF_NOREG_SYNC_READ = 0,
@@ -120,6 +121,9 @@ module top_v66 #(
     output wire        hdmi1_d0_p,
     output wire        hdmi1_ddc_scl,
     inout  wire        hdmi1_ddc_sda,
+    output wire        local_video_clk, local_serial_clk, local_video_rst_n,
+    output wire        local_hs, local_vs, local_de,
+    output wire [23:0] local_rgb,
     input  wire        uart_rxd,
     output wire        uart_txd,
     input  wire        secondary_cmd_valid,
@@ -2898,8 +2902,19 @@ assign vga_hs = secondary_hs_out;
 assign vga_vs = secondary_vs_out;
 assign vga_d  = secondary_rgb_out[23:12];
 
+assign local_video_clk=video_clk;
+assign local_serial_clk=video_clk_5x;
+assign local_video_rst_n=video_rst_n;
+assign local_hs=secondary_hs_out;
+assign local_vs=secondary_vs_out;
+assign local_de=secondary_de_out;
+assign local_rgb=secondary_rgb_out;
 generate
-    if (ENABLE_AUDIO_VISUALIZER) begin : g_hdmi_audio_output
+    if (EXTERNAL_HDMI_PHY) begin : g_external_hdmi_output
+        assign {hdmi1_clk_p,hdmi1_d2_p,hdmi1_d1_p,hdmi1_d0_p}=4'b0;
+        assign hdmi1_ddc_scl=1'b1;
+        assign hdmi1_ddc_sda=1'bz;
+    end else if (ENABLE_AUDIO_VISUALIZER) begin : g_hdmi_audio_output
         video_rgb_to_axis_1280x720 u_video_rgb_to_axis (
             .clk(video_clk), .rst(~video_rst_n), .vs_i(video_vs_out), .de_i(video_de_out),
             .rgb_i(video_rgb_out), .axis_user(axis_user), .axis_valid(axis_valid),

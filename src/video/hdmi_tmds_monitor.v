@@ -11,7 +11,8 @@ module hdmi_tmds_monitor #(
     output reg lanes_locked,
     output reg format_ok,
     output reg frame_toggle,
-    output wire [11:0] bit_offsets
+    output wire [11:0] bit_offsets,
+    output wire control_period
 );
 reg [3:0] bits_used;
 reg [13:0] reservoir [0:2];
@@ -63,6 +64,7 @@ endcase end endfunction
 reg [2:0] ctrl0,ctrl1,ctrl2;
 reg [4:0] island_sync;
 reg island_guard,decoded_valid;
+assign control_period=lanes_locked && ctrl0[2] && ctrl1[2] && ctrl2[2];
 // Keep ten-bit code decoding out of the state/mux path at 185.625 MHz.
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n) begin

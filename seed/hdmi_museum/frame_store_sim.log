@@ -1,0 +1,147 @@
+Reading D:/Modelsim/tcl/vsim/pref.tcl
+
+# 10.6e
+
+# do ./sim/run_secondary_frame_store_alignment.do
+# Model Technology ModelSim SE-64 vlog 10.6e Compiler 2018.06 Jun 23 2018
+# Start time: 13:36:31 on Oct 10,2026
+# vlog -work sim/work_secondary_frame_store_alignment vendor/anlogic_lab6/al_ip/afifo_16_32_256.v vendor/anlogic_lab6/al_ip/afifo_32_16_256.v vendor/anlogic_lab6/frame_read_write.v vendor/anlogic_lab6/frame_fifo_read.v vendor/anlogic_lab6/frame_fifo_write.v sim/tb_secondary_frame_store_alignment.v 
+# -- Compiling module wfifo_32_32_512
+# -- Compiling module fifo_cross_domain_addr_process_al_wfifo_32_32_512
+# -- Compiling module ram_infer_wfifo_32_32_512
+# -- Compiling module rfifo_32_32_512
+# -- Compiling module fifo_cross_domain_addr_process_al_rfifo_32_32_512
+# -- Compiling module ram_infer_rfifo_32_32_512
+# -- Compiling module frame_read_write
+# -- Compiling module frame_fifo_read
+# -- Compiling module frame_fifo_write
+# -- Compiling module tb_secondary_frame_store_alignment
+# -- Compiling module sdram
+# 
+# Top level modules:
+# 	frame_read_write
+# 	tb_secondary_frame_store_alignment
+# 	sdram
+# End time: 13:36:31 on Oct 10,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# Model Technology ModelSim SE-64 vlog 10.6e Compiler 2018.06 Jun 23 2018
+# Start time: 13:36:31 on Oct 10,2026
+# vlog -work sim/work_secondary_frame_store_alignment sim/work_secondary_frame_store_alignment/anlogic_frame_store_unaligned.v 
+# -- Compiling module anlogic_frame_store
+# 
+# Top level modules:
+# 	anlogic_frame_store
+# End time: 13:36:31 on Oct 10,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# vsim -c -voptargs="+acc" -onfinish stop -lib sim/work_secondary_frame_store_alignment tb_secondary_frame_store_alignment -gEXPECT_ERROR=1 
+# Start time: 13:36:31 on Oct 10,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# ** Note: (vopt-143) Recognized 1 FSM in module "frame_fifo_read(fast)".
+# ** Note: (vopt-143) Recognized 1 FSM in module "frame_fifo_write(fast)".
+# ** Warning: vendor/anlogic_lab6/al_ip/afifo_16_32_256.v(231): (vopt-2685) [TFMPC] - Too few port connections for 'ram_inst'.  Expected 16, found 14.
+# ** Warning: vendor/anlogic_lab6/al_ip/afifo_16_32_256.v(231): (vopt-2718) [TFMPC] - Missing connection for port 'dib'.
+# ** Warning: vendor/anlogic_lab6/al_ip/afifo_16_32_256.v(231): (vopt-2718) [TFMPC] - Missing connection for port 'doa'.
+# ** Warning: vendor/anlogic_lab6/al_ip/afifo_32_16_256.v(231): (vopt-2685) [TFMPC] - Too few port connections for 'ram_inst'.  Expected 16, found 14.
+# ** Warning: vendor/anlogic_lab6/al_ip/afifo_32_16_256.v(231): (vopt-2718) [TFMPC] - Missing connection for port 'dib'.
+# ** Warning: vendor/anlogic_lab6/al_ip/afifo_32_16_256.v(231): (vopt-2718) [TFMPC] - Missing connection for port 'doa'.
+# ** Warning: vendor/anlogic_lab6/frame_read_write.v(114): (vopt-2685) [TFMPC] - Too few port connections for 'write_buf'.  Expected 14, found 11.
+# ** Warning: vendor/anlogic_lab6/frame_read_write.v(114): (vopt-2718) [TFMPC] - Missing connection for port 'aempty'.
+# ** Warning: vendor/anlogic_lab6/frame_read_write.v(114): (vopt-2718) [TFMPC] - Missing connection for port 'afull'.
+# ** Warning: vendor/anlogic_lab6/frame_read_write.v(114): (vopt-2718) [TFMPC] - Missing connection for port 'valid'.
+# ** Warning: vendor/anlogic_lab6/frame_read_write.v(163): (vopt-2685) [TFMPC] - Too few port connections for 'read_buf'.  Expected 14, found 12.
+# ** Warning: vendor/anlogic_lab6/frame_read_write.v(163): (vopt-2718) [TFMPC] - Missing connection for port 'aempty'.
+# ** Warning: vendor/anlogic_lab6/frame_read_write.v(163): (vopt-2718) [TFMPC] - Missing connection for port 'afull'.
+# //  ModelSim SE-64 10.6e Jun 23 2018
+# //
+# //  Copyright 1991-2018 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  ModelSim SE-64 and its associated documentation contain trade
+# //  secrets and commercial or financial information that are the property of
+# //  Mentor Graphics Corporation and are privileged, confidential,
+# //  and exempt from disclosure under the Freedom of Information Act,
+# //  5 U.S.C. Section 552. Furthermore, this information
+# //  is prohibited from disclosure under the Trade Secrets Act,
+# //  18 U.S.C. Section 1905.
+# //
+# Loading work.tb_secondary_frame_store_alignment(fast)
+# Loading work.anlogic_frame_store(fast)
+# Loading work.frame_read_write(fast)
+# Loading work.wfifo_32_32_512(fast)
+# Loading work.fifo_cross_domain_addr_process_al_wfifo_32_32_512(fast)
+# Loading work.ram_infer_wfifo_32_32_512(fast)
+# Loading work.frame_fifo_write(fast)
+# Loading work.rfifo_32_32_512(fast)
+# Loading work.fifo_cross_domain_addr_process_al_rfifo_32_32_512(fast)
+# Loading work.ram_infer_rfifo_32_32_512(fast)
+# Loading work.frame_fifo_read(fast)
+# Loading work.sdram(fast)
+# BOUNDARY base=0 word=0 actual=a5000001
+# BOUNDARY base=0 word=639 actual=a500027f
+# BOUNDARY base=0 word=640 actual=a5000001
+# BOUNDARY base=0 word=1279 actual=a500027f
+# BOUNDARY base=1024 word=0 actual=a5000401
+# BOUNDARY base=1024 word=639 actual=a500067f
+# BOUNDARY base=1024 word=640 actual=a5000401
+# BOUNDARY base=1024 word=1279 actual=a500067f
+# PASS wrapper regression EXPECT_ERROR=1 errors=2540 frames=4 words=2560
+# ** Note: $finish    : sim/tb_secondary_frame_store_alignment.v(72)
+#    Time: 74083704 ps  Iteration: 1  Instance: /tb_secondary_frame_store_alignment
+# Break in Module tb_secondary_frame_store_alignment at sim/tb_secondary_frame_store_alignment.v line 72
+# Stopped at sim/tb_secondary_frame_store_alignment.v line 72
+# End time: 13:36:33 on Oct 10,2026, Elapsed time: 0:00:02
+# Errors: 0, Warnings: 13
+# Model Technology ModelSim SE-64 vlog 10.6e Compiler 2018.06 Jun 23 2018
+# Start time: 13:36:33 on Oct 10,2026
+# vlog -work sim/work_secondary_frame_store_alignment src/memory/anlogic_frame_store.v 
+# -- Compiling module anlogic_frame_store
+# 
+# Top level modules:
+# 	anlogic_frame_store
+# End time: 13:36:33 on Oct 10,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# vsim -c -voptargs="+acc" -onfinish stop -lib sim/work_secondary_frame_store_alignment tb_secondary_frame_store_alignment -gEXPECT_ERROR=0 
+# Start time: 13:36:33 on Oct 10,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# ** Note: (vopt-143) Recognized 1 FSM in module "frame_fifo_read(fast)".
+# ** Note: (vopt-143) Recognized 1 FSM in module "frame_fifo_write(fast)".
+# ** Warning: vendor/anlogic_lab6/al_ip/afifo_16_32_256.v(231): (vopt-2685) [TFMPC] - Too few port connections for 'ram_inst'.  Expected 16, found 14.
+# ** Warning: vendor/anlogic_lab6/al_ip/afifo_16_32_256.v(231): (vopt-2718) [TFMPC] - Missing connection for port 'dib'.
+# ** Warning: vendor/anlogic_lab6/al_ip/afifo_16_32_256.v(231): (vopt-2718) [TFMPC] - Missing connection for port 'doa'.
+# ** Warning: vendor/anlogic_lab6/al_ip/afifo_32_16_256.v(231): (vopt-2685) [TFMPC] - Too few port connections for 'ram_inst'.  Expected 16, found 14.
+# ** Warning: vendor/anlogic_lab6/al_ip/afifo_32_16_256.v(231): (vopt-2718) [TFMPC] - Missing connection for port 'dib'.
+# ** Warning: vendor/anlogic_lab6/al_ip/afifo_32_16_256.v(231): (vopt-2718) [TFMPC] - Missing connection for port 'doa'.
+# ** Warning: vendor/anlogic_lab6/frame_read_write.v(114): (vopt-2685) [TFMPC] - Too few port connections for 'write_buf'.  Expected 14, found 11.
+# ** Warning: vendor/anlogic_lab6/frame_read_write.v(114): (vopt-2718) [TFMPC] - Missing connection for port 'aempty'.
+# ** Warning: vendor/anlogic_lab6/frame_read_write.v(114): (vopt-2718) [TFMPC] - Missing connection for port 'afull'.
+# ** Warning: vendor/anlogic_lab6/frame_read_write.v(114): (vopt-2718) [TFMPC] - Missing connection for port 'valid'.
+# ** Warning: vendor/anlogic_lab6/frame_read_write.v(163): (vopt-2685) [TFMPC] - Too few port connections for 'read_buf'.  Expected 14, found 12.
+# ** Warning: vendor/anlogic_lab6/frame_read_write.v(163): (vopt-2718) [TFMPC] - Missing connection for port 'aempty'.
+# ** Warning: vendor/anlogic_lab6/frame_read_write.v(163): (vopt-2718) [TFMPC] - Missing connection for port 'afull'.
+# Loading work.tb_secondary_frame_store_alignment(fast)
+# Loading work.anlogic_frame_store(fast)
+# Loading work.frame_read_write(fast)
+# Loading work.wfifo_32_32_512(fast)
+# Loading work.fifo_cross_domain_addr_process_al_wfifo_32_32_512(fast)
+# Loading work.ram_infer_wfifo_32_32_512(fast)
+# Loading work.frame_fifo_write(fast)
+# Loading work.rfifo_32_32_512(fast)
+# Loading work.fifo_cross_domain_addr_process_al_rfifo_32_32_512(fast)
+# Loading work.ram_infer_rfifo_32_32_512(fast)
+# Loading work.frame_fifo_read(fast)
+# Loading work.sdram(fast)
+# BOUNDARY base=0 word=0 actual=a5000000
+# BOUNDARY base=0 word=639 actual=a500027f
+# BOUNDARY base=0 word=640 actual=a5000000
+# BOUNDARY base=0 word=1279 actual=a500027f
+# BOUNDARY base=1024 word=0 actual=a5000400
+# BOUNDARY base=1024 word=639 actual=a500067f
+# BOUNDARY base=1024 word=640 actual=a5000400
+# BOUNDARY base=1024 word=1279 actual=a500067f
+# PASS wrapper regression EXPECT_ERROR=0 errors=0 frames=4 words=2560
+# ** Note: $finish    : sim/tb_secondary_frame_store_alignment.v(72)
+#    Time: 74083704 ps  Iteration: 1  Instance: /tb_secondary_frame_store_alignment
+# Break in Module tb_secondary_frame_store_alignment at sim/tb_secondary_frame_store_alignment.v line 72
+# Stopped at sim/tb_secondary_frame_store_alignment.v line 72
+# End time: 13:36:35 on Oct 10,2026, Elapsed time: 0:00:02
+# Errors: 0, Warnings: 13

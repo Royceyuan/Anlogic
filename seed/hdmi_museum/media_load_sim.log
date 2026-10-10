@@ -1,0 +1,198 @@
+Reading D:/Modelsim/tcl/vsim/pref.tcl
+
+# 10.6e
+
+# do ./run_secondary_help_fixed720.do
+# ** Warning: (vlib-34) Library already exists at "work_secondary_help_fixed720".
+# Model Technology ModelSim SE-64 vlog 10.6e Compiler 2018.06 Jun 23 2018
+# Start time: 13:40:51 on Oct 10,2026
+# vlog "+define+SIM" "+incdir+.." -work work_secondary_help_fixed720 ../src/storage/al_dp_ram16.v ../src/storage/adaptive_row_ram.v ../src/storage/fat32_image_loader.v ../src/storage/bmp_row_buffer.v ../src/storage/rgb565_stream_packer_ready.v ../src/storage/bmp_sdram_row_writer.v ../src/secondary/secondary_help_overlay.v tb_fat32_bmp_adaptive_loader.v 
+# -- Compiling module al_dp_ram16
+# -- Compiling module EG_LOGIC_BRAM
+# -- Compiling module adaptive_row_ram
+# -- Compiling module fat32_image_loader
+# -- Compiling module bmp_row_buffer
+# -- Compiling module rgb565_stream_packer_ready
+# -- Compiling module bmp_sdram_row_writer
+# -- Compiling module secondary_help_overlay
+# -- Compiling module tb_fat32_bmp_adaptive_loader
+# 
+# Top level modules:
+# 	tb_fat32_bmp_adaptive_loader
+# End time: 13:40:51 on Oct 10,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# -gFIXED_MODE=1 -gBASE_W=160 -gBASE_H=90 -gIMAGE_W=1280 -gIMAGE_H=720 -gIMAGE_ADDR_BITS=21 -gBMP_MAX_WIDTH=1280 -gBMP_MAX_HEIGHT=720 -gMULTI_IMAGE_BMP=1 -gRESOURCE_OPT_CONSTANT_MULT=1
+# -gHELP_MODE=1 -gHIRES=0 -gIMAGE_INDEX=11 -gSOURCE_W=160 -gSOURCE_H=90 -gDISK_BYTES=2097152
+# vsim -c -voptargs="+acc" -onfinish stop -lib work_secondary_help_fixed720 tb_fat32_bmp_adaptive_loader -gDISK_BYTES=2097152 -gBASE_W=160 -gIMAGE_W=1280 -gBASE_H=90 -gIMAGE_H=720 -gIMAGE_ADDR_BITS=21 -gSOURCE_W=160 -gSOURCE_H=90 -gIMAGE_INDEX=11 -gBMP_MAX_WIDTH=1280 -gMULTI_IMAGE_BMP=1 -gHIRES=0 -gFIXED_MODE=1 -gBMP_MAX_HEIGHT=720 -gRESOURCE_OPT_CONSTANT_MULT=1 -gHELP_MODE=1 
+# Start time: 13:40:52 on Oct 10,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# ** Note: (vopt-143) Recognized 2 FSMs in module "fat32_image_loader(fast)".
+# //  ModelSim SE-64 10.6e Jun 23 2018
+# //
+# //  Copyright 1991-2018 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  ModelSim SE-64 and its associated documentation contain trade
+# //  secrets and commercial or financial information that are the property of
+# //  Mentor Graphics Corporation and are privileged, confidential,
+# //  and exempt from disclosure under the Freedom of Information Act,
+# //  5 U.S.C. Section 552. Furthermore, this information
+# //  is prohibited from disclosure under the Trade Secrets Act,
+# //  18 U.S.C. Section 1905.
+# //
+# Loading work.tb_fat32_bmp_adaptive_loader(fast)
+# Loading work.fat32_image_loader(fast)
+# Loading work.bmp_row_buffer(fast)
+# Loading work.adaptive_row_ram(fast)
+# Loading work.EG_LOGIC_BRAM(fast)
+# Loading work.secondary_help_overlay(fast)
+# Adaptive BMP: PASS source=160x90 top_down=0 row_padding=0 output=160x90
+# ** Note: $finish    : tb_fat32_bmp_adaptive_loader.v(613)
+#    Time: 925780 ns  Iteration: 2  Instance: /tb_fat32_bmp_adaptive_loader
+# Break in Module tb_fat32_bmp_adaptive_loader at tb_fat32_bmp_adaptive_loader.v line 613
+# Stopped at tb_fat32_bmp_adaptive_loader.v line 613
+# End time: 13:40:53 on Oct 10,2026, Elapsed time: 0:00:01
+# Errors: 0, Warnings: 0
+# vsim -c -voptargs="+acc" -onfinish stop -lib work_secondary_help_fixed720 tb_fat32_bmp_adaptive_loader -gDISK_BYTES=2097152 -gBASE_W=160 -gIMAGE_W=1280 -gTOP_DOWN=1 -gBASE_H=90 -gIMAGE_H=720 -gFRAGMENTED=1 -gIMAGE_ADDR_BITS=21 -gHEADER_OFFSET=138 -gSOURCE_W=160 -gSOURCE_H=90 -gIMAGE_INDEX=11 -gBMP_MAX_WIDTH=1280 -gMULTI_IMAGE_BMP=1 -gHIRES=0 -gFIXED_MODE=1 -gBMP_MAX_HEIGHT=720 -gRESOURCE_OPT_CONSTANT_MULT=1 -gHELP_MODE=1 
+# Start time: 13:40:53 on Oct 10,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# ** Note: (vopt-143) Recognized 2 FSMs in module "fat32_image_loader(fast)".
+# Loading work.tb_fat32_bmp_adaptive_loader(fast)
+# Loading work.fat32_image_loader(fast)
+# Loading work.bmp_row_buffer(fast)
+# Loading work.adaptive_row_ram(fast)
+# Loading work.EG_LOGIC_BRAM(fast)
+# Loading work.secondary_help_overlay(fast)
+# Adaptive BMP: PASS source=160x90 top_down=1 row_padding=0 output=160x90
+# ** Note: $finish    : tb_fat32_bmp_adaptive_loader.v(613)
+#    Time: 925780 ns  Iteration: 2  Instance: /tb_fat32_bmp_adaptive_loader
+# Break in Module tb_fat32_bmp_adaptive_loader at tb_fat32_bmp_adaptive_loader.v line 613
+# Stopped at tb_fat32_bmp_adaptive_loader.v line 613
+# End time: 13:40:55 on Oct 10,2026, Elapsed time: 0:00:02
+# Errors: 0, Warnings: 0
+# vsim -c -voptargs="+acc" -onfinish stop -lib work_secondary_help_fixed720 tb_fat32_bmp_adaptive_loader -gDISK_BYTES=2097152 -gBASE_W=160 -gIMAGE_W=1280 -gEXPECT_ERROR=1 -gBASE_H=90 -gIMAGE_H=720 -gIMAGE_ADDR_BITS=21 -gSOURCE_W=161 -gSOURCE_H=90 -gIMAGE_INDEX=11 -gBMP_MAX_WIDTH=1280 -gMULTI_IMAGE_BMP=1 -gHIRES=0 -gFIXED_MODE=1 -gBMP_MAX_HEIGHT=720 -gRESOURCE_OPT_CONSTANT_MULT=1 -gHELP_MODE=1 
+# Start time: 13:40:55 on Oct 10,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# ** Note: (vopt-143) Recognized 2 FSMs in module "fat32_image_loader(fast)".
+# Loading work.tb_fat32_bmp_adaptive_loader(fast)
+# Loading work.fat32_image_loader(fast)
+# Loading work.bmp_row_buffer(fast)
+# Loading work.adaptive_row_ram(fast)
+# Loading work.EG_LOGIC_BRAM(fast)
+# Loading work.secondary_help_overlay(fast)
+# Adaptive BMP invalid: PASS bpp=24 compression=0 source=161x90
+# ** Note: $finish    : tb_fat32_bmp_adaptive_loader.v(596)
+#    Time: 32130 ns  Iteration: 1  Instance: /tb_fat32_bmp_adaptive_loader
+# Break in Module tb_fat32_bmp_adaptive_loader at tb_fat32_bmp_adaptive_loader.v line 596
+# Stopped at tb_fat32_bmp_adaptive_loader.v line 596
+# End time: 13:40:57 on Oct 10,2026, Elapsed time: 0:00:02
+# Errors: 0, Warnings: 0
+# vsim -c -voptargs="+acc" -onfinish stop -lib work_secondary_help_fixed720 tb_fat32_bmp_adaptive_loader -gDISK_BYTES=2097152 -gBASE_W=160 -gIMAGE_W=1280 -gEXPECT_ERROR=1 -gBASE_H=90 -gIMAGE_H=720 -gFILE_TRIM=1 -gIMAGE_ADDR_BITS=21 -gSOURCE_W=160 -gSOURCE_H=90 -gIMAGE_INDEX=11 -gBMP_MAX_WIDTH=1280 -gMULTI_IMAGE_BMP=1 -gHIRES=0 -gFIXED_MODE=1 -gBMP_MAX_HEIGHT=720 -gRESOURCE_OPT_CONSTANT_MULT=1 -gHELP_MODE=1 
+# Start time: 13:40:57 on Oct 10,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# ** Note: (vopt-143) Recognized 2 FSMs in module "fat32_image_loader(fast)".
+# Loading work.tb_fat32_bmp_adaptive_loader(fast)
+# Loading work.fat32_image_loader(fast)
+# Loading work.bmp_row_buffer(fast)
+# Loading work.adaptive_row_ram(fast)
+# Loading work.EG_LOGIC_BRAM(fast)
+# Loading work.secondary_help_overlay(fast)
+# Adaptive BMP invalid: PASS bpp=24 compression=0 source=160x90
+# ** Note: $finish    : tb_fat32_bmp_adaptive_loader.v(596)
+#    Time: 32130 ns  Iteration: 1  Instance: /tb_fat32_bmp_adaptive_loader
+# Break in Module tb_fat32_bmp_adaptive_loader at tb_fat32_bmp_adaptive_loader.v line 596
+# Stopped at tb_fat32_bmp_adaptive_loader.v line 596
+# End time: 13:40:59 on Oct 10,2026, Elapsed time: 0:00:02
+# Errors: 0, Warnings: 0
+# vsim -c -voptargs="+acc" -onfinish stop -lib work_secondary_help_fixed720 tb_fat32_bmp_adaptive_loader -gBITS_PER_PIXEL=16 -gDISK_BYTES=2097152 -gBASE_W=160 -gIMAGE_W=1280 -gEXPECT_ERROR=1 -gBASE_H=90 -gIMAGE_H=720 -gIMAGE_ADDR_BITS=21 -gSOURCE_W=160 -gSOURCE_H=90 -gIMAGE_INDEX=11 -gBMP_MAX_WIDTH=1280 -gMULTI_IMAGE_BMP=1 -gHIRES=0 -gFIXED_MODE=1 -gBMP_MAX_HEIGHT=720 -gRESOURCE_OPT_CONSTANT_MULT=1 -gHELP_MODE=1 
+# Start time: 13:40:59 on Oct 10,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# ** Note: (vopt-143) Recognized 2 FSMs in module "fat32_image_loader(fast)".
+# Loading work.tb_fat32_bmp_adaptive_loader(fast)
+# Loading work.fat32_image_loader(fast)
+# Loading work.bmp_row_buffer(fast)
+# Loading work.adaptive_row_ram(fast)
+# Loading work.EG_LOGIC_BRAM(fast)
+# Loading work.secondary_help_overlay(fast)
+# Adaptive BMP invalid: PASS bpp=16 compression=0 source=160x90
+# ** Note: $finish    : tb_fat32_bmp_adaptive_loader.v(596)
+#    Time: 32130 ns  Iteration: 1  Instance: /tb_fat32_bmp_adaptive_loader
+# Break in Module tb_fat32_bmp_adaptive_loader at tb_fat32_bmp_adaptive_loader.v line 596
+# Stopped at tb_fat32_bmp_adaptive_loader.v line 596
+# End time: 13:41:01 on Oct 10,2026, Elapsed time: 0:00:02
+# Errors: 0, Warnings: 0
+# vsim -c -voptargs="+acc" -onfinish stop -lib work_secondary_help_fixed720 tb_fat32_bmp_adaptive_loader -gDISK_BYTES=2097152 -gBASE_W=160 -gIMAGE_W=1280 -gEXPECT_ERROR=1 -gCOMPRESSION=1 -gBASE_H=90 -gIMAGE_H=720 -gIMAGE_ADDR_BITS=21 -gSOURCE_W=160 -gSOURCE_H=90 -gIMAGE_INDEX=11 -gBMP_MAX_WIDTH=1280 -gMULTI_IMAGE_BMP=1 -gHIRES=0 -gFIXED_MODE=1 -gBMP_MAX_HEIGHT=720 -gRESOURCE_OPT_CONSTANT_MULT=1 -gHELP_MODE=1 
+# Start time: 13:41:02 on Oct 10,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# ** Note: (vopt-143) Recognized 2 FSMs in module "fat32_image_loader(fast)".
+# Loading work.tb_fat32_bmp_adaptive_loader(fast)
+# Loading work.fat32_image_loader(fast)
+# Loading work.bmp_row_buffer(fast)
+# Loading work.adaptive_row_ram(fast)
+# Loading work.EG_LOGIC_BRAM(fast)
+# Loading work.secondary_help_overlay(fast)
+# Adaptive BMP invalid: PASS bpp=24 compression=1 source=160x90
+# ** Note: $finish    : tb_fat32_bmp_adaptive_loader.v(596)
+#    Time: 32130 ns  Iteration: 1  Instance: /tb_fat32_bmp_adaptive_loader
+# Break in Module tb_fat32_bmp_adaptive_loader at tb_fat32_bmp_adaptive_loader.v line 596
+# Stopped at tb_fat32_bmp_adaptive_loader.v line 596
+# End time: 13:41:03 on Oct 10,2026, Elapsed time: 0:00:01
+# Errors: 0, Warnings: 0
+# -gHIRES=1 -gSOURCE_W=1280 -gSOURCE_H=720 -gDISK_BYTES=8388608
+# vsim -c -voptargs="+acc" -onfinish stop -lib work_secondary_help_fixed720 tb_fat32_bmp_adaptive_loader -gDISK_BYTES=8388608 -gBASE_W=160 -gIMAGE_W=1280 -gBASE_H=90 -gIMAGE_H=720 -gIMAGE_ADDR_BITS=21 -gSOURCE_W=1280 -gSOURCE_H=720 -gIMAGE_INDEX=0 -gBMP_MAX_WIDTH=1280 -gMULTI_IMAGE_BMP=1 -gHIRES=1 -gFIXED_MODE=1 -gBMP_MAX_HEIGHT=720 -gRESOURCE_OPT_CONSTANT_MULT=1 
+# Start time: 13:41:04 on Oct 10,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# ** Note: (vopt-143) Recognized 2 FSMs in module "fat32_image_loader(fast)".
+# ** Note: (vopt-143) Recognized 1 FSM in module "bmp_sdram_row_writer(fast)".
+# Loading work.tb_fat32_bmp_adaptive_loader(fast)
+# Loading work.fat32_image_loader(fast)
+# Loading work.bmp_row_buffer(fast)
+# Loading work.adaptive_row_ram(fast)
+# Loading work.EG_LOGIC_BRAM(fast)
+# Loading work.bmp_sdram_row_writer(fast)
+# Loading work.rgb565_stream_packer_ready(fast)
+# Adaptive BMP: PASS source=1280x720 top_down=0 row_padding=0 output=1280x720
+# ** Note: $finish    : tb_fat32_bmp_adaptive_loader.v(613)
+#    Time: 74971230 ns  Iteration: 1  Instance: /tb_fat32_bmp_adaptive_loader
+# Break in Module tb_fat32_bmp_adaptive_loader at tb_fat32_bmp_adaptive_loader.v line 613
+# Stopped at tb_fat32_bmp_adaptive_loader.v line 613
+# End time: 13:41:10 on Oct 10,2026, Elapsed time: 0:00:06
+# Errors: 0, Warnings: 0
+# vsim -c -voptargs="+acc" -onfinish stop -lib work_secondary_help_fixed720 tb_fat32_bmp_adaptive_loader -gDISK_BYTES=8388608 -gBASE_W=160 -gIMAGE_W=1280 -gWRITE_STALL=1 -gTOP_DOWN=1 -gBASE_H=90 -gIMAGE_H=720 -gFRAGMENTED=1 -gIMAGE_ADDR_BITS=21 -gSOURCE_W=1280 -gSOURCE_H=720 -gIMAGE_INDEX=5 -gBMP_MAX_WIDTH=1280 -gMULTI_IMAGE_BMP=1 -gHIRES=1 -gFIXED_MODE=1 -gBMP_MAX_HEIGHT=720 -gRESOURCE_OPT_CONSTANT_MULT=1 
+# Start time: 13:41:10 on Oct 10,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# ** Note: (vopt-143) Recognized 2 FSMs in module "fat32_image_loader(fast)".
+# ** Note: (vopt-143) Recognized 1 FSM in module "bmp_sdram_row_writer(fast)".
+# Loading work.tb_fat32_bmp_adaptive_loader(fast)
+# Loading work.fat32_image_loader(fast)
+# Loading work.bmp_row_buffer(fast)
+# Loading work.adaptive_row_ram(fast)
+# Loading work.EG_LOGIC_BRAM(fast)
+# Loading work.bmp_sdram_row_writer(fast)
+# Loading work.rgb565_stream_packer_ready(fast)
+# Adaptive BMP: PASS source=1280x720 top_down=1 row_padding=0 output=1280x720
+# ** Note: $finish    : tb_fat32_bmp_adaptive_loader.v(613)
+#    Time: 79882990 ns  Iteration: 1  Instance: /tb_fat32_bmp_adaptive_loader
+# Break in Module tb_fat32_bmp_adaptive_loader at tb_fat32_bmp_adaptive_loader.v line 613
+# Stopped at tb_fat32_bmp_adaptive_loader.v line 613
+# End time: 13:41:16 on Oct 10,2026, Elapsed time: 0:00:06
+# Errors: 0, Warnings: 0
+# vsim -c -voptargs="+acc" -onfinish stop -lib work_secondary_help_fixed720 tb_fat32_bmp_adaptive_loader -gDISK_BYTES=8388608 -gBASE_W=160 -gIMAGE_W=1280 -gBASE_H=90 -gIMAGE_H=720 -gIMAGE_ADDR_BITS=21 -gSOURCE_W=1280 -gSOURCE_H=720 -gIMAGE_INDEX=10 -gBMP_MAX_WIDTH=1280 -gMULTI_IMAGE_BMP=1 -gHIRES=1 -gFIXED_MODE=1 -gBMP_MAX_HEIGHT=720 -gRESOURCE_OPT_CONSTANT_MULT=1 
+# Start time: 13:41:16 on Oct 10,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# ** Note: (vopt-143) Recognized 2 FSMs in module "fat32_image_loader(fast)".
+# ** Note: (vopt-143) Recognized 1 FSM in module "bmp_sdram_row_writer(fast)".
+# Loading work.tb_fat32_bmp_adaptive_loader(fast)
+# Loading work.fat32_image_loader(fast)
+# Loading work.bmp_row_buffer(fast)
+# Loading work.adaptive_row_ram(fast)
+# Loading work.EG_LOGIC_BRAM(fast)
+# Loading work.bmp_sdram_row_writer(fast)
+# Loading work.rgb565_stream_packer_ready(fast)
+# Adaptive BMP: PASS source=1280x720 top_down=0 row_padding=0 output=1280x720
+# ** Note: $finish    : tb_fat32_bmp_adaptive_loader.v(613)
+#    Time: 74971230 ns  Iteration: 1  Instance: /tb_fat32_bmp_adaptive_loader
+# Break in Module tb_fat32_bmp_adaptive_loader at tb_fat32_bmp_adaptive_loader.v line 613
+# Stopped at tb_fat32_bmp_adaptive_loader.v line 613
+# End time: 13:41:23 on Oct 10,2026, Elapsed time: 0:00:07
+# Errors: 0, Warnings: 0

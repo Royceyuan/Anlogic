@@ -1,0 +1,727 @@
+Reading D:/Modelsim/tcl/vsim/pref.tcl
+
+# 10.6e
+
+# do ./run_secondary_hdmi_local_pairs.do
+# D:/TD_6.2.1/sim_release/eg4
+# Model Technology ModelSim SE-64 vlog 10.6e Compiler 2018.06 Jun 23 2018
+# Start time: 13:48:07 on Oct 10,2026
+# vlog -work work_hdmi_local D:/TD_6.2.1/sim_release/eg4/eg_logic_arith.v D:/TD_6.2.1/sim_release/eg4/eg_logic_bram.v D:/TD_6.2.1/sim_release/eg4/eg_logic_clk.v D:/TD_6.2.1/sim_release/eg4/eg_logic_config.v D:/TD_6.2.1/sim_release/eg4/eg_logic_dram.v D:/TD_6.2.1/sim_release/eg4/eg_logic_dram16x4.v D:/TD_6.2.1/sim_release/eg4/eg_logic_fifo.v D:/TD_6.2.1/sim_release/eg4/eg_logic_gate.v D:/TD_6.2.1/sim_release/eg4/eg_logic_io.v D:/TD_6.2.1/sim_release/eg4/eg_logic_iobuf.v D:/TD_6.2.1/sim_release/eg4/eg_logic_mult.v D:/TD_6.2.1/sim_release/eg4/eg_logic_ramfifo.v D:/TD_6.2.1/sim_release/eg4/eg_phy_adc.v D:/TD_6.2.1/sim_release/eg4/eg_phy_bankref.v D:/TD_6.2.1/sim_release/eg4/eg_phy_bram.v D:/TD_6.2.1/sim_release/eg4/eg_phy_bram32k.v D:/TD_6.2.1/sim_release/eg4/eg_phy_clk.v D:/TD_6.2.1/sim_release/eg4/eg_phy_config.v D:/TD_6.2.1/sim_release/eg4/eg_phy_csb.v D:/TD_6.2.1/sim_release/eg4/eg_phy_ddr_8m_16.v D:/TD_6.2.1/sim_release/eg4/eg_phy_dff.v D:/TD_6.2.1/sim_release/eg4/eg_phy_fifo.v D:/TD_6.2.1/sim_release/eg4/eg_phy_glbl.v D:/TD_6.2.1/sim_release/eg4/eg_phy_lslice.v D:/TD_6.2.1/sim_release/eg4/eg_phy_mslice.v D:/TD_6.2.1/sim_release/eg4/eg_phy_mult18.v D:/TD_6.2.1/sim_release/eg4/eg_phy_osc.v D:/TD_6.2.1/sim_release/eg4/eg_phy_pad.v D:/TD_6.2.1/sim_release/eg4/eg_phy_pll.v D:/TD_6.2.1/sim_release/eg4/eg_phy_pwrmnt.v D:/TD_6.2.1/sim_release/eg4/eg_phy_sdram_2m_32.v 
+# -- Compiling module EG_LOGIC_SEQ_DIV
+# -- Compiling module EG_LOGIC_BUFG
+# -- Compiling module EG_LOGIC_BUFIO
+# -- Compiling module EG_LOGIC_BUFGMUX
+# -- Compiling module EG_LOGIC_MBOOT
+# -- Compiling module EG_LOGIC_DNA
+# -- Compiling module EG_LOGIC_GSRN
+# -- Compiling module EG_LOGIC_CCLK
+# -- Compiling module EG_LOGIC_DRAM
+# -- Compiling module EG_LOGIC_DRAM16X4
+# -- Compiling module EG_LOGIC_FIFO
+# -- Compiling module EG_LOGIC_BUF
+# -- Compiling module EG_LOGIC_IDELAY
+# -- Compiling module EG_LOGIC_IDDR
+# -- Compiling module EG_LOGIC_ODDR
+# -- Compiling module EG_LOGIC_IDDRx2
+# -- Compiling module EG_LOGIC_ODELAY
+# -- Compiling module EG_LOGIC_ODDRx2
+# -- Compiling module EG_LOGIC_ODDRx2l
+# -- Compiling module EG_LOGIC_IBUF
+# -- Compiling module EG_LOGIC_OBUF
+# -- Compiling module EG_LOGIC_IOTRIBUF
+# -- Compiling module EG_LOGIC_MULT
+# -- Compiling module EG_LOGIC_RAMFIFO
+# -- Compiling module gray2bin
+# -- Compiling module gray_count
+# -- Compiling module showahead_buffer
+# -- Compiling module EG_PHY_ADC
+# -- Compiling module HARD_SAR12_ADC
+# -- Compiling module EG_PHY_BANKREF
+# -- Compiling module EG_PHY_BRAM
+# -- Compiling module EG_PHY_BRAM32K
+# -- Compiling module EG_PHY_GCLK
+# -- Compiling module EG_PHY_IOCLK
+# -- Compiling module EG_PHY_CLKDIV
+# -- Compiling module EG_PHY_CONFIG
+# -- Compiling module EG_PHY_DDR_8M_16
+# -- Compiling module dff_slice_half
+# -- Compiling module pfb_dffctrl
+# -- Compiling module dff_slice
+# -- Compiling module EG_PHY_FIFO
+# -- Compiling module glbl
+# -- Compiling module EG_PHY_LSLICE
+# -- Compiling module EG_PHY_MSLICE
+# -- Compiling module EG_PHY_MULT18
+# -- Compiling module EG_PHY_OSC
+# -- Compiling module EG_PHY_PAD
+# -- Compiling module EG_PHY_PLL
+# -- Compiling module prediv_mux
+# -- Compiling module eg_dphase_sel
+# -- Compiling module eg_clko_premux
+# -- Compiling module eg_clko_ctrl
+# -- Compiling module eg_pll_div128
+# -- Compiling module eg_pll_div2
+# -- Compiling module EG_PHY_PWRMNT
+# -- Compiling module EG_PHY_SDRAM_2M_32
+# 
+# Top level modules:
+# 	EG_LOGIC_SEQ_DIV
+# 	EG_LOGIC_BUFG
+# 	EG_LOGIC_BUFIO
+# 	EG_LOGIC_BUFGMUX
+# 	EG_LOGIC_MBOOT
+# 	EG_LOGIC_DNA
+# 	EG_LOGIC_GSRN
+# 	EG_LOGIC_CCLK
+# 	EG_LOGIC_DRAM
+# 	EG_LOGIC_DRAM16X4
+# 	EG_LOGIC_FIFO
+# 	EG_LOGIC_BUF
+# 	EG_LOGIC_IDELAY
+# 	EG_LOGIC_ODELAY
+# 	EG_LOGIC_ODDRx2l
+# 	EG_LOGIC_IBUF
+# 	EG_LOGIC_OBUF
+# 	EG_LOGIC_IOTRIBUF
+# 	EG_LOGIC_MULT
+# 	EG_LOGIC_RAMFIFO
+# 	EG_PHY_ADC
+# 	EG_PHY_BANKREF
+# 	EG_PHY_BRAM
+# 	EG_PHY_BRAM32K
+# 	EG_PHY_GCLK
+# 	EG_PHY_CONFIG
+# 	EG_PHY_DDR_8M_16
+# 	EG_PHY_FIFO
+# 	glbl
+# 	EG_PHY_MULT18
+# 	EG_PHY_OSC
+# 	EG_PHY_PAD
+# 	EG_PHY_PLL
+# 	EG_PHY_PWRMNT
+# 	EG_PHY_SDRAM_2M_32
+# End time: 13:48:11 on Oct 10,2026, Elapsed time: 0:00:04
+# Errors: 0, Warnings: 0
+# Model Technology ModelSim SE-64 vcom 10.6e Compiler 2018.06 Jun 23 2018
+# Start time: 13:48:11 on Oct 10,2026
+# vcom -2008 -work work_hdmi_local ../vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/TMDSEncoder.enc.vhd ../vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/SerializerN_1_lvds_dat.enc.vhd 
+# -- Loading package STANDARD
+# End time: 13:48:12 on Oct 10,2026, Elapsed time: 0:00:01
+# Errors: 0, Warnings: 0
+# Model Technology ModelSim SE-64 vlog 10.6e Compiler 2018.06 Jun 23 2018
+# Start time: 13:48:12 on Oct 10,2026
+# vlog -work work_hdmi_local ../src/video/secondary_hdmi_local_pairs.v ../src/video/secondary_hdmi_source_switch.v tb_secondary_hdmi_local_pairs.v 
+# -- Compiling module secondary_hdmi_local_pairs
+# -- Compiling module secondary_hdmi_source_switch
+# -- Compiling module tb_secondary_hdmi_local_pairs
+# 
+# Top level modules:
+# 	tb_secondary_hdmi_local_pairs
+# End time: 13:48:12 on Oct 10,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# vsim -c -voptargs="+acc" -onfinish stop -lib work_hdmi_local tb_secondary_hdmi_local_pairs glbl 
+# Start time: 13:48:12 on Oct 10,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# ** Warning: ../vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/SerializerN_1_lvds_dat.enc.vhd(49): (vopt-8617) Possible component instance "/tb_secondary_hdmi_local_pairs/g_reference[0]/u_original/ph1/oddr_snd : PH1_LOGIC_ODDR" is not bound.
+# ** Warning: ../vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/SerializerN_1_lvds_dat.enc.vhd(49): (vopt-8617) Possible component instance "/tb_secondary_hdmi_local_pairs/g_reference[0]/u_original/al/oddr_snd : AL_LOGIC_ODDR" is not bound.
+# ** Warning: ../vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/SerializerN_1_lvds_dat.enc.vhd(49): (vopt-8617) Possible component instance "/tb_secondary_hdmi_local_pairs/g_reference[0]/u_original/ef2/oddr_snd : EF2_LOGIC_ODDR" is not bound.
+# ** Warning: ../vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/SerializerN_1_lvds_dat.enc.vhd(49): (vopt-8617) Possible component instance "/tb_secondary_hdmi_local_pairs/g_reference[0]/u_original/ef3/oddr_snd : EF3_LOGIC_ODDR" is not bound.
+# ** Warning: ../vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/SerializerN_1_lvds_dat.enc.vhd(49): (vopt-8617) Possible component instance "/tb_secondary_hdmi_local_pairs/g_reference[1]/u_original/ph1/oddr_snd : PH1_LOGIC_ODDR" is not bound.
+# ** Warning: ../vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/SerializerN_1_lvds_dat.enc.vhd(49): (vopt-8617) Possible component instance "/tb_secondary_hdmi_local_pairs/g_reference[1]/u_original/al/oddr_snd : AL_LOGIC_ODDR" is not bound.
+# ** Warning: ../vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/SerializerN_1_lvds_dat.enc.vhd(49): (vopt-8617) Possible component instance "/tb_secondary_hdmi_local_pairs/g_reference[1]/u_original/ef2/oddr_snd : EF2_LOGIC_ODDR" is not bound.
+# ** Warning: ../vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/SerializerN_1_lvds_dat.enc.vhd(49): (vopt-8617) Possible component instance "/tb_secondary_hdmi_local_pairs/g_reference[1]/u_original/ef3/oddr_snd : EF3_LOGIC_ODDR" is not bound.
+# ** Warning: ../vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/SerializerN_1_lvds_dat.enc.vhd(49): (vopt-8617) Possible component instance "/tb_secondary_hdmi_local_pairs/g_reference[2]/u_original/ph1/oddr_snd : PH1_LOGIC_ODDR" is not bound.
+# ** Warning: ../vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/SerializerN_1_lvds_dat.enc.vhd(49): (vopt-8617) Possible component instance "/tb_secondary_hdmi_local_pairs/g_reference[2]/u_original/al/oddr_snd : AL_LOGIC_ODDR" is not bound.
+# ** Warning: ../vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/SerializerN_1_lvds_dat.enc.vhd(49): (vopt-8617) Possible component instance "/tb_secondary_hdmi_local_pairs/g_reference[2]/u_original/ef2/oddr_snd : EF2_LOGIC_ODDR" is not bound.
+# ** Warning: ../vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/SerializerN_1_lvds_dat.enc.vhd(49): (vopt-8617) Possible component instance "/tb_secondary_hdmi_local_pairs/g_reference[2]/u_original/ef3/oddr_snd : EF3_LOGIC_ODDR" is not bound.
+# ** Warning: ../vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/SerializerN_1_lvds_dat.enc.vhd(49): (vopt-8617) Possible component instance "/tb_secondary_hdmi_local_pairs/g_reference[3]/u_original/ph1/oddr_snd : PH1_LOGIC_ODDR" is not bound.
+# ** Warning: ../vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/SerializerN_1_lvds_dat.enc.vhd(49): (vopt-8617) Possible component instance "/tb_secondary_hdmi_local_pairs/g_reference[3]/u_original/al/oddr_snd : AL_LOGIC_ODDR" is not bound.
+# ** Warning: ../vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/SerializerN_1_lvds_dat.enc.vhd(49): (vopt-8617) Possible component instance "/tb_secondary_hdmi_local_pairs/g_reference[3]/u_original/ef2/oddr_snd : EF2_LOGIC_ODDR" is not bound.
+# ** Warning: ../vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/SerializerN_1_lvds_dat.enc.vhd(49): (vopt-8617) Possible component instance "/tb_secondary_hdmi_local_pairs/g_reference[3]/u_original/ef3/oddr_snd : EF3_LOGIC_ODDR" is not bound.
+# ** Warning: D:/TD_6.2.1/sim_release/eg4/eg_phy_csb.v(59): (vopt-2241) Connection width does not match width of port '<protected>'.<protected>
+# ** Warning: D:/TD_6.2.1/sim_release/eg4/eg_phy_csb.v(59): (vopt-2241) Connection width does not match width of port '<protected>'.<protected>
+# ** Note: (vopt-143) Recognized 1 FSM in module "secondary_hdmi_source_switch(fast)".
+# //  ModelSim SE-64 10.6e Jun 23 2018
+# //
+# //  Copyright 1991-2018 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  ModelSim SE-64 and its associated documentation contain trade
+# //  secrets and commercial or financial information that are the property of
+# //  Mentor Graphics Corporation and are privileged, confidential,
+# //  and exempt from disclosure under the Freedom of Information Act,
+# //  5 U.S.C. Section 552. Furthermore, this information
+# //  is prohibited from disclosure under the Trade Secrets Act,
+# //  18 U.S.C. Section 1905.
+# //
+# Loading work.tb_secondary_hdmi_local_pairs(fast)
+# Loading work.secondary_hdmi_local_pairs(fast)
+# Loading work.secondary_hdmi_source_switch(fast)
+# Loading work.EG_LOGIC_ODDR(fast)
+# Loading work.glbl(fast)
+# Loading std.standard
+# Loading std.textio(body)
+# Loading ieee.std_logic_1164(body)
+# Loading ieee.std_logic_arith(body)
+# Loading ieee.std_logic_signed(body)
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 1  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 1  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 1  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 3  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 3  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 3  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 3  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 8  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 8  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 8  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 8  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 8  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 8  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 8  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 8  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 8  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 8  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 8  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 8  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 8  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 8  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 8  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 9  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 9  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 9  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 9  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 9  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 9  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 9  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 9  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 9  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 10  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 10  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 10  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 20001 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 20001 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 20001 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_blue
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 20001 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 20001 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 20001 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_green
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 20001 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 20001 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 20001 ps  Iteration: 2  Instance: /tb_secondary_hdmi_local_pairs/u_local/u_red
+# PASS local common-pair transmitter matches vendor serializer on four lanes, extra delay           1 UI
+# ** Note: $finish    : tb_secondary_hdmi_local_pairs.v(47)
+#    Time: 5772190 ps  Iteration: 0  Instance: /tb_secondary_hdmi_local_pairs
+# Break in Module tb_secondary_hdmi_local_pairs at tb_secondary_hdmi_local_pairs.v line 47
+# Stopped at tb_secondary_hdmi_local_pairs.v line 47
+# End time: 13:48:14 on Oct 10,2026, Elapsed time: 0:00:02
+# Errors: 0, Warnings: 295

@@ -18,6 +18,9 @@ set f [open [file join $root $project_file] r]; set project [read $f]; close $f
 set required_files [list $project_file vendor/anlogic_lab6/sdram/enc_file/global_def.v vendor/anlogic_hx4s20_udp/par_ph1demo/al_ip/TEMAC_CORE_gate.v]
 foreach {entry path} [regexp -all -inline {<File Path="([^"]+)"} $project] {lappend required_files $path}
 lappend required_files src/secondary/secondary_help_font.vh
+if {$top in {top_secondary_hdmi_av_diag top_secondary_hdmi_museum}} {
+    lappend required_files vendor/official_hdmi_loop_edid/edid_1280720_with_audio.mif
+}
 foreach file $required_files {if {![file exists [file join $root $file]] || [file mtime [file join $root $file]] > [file mtime $db]} {set good 0}}
 if {!$good} {puts "REFUSED: stale P&R, warnings, or failed timing"; exit}
 cd $root

@@ -3,11 +3,12 @@
 
 // Shared IOL latency on all four lanes preserves video, audio and TMDS clock.
 // Chronological nibble order is q0,q1,q2,q3. No payload reconstruction.
-module hdmi_relay_phy (
+module hdmi_relay_phy #(parameter integer EXTERNAL_TRANSMITTER=0) (
     input wire pclk, sclk, sampler_rst, transmitter_rst,
     input wire [3:0] serial_in,
     output wire [15:0] nibbles,
-    output wire [3:0] serial_out
+    output wire [3:0] serial_out,
+    output wire [7:0] parallel_pairs
 );
 reg capture_toggle,serial_toggle;
 always @(posedge pclk or posedge sampler_rst)
@@ -34,10 +35,15 @@ generate for(lane=0;lane<4;lane=lane+1) begin : g_lane
         transmit_pair<=first_pair ? nibbles[lane*4+:2] : nibbles[lane*4+2+:2];
     // Full-cycle path into the output IOL, as in the existing HDMI transmitter.
     always @(posedge sclk) output_pair<=transmit_pair;
+    assign parallel_pairs[lane*2+:2]=output_pair;
+    if (!EXTERNAL_TRANSMITTER) begin : g_output
     EG_LOGIC_ODDR u_transmit (
         .q(serial_out[lane]), .clk(sclk), .rst(transmitter_rst),
         .d0(output_pair[0]), .d1(output_pair[1])
     );
+    end else begin : g_parallel
+        assign serial_out[lane]=1'b0;
+    end
 end endgenerate
 endmodule
 `default_nettype wire

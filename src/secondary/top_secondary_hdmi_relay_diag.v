@@ -5,7 +5,8 @@
 module top_secondary_hdmi_relay_diag #(
     parameter integer HPD_LOW_CYCLES=10000000,
     parameter integer USE_OFFICIAL_EDID=0,
-    parameter integer REQUIRE_SINK_HPD=1
+    parameter integer REQUIRE_SINK_HPD=1,
+    parameter integer EXTERNAL_TRANSMITTER=0
 )(
     input wire clk_50m,
     input wire hdmi_b_clk_p,hdmi_b_d0_p,hdmi_b_d1_p,hdmi_b_d2_p,
@@ -15,7 +16,9 @@ module top_secondary_hdmi_relay_diag #(
     input wire hdmi_a_hpd,
     output wire hdmi1_clk_p,hdmi1_d0_p,hdmi1_d1_p,hdmi1_d2_p,
     output wire [3:0] led,
-    output wire [7:0] seg_data,seg_sel
+    output wire [7:0] seg_data,seg_sel,
+    output wire relay_sclk, relay_valid, relay_blank, application_rst_n,
+    output wire [7:0] relay_pairs
 );
 reg [15:0] startup=0;
 always @(posedge clk_50m) if(startup!=16'hffff) startup<=startup+1'b1;
@@ -123,12 +126,12 @@ always @(posedge sclk or negedge receive_allowed)
     if(!receive_allowed) tx_reset_output<=1'b1;
     else tx_reset_output<=tx_reset_falling;
 wire tx_reset_n=!tx_reset_output;
-hdmi_relay_phy u_phy(.pclk(pclk),.sclk(sclk),.sampler_rst(sample_reset[1]),
+hdmi_relay_phy #(.EXTERNAL_TRANSMITTER(EXTERNAL_TRANSMITTER)) u_phy(.pclk(pclk),.sclk(sclk),.sampler_rst(sample_reset[1]),
     .transmitter_rst(tx_reset_output),
     .serial_in({hdmi_b_clk_p,hdmi_b_d2_p,hdmi_b_d1_p,hdmi_b_d0_p}),
-    .nibbles(nibbles),.serial_out(outgoing));
+    .nibbles(nibbles),.serial_out(outgoing),.parallel_pairs(relay_pairs));
 hdmi_tmds_monitor u_monitor(.clk(pclk),.rst_n(rx_reset_n),.nibbles(nibbles[11:0]),
-    .lanes_locked(lanes_locked),.format_ok(format_ok),.frame_toggle(frame_toggle),.bit_offsets(bit_offsets));
+    .lanes_locked(lanes_locked),.format_ok(format_ok),.frame_toggle(frame_toggle),.bit_offsets(bit_offsets),.control_period(relay_blank));
 assign {hdmi1_clk_p,hdmi1_d2_p,hdmi1_d1_p,hdmi1_d0_p}=outgoing;
 assign led={format_ff[1],pll_ff[1],clock_valid,heartbeat[24]};
 reg [2:0] transmit_ff1,transmit_ff2;
@@ -144,6 +147,9 @@ wire [15:0] diagnostic_value=&heartbeat[26:25] ?
     heartbeat[26] ? {4'hb,ddc_bus_status[7:1],clock_activity_seen,ddc_parser_state} :
     {4'ha,edid_ready,sink_ff[1],edid_read_seen,edid_request_seen,
      clock_valid,pll_ff[1],lock_ff[1],format_ff[1],phase_index};
+assign application_rst_n=rst_n;
+assign relay_sclk=sclk;
+assign relay_valid=clock_valid && format_ff[1] && transmit_ff2[2];
 seg_hex_display u_seg(.clk(clk_50m),.rst_n(rst_n),
     // A status, clock count, B bus probe, C TX reset/offsets; 0.67 s per page.
     .value(diagnostic_value),
