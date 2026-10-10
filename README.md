@@ -11,13 +11,24 @@
 | 系统集成 | `src/top/museum_main_board_top.v` |
 | 管脚约束 | `constraints/museum_main_board_pins.adc` |
 | 时序约束 | `constraints/museum_main_board_timing.sdc` |
-| 唯一保留bit | `release/dual_fpga_museum_terminal_main_board_flash_startup_repair.bit` |
+| 当前B口候选bit | `release/dual_fpga_museum_terminal_main_board_hdmi_b.bit` |
+| 已验收A口bit（回退用） | `release/dual_fpga_museum_terminal_main_board_flash_startup_repair.bit` |
 | bit校验值 | `release/dual_fpga_museum_terminal_main_board_flash_startup_repair.sha256` |
-| 成功种子及最终报告 | `seed/`，布局种子1 |
+| 成功种子及最终报告 | B口：`seed/hdmi_b/`，种子4；旧A口：`seed/`，种子1 |
 
-bit SHA-256：`4409952619964B9FB2D138E2D3FB9006DB005E53278404412D8A7F92AB876BE5`。
+已验收A口bit SHA-256：`4409952619964B9FB2D138E2D3FB9006DB005E53278404412D8A7F92AB876BE5`。
 
 这是用户反馈整体可用的Flash启动修复版。极低概率80C6仍作为待观察项，不宣称完全消除。整理没有修改功能RTL，发布bit不变，不需要重新烧录或写卡。保留了用户原有未提交源码修改；本轮独立重建使用待提交源码副本，不包含这些修改，不能将它们宣称为该bit的新综合结果。
+
+### 当前HDMIB输出变更
+
+2026-10-10按用户要求，将主板输出从HDMIA迁移至HDMIB。仅修改ADC中的六个物理管脚，顶层及媒体RTL不变：CLK=C3、D2=E1、D1=F1、D0=G5、DDC SCL=P2、SDA=R2。内部`hdmi1_*`仍是同一组逻辑信号名，不表示当前物理A口。
+
+新bit为`release/dual_fpga_museum_terminal_main_board_hdmi_b.bit`，旧A口bit及校验值保留用于回退，不被bitgen覆盖。烧录新bit后，将主屏HDMI线移到主板HDMIB；原HDMIA不再提供博物馆输出。TF卡、以太网接线和副板bit不变；所有按键、拨码、图片顺序、转场及音画字幕时间轴保持原逻辑。新的物理输出需要上板验证后才能标记为通过。
+
+B口bit SHA-256：`29351E9BCBB3420392381AF14B8D0ECF3EF3EFD50C3BE0EB6EB95EF2B342AACF`。以已提交基线`9a3e939`的独立源码副本构建，91个源码/IP文件与基线一致，未夹带工作区原有改动。完整综合、布局布线、DRC及bitgen完成；setup +0.146ns、hold +0.024ns，TNS均为0。6组功能回归合计13条PASS。B口的成功种子4与原始报告保存在`seed/hdmi_b`；构建先导出并重开gate检查点，再按种子4布局，与本次闭合流程一致，不依赖工程外缓存。
+
+B口最终资源：LUT16969/19600、FF11448/19600、Slice9605/9800（98.01%）、BRAM9K43/64、BRAM32K10/16、DSP13/29、PLL4/4。原有SDRAM位置提示及一个SDRAM时钟局部布线提示仍保留，DRC无多驱动或异常时序路径。未改变SDC、时钟频率或PLL相位。仅迁移输出，不为原A口增加HDMI输入功能。
 
 ## 已实现功能
 
@@ -81,12 +92,12 @@ Set-Location -LiteralPath D:\VSCode\CodeFiles\Git_TD\Anlogic
 # 确认上一步成功，检查 _build_flash_startup_repair/museum_main_board_final.ts
 # setup/hold WNS非负，TNS均为0，再执行：
 & D:\TD_6.2.1\bin\td_commands_prompt.exe scripts/bitgen_flash_startup_repair.tcl
-Get-FileHash -LiteralPath ./release/dual_fpga_museum_terminal_main_board_flash_startup_repair.bit -Algorithm SHA256
+Get-FileHash -LiteralPath ./release/dual_fpga_museum_terminal_main_board_hdmi_b.bit -Algorithm SHA256
 ```
 
 4. 检查TD输出无ERROR，完整构建的DRC通过，bitgen明确输出 `Generate bits file`；确认新bit的文件时间和SHA256后再烧录。只看进程退出码或目录里有旧bit不能证明生成成功。自行修改后产生的新bit不自动继承当前发布bit的上板验收。
 
-启动修复构建包装器复用 `build_museum_main_board.tcl` 及bitgen，四个Tcl都必须保留。所有现有build目录和数据库均已归档；下次生成bit必须先执行第一条完整构建，再执行bitgen，脚本会重新建立构建目录。成功布局种子1及其参数原样保留在构建脚本，并在 `seed/seed_config.json` 汇总；这里只保存原始最终报告，不是可直接bitgen的数据库。种子不保证修改后的源码仍然闭合时序。
+启动修复构建包装器复用 `build_museum_main_board.tcl` 及bitgen，四个Tcl都必须保留。下次生成bit必须先执行第一条完整构建，再执行bitgen，脚本会重新建立构建目录。当前B口使用成功种子4，参数见`seed/hdmi_b/seed_config.json`；旧A口种子1的参数与报告仍在`seed/seed_config.json`及根级报告中用于回溯。这里只保存原始最终报告，不是可直接bitgen的数据库。种子不保证修改后的源码仍然闭合时序。
 
 保留bit对应报告：LUT16960/19600（86.53%）、FF11427/19600（58.30%）、Slice9540/9800（97.35%）、BRAM9K43/64、BRAM32K10/16、DSP13/29、PLL4/4。setup +0.107ns、hold +0.023ns，TNS=0。原始依据在 `seed/` 的final.area、final.qor、final.ts、final.timing及bitgen.log；余量较紧，不放宽时序来宣称通过。
 

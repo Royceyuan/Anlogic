@@ -47,12 +47,13 @@ set_pin_assignment	{ vga_d[10] }	{ LOCATION = L8; IOSTANDARD = LVCMOS25; DRIVEST
 set_pin_assignment	{ vga_d[11] }	{ LOCATION = E13; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
 set_pin_assignment	{ vga_hs }	{ LOCATION = E7; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
 set_pin_assignment	{ vga_vs }	{ LOCATION = F7; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = NONE; }
-set_pin_assignment	{ hdmi1_clk_p }	{ LOCATION = K1; IOSTANDARD = LVDS33; PULLTYPE = NONE; }
-set_pin_assignment	{ hdmi1_d2_p }	{ LOCATION = B3; IOSTANDARD = LVDS33; PULLTYPE = NONE; }
-set_pin_assignment	{ hdmi1_d1_p }	{ LOCATION = E3; IOSTANDARD = LVDS33; PULLTYPE = NONE; }
-set_pin_assignment	{ hdmi1_d0_p }	{ LOCATION = F5; IOSTANDARD = LVDS33; PULLTYPE = NONE; }
-set_pin_assignment	{ hdmi1_ddc_scl }	{ LOCATION = P1; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = PULLUP; }
-set_pin_assignment	{ hdmi1_ddc_sda }	{ LOCATION = R1; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = PULLUP; }
+# Logical hdmi1_* ports now drive physical HDMIB; media RTL is unchanged.
+set_pin_assignment	{ hdmi1_clk_p }	{ LOCATION = C3; IOSTANDARD = LVDS33; PULLTYPE = NONE; }
+set_pin_assignment	{ hdmi1_d2_p }	{ LOCATION = E1; IOSTANDARD = LVDS33; PULLTYPE = NONE; }
+set_pin_assignment	{ hdmi1_d1_p }	{ LOCATION = F1; IOSTANDARD = LVDS33; PULLTYPE = NONE; }
+set_pin_assignment	{ hdmi1_d0_p }	{ LOCATION = G5; IOSTANDARD = LVDS33; PULLTYPE = NONE; }
+set_pin_assignment	{ hdmi1_ddc_scl }	{ LOCATION = P2; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = PULLUP; }
+set_pin_assignment	{ hdmi1_ddc_sda }	{ LOCATION = R2; IOSTANDARD = LVCMOS33; DRIVESTRENGTH = 8; PULLTYPE = PULLUP; }
 
 set_pin_assignment { eth_rgmii_rxd[0] } { LOCATION = P6; IOSTANDARD = LVCMOS25; PULLTYPE = NONE; }
 set_pin_assignment { eth_rgmii_rxd[1] } { LOCATION = M6; IOSTANDARD = LVCMOS25; PULLTYPE = NONE; }

@@ -10,8 +10,10 @@ optimize_rtl
 set_param gate pack_effort high
 optimize_gate -packarea ./_build_museum_main_board/museum_main_board_gate.area
 export_db ./_build_museum_main_board/museum_main_board_gate.db
+# Reopen the checkpoint used by the verified HDMIB placement run.
+import_db ./_build_museum_main_board/museum_main_board_gate.db
 legalize_phy_inst
-set_param place seed 1
+set_param place seed 4
 set_param place effort high
 set_param place opt_timing high
 set_param place logic_level_opt on

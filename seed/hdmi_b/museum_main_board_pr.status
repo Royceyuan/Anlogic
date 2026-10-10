@@ -1,0 +1,23 @@
+Location         : D:\VSCode\CodeFiles\Git_TD\Anlogic\_build_hdmi_b\source
+Running with     : Tang Dynasty v6.2.168116
+                   Copyright (c) 2012-2025 Anlogic Inc.
+Top Model        : dual_fpga_museum_terminal_main_board
+Device           : EG4S20BG256
+Speed            : NA
+
+Timing Mode      : final
+Setup            : WNS   146ps  TNS        0ps  NUM_FEPS     0
+Hold             : WNS    24ps  TNS        0ps  NUM_FEPS     0
+
+Flow Statistics  :
+---------------------------------------------------------------------------------------------------
+     command     |  #calls  |  wall time   |  cpu time(s)  |  used memory(mb)  |  peak memory(mb)  
+---------------------------------------------------------------------------------------------------
+      route      |    1     |  2m59s(64%)  |   234(58%)    |       1185        |       1197        
+      place      |    1     |  1m30s(32%)  |   157(39%)    |       1146        |       1197        
+    fix_hold     |    1     |    8s(2%)    |     8(2%)     |       1185        |       1197        
+    import_db    |    1     |    0s(0%)    |     0(0%)     |        277        |        277        
+  import_device  |    1     |    0s(0%)    |     0(0%)     |        83         |        83         
+---------------------------------------------------------------------------------------------------
+      total      |    5     |    4m37s     |      399      |       1185        |       1197        
+---------------------------------------------------------------------------------------------------
