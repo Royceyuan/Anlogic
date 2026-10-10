@@ -2,6 +2,8 @@
 
 适用安路HX4S20C（EG4S20BG256）。实现本地展陈、主板状态联动、以太网画面控制、自动/手动同步、说明页、PC HDMI音视频直通及断源回退。2026-10-10用户确认集成现象正常并要求整理推送；未记录的播放时长、冷启动次数不补写为通过。
 
+2026-10-11新增USB串口授权播放候选版：HDMI常连接不再自动展示桌面，电脑播放器发START才显示视频，STOP或失联自动回本地。主板及MBP1不变。当前源码实现候选版；下述旧发布bit仅作为已上板回退基线，候选版须重新上板验收。
+
 ## 1. 唯一入口与已验证bit
 
 - TD入口：`dual_fpga_museum_terminal_secondary_board.al`。
@@ -9,6 +11,9 @@
 - 已上板bit：`release/dual_fpga_museum_terminal_secondary_board.bit`，654090字节。
 - SHA256：`85E5C239BFF500C794896F1BF0FE5233DC0A51244F9C91A16DB86230955DC458`。
 - 发布信息：`release/manifest_secondary_board.json`。
+- 本轮待上板bit：`release/dual_fpga_museum_terminal_secondary_board_uart_video.bit`，SHA256 `E6C0A247EA0731ACC9FA4182A09A70A814D32BDF6339456FA8EEB2381DD270AF`。
+- 候选信息及成功种子：`release/manifest_secondary_uart_video.json`、`seed/uart_video`。
+- 必要电脑播放器：`tools/PCVideoPlayer/MuseumPCVideoPlayer.exe`；源代码及重编脚本同目录，无需安装Python或第三方播放器。
 
 整理不改变硬件RTL行为；bit只移动并改名，字节及校验值不变。旧入口和旧bit在Git历史/rubbish保留，不作为当前工程入口。
 
@@ -20,7 +25,25 @@
 
 声音选择AnlogicHDMI对应HDMI设备，双声道48kHz24-bit LPCM，由B送显示器，不经副板功放。显示器须有音频播放能力。暂不支持1080p输入、HDCP、HDR、深色或压缩音频位流。
 
-无有效信源时，原轮播、简介、说明页或应急页跟随最新状态。有合格信源连续8帧通过后，外部音视频始终优先，包括应急、说明页状态；FPGA不会替电脑打开逃生视频。直通期间TF、SDRAM刷新、本地扫描、以太网、按键和拨码继续运行，本地页面暂不显示。断源回到**当前**本地状态，不需KEY4、不重载全部素材。允许显示器重锁时短暂黑屏，不承诺无缝。
+当前候选版：无授权或无有效信源时，原轮播、简介、说明页或应急页跟随最新状态。输入连续8帧通过且收到合法UART START后，外部音视频优先，包括应急、说明页状态；FPGA不会替电脑打开逃生视频。直通期间TF、SDRAM刷新、本地扫描、以太网、按键和拨码继续运行，本地页面暂不显示。STOP、断源或3秒未收到有效KEEPALIVE会回到**当前**本地状态，不需KEY4、不重载全部素材；断源取消旧授权，重新连接不自动展示桌面。允许显示器重锁时短暂黑屏，不承诺无缝。旧85E5C239基线仍是输入有效自动优先，不能用它验证新串口功能。
+
+### 电脑主动播放操作
+
+1. 电脑HDMI→副板HDMIA，副板HDMIB→屏幕；双板以太网仍直连原端口。
+2. 电脑USB→副板板载USB-UART Type-C（CH340），不是USB-JTAG；UART RX=F12、TX=D12，与官方第16例一致。需要系统已安装CH340驱动，程序不自动安装驱动。
+3. Windows启用AnlogicHDMI为扩展屏，保持1280×720、60/59.94Hz、RGB8、SDR；声音输出选择AnlogicHDMI，双声道48kHz/24-bit PCM。电脑自身视频编码可不同，解码后由GPU按这一路显示格式输出。程序不更改显示器/音频系统设置。
+4. 双击电脑播放器，选择副板COM口并连接、选择AnlogicHDMI扩展屏、选择本地视频，点“播放到副屏”。若读不到对应EDID名称，程序拒绝把独立DP或主屏误当成HDMI视频目标。
+5. 程序先静音准备全屏首帧，再授权并等待输出稳定后播放。暂停保留画面及保活；停止/结束先撤销授权并确认本地输出，再关闭置顶视频窗。串口失联时保留视频窗至硬件看门狗超时，避免正常停止时露出桌面。强杀程序无法保留窗口，最长约3秒才退回本地，不宣称此异常场景完全无桌面闪现。
+
+Windows10/11 x64、.NET Framework 4.8、系统媒体组件；推荐MP4(H.264/AAC)。不保证任意编解码均支持；媒体失败、不含视频、输入未就绪、串口占用/错误COM均明确提示并保持/恢复本地。视频/音频实时走HDMI，不写TF，不经以太网或副板SDRAM。媒体播放依托[Windows WPF MediaElement](https://learn.microsoft.com/en-us/dotnet/desktop/wpf/graphics-multimedia/multimedia-overview)。本机已验证H.264/AAC含声画解码及结束事件，尚未验证新bit与实际USB串口/播放器的实板组合。
+
+### 串口控制协议
+
+115200、8N1、无流控。命令固定5字节`A5 5A CMD SEQ CRC`；应答`5A A5 SEQ FLAGS CRC`。CRC-8/SMBUS：poly=07、init=00、xorout=00、不反射，覆盖前4字节；“123456789”校验为F4。
+
+CMD：01 START（仅输入已有效时接受）、02 STOP、03 QUERY、04 KEEPALIVE。FLAGS bit0输入有效、bit1外部已选择、bit2输出处于静音/复位、bit3已授权、bit7本次命令拒绝，其余为0。QUERY不能授权或延长租约；KEEPALIVE只延长已存在授权。未知命令拒绝，坏CRC/停止位丢弃；帧间断超10ms重新同步。PC每250ms保活，一个未完成事务，250ms超时同序号重试最多3次；停止可取代未完成请求，过期应答不驱动状态。START/STOP重复执行幂等。
+
+重编电脑程序：PowerShell进入`tools/PCVideoPlayer`，执行`./build.ps1`，使用系统csc生成无终端EXE并运行报文自检。EXE可单独运行，其构建不依赖主板打包软件。`--media-test <本地文件>`是静音解码/结束事件核验，`--ui-test <PNG路径>`是无播放、无串口连接的界面渲染核验。
 
 LED/数码管保留原媒体加载意义，不是独立诊断的A/B/C页，LED4也不是外部帧锁定指示。
 
@@ -72,6 +95,7 @@ SW3=0请求自动讲解，=1请求手动浏览；以主板实际回报为准，�
 | src/video/hdmi_relay_phy.v、hdmi_tmds_monitor.v | 四路采样、分组、符号和帧检查 |
 | src/video/secondary_hdmi_local_pairs.v | 厂家RGB编码及原toggle/shift发送结构 |
 | src/video/secondary_hdmi_source_switch.v | 静音、CSB时钟选择、一套ODDR |
+| src/common/uart_byte_io.v、src/secondary/secondary_video_uart_control.v | 复用UART字节收发、CRC/ACK、视频授权及3秒失联回退；不导入字幕系统 |
 | vendor | 必需厂家IP、加密RTL、初始化文件和版权 |
 | sim | 当前回归源码/夹具，不是额外AL入口 |
 
@@ -114,6 +138,8 @@ SW3=0请求自动讲解，=1请求手动浏览；以主板实际回报为准，�
 | GCLK | 10/16 |
 
 `seed/hdmi_museum`保留当前成功种子7的资源、两模式STA、DRC、bitgen和13组54条PASS证据；其余seed为历史成功记录，不是另一个入口。报告旧路径是生成时的记录，不是当前编译依赖。
+
+本轮候选种子7：LUT11255/19600（57.42%，+289）、FF7254/19600（37.01%，+154）、Slice6455/9800（65.87%，+141），BRAM9K21/64、BRAM32K13/16、DSP5/29、PLL4/4、GCLK10/16均不增加。setup +0.106ns、hold +0.021ns，TNS为0，未修改时钟/相位/时序例外。8组27条回归通过，涵盖UART、集成AV、死钟回退、厂家本地发送器等价、按键、MBP1、页面和说明字库；报告在`seed/uart_video`。UART新增首级异步同步器按现有板载输入方式处理，仿真不替代实板USB线路和亚稳态验证。
 
 回归覆盖切源、AV、本地厂家发送器等价、按键、状态、说明页、切页、MBP1重连、帧缓存、PLL和BMP异常格式。例：
 

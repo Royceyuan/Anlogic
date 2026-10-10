@@ -1,9 +1,11 @@
 `timescale 1ns / 1ps
 `default_nettype none
 // Integrated candidate: A receives PC HDMI, B is the only display output.
-// External AV has priority. The original local terminal keeps running.
+// UART-authorized external AV has priority. The local terminal keeps running.
 module top_secondary_hdmi_museum(
     input wire clk_50m,
+    input wire uart_rxd,
+    output wire uart_txd,
     input wire [3:0] sw,key_n,
     output wire [3:0] led,
     output wire [7:0] seg_data,seg_sel,
@@ -38,6 +40,7 @@ top_secondary_main5e #(.SHARED_MEDIA_ETH_PLL(1),.EXTERNAL_HDMI_PHY(1)) u_termina
     .eth_mdc(eth_mdc),.eth_mdio(eth_mdio));
 wire external_sclk,external_ready,external_blank,rst_n;
 wire [7:0] external_pairs,local_pairs;
+wire external_selected,output_muted,pc_play_enabled;
 top_secondary_hdmi_relay_diag #(.USE_OFFICIAL_EDID(1),.REQUIRE_SINK_HPD(0),.EXTERNAL_TRANSMITTER(1)) u_relay(
     .clk_50m(application_clock),.hdmi_b_clk_p(hdmi_a_clk_p),
     .hdmi_b_d0_p(hdmi_a_d0_p),.hdmi_b_d1_p(hdmi_a_d1_p),.hdmi_b_d2_p(hdmi_a_d2_p),
@@ -47,9 +50,12 @@ top_secondary_hdmi_relay_diag #(.USE_OFFICIAL_EDID(1),.REQUIRE_SINK_HPD(0),.EXTE
 secondary_hdmi_local_pairs u_local(
     .pixel_clk(local_pclk),.serial_clk(local_sclk),.rst_n(local_ready),
     .hs(local_hs),.vs(local_vs),.de(local_de),.rgb(local_rgb),.pairs(local_pairs));
-wire external_selected,output_muted;
+secondary_video_uart_control u_pc_video(
+    .clk(application_clock),.rst_n(rst_n),.uart_rxd(uart_rxd),.uart_txd(uart_txd),
+    .input_ready(external_ready),.external_selected(external_selected),
+    .output_muted(output_muted),.play_enabled(pc_play_enabled));
 secondary_hdmi_source_switch u_switch(
-    .clk_50m(application_clock),.rst_n(rst_n),.local_ready(local_ready),.external_ready(external_ready),
+    .clk_50m(application_clock),.rst_n(rst_n),.local_ready(local_ready),.external_ready(external_ready&&pc_play_enabled),
     .local_blank(!local_de),.external_blank(external_blank),
     .local_sclk(local_sclk),.external_sclk(external_sclk),.local_pairs(local_pairs),.external_pairs(external_pairs),
     .external_selected(external_selected),.output_muted(output_muted),

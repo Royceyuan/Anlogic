@@ -1,0 +1,34 @@
+# do run_secondary_page_switch.do
+# Model Technology ModelSim SE-64 vlog 10.6e Compiler 2018.06 Jun 23 2018
+# Start time: 00:33:11 on Oct 11,2026
+# vlog "+incdir+work_secondary_page_switch" -work work_secondary_page_switch tb_secondary_page_switch.v 
+# -- Compiling module tb_secondary_page_switch
+# 
+# Top level modules:
+# 	tb_secondary_page_switch
+# End time: 00:33:11 on Oct 11,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# vsim -c -voptargs="+acc" -onfinish stop -lib work_secondary_page_switch tb_secondary_page_switch 
+# Start time: 00:33:11 on Oct 11,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# //  ModelSim SE-64 10.6e Jun 23 2018
+# //
+# //  Copyright 1991-2018 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  ModelSim SE-64 and its associated documentation contain trade
+# //  secrets and commercial or financial information that are the property of
+# //  Mentor Graphics Corporation and are privileged, confidential,
+# //  and exempt from disclosure under the Freedom of Information Act,
+# //  5 U.S.C. Section 552. Furthermore, this information
+# //  is prohibited from disclosure under the Trade Secrets Act,
+# //  18 U.S.C. Section 1905.
+# //
+# Loading work.tb_secondary_page_switch(fast)
+# PASS: production page FSM lecture fade, emergency direct/preemption, carousel preserved
+# ** Note: $finish    : tb_secondary_page_switch.v(100)
+#    Time: 63076 ns  Iteration: 0  Instance: /tb_secondary_page_switch
+# Break in Module tb_secondary_page_switch at tb_secondary_page_switch.v line 100
+# Stopped at tb_secondary_page_switch.v line 100
+# End time: 00:33:13 on Oct 11,2026, Elapsed time: 0:00:02
+# Errors: 0, Warnings: 0

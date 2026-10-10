@@ -1,6 +1,7 @@
 `timescale 1ns / 100fs
 module tb_secondary_hdmi_museum;
 reg clk=0,scl=1,master_low=0,source_enabled=0;
+reg uart_rxd=1;
 always #10 clk=!clk;
 reg [3:0] incoming=0;
 tri1 sda;
@@ -9,6 +10,7 @@ wire hpd;
 wire [3:0] outgoing,led;
 wire [7:0] seg,sel;
 top_secondary_hdmi_museum dut(.clk_50m(clk),.hdmi_a_clk_p(incoming[3]),
+    .uart_rxd(uart_rxd),.uart_txd(),
     .hdmi_a_d0_p(incoming[0]),.hdmi_a_d1_p(incoming[1]),.hdmi_a_d2_p(incoming[2]),
     .hdmi_a_scl(scl),.hdmi_a_sda(sda),.hdmi_a_hpd(hpd),.hdmi_b_hpd(1'b0),
     .hdmi_b_clk_p(outgoing[3]),.hdmi_b_d0_p(outgoing[0]),
@@ -16,6 +18,7 @@ top_secondary_hdmi_museum dut(.clk_50m(clk),.hdmi_a_clk_p(incoming[3]),
     .led(led),.seg_data(seg),.seg_sel(sel));
 defparam dut.u_relay.u_clock.CLOCKS_PER_MS=500;
 defparam dut.u_switch.SETTLE_CYCLES=64;
+defparam dut.u_pc_video.BAUD_DIV=8;
 defparam dut.u_relay.u_monitor.H_TOTAL=192;
 defparam dut.u_relay.u_monitor.V_TOTAL=16;
 defparam dut.u_relay.u_monitor.GOOD_FRAMES=2;
@@ -25,6 +28,26 @@ input vs,hs;
 begin case({vs,hs})
     0:control=10'h354;1:control=10'h0ab;2:control=10'h154;3:control=10'h2ab;
 endcase end endfunction
+function [7:0] crc8;
+input [7:0] c,b;
+reg [7:0] w;
+integer n;
+begin w=c^b;for(n=0;n<8;n=n+1) w=w[7]?(w<<1)^8'h07:w<<1;crc8=w;end
+endfunction
+task uart_byte;
+input [7:0] b;
+integer n;
+begin
+    @(negedge clk);uart_rxd=0;repeat(8) @(negedge clk);
+    for(n=0;n<8;n=n+1) begin uart_rxd=b[n];repeat(8) @(negedge clk);end
+    uart_rxd=1;repeat(16) @(negedge clk);
+end endtask
+task uart_command;
+input [7:0] command,seq;
+begin
+    uart_byte(8'ha5);uart_byte(8'h5a);uart_byte(command);uart_byte(seq);
+    uart_byte(crc8(crc8(crc8(crc8(0,8'ha5),8'h5a),command),seq));
+end endtask
 function [9:0] terc;
 input [3:0] nibble;
 begin case(nibble)
@@ -131,7 +154,11 @@ initial begin
     if(sum0%256 || sum1%256) $fatal(1,"official EDID checksum");
     if(!dut.u_relay.edid_read_seen) $fatal(1,"passive observer missed read address");
     $display("PASS official ROM both blocks read/checksum while passive monitor never drives SDA");
-    source_enabled=1;wait(dut.u_relay.format_ff[1]&&dut.external_selected&&!dut.output_muted);
+    source_enabled=1;wait(dut.u_relay.format_ff[1]);
+    repeat(100) @(posedge clk);
+    if(dut.external_selected||dut.pc_play_enabled) $fatal(1,"valid desktop auto-selected without UART START");
+    $display("PASS valid connected PC stays local until UART authorizes video");
+    uart_command(1,1);wait(dut.external_selected&&!dut.output_muted);
     repeat(100) @(posedge dut.u_relay.pclk);
     if(!dut.external_selected || dut.output_muted || dut.u_relay.sink_ff[1]) $fatal(1,"unreliable sink HPD gated qualified output");
     $display("PASS A-input/B-output candidate qualifies source without sink-HPD gate");
@@ -145,8 +172,13 @@ initial begin
     if(dut.u_relay.clock_valid || dut.external_selected || dut.output_muted) $fatal(1,"source loss did not restore local output");
     if(dut.u_terminal.background_ticks<100000) $fatal(1,"background application stopped during passthrough");
     $display("PASS source loss restores local output while background application keeps running");
-    source_enabled=1;wait(dut.u_relay.format_ff[1]&&dut.external_selected&&!dut.output_muted);
-    $display("PASS source reconnect requalifies while official EDID remains available");
+    source_enabled=1;wait(dut.u_relay.format_ff[1]);repeat(100) @(posedge clk);
+    if(dut.external_selected||dut.pc_play_enabled) $fatal(1,"reconnect reused old authorization");
+    uart_command(1,2);wait(dut.external_selected&&!dut.output_muted);
+    $display("PASS source reconnect requires fresh UART authorization while EDID remains available");
+    uart_command(2,3);wait(!dut.external_selected&&!dut.output_muted);
+    if(!dut.external_ready||dut.pc_play_enabled) $fatal(1,"STOP reset HDMI receiver or retained authorization");
+    $display("PASS UART STOP restores local without unplugging HDMI or resetting receiver");
     test_pass=1;$finish;
 end
 initial begin #10000000;$fatal(1,"candidate timeout clock=%b PLL=%b locks=%b offsets=%h format=%b lines=%d frames=%d",dut.u_relay.clock_valid,dut.u_relay.pll_locked,dut.u_relay.u_monitor.lane_lock,dut.u_relay.bit_offsets,dut.u_relay.format_ok,dut.u_relay.u_monitor.line_symbols,dut.u_relay.u_monitor.frame_symbols);end
