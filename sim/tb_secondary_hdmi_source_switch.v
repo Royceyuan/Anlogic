@@ -37,13 +37,32 @@ begin
     repeat(8) @(posedge dut.output_sclk);
     before=checks;checking=1;wait(checks>=before+100);checking=0;
 end endtask
+task verify_muted_clock;
+input target;
+integer edges;
+reg previous;
+begin
+    wait(selected==target);repeat(8) @(posedge dut.output_sclk);
+    if(!muted || tx[2:0]!==0) $fatal(1,"data lanes escaped safe mute");
+    edges=0;previous=tx[3];
+    repeat(100) begin
+        @(dut.output_sclk);#0.3;
+        if(!muted || tx[2:0]!==0) $fatal(1,"data released before target blank");
+        if(tx[3]!=previous) edges=edges+1;
+        previous=tx[3];
+    end
+    if(edges<10) $fatal(1,"TMDS clock was reset during valid-source mute");
+end endtask
 reg test_pass=0;
 initial begin
     #200;rst_n=1;
-    #2000;if(!muted || tx!==0) $fatal(1,"unready local enabled");
+    #2000;if(!muted || tx[2:0]!==0) $fatal(1,"unready local enabled");
     local_ready=1;#2000;if(!muted) $fatal(1,"released during local active pixels");
+    verify_muted_clock(0);
     local_blank=1;verify(0);$display("PASS local-only output keeps all four lanes paired");
     ext_ready=1;#2000;if(!muted) $fatal(1,"released during external data period");
+    verify_muted_clock(1);
+    $display("PASS qualified TMDS clock continues while all data lanes remain muted");
     ext_blank=1;verify(1);$display("PASS valid external source takes priority after muted clock switch");
     $display("PASS output release waits for target blank/control indication");
     @(posedge ext_clk);#0.1;ext_running=0;ext_ready=0;

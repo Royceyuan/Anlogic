@@ -77,12 +77,16 @@ static class Protocol
         foreach (byte b in ack) decoder.Feed(b,out seq,out flags);
         if (decoder.HasContext) throw new Exception("Legacy ACK compatibility");
         VideoSettings.SelfTest();
+        if(!OutputReady(11,false)||OutputReady(11,true)||!OutputReady(43,true)||
+           OutputReady(47,true)||OutputReady(139,false)) throw new Exception("Output readiness / emergency lease");
         if (LinkedArtifact(3,2) != 2 || LinkedArtifact(7,2) != 2 || LinkedArtifact(0x1b,2) != 5 ||
             LinkedArtifact(9,255)!=5 || LinkedArtifact(8,2)!=-1 || LinkedArtifact(0x49,2)!=-1 ||
             LinkedArtifact(2,2) != -1 || LinkedArtifact(0x43,2) != -1 || LinkedArtifact(3,255) != -1) throw new Exception("Link policy");
     }
     internal static int LinkedArtifact(byte state, byte artifact)
     { return (state&0x49)==9 ? 5 : (state & 0x4b) == 3 && artifact < 5 ? artifact : -1; }
+    internal static bool OutputReady(byte flags,bool emergency)
+    { return (flags&0x8f)==11&&(!emergency||(flags&32)!=0); }
 }
 
 sealed class VideoSettings
@@ -138,16 +142,25 @@ sealed class VideoWindow : Window
         LoadedBehavior = MediaState.Manual, UnloadedBehavior = MediaState.Close,
         ScrubbingEnabled = true, Stretch = Stretch.Uniform, IsMuted = true
     }; }
-    internal VideoWindow(Forms.Screen screen, MediaElement prepared = null)
+    internal readonly string ScreenName;
+    internal readonly int SurfaceWidth,SurfaceHeight;
+    internal VideoWindow(Forms.Screen screen, bool offscreenTest = false, bool background = false)
     {
-        Media = prepared ?? CreateMedia();
+        Media = CreateMedia(); ScreenName=screen.DeviceName;
         WindowStyle = WindowStyle.None; ResizeMode = ResizeMode.NoResize;
-        Background = Brushes.Black; ShowInTaskbar = false; ShowActivated = false; Topmost = true; Content = Media;
+        Background = Brushes.Black; ShowInTaskbar = false; ShowActivated = false; Topmost = !background; Content = Media;
         Show();
         var r = screen.Bounds;
-        if (!SetWindowPos(new WindowInteropHelper(this).Handle, new IntPtr(-1), r.X, r.Y, r.Width, r.Height, 0x50)) {
+        SurfaceWidth=offscreenTest ? 1280 : r.Width;SurfaceHeight=offscreenTest ? 720 : r.Height;
+        if (!SetWindowPos(new WindowInteropHelper(this).Handle, new IntPtr(background ? -2 : -1), offscreenTest ? -16000 : r.X, offscreenTest ? -16000 : r.Y, SurfaceWidth, SurfaceHeight, 0x50)) {
             Close(); throw new System.ComponentModel.Win32Exception("无法定位视频扩展屏");
         }
+    }
+    internal void BringForward()
+    {
+        Topmost=true;
+        if(!SetWindowPos(new WindowInteropHelper(this).Handle,new IntPtr(-1),0,0,0,0,0x13))
+            throw new System.ComponentModel.Win32Exception("无法显示已准备的视频窗口");
     }
     [DllImport("user32.dll")] static extern bool SetWindowPos(IntPtr hwnd, IntPtr after, int x, int y, int width, int height, uint flags);
 }
@@ -194,12 +207,12 @@ sealed class ControllerWindow : Window
     readonly TextBlock mainStatus = new TextBlock { TextWrapping = TextWrapping.Wrap, FontSize = 13, Margin = new Thickness(0,8,0,0) };
     readonly CheckBox automatic = new CheckBox { Content = "联动模式：文物视频 / 应急优先（静音）", Margin = new Thickness(4,12,0,4) };
     readonly DispatcherTimer timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
-    readonly Grid emergencyCacheHost = new Grid { Width=1,Height=1,Opacity=0,IsHitTestVisible=false,
-        HorizontalAlignment=HorizontalAlignment.Left,VerticalAlignment=VerticalAlignment.Top };
     MediaElement emergencyCache;
+    VideoWindow emergencyCacheWindow;
     string emergencyCachePath,emergencyFailedPath;
     DateTime emergencyCacheAt,emergencyReadyAt=DateTime.MaxValue;
-    bool EmergencyPrepared { get { return emergencyCache!=null&&DateTime.UtcNow>=emergencyReadyAt; } }
+    bool emergencyCachePaused;
+    bool EmergencyPrepared { get { return emergencyCache!=null&&emergencyCachePaused&&DateTime.UtcNow>=emergencyReadyAt; } }
     readonly Button play, pause;
     SerialPort port;
     VideoWindow video;
@@ -260,15 +273,18 @@ sealed class ControllerWindow : Window
                 if(window.phase!=Phase.Preparing||!window.autoSession) throw new Exception("Ready first frame waited for main transition");
                 window.autoSession=false;window.phase=Phase.Warming;File.Delete(warmed);window.UpdateAutomatic();
                 if(window.failedArtifact!=4) throw new Exception("Moved warm video was authorized");
-                var prepared=VideoWindow.CreateMedia();prepared.UnloadedBehavior=MediaState.Manual;
+                var surface=new VideoWindow(Forms.Screen.PrimaryScreen,true);
+                var prepared=surface.Media;
                 prepared.Source=new Uri(warmed);window.emergencyCache=prepared;
+                window.emergencyCacheWindow=surface;
+                window.emergencyCachePaused=true;
                 window.emergencyCachePath=warmed;window.emergencyReadyAt=DateTime.UtcNow.AddSeconds(-1);
-                window.emergencyCacheHost.Children.Add(prepared);
                 if(!window.EmergencyPrepared) throw new Exception("Prepared emergency cache not ready");
                 var taken=window.TakeEmergencyCache();
-                if(!ReferenceEquals(prepared,taken)||taken.Source.LocalPath!=warmed||window.emergencyCacheHost.Children.Count!=0||
-                   taken.UnloadedBehavior!=MediaState.Manual||window.EmergencyPrepared) throw new Exception("Emergency handoff reopened/closed media or retained parent");
-                taken.Close();
+                if(!ReferenceEquals(surface,taken)||!ReferenceEquals(prepared,taken.Media)||taken.Media.Source.LocalPath!=warmed||
+                   !ReferenceEquals(taken.Content,prepared)||window.emergencyCacheWindow!=null||window.EmergencyPrepared)
+                    throw new Exception("Emergency handoff recreated its surface or media");
+                taken.Media.Close();taken.Close();
             } finally { if(File.Exists(warmed)) File.Delete(warmed); }
         } finally { window.Close();app.Shutdown(); }
     }
@@ -277,28 +293,34 @@ sealed class ControllerWindow : Window
         var app=new Application();var window=new ControllerWindow { Opacity=0,ShowInTaskbar=false,ShowActivated=false };
         var watch=System.Diagnostics.Stopwatch.StartNew();var frame=new DispatcherFrame();
         var poll=new DispatcherTimer { Interval=TimeSpan.FromMilliseconds(25) };
-        MediaElement prepared=null;bool transferred=false,passed=false;int opens=0;double readyMs=0;
+        MediaElement prepared=null;VideoWindow surface=null;bool transferred=false,passed=false;int opens=0;double readyMs=0;
         try {
             window.Show();window.settings=new VideoSettings();window.settings.Videos[5]=Path.GetFullPath(path);
             window.linked=true;window.flags=1;window.contextAvailable=true;window.contextAt=DateTime.UtcNow;
-            window.museumState=1;window.automatic.IsChecked=true;window.PrepareEmergencyCache();
+            window.museumState=1;window.automatic.IsChecked=true;window.PrepareEmergencyCache(true);
             prepared=window.emergencyCache;if(prepared==null) return 1;
+            surface=window.emergencyCacheWindow;
             prepared.MediaOpened+=(s,e)=>opens++;
-            prepared.MediaEnded+=(s,e)=> { passed=transferred&&opens==1&&prepared.NaturalVideoWidth==1280&&prepared.NaturalVideoHeight==720;frame.Continue=false; };
+            prepared.MediaEnded+=(s,e)=> { passed=transferred&&opens==1&&prepared.NaturalVideoWidth==1280&&prepared.NaturalVideoHeight==720&&
+                surface.SurfaceWidth==1280&&surface.SurfaceHeight==720;frame.Continue=false; };
             prepared.MediaFailed+=(s,e)=>frame.Continue=false;
             poll.Tick+=(s,e)=> {
                 if(watch.Elapsed.TotalSeconds>10) { frame.Continue=false;return; }
+                if(!transferred) { window.contextAt=DateTime.UtcNow;window.PrepareEmergencyCache(true); }
                 if(!transferred&&window.EmergencyPrepared) {
-                    readyMs=watch.Elapsed.TotalMilliseconds;prepared=window.TakeEmergencyCache();
-                    var host=new Grid { Width=1,Height=1,Opacity=0 };((Grid)window.Content).Children.Add(host);
-                    host.Children.Add(prepared);transferred=true;prepared.Play();
+                    readyMs=watch.Elapsed.TotalMilliseconds;var taken=window.TakeEmergencyCache();
+                    transferred=ReferenceEquals(taken,surface)&&ReferenceEquals(taken.Media,prepared)&&ReferenceEquals(taken.Content,prepared);
+                    if(!transferred) { frame.Continue=false;return; }
+                    prepared.Play();
                 }
             };
             poll.Start();Dispatcher.PushFrame(frame);
             if(report!=null) new XDocument(new XElement("emergencyCacheTest",new XAttribute("passed",passed),
-                new XAttribute("ready_ms",readyMs),new XAttribute("media_open_count",opens),new XAttribute("reparented",transferred))).Save(report);
+                new XAttribute("ready_ms",readyMs),new XAttribute("media_open_count",opens),new XAttribute("same_window",transferred),
+                new XAttribute("reparented",false),new XAttribute("surface_width",surface.SurfaceWidth),
+                new XAttribute("surface_height",surface.SurfaceHeight),new XAttribute("offscreen_test",true))).Save(report);
             return passed ? 0 : 1;
-        } finally { poll.Stop();if(prepared!=null) prepared.Close();window.Close();app.Shutdown(); }
+        } finally { poll.Stop();if(prepared!=null) prepared.Close();if(surface!=null) surface.Close();window.Close();app.Shutdown(); }
     }
     internal ControllerWindow()
     {
@@ -325,7 +347,6 @@ sealed class ControllerWindow : Window
         var design = new Grid { Width=940,Height=750 };
         design.Children.Add(new ScrollViewer { Content=layout,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled });
         root.Children.Add(new Viewbox { Child=design,Stretch=Stretch.Uniform });
-        root.Children.Add(emergencyCacheHost);
         var header = new DockPanel { Margin = new Thickness(0,0,0,24) };
         header.Children.Add(new Image { Source = Icon, Width = 72, Height = 72, Margin = new Thickness(0,0,18,0) });
         var heading = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
@@ -519,33 +540,46 @@ sealed class ControllerWindow : Window
     void ClearEmergencyCache()
     {
         var previous=emergencyCache;emergencyCache=null;emergencyCachePath=null;emergencyReadyAt=DateTime.MaxValue;
-        emergencyCacheHost.Children.Clear();
+        emergencyCachePaused=false;
+        var surface=emergencyCacheWindow;emergencyCacheWindow=null;
         if(previous!=null) { previous.Stop();previous.Close(); }
+        if(surface!=null) surface.Close();
     }
-    MediaElement TakeEmergencyCache()
+    VideoWindow TakeEmergencyCache()
     {
-        var prepared=emergencyCache;emergencyCache=null;emergencyCachePath=null;emergencyReadyAt=DateTime.MaxValue;
-        emergencyCacheHost.Children.Remove(prepared);return prepared;
+        var surface=emergencyCacheWindow;emergencyCache=null;emergencyCacheWindow=null;
+        emergencyCachePath=null;emergencyReadyAt=DateTime.MaxValue;emergencyCachePaused=false;return surface;
     }
-    void PrepareEmergencyCache()
+    void PrepareEmergencyCache(bool offscreenTest = false)
     {
         if(!AutoEnabled||configuring||closeAfterStop||!linked||!ContextFresh||(flags&1)==0||activeArtifact==5) return;
+        var target=screens.SelectedItem as ScreenChoice;
+        if(!offscreenTest&&(target==null||target.Name.IndexOf("Anlogic",StringComparison.OrdinalIgnoreCase)<0||target.Screen.Primary||
+            target.Screen.Bounds.Width!=1280||target.Screen.Bounds.Height!=720)) { ClearEmergencyCache();return; }
         string path=settings.Videos[5];
         if(emergencyCache!=null) {
-            if(emergencyCachePath!=path||!File.Exists(path)) ClearEmergencyCache();
+            if(emergencyCachePath!=path||!File.Exists(path)||!offscreenTest&&emergencyCacheWindow.ScreenName!=target.Screen.DeviceName) ClearEmergencyCache();
             else { if((DateTime.UtcNow-emergencyCacheAt).TotalSeconds>10&&emergencyReadyAt==DateTime.MaxValue) {
                        emergencyFailedPath=path;ClearEmergencyCache();SetStatus("应急首帧准备超时；保留板载应急图。"); }
+                   else if(!emergencyCachePaused&&DateTime.UtcNow>=emergencyReadyAt) {
+                       emergencyCache.Pause();emergencyCachePaused=true;emergencyReadyAt=DateTime.UtcNow.AddMilliseconds(34); }
                    return; }
         }
         if(emergencyFailedPath==path||!File.Exists(path)) return;
         try {
-            var prepared=VideoWindow.CreateMedia();prepared.UnloadedBehavior=MediaState.Manual;
+            var surface=new VideoWindow(offscreenTest ? Forms.Screen.PrimaryScreen : target.Screen,offscreenTest,true);
+            // Decode on the final monitor, at final size, behind ordinary video.
+            // Keep the window and visual parent unchanged when SW4 triggers.
+            surface.Topmost=false;emergencyCacheWindow=surface;
+            var prepared=surface.Media;
             emergencyCache=prepared;emergencyCachePath=path;emergencyCacheAt=DateTime.UtcNow;
-            emergencyCacheHost.Children.Add(prepared);
             prepared.MediaOpened+=(s,e)=> {
                 if(!ReferenceEquals(emergencyCache,prepared)) return;
                 if(!prepared.HasVideo) { emergencyFailedPath=path;ClearEmergencyCache();return; }
-                prepared.Pause();prepared.Position=TimeSpan.Zero;emergencyReadyAt=DateTime.UtcNow.AddMilliseconds(120);
+                // MediaOpened is metadata readiness, not a decoded video frame.
+                // Let frames reach the final surface before pausing; seeking
+                // back to zero here would flush that prepared texture again.
+                prepared.Play();emergencyReadyAt=DateTime.UtcNow.AddMilliseconds(200);
             };
             prepared.MediaFailed+=(s,e)=> { if(ReferenceEquals(emergencyCache,prepared)) {
                 emergencyFailedPath=path;ClearEmergencyCache();SetStatus("应急视频无法预解码；保留板载应急图。"); } };
@@ -558,20 +592,21 @@ sealed class ControllerWindow : Window
         var target=screens.SelectedItem as ScreenChoice;
         if(target==null||target.Name.IndexOf("Anlogic",StringComparison.OrdinalIgnoreCase)<0||target.Screen.Primary||
            target.Screen.Bounds.Width!=1280||target.Screen.Bounds.Height!=720) return false;
-        MediaElement prepared=TakeEmergencyCache();VideoWindow next=null;
+        VideoWindow next=TakeEmergencyCache();
         try {
-            next=new VideoWindow(target.Screen,prepared);
+            next.BringForward();
             var previous=video;video=next;activeArtifact=5;autoSession=true;autoHold=false;
             opened=true;warmHintSent=false;phase=Phase.Preparing;releaseAt=DateTime.MaxValue;fileCheckedAt=DateTime.UtcNow;
-            prepareAt=DateTime.UtcNow;firstFrameAt=prepareAt.AddMilliseconds(34);
-            AttachVideoEvents(next);file.Text=settings.Videos[5];prepared.Play();
-            // Discard an old STOP/query ACK. Give the reparented surface two
-            // display frames before CMD06; do not reopen/decode the file.
+            prepareAt=DateTime.UtcNow;firstFrameAt=prepareAt;
+            AttachVideoEvents(next);file.Text=settings.Videos[5];next.Media.Play();
+            // Discard an old STOP/query ACK. No new surface or decoder is
+            // created here: the paused frame already occupies the HDMI target.
             if(previous!=null) { previous.Media.Stop();previous.Media.Close();previous.Close(); }
             pending=false;
             SetStatus("接管已缓存的应急首帧，即将申请应急显示授权。");return true;
         } catch(Exception error) {
-            if(next==null) prepared.Close();failedArtifact=5;StopVideo("应急切入失败："+error.Message);return false;
+            if(!ReferenceEquals(video,next)) { next.Media.Close();next.Close(); }
+            failedArtifact=5;StopVideo("应急切入失败："+error.Message);return false;
         }
     }
     void PrepareVideo(bool warm)
@@ -709,7 +744,7 @@ sealed class ControllerWindow : Window
                     phase = Phase.Authorizing; Send(autoSession ? activeArtifact==5 ? (byte)6 : (byte)(0x10+activeArtifact) : (byte)1); SetStatus("切入HDMI视频，等待输出和显示器稳定。");
                 }
             }
-            if (phase == Phase.Authorizing && (flags & 15) == 11) {
+            if (phase == Phase.Authorizing && !pending && Protocol.OutputReady(flags,autoSession&&activeArtifact==5)) {
                 if (releaseAt == DateTime.MaxValue) releaseAt = now.AddMilliseconds(autoSession ? activeArtifact==5 ? 0 : 100 : 700);
                 if (now >= releaseAt) {
                     video.Media.IsMuted=autoSession;

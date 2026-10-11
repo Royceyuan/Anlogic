@@ -15,12 +15,13 @@
 - 正式发布信息及成功种子：`release/manifest_secondary_uart_video.json`、`seed/uart_video`，种子7。
 - 必要电脑播放器：`tools/PCVideoPlayer/MuseumPCVideoPlayer.exe`；源代码及重编脚本同目录，无需安装Python或第三方播放器。
 - 新联动提速候选：`release/dual_fpga_museum_terminal_secondary_board_linked_video.bit`，SHA256 `5BDAA5478EAFA2E5E40B43F85B59FCA7F81FBA9C4C9F6570AEC6BE57F4561C9F`；使用当前播放器，主板bit不用更换。
-- 最新应急状态修正候选：`release/dual_fpga_museum_terminal_secondary_board_emergency_video.bit`，SHA256 `4B7807DD2ED3E07803DA4594736017D0928FF5C3C94080E21E58E1D338ED07D1`。
-- 当前源码的资源/时序及协议记录：`release/manifest_secondary_emergency_video.json`、`seed/emergency_busy_fix`。此前emergency/linked/uart清单和成功种子保留历史组合，播放器哈希以新清单为准。
+- 应急状态修正回退候选：`release/dual_fpga_museum_terminal_secondary_board_emergency_video.bit`，SHA256 `4B7807DD2ED3E07803DA4594736017D0928FF5C3C94080E21E58E1D338ED07D1`。
+- 最新黑屏提速候选：`release/dual_fpga_museum_terminal_secondary_board_emergency_video_fast_switch.bit`，SHA256 `B6D55A66487E2292FA60B089F5B02A2D3BDB539E7D52B4FC4AD5A3BF3837AC35`；配套新版播放器，第12节说明。
+- 当前源码的资源/时序及协议记录：`release/manifest_secondary_emergency_video.json`、`seed/emergency_clock_keep`。此前成功种子和旧bit保留回退，播放器哈希以新清单为准。
 
-工程入口仍唯一。本轮只更改副板状态导出、UART授权/回报和播放器，不改HDMI物理数据路径、PLL、管脚或时序约束。旧入口和历史文件在Git/rubbish回溯；必要工具、素材及成功种子保留。
+工程入口仍唯一。最新修改保持三个数据通道静音，但有效信源切换等待期间不再一起复位TMDS时钟通道；PLL、管脚、时序约束和UART协议不改。旧入口和历史文件在Git/rubbish回溯；必要工具、素材及成功种子保留。
 
-已验收UART版setup/hold为+0.106/+0.021ns；上轮联动提速候选为+0.105/+0.021ns；当前应急状态修正候选为+0.048/+0.023ns，TNS均0。历史85E5C239基线证据仍保留在`seed/hdmi_museum/cleanup_verification.json`，仅作回溯，不是当前源码的报告。
+已验收UART版setup/hold为+0.106/+0.021ns；上轮联动提速候选为+0.105/+0.021ns；应急状态修正候选为+0.048/+0.023ns；最新切换候选为+0.090/+0.023ns，TNS均0。历史85E5C239基线证据仍保留在`seed/hdmi_museum/cleanup_verification.json`，仅作回溯，不是当前源码的报告。
 
 ## 2. 接线、视频和优先级
 
@@ -255,7 +256,7 @@ Start-Process .\tools\PCVideoPlayer\MuseumPCVideoPlayer.exe -ArgumentList '--med
 
 构建数据库、仿真缓存及旧候选bit已移入`rubbish/双板界面与联动提速_20261011`，必要软件、重建源码、最新候选bit、已验收回退bit和所有成功种子保留。不改主板RTL、TF素材、两板控制分配或音画字幕时间轴。
 
-## 11. 当前应急视频版交付与验收
+## 11. 上轮应急视频版记录（当前交付以第12节为准）
 
 副板UART06授权已实现；本轮快切仅修改PC播放器与应急MP4，不改两板RTL、bit、MBP1、按键分配、原应急图或TF格式。主板SW4是应急触发源，副板SW4仍为说明页开关。新播放器SHA256为`F0EA6F57901DFA849FF11BA3E74C79313D25480DF979F512DEB2C924BAE1B867`；五个旧视频映射兼容读取，`emergencyVideo`字段保存第六支片的任意路径。视频已在原素材路径更新，不必重新选择路径，但必须关闭旧软件后重开，不能继续使用已缓存的旧30秒片。正常回总览后可准备下一次文物视频；应急解除至讲解、故障或失联状态不复播旧文物片。
 
@@ -297,3 +298,18 @@ Start-Process .\tools\PCVideoPlayer\MuseumPCVideoPlayer.exe -ArgumentList '--cac
 6. 停止并关闭联动后移走应急文件，再开启联动并触发应急：软件提示缺片，屏幕仍为原应急图；其他文物路径不受影响。
 
 这是竞赛演示联动，不是通过认证的消防系统。软件启动默认不联动，PC离线时始终依赖原应急图。预缓存缩短PC解码及停止应答等待，但不提高固定HDMI物理传输速率。本地和PC时钟不同，硬件仍可能先切回本地、再切到PC，显示器重锁短黑不能靠软件缓存保证消除；没有缩短1ms安全静音、隐藏原图兜底或虚构零黑屏。若仍明显，下一步须独立验证统一输出时钟/帧缓存方案，不在本轮修改已验收物理路径。强杀软件回退上限约3秒。旧视频及中间物在`rubbish/应急视频快切与动态指引_20261011`可恢复。
+
+## 12. 应急切换黑屏修正候选（2026-10-11）
+
+用户报告同一版本先黑屏约4秒、随后才显示视频。软件显示“应急疏散指引”只证明收到切源/授权状态，不证明显示器已经呈现画面；此前未改代码的追问不是新版本测试。此次实际修改两处，不把未测的延迟写成已解决：
+
+- `secondary_hdmi_source_switch.v`保留原1ms等待、三个数据通道复位和目标消隐判定；只使有效信源的TMDS时钟通道在该等待期间继续输出。启动及本地PLL未就绪仍复位时钟，不放行未授权图像/音频。时钟源频率/相位切换仍存在，不承诺零黑屏。
+- 播放器在最终AnlogicHDMI扩展屏、最终1280×720窗口中提前解码应急片，置于普通视频后方。MediaOpened后实际播放200ms，再暂停保留已解码画面；不重新寻址零点。SW4触发时直接提升同一窗口，不重建窗口、不跨屏重挂MediaElement、不重开解码器。确认CMD06应答且应急租约有效后才报告播放，避免使用旧普通授权状态误报。
+
+新bit：`release/dual_fpga_museum_terminal_secondary_board_emergency_video_fast_switch.bit`，SHA256 `B6D55A66487E2292FA60B089F5B02A2D3BDB539E7D52B4FC4AD5A3BF3837AC35`。新播放器：`tools/PCVideoPlayer/MuseumPCVideoPlayer.exe`，SHA256 `E9701CAA34433C44E28EBC2A18A4FC55157FCEB04AD920B8BB8102477BB4B666`。主板、TF卡、6秒应急视频、五支文物视频、MBP1及按键分配不变。旧4B7807DD应急bit保留回退。
+
+原种子7完成综合、布局布线、STA、DRC检查和bitgen：setup +0.090ns、hold +0.023ns，TNS均0，无multi-drive/abnormal timing path；原PHY7002、PHY5079提示继续披露。LUT 11474/19600（58.54%）、FF 7312/19600（37.31%）、Slice 6520/9800（66.53%）、BRAM9K 21/64、BRAM32K 13/16、DSP 5/29、PLL 4/4、GCLK 10/16。相对4B候选LUT +71、FF +1、Slice +23，BRAM/DSP/PLL不增加；不改约束或新增时序例外。成功报告在`seed/emergency_clock_keep`。
+
+本轮重跑：切源7条PASS（新增数据静音期间TMDS时钟持续输出）、集成HDMI11条、UART新旧23条、本地缓存/应急状态策略2条，共43条PASS。原有仿真缩减时序、厂商初始化X提示及数据岛样式测试边界不变，不当作真实LPCM/BCH或电气验证。播放器自检、Windows完整6秒片解码及全尺寸离屏缓存播放通过，缓存只打开一次、接管保持同一窗口/父级；初始化约1.05秒被提前到联动开启。离屏测试不代替真实扩展屏呈现或显示器重锁验证。
+
+验收操作：关闭旧播放器→烧新副板bit→打开新EXE→连接串口、选AnlogicHDMI、勾联动→等待“应急首帧：已缓存”。分别在总览和普通视频中将主板SW4置1，观察黑屏是否明显短于原4秒、随后动态指引循环；置0确认本地恢复且旧片不复播。再检查普通文物播放/暂停/退出、手动有声播放、拔HDMI/串口回原应急图、双板控制及副板SW4说明页。尚未上板验收，board_pass=false；若仍约4秒，应继续定位不同源时序导致的显示器重锁，不能宣称此候选已消除问题。

@@ -1,6 +1,8 @@
 `timescale 1ns / 1ps
 `default_nettype none
-// Clock switching happens only while the one output IOL bank is reset.
+// Data clock switching happens while the data IOL bank is reset.
+// Keep TMDS clock pairs running during a qualified-source settle interval;
+// resetting the clock lane too makes the sink interpret switching as unplug.
 // Local media and Ethernet clocks/reset are never switched or reset here.
 module secondary_hdmi_source_switch #(
     parameter integer SETTLE_CYCLES=50000
@@ -50,7 +52,7 @@ always @(posedge clk_50m or negedge rst_n) begin
 end
 wire output_sclk;
 // Vendor CSB forces a switch even if the lost input clock stopped high.
-// Any shortened edge during that switch is contained by the mute interval.
+// Any shortened data edge during that switch is contained by the mute interval.
 // Same CSB configuration as EG_LOGIC_BUFGMUX, instantiated directly so its
 // clock output pin has a stable name during both elaboration and routing.
 EG_PHY_CSB #(.HOLD("YES"),.INITOUT("0"),.PRESELECT("CLK0")) u_clock_mux(
@@ -65,7 +67,12 @@ reg [7:0] output_pairs;
 always @(posedge output_sclk) output_pairs<=external_selected ? external_pairs : local_pairs;
 genvar lane;
 generate for(lane=0;lane<4;lane=lane+1) begin : g_lane
-    EG_LOGIC_ODDR u_output(.q(serial_out[lane]),.clk(output_sclk),.rst(output_muted),
+    // The clock is not media: authorization still silences all three data
+    // lanes. Startup / loss of the local PLL may reset the clock lane.
+    wire lane_reset;
+    if(lane==3) assign lane_reset=!rst_n || (!external_selected && !local_ready_ff[1]);
+    else assign lane_reset=output_muted;
+    EG_LOGIC_ODDR u_output(.q(serial_out[lane]),.clk(output_sclk),.rst(lane_reset),
         .d0(output_pairs[lane*2]),.d1(output_pairs[lane*2+1]));
 end endgenerate
 endmodule
