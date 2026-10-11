@@ -1,0 +1,12 @@
+{
+  "file": "06_博物馆应急疏散指引.mp4",
+  "duration_s": 30,
+  "format": "H264 1280x720 30fps yuv420p; AAC stereo 48kHz silence",
+  "sha256": "a56ef8aec265fd7616cef6008897e4cd86f539e0d6e8b2f6eb0b791bdfccd3a5",
+  "source_map_sha256": "8199ab4d95c93683654109133d7fa0b017b6a45a364506f3919e589c4211ade2",
+  "safety": "Demo map only. Follow actual signs and staff; not a certified evacuation system.",
+  "references": [
+    "https://www.119.gov.cn/kp/hzyf/ggylcs/2022/32305.shtml",
+    "https://www.119.gov.cn/kp/zjts/hz/2025/49981.shtml"
+  ]
+}

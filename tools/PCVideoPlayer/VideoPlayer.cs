@@ -77,18 +77,19 @@ static class Protocol
         foreach (byte b in ack) decoder.Feed(b,out seq,out flags);
         if (decoder.HasContext) throw new Exception("Legacy ACK compatibility");
         VideoSettings.SelfTest();
-        if (LinkedArtifact(3,2) != 2 || LinkedArtifact(7,2) != 2 || LinkedArtifact(0x1b,2) != -1 ||
+        if (LinkedArtifact(3,2) != 2 || LinkedArtifact(7,2) != 2 || LinkedArtifact(0x1b,2) != 5 ||
+            LinkedArtifact(9,255)!=5 || LinkedArtifact(8,2)!=-1 || LinkedArtifact(0x49,2)!=-1 ||
             LinkedArtifact(2,2) != -1 || LinkedArtifact(0x43,2) != -1 || LinkedArtifact(3,255) != -1) throw new Exception("Link policy");
     }
     internal static int LinkedArtifact(byte state, byte artifact)
-    { return (state & 0x4b) == 3 && artifact < 5 ? artifact : -1; }
+    { return (state&0x49)==9 ? 5 : (state & 0x4b) == 3 && artifact < 5 ? artifact : -1; }
 }
 
 sealed class VideoSettings
 {
     internal static readonly string PathName = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"DualFPGAMuseum","VideoPlayer.xml");
-    internal static readonly string[] Names = { "越王勾践剑", "四羊方尊", "金缕玉衣", "马踏飞燕", "长信宫灯" };
-    internal string[] Videos = new string[5];
+    internal static readonly string[] Names = { "越王勾践剑", "四羊方尊", "金缕玉衣", "马踏飞燕", "长信宫灯", "应急疏散指引" };
+    internal string[] Videos = new string[6];
     internal string Port = "";
     internal static VideoSettings Load(string path)
     {
@@ -98,6 +99,7 @@ sealed class VideoSettings
             var root = XDocument.Load(reader).Root;
             if (root == null || root.Name != "museumVideos") throw new XmlException("配置文件格式不正确");
             result.Port = (string)root.Element("port") ?? "";
+            result.Videos[5] = (string)root.Element("emergencyVideo") ?? "";
             foreach (var row in root.Elements("video")) {
                 int id; if (Int32.TryParse((string)row.Attribute("id"),out id) && id >= 0 && id < 5) result.Videos[id] = row.Value;
             }
@@ -109,6 +111,7 @@ sealed class VideoSettings
         Directory.CreateDirectory(Path.GetDirectoryName(path));
         var root = new XElement("museumVideos",new XElement("port",Port));
         for (int i=0;i<5;i++) root.Add(new XElement("video",new XAttribute("id",i),Videos[i] ?? ""));
+        root.Add(new XElement("emergencyVideo",Videos[5] ?? ""));
         string temporary = path+".tmp"; new XDocument(root).Save(temporary);
         if (File.Exists(path)) File.Replace(temporary,path,null); else File.Move(temporary,path);
     }
@@ -117,9 +120,11 @@ sealed class VideoSettings
         string folder = Path.Combine(Path.GetTempPath(),"MuseumVideoConfig_"+Guid.NewGuid().ToString("N"));
         string path = Path.Combine(folder,"settings.xml");
         try {
-            var value = new VideoSettings { Port = "COM7", Videos = new[] { "D:\\可移动素材\\视频&1.mp4", "", "E:\\其他位置\\2.mp4", "", "" } };
+            var value = new VideoSettings { Port = "COM7", Videos = new[] { "D:\\可移动素材\\视频&1.mp4", "", "E:\\其他位置\\2.mp4", "", "", "D:\\应急\\疏散.mp4" } };
             value.Save(path); value.Save(path); var loaded = Load(path);
             if (loaded.Port != value.Port || !loaded.Videos.SequenceEqual(value.Videos)) throw new Exception("Settings roundtrip");
+            File.WriteAllText(path,"<museumVideos><video id='2'>old.mp4</video></museumVideos>");
+            loaded=Load(path);if(loaded.Videos[2]!="old.mp4"||loaded.Videos[5]!="") throw new Exception("Legacy five-video settings compatibility");
             File.WriteAllText(path,"<invalid>");
             try { Load(path); throw new Exception("Malformed settings accepted"); } catch (XmlException) { }
         } finally { File.Delete(path);File.Delete(path+".tmp");if(Directory.Exists(folder)) Directory.Delete(folder); }
@@ -185,7 +190,7 @@ sealed class ControllerWindow : Window
     readonly TextBox file = new TextBox { IsReadOnly = true };
     readonly TextBlock status = new TextBlock { TextWrapping = TextWrapping.Wrap };
     readonly TextBlock mainStatus = new TextBlock { TextWrapping = TextWrapping.Wrap, FontSize = 13, Margin = new Thickness(0,8,0,0) };
-    readonly CheckBox automatic = new CheckBox { Content = "联动模式：随主板文物自动播放（静音）", Margin = new Thickness(4,12,0,4) };
+    readonly CheckBox automatic = new CheckBox { Content = "联动模式：文物视频 / 应急优先（静音）", Margin = new Thickness(4,12,0,4) };
     readonly DispatcherTimer timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
     readonly Button play, pause;
     SerialPort port;
@@ -203,7 +208,7 @@ sealed class ControllerWindow : Window
     int activeArtifact=-1,failedArtifact=-1;
     DateTime contextAt;
     DateTime fileCheckedAt;
-    bool warmHintSent,warmSupported=true,observedOverview;
+    bool warmHintSent,warmSupported=true,observedOverview,observedEmergency;
     bool AutoEnabled { get { return automatic.IsChecked == true; } }
     bool ContextFresh { get { return contextAvailable && (DateTime.UtcNow-contextAt).TotalMilliseconds < 1500; } }
     internal static void SelfTest()
@@ -220,13 +225,21 @@ sealed class ControllerWindow : Window
             window.museumArtifact=4;window.UpdateAutomatic();
             if(window.failedArtifact!=4) throw new Exception("One missing artifact blocked another");
             window.autoSession=true;window.activeArtifact=4;window.museumState=11;window.UpdateAutomatic();
-            if(!window.autoHold) throw new Exception("Emergency did not require rearm");
+            if(!window.observedEmergency||window.phase!=Phase.Idle) throw new Exception("Emergency did not revoke ordinary video");
             window.autoSession=false;window.autoHold=false;window.UpdateAutomatic();
-            if(!window.autoHold) throw new Exception("Enabling during emergency bypassed rearm");
+            if(window.failedArtifact!=5||window.video!=null) throw new Exception("Missing emergency video bypassed local fallback");
+            window.museumState=8;window.UpdateAutomatic();
+            if(!window.autoHold||window.observedEmergency) throw new Exception("Lost emergency state retained eligibility");
+            window.museumState=9;window.UpdateAutomatic();
+            if(window.autoHold||window.failedArtifact!=5) throw new Exception("Fresh emergency reconnect did not select emergency fallback");
             window.FinishStop();window.museumState=3;window.UpdateAutomatic();
             if(!window.autoHold||window.video!=null) throw new Exception("Emergency clear resumed old video");
             window.museumState=1;window.museumScene=255;window.UpdateAutomatic();
             if(window.autoHold||window.failedArtifact!=-1) throw new Exception("Fresh overview must rearm");
+            window.autoSession=true;window.observedOverview=false;window.phase=Phase.Playing;window.UpdateAutomatic();
+            if(window.autoHold) throw new Exception("Normal return to overview blocked the next exhibit");
+            window.FinishStop();window.UpdateAutomatic();
+            if(window.autoHold) throw new Exception("Overview remained blocked after stop confirmation");
             window.autoSession=true;window.activeArtifact=4;window.contextAt=DateTime.UtcNow.AddSeconds(-2);window.UpdateAutomatic();
             if(!window.autoHold) throw new Exception("Stale status retained automatic playback");
             window.FinishStop();
@@ -285,12 +298,19 @@ sealed class ControllerWindow : Window
         var actions = new WrapPanel { Margin = new Thickness(0,12,0,12) };
         actions.Children.Add(play); actions.Children.Add(pause); actions.Children.Add(MakeButton("停止并回本地", () => { if(AutoEnabled) automatic.IsChecked=false;autoHold=true; StopVideo("已停止并释放首帧缓存；重新勾选联动可继续。"); }));
         actions.Children.Add(MakeButton("使用说明", () => MessageBox.Show(
-            "1. 电脑HDMI→副板HDMIA；副板HDMIB→屏幕。\n2. 电脑USB→副板USB-UART Type-C，不是USB-JTAG。\n3. Windows扩展AnlogicHDMI：1280×720、60/59.94Hz、RGB8、SDR。\n4. 手动有声播放时选择AnlogicHDMI声音输出，48kHz/24-bit双声道PCM。\n5. 手动模式选视频再播放；联动模式先配置五件视频，再勾选联动。\n视频可放任意目录，路径自动保存；移动/删除后请重新选择。\n联动按实际展示文物，不跟随后台预载；自动循环且始终静音，暂停随主板。\n应急、恢复或失联退回本地；应急解除不恢复旧视频。\n启动不自动开启联动；电脑和本程序必须持续运行。旧版bit仅支持手动播放。\n软件使用Windows媒体组件，建议MP4(H.264/AAC)；不支持的编解码会明确报错。", "使用说明")));
+            "1. 电脑HDMI→副板HDMIA；副板HDMIB→屏幕。\n2. 电脑USB→副板USB-UART Type-C，不是USB-JTAG。\n"+
+            "3. Windows扩展AnlogicHDMI：1280×720、60/59.94Hz、RGB8、SDR。\n4. 手动有声播放选择HDMI音频输出，48kHz/24-bit双声道PCM。\n"+
+            "5. 点击“文物与应急视频配置”，选择五件文物及一支应急视频，再勾选联动。文件可放任意目录，路径自动保存。\n"+
+            "文物视频静音循环，暂停随主板。主板SW4进入应急后，普通视频被撤销，改为静音循环应急指引。\n"+
+            "应急解除立即撤销应急视频，不恢复旧文物视频。视频缺失、解码失败、信源或通信失效时保留板载应急图。\n"+
+            "关闭联动仍使用原本地应急图。重连后若主板仍应急，重新申请应急授权；普通视频不会自行复播。\n"+
+            "启动不自动开启联动；电脑和本程序必须持续运行。旧bit不支持应急视频，需烧新副板bit。\n"+
+            "软件使用Windows媒体组件，建议MP4(H.264/AAC)。演示地图不是实际场馆消防设施，请遵循现场标识与工作人员指引。", "使用说明")));
         panel.Children.Add(actions);
-        panel.Children.Add(MakeButton("五件文物视频配置", ConfigureVideos));
+        panel.Children.Add(MakeButton("文物与应急视频配置", ConfigureVideos));
         panel.Children.Add(automatic);
         automatic.Checked += (s,e) => { autoHold=false;failedArtifact=-1; if (video!=null) StopVideo("先退出手动视频，再按主板状态联动。"); else SetStatus("联动已开启；等待主板实际展示状态。"); };
-        automatic.Unchecked += (s,e) => { if (autoSession||phase==Phase.Warming) StopVideo("联动已关闭，释放缓存并恢复本地显示。"); else { if(linked&&warmSupported&&(flags&16)!=0) Send(7);SetStatus("手动模式。"); } };
+        automatic.Unchecked += (s,e) => { observedEmergency=false;if (autoSession||phase==Phase.Warming) StopVideo("联动已关闭，释放缓存并恢复本地显示。"); else { if(linked&&warmSupported&&(flags&16)!=0) Send(7);SetStatus("手动模式。"); } };
         var statePanel = new StackPanel();
         statePanel.Children.Add(new TextBlock { Text = "02  播放与连接状态", FontWeight = FontWeights.SemiBold, FontSize = 16, Margin = new Thickness(0,0,0,10) });
         status.MinHeight = 46; status.LineHeight = 24; statePanel.Children.Add(status);
@@ -340,14 +360,14 @@ sealed class ControllerWindow : Window
         if (phase != Phase.Idle && phase != Phase.Warming) { SetStatus("请先停止视频，再修改联动配置。"); return; }
         configuring=true;
         try {
-            var dialog = new Window { Title="五件文物视频配置", Owner=this, Icon=Icon, Width=900, Height=440,
+            var dialog = new Window { Title="文物与应急视频配置", Owner=this, Icon=Icon, Width=900, Height=510,
                 WindowStartupLocation=WindowStartupLocation.CenterOwner, FontFamily=FontFamily, FontSize=14, Background=Brushes.FloralWhite, Resources=Resources };
             var body=new StackPanel { Margin=new Thickness(22) };
-            var design=new Grid { Width=900,Height=400 };design.Children.Add(body);
+            var design=new Grid { Width=900,Height=470 };design.Children.Add(body);
             dialog.Content=new Viewbox { Child=design,Stretch=Stretch.Uniform };
-            body.Children.Add(new TextBlock { Text="每件文物选择一个视频，位置不限；配置保存后下次自动恢复。", Margin=new Thickness(0,0,0,14) });
+            body.Children.Add(new TextBlock { Text="五件文物及应急视频可放任意位置；应急缺片时保留板载逃生图。", Margin=new Thickness(0,0,0,14) });
             string[] paths=(string[])settings.Videos.Clone();
-            for(int i=0;i<5;i++) {
+            for(int i=0;i<6;i++) {
                 int id=i; var box=new TextBox { Text=paths[id] ?? "", IsReadOnly=true };
                 body.Children.Add(Row(id+"  "+VideoSettings.Names[id],box,MakeButton("选择视频",()=> {
                     var pick=new OpenFileDialog { Filter="视频文件|*.mp4;*.wmv;*.avi;*.mkv;*.mov|全部文件|*.*" };
@@ -428,7 +448,7 @@ sealed class ControllerWindow : Window
         if (phase == Phase.Stopping && (acknowledgedCommand == 2 || acknowledgedCommand == 3 || acknowledgedCommand == 5 || acknowledgedCommand == 7) && (flags & 14) == 0) stopConfirmed = true;
         if (phase == Phase.Idle && !AutoEnabled) SetStatus("已连接；HDMI输入" + ((flags & 1) != 0 ? "有效" : "未就绪") + "，当前保持副板本地内容。");
         else if (phase == Phase.Authorizing || phase == Phase.Playing || phase == Phase.Paused)
-            if ((flags & 9) != 9) { if(autoSession) autoHold=true;StopVideo("HDMI信源失效或授权已撤销，已退回本地。请重新开启联动或从总览重新进入。"); }
+            if ((flags & 9) != 9 || autoSession&&activeArtifact==5&&(flags&32)==0) { if(autoSession) autoHold=true;StopVideo("HDMI信源失效或授权已撤销，已退回本地。请重新开启联动或从总览重新进入。"); }
     }
     void Send(byte command)
     {
@@ -439,7 +459,7 @@ sealed class ControllerWindow : Window
     void Disconnect()
     {
         linked = false; pending = false;
-        contextKnown=false;contextAvailable=false;nextContext=true;warmSupported=true;warmHintSent=false;observedOverview=false;
+        contextKnown=false;contextAvailable=false;nextContext=true;warmSupported=true;warmHintSent=false;observedOverview=false;observedEmergency=false;
         if(autoSession) autoHold=true;
         var current = port; port = null;
         if (current != null) current.Dispose();
@@ -466,7 +486,7 @@ sealed class ControllerWindow : Window
                 if(!ReferenceEquals(video,currentVideo)) return;
                 if(autoSession&&AutoEnabled&&ContextFresh&&!autoHold&&Protocol.LinkedArtifact(museumState,museumArtifact)==activeArtifact) {
                     currentVideo.Media.Position=TimeSpan.Zero;
-                    if((museumState&4)==0) currentVideo.Media.Play();else currentVideo.Media.Pause();
+                    if(activeArtifact==5||(museumState&4)==0) currentVideo.Media.Play();else currentVideo.Media.Pause();
                 } else StopVideo("视频结束，副板恢复本地内容。");
             };
             video.Media.MediaFailed += (s,e) => { if (ReferenceEquals(video,currentVideo)) { if(AutoEnabled) failedArtifact=activeArtifact; StopVideo("视频解码失败：" + e.ErrorException.Message); } };
@@ -504,7 +524,13 @@ sealed class ControllerWindow : Window
     void UpdateAutomatic()
     {
         if(!AutoEnabled||configuring||closeAfterStop) return;
-        if(ContextFresh&&(museumState&0x48)!=0) autoHold=true;
+        if(ContextFresh) {
+            bool emergency=(museumState&0x49)==9;
+            if(emergency&&!observedEmergency) { autoHold=false;failedArtifact=-1; }
+            if(!emergency&&observedEmergency) autoHold=true;
+            observedEmergency=emergency;
+            if((museumState&64)!=0) autoHold=true;
+        }
         bool overview=ContextFresh&&(museumState&0x6b)==1&&museumScene==255;
         if(overview&&!observedOverview) { autoHold=false;failedArtifact=-1; }
         observedOverview=overview;
@@ -514,7 +540,7 @@ sealed class ControllerWindow : Window
             if(!File.Exists(settings.Videos[activeArtifact])) { failedArtifact=activeArtifact;StopVideo("联动视频已移动或不可访问，请重新配置；回到本地显示。");return; }
         }
         if(desired<0) {
-            if(autoSession) { autoHold=true;StopVideo("主板应急、恢复、失联或已退出，回到副板本地。"); }
+            if(autoSession) { autoHold=!overview;StopVideo("主板应急、恢复、失联或已退出，回到副板本地。"); }
             else if(ContextFresh&&(museumState&0x6b)==1&&museumArtifact<5&&!autoHold) {
                 if(phase==Phase.Warming&&activeArtifact!=museumArtifact) { StopVideo("总览高亮变化，准备下一件首帧。");return; }
                 if(phase==Phase.Idle&&!pending&&linked&&failedArtifact!=museumArtifact&&(flags&1)!=0) {
@@ -532,13 +558,13 @@ sealed class ControllerWindow : Window
         }
         if(autoSession&&desired!=activeArtifact) { StopVideo("实际展示文物变化，先撤销上一视频。");return; }
         if(video!=null && (phase==Phase.Playing||phase==Phase.Paused) && autoSession) {
-            bool paused=(museumState&4)!=0;
+            bool paused=activeArtifact!=5&&(museumState&4)!=0;
             if(paused && phase==Phase.Playing) { video.Media.Pause();phase=Phase.Paused;SetStatus("联动视频随主板暂停。"); }
             if(!paused && phase==Phase.Paused) { video.Media.Play();phase=Phase.Playing;SetStatus("联动视频随主板继续，静音循环。"); }
         }
         if(phase!=Phase.Idle||pending||!linked||autoHold||failedArtifact==desired||(flags&1)==0) return;
         string path=settings.Videos[desired];
-        if(!File.Exists(path)) { failedArtifact=desired;SetStatus("文物"+desired+"的视频未配置或已移动，请在“五件文物视频配置”中重新选择；副板保持本地。");return; }
+        if(!File.Exists(path)) { failedArtifact=desired;SetStatus(VideoSettings.Names[desired]+"视频未配置或已移动，请重新选择；应急时保留板载逃生图。");return; }
         file.Text=path;autoSession=true;activeArtifact=desired;fileCheckedAt=DateTime.UtcNow;StartVideo();
         if(video==null) { failedArtifact=desired;autoSession=false;activeArtifact=-1; }
     }
@@ -558,19 +584,19 @@ sealed class ControllerWindow : Window
                 else if((now-prepareAt).TotalSeconds>10&&!opened) { failedArtifact=activeArtifact;StopVideo("首帧准备超时，请检查视频文件。"); }
                 else if(opened&&now>=firstFrameAt&&!pending&&!warmHintSent&&warmSupported) { Send((byte)(0x20+activeArtifact));warmHintSent=true; }
             }
-            if(contextAvailable && (museumState&8)!=0 && video!=null) { autoHold=true;StopVideo("主板应急，外部视频授权已撤销。"); }
+            if(contextAvailable && (museumState&8)!=0 && video!=null&&activeArtifact!=5) StopVideo("主板应急，先撤销普通视频，再准备应急指引。");
             if (phase == Phase.Preparing) {
                 if ((now - prepareAt).TotalSeconds > 10) { if(autoSession) failedArtifact=activeArtifact;StopVideo("视频或HDMI准备超时，请检查输入格式和视频编解码。"); return; }
                 if (opened && now >= firstFrameAt && (flags & 1) != 0 && !pending) {
-                    phase = Phase.Authorizing; Send(autoSession ? (byte)(0x10+activeArtifact) : (byte)1); SetStatus("切入HDMI视频，等待输出和显示器稳定。");
+                    phase = Phase.Authorizing; Send(autoSession ? activeArtifact==5 ? (byte)6 : (byte)(0x10+activeArtifact) : (byte)1); SetStatus("切入HDMI视频，等待输出和显示器稳定。");
                 }
             }
             if (phase == Phase.Authorizing && (flags & 15) == 11) {
                 if (releaseAt == DateTime.MaxValue) releaseAt = now.AddMilliseconds(autoSession ? 100 : 700);
                 if (now >= releaseAt) {
                     video.Media.IsMuted=autoSession;
-                    if(autoSession&&(museumState&4)!=0) { video.Media.Pause();phase=Phase.Paused; } else { video.Media.Play();phase=Phase.Playing; }
-                    SetStatus(autoSession ? "联动展示：文物"+activeArtifact+"，静音循环，暂停随主板。" : "正在播放；视频和声音均走HDMI，停止后回到本地内容。");
+                    if(autoSession&&activeArtifact!=5&&(museumState&4)!=0) { video.Media.Pause();phase=Phase.Paused; } else { video.Media.Play();phase=Phase.Playing; }
+                    SetStatus(autoSession ? activeArtifact==5 ? "应急疏散指引：静音循环，解除应急立即返回本地。" : "联动展示：文物"+activeArtifact+"，静音循环，暂停随主板。" : "正在播放；视频和声音均走HDMI，停止后回到本地内容。");
                 }
             }
             if (!pending && (now - replyAt).TotalMilliseconds >= 50) {

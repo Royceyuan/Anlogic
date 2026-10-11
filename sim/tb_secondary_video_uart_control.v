@@ -145,6 +145,37 @@ initial begin
         exchange(8'h23,45,0,0);museum_state=8'h09;repeat(3) @(negedge clk);
         if(armed) $fatal(1,"emergency retained intro suppression");
         $display("PASS UART warm hint never authorizes AV; release, timeout and emergency restore local policy");
+        museum_state=8'h01;exchange(6,46,0,1);
+        museum_state=8'h09;ready=0;exchange(6,47,0,1);ready=1;
+        museum_state=8'h08;exchange(6,48,0,1);
+        museum_state=8'h49;exchange(6,49,0,1);
+        museum_state=8'h09;exchange(6,50,1,0);exchange(6,50,1,0);
+        if(!replies[reply_count-2][5]||armed) $fatal(1,"emergency flag missing or ordinary hint retained");
+        exchange(4,51,1,0);exchange(1,52,1,1);
+        if(!dut.emergency_lease) $fatal(1,"ordinary START replaced emergency lease");
+        museum_state=8'h01;repeat(3) @(negedge clk);
+        if(enabled) $fatal(1,"emergency video survived emergency clear");
+        exchange(3,53,0,0);if(replies[reply_count-2][5]) $fatal(1,"stale emergency authorized flag");
+        museum_state=8'h09;repeat(3) @(negedge clk);
+        if(enabled) $fatal(1,"emergency re-entry reused old authorization");
+        $display("PASS emergency-only START: fresh state/source required; ordinary START blocked; clear revokes");
+        exchange(6,54,1,0);ready=0;repeat(3) @(negedge clk);
+        if(enabled) $fatal(1,"emergency input loss retained video");
+        ready=1;repeat(3) @(negedge clk);if(enabled) $fatal(1,"input reconnect reused emergency lease");
+        exchange(6,55,1,0);museum_state=8'h08;repeat(3) @(negedge clk);
+        if(enabled) $fatal(1,"emergency network loss retained video");
+        museum_state=8'h09;repeat(3) @(negedge clk);if(enabled) $fatal(1,"network reconnect reused emergency lease");
+        exchange(6,56,1,0);museum_state=8'h49;repeat(3) @(negedge clk);
+        if(enabled) $fatal(1,"recovery retained emergency video");
+        museum_state=8'h09;repeat(3) @(negedge clk);if(enabled) $fatal(1,"recovery clear reused emergency lease");
+        $display("PASS emergency video loss/recovery returns local; fresh START required after reconnect");
+        exchange(6,57,1,0);repeat(9000) @(negedge clk);
+        if(enabled) $fatal(1,"PC watchdog retained emergency video");
+        exchange(6,58,1,0);exchange(2,59,0,0);
+        exchange(6,60,1,0);exchange(7,61,0,0);
+        $display("PASS emergency lease watchdog, STOP and release preserve static fallback");
+    end else begin
+        exchange(6,62,0,1);
     end
     rst_n=0;repeat(5) @(negedge clk);if(enabled||txd!==1) $fatal(1,"reset unsafe");
     test_pass=1;$finish;

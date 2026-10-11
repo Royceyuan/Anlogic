@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 `default_nettype none
 // Integrated candidate: A receives PC HDMI, B is the only display output.
-// UART authorizes AV; main-board emergency always revokes that authorization.
+// UART authorizes AV; emergency revokes ordinary AV, allowing only CMD06 AV.
 module top_secondary_hdmi_museum(
     input wire clk_50m,
     input wire uart_rxd,

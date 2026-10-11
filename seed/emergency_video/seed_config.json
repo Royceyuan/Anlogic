@@ -1,0 +1,17 @@
+{
+  "tool":"TD 6.2.168116",
+  "project":"dual_fpga_museum_terminal_secondary_board.al",
+  "top":"top_secondary_hdmi_museum",
+  "build_script":"scripts/synthesize_and_route.tcl",
+  "place_seed":7,
+  "shared_pll_location":"x000y000",
+  "rx_pll_location":"x000y071",
+  "pair_regions":{"lane0":[38,8,2,4],"lane1":[38,12,2,4]},
+  "setup_wns_ns":0.114,
+  "hold_wns_ns":0.022,
+  "tns_ns":0,
+  "bit_manifest":"release/manifest_secondary_emergency_video.json",
+  "bit_sha256":"4539AC5420477519B57EC52DA627B29C8DF3AD67E274C5239756EC124ACD9E43",
+  "board_pass":false,
+  "note":"Emergency-only UART authorization; previous clocks, constraints, PHY, static map and successful seeds unchanged."
+}

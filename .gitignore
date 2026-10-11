@@ -29,3 +29,5 @@ sim/transcript
 .DS_Store
 Thumbs.db
 .vscode/*.user
+# Reproducible video rendering intermediates, not final emergency media.
+assets/emergency_video/_work/
