@@ -24,6 +24,7 @@ module top_secondary_main5e #(
     output wire local_video_clk, local_serial_clk, local_video_rst_n,
     output wire local_hs, local_vs, local_de,
     output wire [23:0] local_rgb,
+    output wire [7:0] pc_artifact, pc_state, pc_phase,
     input wire eth_rgmii_rx_clk,
     input wire eth_rgmii_rx_ctl,
     input wire [3:0] eth_rgmii_rxd,
@@ -50,6 +51,31 @@ wire [63:0] control_payload;
 wire manual_mode, manual_next;
 wire [3:0] help_switches;
 wire [7:0] media_seg_data, media_seg_sel;
+reg pc_seen;
+reg [7:0] pc_id_q,pc_phase_q;
+reg pc_active_q,pc_paused_q,pc_emergency_q,pc_manual_q,pc_transition_q,pc_recovery_q,pc_finished_q;
+assign pc_artifact=pc_id_q;
+assign pc_phase=pc_phase_q;
+assign pc_state={pc_finished_q,pc_recovery_q,pc_transition_q,pc_manual_q,
+                 pc_emergency_q,pc_paused_q,pc_active_q,(pc_seen&&peer_alive)};
+always @(posedge clk_50m or posedge network_reset) begin
+    if(network_reset) begin
+        pc_seen<=0;pc_id_q<=8'hff;pc_phase_q<=8'hff;
+        pc_active_q<=0;pc_paused_q<=0;pc_emergency_q<=0;pc_manual_q<=0;
+        pc_transition_q<=0;pc_recovery_q<=0;pc_finished_q<=0;
+    end else begin
+        if(heartbeat_pulse) begin
+            pc_seen<=1;pc_id_q<=heartbeat_data[119:112];pc_phase_q<=heartbeat_data[111:104];
+            pc_active_q<=heartbeat_data[127:120]==2&&heartbeat_data[111:104]<=4;
+            pc_paused_q<=heartbeat_data[68];
+            pc_emergency_q<=heartbeat_data[95:88]!=0;
+            pc_transition_q<=heartbeat_data[103:96]==3;
+            pc_recovery_q<=heartbeat_data[70]||heartbeat_data[127:120]==0||heartbeat_data[127:120]==4;
+            pc_finished_q<=heartbeat_data[103:96]==4;
+        end else if(!peer_alive) pc_seen<=0;
+        if(display_pulse) pc_manual_q<=display_data[42];
+    end
+end
 assign seg_data = media_seg_data;
 assign seg_sel = media_seg_sel;
 

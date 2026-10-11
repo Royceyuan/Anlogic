@@ -2,12 +2,14 @@
 `default_nettype none
 // Request: A5 5A command sequence CRC8. Reply: 5A A5 sequence flags CRC8.
 // CRC8/SMBUS: poly 07, init 00, no reflection/xorout, covers first four bytes.
-// Commands: 1=start, 2=stop, 3=query, 4=keepalive. One outstanding PC request.
+// Commands 1..4 unchanged; 5=context query, 10..14 hex=linked START artifact0..4.
+// Context reply: 5A A6 seq flags artifact state phase CRC8 (8 bytes).
 // Flags: bit0=input ready, bit1=selected, bit2=muted, bit3=authorized, bit7=reject.
 module secondary_video_uart_control #(
-    parameter integer BAUD_DIV=434,CLOCKS_PER_MS=50000,WATCHDOG_MS=3000
+    parameter integer BAUD_DIV=434,CLOCKS_PER_MS=50000,WATCHDOG_MS=3000,MUSEUM_LINK=0
 )(
     input wire clk,rst_n,uart_rxd,input_ready,external_selected,output_muted,
+    input wire [7:0] museum_artifact,museum_state,museum_phase,
     output wire uart_txd,output reg play_enabled
 );
 function [7:0] crc8;
@@ -34,14 +36,21 @@ reg [11:0] lease_ms;
 reg [3:0] rx_age_ms;
 reg [2:0] rx_state,tx_index;
 reg [7:0] command,sequence,rx_crc,tx_crc,reply_sequence,ack_sequence,ack_flags;
+reg [7:0] ack_artifact,ack_state,ack_phase,lease_artifact;
+reg reply_context,ack_context,linked_lease;
 reg reply_pending,reply_rejected,tx_active;
 wire [7:0] flags={reply_rejected,3'b000,play_enabled,output_muted,external_selected,input_ready};
+wire emergency_block=MUSEUM_LINK&&museum_state[3];
+wire linked_allowed=MUSEUM_LINK&&museum_state[0]&&museum_state[1]&&!museum_state[3]&&!museum_state[6];
 reg [7:0] next_tx_data;
 always @* case(tx_index)
     0:next_tx_data=8'h5a;
-    1:next_tx_data=8'ha5;
+    1:next_tx_data=ack_context ? 8'ha6 : 8'ha5;
     2:next_tx_data=ack_sequence;
     3:next_tx_data=ack_flags;
+    4:next_tx_data=ack_context ? ack_artifact : tx_crc;
+    5:next_tx_data=ack_state;
+    6:next_tx_data=ack_phase;
     default:next_tx_data=tx_crc;
 endcase
 always @(posedge clk or negedge rst_n) begin
@@ -51,10 +60,13 @@ always @(posedge clk or negedge rst_n) begin
         reply_pending<=0;reply_rejected<=0;reply_sequence<=0;
         tx_active<=0;tx_index<=0;tx_crc<=0;ack_sequence<=0;ack_flags<=0;
         tx_data<=0;tx_valid<=0;
+        reply_context<=0;ack_context<=0;linked_lease<=0;lease_artifact<=8'hff;
+        ack_artifact<=8'hff;ack_state<=0;ack_phase<=8'hff;
     end else begin
         tx_valid<=0;
         if(ms_tick) ms_cycles<=0;else ms_cycles<=ms_cycles+1'b1;
-        if(!input_ready) play_enabled<=0;
+        if(!input_ready||emergency_block||
+           (linked_lease&&(!linked_allowed||museum_artifact!=lease_artifact))) play_enabled<=0;
         if(ms_tick) begin
             if(play_enabled) begin
                 if(lease_ms==WATCHDOG_MS-1) begin play_enabled<=0;lease_ms<=0;end
@@ -69,10 +81,12 @@ always @(posedge clk or negedge rst_n) begin
         // applied even during reply transmission. The PC serializes requests.
         if(reply_pending&&!tx_active&&tx_ready&&!tx_valid) begin
             ack_sequence<=reply_sequence;ack_flags<=flags;
+            ack_context<=reply_context;ack_artifact<=museum_artifact;
+            ack_state<=museum_state;ack_phase<=museum_phase;
             tx_index<=0;tx_crc<=0;tx_active<=1;reply_pending<=0;
         end else if(tx_active&&tx_ready&&!tx_valid) begin
             tx_data<=next_tx_data;tx_valid<=1;
-            if(tx_index==4) tx_active<=0;
+            if(tx_index==(ack_context ? 7 : 4)) tx_active<=0;
             else begin tx_crc<=crc8(tx_crc,next_tx_data);tx_index<=tx_index+1'b1;end
         end
         if(rx_valid) begin
@@ -87,13 +101,18 @@ always @(posedge clk or negedge rst_n) begin
                     rx_state<=0;
                     if(rx_data==rx_crc) begin
                         reply_sequence<=sequence;reply_pending<=1;reply_rejected<=0;
+                        reply_context<=MUSEUM_LINK&&command==5;
                         case(command)
-                            1: if(input_ready) begin play_enabled<=1;lease_ms<=0;end
+                            1: if(input_ready&&!emergency_block) begin play_enabled<=1;lease_ms<=0;linked_lease<=0;end
                                else reply_rejected<=1;
-                            2: begin play_enabled<=0;lease_ms<=0;end
+                            2: begin play_enabled<=0;lease_ms<=0;linked_lease<=0;end
                             3: ;
                             4: if(play_enabled) lease_ms<=0;
-                            default:reply_rejected<=1;
+                            5: if(!MUSEUM_LINK) reply_rejected<=1;
+                            default: if(command>=8'h10&&command<=8'h14&&input_ready&&linked_allowed&&
+                                        museum_artifact==command-8'h10) begin
+                                play_enabled<=1;lease_ms<=0;linked_lease<=1;lease_artifact<=museum_artifact;
+                            end else reply_rejected<=1;
                         endcase
                     end else if(rx_data==8'ha5) begin rx_state<=1;rx_crc<=crc8(0,8'ha5);end
                 end

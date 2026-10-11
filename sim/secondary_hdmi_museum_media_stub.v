@@ -14,6 +14,7 @@ module top_secondary_main5e #(
     output wire local_video_clk,local_serial_clk,local_video_rst_n,
     output wire local_hs,local_vs,local_de,
     output wire [23:0] local_rgb,
+    output wire [7:0] pc_artifact,pc_state,pc_phase,
     input wire eth_rgmii_rx_clk,eth_rgmii_rx_ctl,
     input wire [3:0] eth_rgmii_rxd,
     output wire eth_rgmii_tx_clk,eth_rgmii_tx_ctl,
@@ -28,6 +29,7 @@ assign local_video_clk=pixel_clk;
 assign local_serial_clk=serial_clk;
 assign local_video_rst_n=1;
 assign local_hs=0;assign local_vs=0;assign local_de=0;assign local_rgb=24'h123456;
+assign pc_artifact=0;assign pc_state=8'h03;assign pc_phase=0;
 assign led=0;assign seg_data=0;assign seg_sel=0;
 assign {sd_clk,sd_mosi,sd_cs_n}=3'b001;
 assign {hdmi1_clk_p,hdmi1_d0_p,hdmi1_d1_p,hdmi1_d2_p}=0;

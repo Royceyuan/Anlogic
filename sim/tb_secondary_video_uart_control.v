@@ -1,11 +1,14 @@
 `timescale 1ns/1ps
 module tb_secondary_video_uart_control;
+parameter LINK_TEST=1;
 reg clk=0,rst_n=0,rxd=1,ready=1;
+reg [7:0] museum_artifact=2,museum_state=0,museum_phase=0;
 always #10 clk=!clk;
 wire txd,enabled;
-secondary_video_uart_control #(.BAUD_DIV(8),.CLOCKS_PER_MS(200),.WATCHDOG_MS(40)) dut(
+secondary_video_uart_control #(.BAUD_DIV(8),.CLOCKS_PER_MS(200),.WATCHDOG_MS(40),.MUSEUM_LINK(LINK_TEST)) dut(
     .clk(clk),.rst_n(rst_n),.uart_rxd(rxd),.input_ready(ready),
-    .external_selected(enabled),.output_muted(1'b0),.uart_txd(txd),.play_enabled(enabled));
+    .external_selected(enabled),.output_muted(1'b0),.uart_txd(txd),.play_enabled(enabled),
+    .museum_artifact(museum_artifact),.museum_state(museum_state),.museum_phase(museum_phase));
 wire [7:0] reply_byte;
 wire reply_valid;
 secondary_uart_rx #(.BAUD_DIV(8)) reply_rx(
@@ -16,7 +19,7 @@ reg [7:0] v;
 integer i;
 begin v=c^b;for(i=0;i<8;i=i+1) v=v[7] ? (v<<1)^8'h07 : v<<1;crc=v;end
 endfunction
-reg [7:0] replies[0:199];
+reg [7:0] replies[0:399];
 integer reply_count=0;
 always @(posedge clk) if(reply_valid) begin
     replies[reply_count]=reply_byte;reply_count=reply_count+1;
@@ -51,6 +54,17 @@ begin
         $fatal(1,"bad ACK header/sequence/CRC");
     if(replies[base+3][3]!==permit||replies[base+3][7]!==reject||enabled!==permit)
         $fatal(1,"bad permit/rejection flags seq=%d flags=%h enabled=%b",seq,replies[base+3],enabled);
+end endtask
+task context_query;
+input [7:0] seq;
+integer base,j;
+reg [7:0] c;
+begin
+    base=reply_count;packet(5,seq,0);wait(reply_count>=base+8);
+    c=0;for(j=0;j<7;j=j+1)c=crc(c,replies[base+j]);
+    if(replies[base]!=8'h5a||replies[base+1]!=8'ha6||replies[base+2]!=seq||replies[base+7]!=c||
+       replies[base+4]!=museum_artifact||replies[base+5]!=museum_state||replies[base+6]!=museum_phase)
+        $fatal(1,"bad context snapshot/header/CRC");
 end endtask
 reg test_pass=0;
 integer i,base;
@@ -97,6 +111,29 @@ initial begin
     base=reply_count;release dut.tx_ready;wait(reply_count>=base+5);
     if(replies[base+2]!=21||replies[base+3][3]) $fatal(1,"stale queued ACK after STOP");
     $display("PASS UART stopped reply channel cannot block STOP or retain stale authorization");
+    if(LINK_TEST) begin
+        context_query(30);
+        exchange(8'h12,31,0,1);
+        museum_state=8'h03;museum_phase=3;context_query(32);
+        exchange(8'h11,33,0,1);exchange(8'h12,34,1,0);
+        museum_state=8'h07;context_query(35);
+        if(!enabled) $fatal(1,"pause incorrectly cancelled video lease");
+        museum_artifact=3;repeat(3) @(negedge clk);
+        if(enabled) $fatal(1,"old artifact lease survived actual artifact change");
+        exchange(8'h12,36,0,1);exchange(8'h13,37,1,0);
+        museum_state=8'h06;repeat(3) @(negedge clk);
+        if(enabled) $fatal(1,"network loss did not revoke linked video");
+        museum_state=8'h03;exchange(1,38,1,0);
+        museum_state=8'h0b;repeat(3) @(negedge clk);
+        if(enabled) $fatal(1,"emergency did not revoke MANUAL authorization");
+        exchange(1,39,0,1);exchange(8'h13,40,0,1);context_query(41);
+        museum_state=8'h03;repeat(20) @(negedge clk);
+        if(enabled) $fatal(1,"emergency clear automatically restored old video");
+        exchange(8'h13,42,1,0);museum_state=8'h43;repeat(3) @(negedge clk);
+        if(enabled) $fatal(1,"application recovery did not revoke video");
+        museum_state=8'h01;exchange(8'h13,43,0,1);
+        $display("PASS UART context CRC, actual artifact, pause, loss, emergency priority, no old resume and recovery");
+    end
     rst_n=0;repeat(5) @(negedge clk);if(enabled||txd!==1) $fatal(1,"reset unsafe");
     test_pass=1;$finish;
 end

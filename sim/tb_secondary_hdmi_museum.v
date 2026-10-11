@@ -179,6 +179,19 @@ initial begin
     uart_command(2,3);wait(!dut.external_selected&&!dut.output_muted);
     if(!dut.external_ready||dut.pc_play_enabled) $fatal(1,"STOP reset HDMI receiver or retained authorization");
     $display("PASS UART STOP restores local without unplugging HDMI or resetting receiver");
+    uart_command(8'h10,4);wait(dut.external_selected&&!dut.output_muted);
+    force dut.u_terminal.pc_state=8'h0b;
+    wait(!dut.external_selected&&!dut.output_muted);
+    if(dut.pc_play_enabled||!dut.external_ready) $fatal(1,"emergency did not revoke external video without resetting RX");
+    release dut.u_terminal.pc_state;repeat(100) @(posedge clk);
+    if(dut.external_selected||dut.pc_play_enabled) $fatal(1,"emergency clear reused old authorization");
+    $display("PASS hardware emergency preempts HDMI and clear cannot resume old video");
+    uart_command(8'h10,5);wait(dut.external_selected&&!dut.output_muted);
+    force dut.u_terminal.pc_state=8'h02;
+    wait(!dut.external_selected&&!dut.output_muted);
+    if(dut.pc_play_enabled||!dut.external_ready) $fatal(1,"lost museum heartbeat retained linked video");
+    release dut.u_terminal.pc_state;
+    $display("PASS lost main-board status returns linked video to local without altering AV receiver");
     test_pass=1;$finish;
 end
 initial begin #10000000;$fatal(1,"candidate timeout clock=%b PLL=%b locks=%b offsets=%h format=%b lines=%d frames=%d",dut.u_relay.clock_valid,dut.u_relay.pll_locked,dut.u_relay.u_monitor.lane_lock,dut.u_relay.bit_offsets,dut.u_relay.format_ok,dut.u_relay.u_monitor.line_symbols,dut.u_relay.u_monitor.frame_symbols);end

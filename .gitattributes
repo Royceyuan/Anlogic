@@ -18,3 +18,5 @@ seed/hdmi_museum/*.json text
 seed/uart_video/* -text -whitespace
 seed/uart_video/*.json text whitespace
 tools/PCVideoPlayer/*.exe filter=lfs diff=lfs merge=lfs -text
+seed/linked_video/* -text -whitespace
+seed/linked_video/*.json text whitespace

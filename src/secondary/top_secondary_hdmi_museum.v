@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 `default_nettype none
 // Integrated candidate: A receives PC HDMI, B is the only display output.
-// UART-authorized external AV has priority. The local terminal keeps running.
+// UART authorizes AV; main-board emergency always revokes that authorization.
 module top_secondary_hdmi_museum(
     input wire clk_50m,
     input wire uart_rxd,
@@ -26,6 +26,7 @@ module top_secondary_hdmi_museum(
 wire local_pclk,local_sclk,local_ready,local_hs,local_vs,local_de;
 wire [23:0] local_rgb;
 wire application_clock;
+wire [7:0] pc_artifact,pc_state,pc_phase;
 // One explicit root GCLK feeds both application registers and PLL references;
 // do not let an unbuffered PLL reference bypass the application clock tree.
 EG_LOGIC_BUFG u_application_clock(.i(clk_50m),.o(application_clock));
@@ -35,6 +36,7 @@ top_secondary_main5e #(.SHARED_MEDIA_ETH_PLL(1),.EXTERNAL_HDMI_PHY(1)) u_termina
     .hdmi1_clk_p(),.hdmi1_d0_p(),.hdmi1_d1_p(),.hdmi1_d2_p(),
     .local_video_clk(local_pclk),.local_serial_clk(local_sclk),.local_video_rst_n(local_ready),
     .local_hs(local_hs),.local_vs(local_vs),.local_de(local_de),.local_rgb(local_rgb),
+    .pc_artifact(pc_artifact),.pc_state(pc_state),.pc_phase(pc_phase),
     .eth_rgmii_rx_clk(eth_rgmii_rx_clk),.eth_rgmii_rx_ctl(eth_rgmii_rx_ctl),.eth_rgmii_rxd(eth_rgmii_rxd),
     .eth_rgmii_tx_clk(eth_rgmii_tx_clk),.eth_rgmii_tx_ctl(eth_rgmii_tx_ctl),.eth_rgmii_txd(eth_rgmii_txd),
     .eth_mdc(eth_mdc),.eth_mdio(eth_mdio));
@@ -50,10 +52,11 @@ top_secondary_hdmi_relay_diag #(.USE_OFFICIAL_EDID(1),.REQUIRE_SINK_HPD(0),.EXTE
 secondary_hdmi_local_pairs u_local(
     .pixel_clk(local_pclk),.serial_clk(local_sclk),.rst_n(local_ready),
     .hs(local_hs),.vs(local_vs),.de(local_de),.rgb(local_rgb),.pairs(local_pairs));
-secondary_video_uart_control u_pc_video(
+secondary_video_uart_control #(.MUSEUM_LINK(1)) u_pc_video(
     .clk(application_clock),.rst_n(rst_n),.uart_rxd(uart_rxd),.uart_txd(uart_txd),
     .input_ready(external_ready),.external_selected(external_selected),
-    .output_muted(output_muted),.play_enabled(pc_play_enabled));
+    .output_muted(output_muted),.play_enabled(pc_play_enabled),
+    .museum_artifact(pc_artifact),.museum_state(pc_state),.museum_phase(pc_phase));
 secondary_hdmi_source_switch u_switch(
     .clk_50m(application_clock),.rst_n(rst_n),.local_ready(local_ready),.external_ready(external_ready&&pc_play_enabled),
     .local_blank(!local_de),.external_blank(external_blank),
