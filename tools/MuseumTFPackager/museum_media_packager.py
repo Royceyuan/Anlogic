@@ -160,15 +160,16 @@ def show_help(parent):
 
     window = tk.Toplevel(parent)
     window.title("使用说明 — 博物馆 TF 素材打包工具")
-    window.geometry("880x660")
+    scale = getattr(parent, "ui_scale", 1.0)
+    window.geometry(f"{round(880 * scale)}x{round(660 * scale)}")
     window.minsize(620, 420)
     window.transient(parent)
     frame = ttk.Frame(window, padding=16)
     frame.pack(fill="both", expand=True)
-    ttk.Label(frame, text="从素材准备到 TF 卡使用", font=("Microsoft YaHei", 14, "bold")).pack(anchor="w", pady=(0, 12))
+    ttk.Label(frame, text="从素材准备到 TF 卡使用", font=("Microsoft YaHei", round(14 * scale), "bold")).pack(anchor="w", pady=(0, 12))
     body = ttk.Frame(frame)
     body.pack(fill="both", expand=True)
-    text = tk.Text(body, wrap="word", font=("Microsoft YaHei", 11), padx=12, pady=8,
+    text = tk.Text(body, wrap="word", font=("Microsoft YaHei", round(11 * scale)), padx=12, pady=8,
                    background="#fffdf7", foreground="#213e38", relief="flat")
     scrollbar = ttk.Scrollbar(body, orient="vertical", command=text.yview)
     text.configure(yscrollcommand=scrollbar.set)
@@ -556,7 +557,8 @@ def launch_gui() -> None:
     root.minsize(980, 720)
     root.configure(background="#162d2a")
     assets = Path(getattr(sys, "_MEIPASS", HERE)) / "theme"
-    icon = ImageTk.PhotoImage(Image.open(assets / "icon.png").resize((64, 64), Image.Resampling.LANCZOS))
+    icon_source = Image.open(assets / "icon.png")
+    icon = ImageTk.PhotoImage(icon_source.resize((64, 64), Image.Resampling.LANCZOS))
     root.iconphoto(True, icon)
     style = ttk.Style(root)
     style.theme_use("clam")
@@ -582,18 +584,39 @@ def launch_gui() -> None:
     canvas.pack(fill="both", expand=True)
     wallpaper = Image.open(assets / "wallpaper.png")
     backdrop = canvas.create_image(0, 0, anchor="nw")
-    canvas.create_image(28, 30, image=icon, anchor="nw")
-    canvas.create_text(110, 38, text="博物馆素材工坊", anchor="nw", fill="#fff6df", font=("Microsoft YaHei UI", 23, "bold"))
-    canvas.create_text(112, 80, text="TF 素材打包  /  图片 · 音频 · 字幕 · 文物名称", anchor="nw",
+    header_icon = canvas.create_image(28, 30, image=icon, anchor="nw")
+    title = canvas.create_text(110, 38, text="博物馆素材工坊", anchor="nw", fill="#fff6df", font=("Microsoft YaHei UI", 23, "bold"))
+    caption = canvas.create_text(112, 80, text="TF 素材打包  /  图片 · 音频 · 字幕 · 文物名称", anchor="nw",
                        fill="#d7cbae", font=("Microsoft YaHei UI", 11))
     resize_job = {"id": None}
 
     def resize(event):
-        canvas.itemconfigure(card, width=max(1, event.width - 48), height=max(1, event.height - 160))
+        scale = min(event.width / 1120, event.height / 780)
+        size = lambda value: max(1, round(value * scale))
+        root.ui_scale = scale
+        canvas.coords(card, size(24), size(132))
+        canvas.itemconfigure(card, width=max(1, event.width - size(48)), height=max(1, event.height - size(160)))
+        canvas.coords(header_icon, size(28), size(30))
+        canvas.coords(title, size(110), size(38))
+        canvas.coords(caption, size(112), size(80))
+        canvas.itemconfigure(title, font=("Microsoft YaHei UI", size(23), "bold"))
+        canvas.itemconfigure(caption, font=("Microsoft YaHei UI", size(11)))
+        style.configure(".", font=("Microsoft YaHei UI", size(10)))
+        style.configure("TButton", padding=(size(12), size(8)))
+        style.configure("TEntry", padding=size(7))
+        style.configure("TCombobox", padding=size(5))
+        style.configure("Treeview", rowheight=size(34))
+        style.configure("Treeview.Heading", font=("Microsoft YaHei UI", size(10), "bold"), padding=(size(8), size(9)))
+        frame.configure(padding=size(18))
+        log.configure(font=("Microsoft YaHei UI", size(10)), padx=size(12), pady=size(10))
+        for column, width in zip(columns, widths):
+            table.column(column, width=size(width))
         if resize_job["id"] is not None:
             root.after_cancel(resize_job["id"])
 
         def redraw():
+            canvas.header_image = ImageTk.PhotoImage(icon_source.resize((size(64), size(64)), Image.Resampling.LANCZOS))
+            canvas.itemconfigure(header_icon, image=canvas.header_image)
             canvas.wallpaper_image = ImageTk.PhotoImage(wallpaper.resize(
                 (max(1, event.width), max(1, event.height)), Image.Resampling.LANCZOS))
             canvas.itemconfigure(backdrop, image=canvas.wallpaper_image)
@@ -730,9 +753,10 @@ def launch_gui() -> None:
             return
         window = tk.Toplevel(root)
         window.title("选择四个切图句 — 校准后自动使用新时间")
-        window.geometry("850x440")
+        scale = getattr(root, "ui_scale", 1.0)
+        window.geometry(f"{round(850 * scale)}x{round(440 * scale)}")
         ttk.Label(window, text="每件文物选四句，按顺序开始细节1、细节2、细节3、最终全貌；全部留空使用自动/脚本切图。",
-                  wraplength=800).pack(padx=16, pady=12)
+                  wraplength=round(800 * scale)).pack(padx=16, pady=12)
         notebook = ttk.Notebook(window)
         notebook.pack(fill="both", expand=True, padx=16)
         fields = []

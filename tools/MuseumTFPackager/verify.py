@@ -115,6 +115,23 @@ def main():
 
         def gui_flow(gui):
             gui.update()
+            style = ttk.Style(gui)
+            table = next(widget for widget in widgets(gui) if isinstance(widget, ttk.Treeview))
+            original_font = style.lookup(".", "font")
+            original_height = int(style.lookup("Treeview", "rowheight"))
+            gui.geometry("1600x1100")
+            gui.update()
+            assert style.lookup(".", "font") != original_font
+            assert int(style.lookup("Treeview", "rowheight")) > original_height
+            for button in (widget for widget in widgets(gui) if isinstance(widget, ttk.Button)):
+                assert button.winfo_rootx() + button.winfo_width() <= gui.winfo_rootx() + gui.winfo_width()
+            assert table.winfo_height() > 0
+            gui.geometry("980x720")
+            gui.update()
+            assert int(style.lookup("Treeview", "rowheight")) < original_height
+            gui.geometry("1120x780")
+            gui.update()
+            print("PASS proportional GUI fonts, rows and controls at 980x720 / 1120x780 / 1600x1100")
             help_window = show_help(gui)
             gui.update()
             text = next(widget for widget in widgets(help_window) if isinstance(widget, tk.Text))
