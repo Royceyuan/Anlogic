@@ -164,3 +164,22 @@ cd sim
 历史入口、旧bit、构建数据库、日志、转储、仿真缓存和辅助工具已移动到rubbish而非删除。成功种子、所有AL依赖、包含文件、TEMAC配置/门级文件、EDID MIF、最终TF素材、回归源码保留。审查代码和完整手动构建不依赖rubbish。
 
 本次发布整理归档：`D:\VSCode\CodeFiles\Git_TD\rubbish\副板发布整理_20261011_372f809`，仅移动旧85E5C239 bit和旧发布清单；移动清单及保留文件校验同目录保存。未改RTL、约束或构建流程，无需因整理重新烧录、改TF卡或替换播放器。
+
+## 9. 电脑视频播放器界面与重建
+
+双击 `tools/PCVideoPlayer/MuseumPCVideoPlayer.exe`，无终端窗口。2026-10-11 桌面 UI 改为墨绿博物馆背景、米白设备/状态卡片和青铜播放图标。串口 CRC/ACK、授权、保活、暂停、停止/结束回本地、断线处理及 HDMI 视频窗口均保持原实现；不修改双板协议或 FPGA bit。
+
+操作仍是：连接 USB-UART → 选择 AnlogicHDMI 扩展屏 → 选择本地视频 → 播放。未授权保持副板本地内容；暂停保留视频画面，停止等待副板撤销授权后回本地。电脑需使用原说明规定的 720p、音频格式及 Windows 媒体组件，UI 更新不增加编解码支持。
+
+在工程根目录执行 `& .\tools\PCVideoPlayer\build.ps1`，使用 Windows 自带 .NET Framework 编译器，嵌入背景和图标，运行 `--self-test` 并更新 EXE 校验文件，无新增 UI 框架。复核命令：
+
+```powershell
+Start-Process .\tools\PCVideoPlayer\MuseumPCVideoPlayer.exe -ArgumentList '--self-test' -Wait -PassThru
+Start-Process .\tools\PCVideoPlayer\MuseumPCVideoPlayer.exe -ArgumentList '--ui-test',"$PWD\_build_player_preview.png" -Wait -PassThru
+# 仅本机解码测试，不发送串口命令；视频应含音轨、短于10秒。
+Start-Process .\tools\PCVideoPlayer\MuseumPCVideoPlayer.exe -ArgumentList '--media-test','C:\路径\短视频.mp4' -Wait -PassThru
+```
+
+退出码 0 为通过。界面截图与解码测试不代替实板串口/HDMI 验收；本轮协议自检和 H.264/AAC 解码通过，控制/播放状态机与上一版逐段核对不变。只需更换软件，不必重新烧录。
+
+`theme` 是必要重建素材，运行不依赖外部图片。内置 imagegen 与主板软件统一设计：暗墨绿博物馆、右侧青铜暖光、无文字背景；透明外缘、墨绿圆角底、象牙白门廊与青铜播放三角图标。ICO 含 16～256 像素尺寸，不使用字体图标或额外依赖。

@@ -9,6 +9,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Microsoft.Win32;
 using Forms = System.Windows.Forms;
@@ -134,20 +135,51 @@ sealed class ControllerWindow : Window
     string stopMessage;
     internal ControllerWindow()
     {
-        Title = "博物馆副屏 · 本地视频播放"; Width = 760; Height = 430; MinWidth = 700; MinHeight = 410;
-        FontFamily = new FontFamily("Microsoft YaHei UI"); FontSize = 15;
-        var panel = new StackPanel { Margin = new Thickness(22) }; Content = panel;
-        panel.Children.Add(new TextBlock { Text = "HDMI 传音视频，USB 串口控制显示授权", FontSize = 22, Margin = new Thickness(0,0,0,16) });
+        Title = "博物馆副屏 · 本地视频播放"; Width = 940; Height = 690; MinWidth = 860; MinHeight = 650;
+        FontFamily = new FontFamily("Microsoft YaHei UI"); FontSize = 14;
+        Foreground = new SolidColorBrush(Color.FromRgb(33,62,56));
+        Icon = Asset("museum_icon");
+        Resources.Add(typeof(Button), System.Windows.Markup.XamlReader.Parse(@"
+<Style xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' TargetType='Button'>
+ <Setter Property='Background' Value='#E5EADE'/><Setter Property='Foreground' Value='#213E38'/>
+ <Setter Property='BorderBrush' Value='#C1CEC3'/><Setter Property='BorderThickness' Value='1'/>
+ <Setter Property='Cursor' Value='Hand'/><Setter Property='Template'><Setter.Value>
+ <ControlTemplate TargetType='Button'><Border x:Name='Surface' xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'
+ Background='{TemplateBinding Background}' BorderBrush='{TemplateBinding BorderBrush}' BorderThickness='{TemplateBinding BorderThickness}' CornerRadius='7'>
+ <ContentPresenter Margin='{TemplateBinding Padding}' HorizontalAlignment='Center' VerticalAlignment='Center'/></Border>
+ <ControlTemplate.Triggers><Trigger Property='IsMouseOver' Value='True'><Setter TargetName='Surface' Property='Opacity' Value='0.82'/></Trigger>
+ <Trigger Property='IsPressed' Value='True'><Setter TargetName='Surface' Property='Opacity' Value='0.65'/></Trigger>
+ <Trigger Property='IsKeyboardFocused' Value='True'><Setter TargetName='Surface' Property='BorderBrush' Value='#AD8645'/><Setter TargetName='Surface' Property='BorderThickness' Value='2'/></Trigger>
+ <Trigger Property='IsEnabled' Value='False'><Setter TargetName='Surface' Property='Opacity' Value='0.45'/><Setter Property='Cursor' Value='Arrow'/></Trigger>
+ </ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>"));
+        var root = new Grid { Background = new ImageBrush(Asset("museum_wallpaper")) { Stretch = Stretch.UniformToFill } };
+        Content = root;
+        var layout = new StackPanel { Margin = new Thickness(26) }; root.Children.Add(layout);
+        var header = new DockPanel { Margin = new Thickness(0,0,0,24) };
+        header.Children.Add(new Image { Source = Icon, Width = 72, Height = 72, Margin = new Thickness(0,0,18,0) });
+        var heading = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        heading.Children.Add(new TextBlock { Text = "博物馆影像放映", FontSize = 28, FontWeight = FontWeights.SemiBold, Foreground = Brushes.Cornsilk });
+        heading.Children.Add(new TextBlock { Text = "HDMI 音视频  /  USB 串口授权  /  停止后回到本地展陈", Foreground = Brushes.Wheat, FontSize = 13, Margin = new Thickness(0,8,0,0) });
+        header.Children.Add(heading); layout.Children.Add(header);
+        var panel = new StackPanel();
+        layout.Children.Add(Card(panel));
+        panel.Children.Add(new TextBlock { Text = "01  连接设备与选择视频", FontSize = 17, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0,0,0,12) });
         panel.Children.Add(Row("副板 USB-UART 串口", ports, MakeButton("刷新", Refresh), MakeButton("连接 / 重连", Connect)));
         panel.Children.Add(Row("AnlogicHDMI 扩展屏", screens, MakeButton("刷新", Refresh)));
         panel.Children.Add(Row("本地视频", file, MakeButton("选择视频", ChooseFile)));
         play = MakeButton("播放到副屏", StartVideo); pause = MakeButton("暂停 / 继续", PauseVideo);
+        play.Background = new SolidColorBrush(Color.FromRgb(34,91,78)); play.Foreground = Brushes.Cornsilk;
+        play.BorderBrush = play.Background;
         var actions = new WrapPanel { Margin = new Thickness(0,12,0,12) };
         actions.Children.Add(play); actions.Children.Add(pause); actions.Children.Add(MakeButton("停止并回本地", () => StopVideo("已停止，副板恢复本地内容。")));
         actions.Children.Add(MakeButton("使用说明", () => MessageBox.Show(
             "1. 电脑HDMI→副板HDMIA；副板HDMIB→屏幕。\n2. 电脑USB→副板USB-UART Type-C，不是USB-JTAG。\n3. Windows扩展AnlogicHDMI：1280×720、60/59.94Hz、RGB8、SDR。\n4. Windows声音输出选择AnlogicHDMI，双声道48kHz/24-bit PCM。\n5. 选择串口并连接，选择AnlogicHDMI扩展屏和本地视频，再播放。\n暂停保持视频画面；结束/停止恢复本地；程序异常关闭约3秒回退。\n软件使用Windows媒体组件，建议MP4(H.264/AAC)；不支持的编解码会明确报错。", "使用说明")));
-        panel.Children.Add(actions); panel.Children.Add(status);
-        panel.Children.Add(new TextBlock { Text = "只控制副板 HDMI 显示，不改变主板或双板以太网功能。", Foreground = Brushes.DimGray, Margin = new Thickness(0,12,0,0) });
+        panel.Children.Add(actions);
+        var statePanel = new StackPanel();
+        statePanel.Children.Add(new TextBlock { Text = "02  播放与连接状态", FontWeight = FontWeights.SemiBold, FontSize = 16, Margin = new Thickness(0,0,0,10) });
+        status.MinHeight = 46; status.LineHeight = 24; statePanel.Children.Add(status);
+        var stateCard = Card(statePanel); stateCard.Margin = new Thickness(0,16,0,0); layout.Children.Add(stateCard);
+        layout.Children.Add(new TextBlock { Text = "只控制副板 HDMI 显示，不改变主板或双板以太网功能。", Foreground = Brushes.Wheat, FontSize = 12, Margin = new Thickness(4,16,0,0) });
         Refresh(); SetStatus("先连接副板串口；未点击播放时，HDMI 常连接仍保持本地展示。");
         timer.Tick += Tick; timer.Start();
         Closing += (s,e) => {
@@ -156,6 +188,17 @@ sealed class ControllerWindow : Window
             Disconnect(); FinishStop();
         };
     }
+    static BitmapFrame Asset(string name)
+    {
+        using (var stream = typeof(ControllerWindow).Assembly.GetManifestResourceStream(name))
+            return BitmapFrame.Create(stream, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+    }
+    static Border Card(UIElement content)
+    {
+        return new Border { Child = content, Background = new SolidColorBrush(Color.FromRgb(246,243,235)),
+            BorderBrush = new SolidColorBrush(Color.FromRgb(214,214,195)), BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(12), Padding = new Thickness(22) };
+    }
     static Button MakeButton(string text, Action click)
     {
         var button = new Button { Content = text, Padding = new Thickness(13,7,13,7), Margin = new Thickness(4) };
@@ -163,10 +206,14 @@ sealed class ControllerWindow : Window
     }
     static UIElement Row(string label, Control control, params Button[] buttons)
     {
-        var row = new DockPanel { Margin = new Thickness(0,4,0,4) };
-        row.Children.Add(new TextBlock { Text = label, Width = 170, VerticalAlignment = VerticalAlignment.Center });
+        var row = new DockPanel { Margin = new Thickness(0,6,0,6) };
+        row.Children.Add(new TextBlock { Text = label, Width = 154, VerticalAlignment = VerticalAlignment.Center });
         foreach (Button b in buttons) { DockPanel.SetDock(b,Dock.Right); row.Children.Add(b); }
-        control.Margin = new Thickness(4); control.MinHeight = 32; row.Children.Add(control); return row;
+        control.Margin = new Thickness(4); control.MinHeight = 36;
+        control.Background = Brushes.FloralWhite; control.Padding = new Thickness(7,4,7,4);
+        control.VerticalContentAlignment = VerticalAlignment.Center;
+        control.BorderBrush = new SolidColorBrush(Color.FromRgb(193,206,195));
+        row.Children.Add(control); return row;
     }
     void SetStatus(string text) { status.Text = text; play.IsEnabled = linked && phase == Phase.Idle; pause.IsEnabled = phase == Phase.Playing || phase == Phase.Paused; }
     void Refresh()
@@ -318,13 +365,12 @@ static class Program
         if (args.Length == 2 && args[0] == "--ui-test") {
             var testApp = new Application(); var window = new ControllerWindow();
             var panel = (FrameworkElement)window.Content;
-            panel.Measure(new Size(716,386)); panel.Arrange(new Rect(22,22,716,386)); panel.UpdateLayout();
+            panel.Measure(new Size(940,650)); panel.Arrange(new Rect(0,0,940,650)); panel.UpdateLayout();
             var drawing = new DrawingVisual();
             using (var context = drawing.RenderOpen()) {
-                context.DrawRectangle(Brushes.White,null,new Rect(0,0,760,430));
-                context.DrawRectangle(new VisualBrush(panel),null,new Rect(22,22,716,386));
+                context.DrawRectangle(new VisualBrush(panel),null,new Rect(0,0,940,650));
             }
-            var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(760,430,96,96,PixelFormats.Pbgra32);
+            var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(940,650,96,96,PixelFormats.Pbgra32);
             bitmap.Render(drawing);
             var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
             encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
