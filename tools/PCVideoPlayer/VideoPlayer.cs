@@ -179,7 +179,6 @@ sealed class ControllerWindow : Window
         statePanel.Children.Add(new TextBlock { Text = "02  播放与连接状态", FontWeight = FontWeights.SemiBold, FontSize = 16, Margin = new Thickness(0,0,0,10) });
         status.MinHeight = 46; status.LineHeight = 24; statePanel.Children.Add(status);
         var stateCard = Card(statePanel); stateCard.Margin = new Thickness(0,16,0,0); layout.Children.Add(stateCard);
-        layout.Children.Add(new TextBlock { Text = "只控制副板 HDMI 显示，不改变主板或双板以太网功能。", Foreground = Brushes.Wheat, FontSize = 12, Margin = new Thickness(4,16,0,0) });
         Refresh(); SetStatus("先连接副板串口；未点击播放时，HDMI 常连接仍保持本地展示。");
         timer.Tick += Tick; timer.Start();
         Closing += (s,e) => {
