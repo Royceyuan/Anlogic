@@ -1,8 +1,8 @@
 {
   "file": "06_博物馆应急疏散指引.mp4",
-  "duration_s": 30,
+  "duration_s": 6,
   "format": "H264 1280x720 30fps yuv420p; AAC stereo 48kHz silence",
-  "sha256": "a56ef8aec265fd7616cef6008897e4cd86f539e0d6e8b2f6eb0b791bdfccd3a5",
+  "sha256": "6d0547f0b424b22836f10d1a1848c248477c9933c6124ba3696265b50721297d",
   "source_map_sha256": "8199ab4d95c93683654109133d7fa0b017b6a45a364506f3919e589c4211ade2",
   "safety": "Demo map only. Follow actual signs and staff; not a certified evacuation system.",
   "references": [

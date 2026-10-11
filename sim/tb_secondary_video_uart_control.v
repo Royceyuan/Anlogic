@@ -191,6 +191,13 @@ initial begin
         hb_error=0;#1;museum_state={1'b0,decoded_recovery,2'b00,(hb_emergency!=0),2'b00,1'b1};
         exchange(6,66,1,0);exchange(2,67,0,0);
         $display("PASS actual heartbeat busy -> normalized state -> emergency UART grant; real error/exit blocked");
+        force dut.tx_ready=0;packet(2,68,0);repeat(10) @(negedge clk);
+        packet(6,69,0);repeat(10) @(negedge clk);
+        if(!enabled) $fatal(1,"urgent emergency START waited for old STOP reply");
+        base=reply_count;release dut.tx_ready;wait(reply_count>=base+5);
+        if(replies[base+2]!=69||!replies[base+3][5]) $fatal(1,"old STOP reply replaced urgent emergency ACK");
+        exchange(2,70,0,0);
+        $display("PASS cached emergency START supersedes pending STOP without waiting for its ACK");
     end else begin
         exchange(6,62,0,1);
     end

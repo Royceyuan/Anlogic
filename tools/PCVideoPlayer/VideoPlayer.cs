@@ -133,12 +133,14 @@ sealed class VideoSettings
 
 sealed class VideoWindow : Window
 {
-    internal readonly MediaElement Media = new MediaElement {
+    internal readonly MediaElement Media;
+    internal static MediaElement CreateMedia() { return new MediaElement {
         LoadedBehavior = MediaState.Manual, UnloadedBehavior = MediaState.Close,
         ScrubbingEnabled = true, Stretch = Stretch.Uniform, IsMuted = true
-    };
-    internal VideoWindow(Forms.Screen screen)
+    }; }
+    internal VideoWindow(Forms.Screen screen, MediaElement prepared = null)
     {
+        Media = prepared ?? CreateMedia();
         WindowStyle = WindowStyle.None; ResizeMode = ResizeMode.NoResize;
         Background = Brushes.Black; ShowInTaskbar = false; ShowActivated = false; Topmost = true; Content = Media;
         Show();
@@ -192,6 +194,12 @@ sealed class ControllerWindow : Window
     readonly TextBlock mainStatus = new TextBlock { TextWrapping = TextWrapping.Wrap, FontSize = 13, Margin = new Thickness(0,8,0,0) };
     readonly CheckBox automatic = new CheckBox { Content = "联动模式：文物视频 / 应急优先（静音）", Margin = new Thickness(4,12,0,4) };
     readonly DispatcherTimer timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
+    readonly Grid emergencyCacheHost = new Grid { Width=1,Height=1,Opacity=0,IsHitTestVisible=false,
+        HorizontalAlignment=HorizontalAlignment.Left,VerticalAlignment=VerticalAlignment.Top };
+    MediaElement emergencyCache;
+    string emergencyCachePath,emergencyFailedPath;
+    DateTime emergencyCacheAt,emergencyReadyAt=DateTime.MaxValue;
+    bool EmergencyPrepared { get { return emergencyCache!=null&&DateTime.UtcNow>=emergencyReadyAt; } }
     readonly Button play, pause;
     SerialPort port;
     VideoWindow video;
@@ -252,8 +260,45 @@ sealed class ControllerWindow : Window
                 if(window.phase!=Phase.Preparing||!window.autoSession) throw new Exception("Ready first frame waited for main transition");
                 window.autoSession=false;window.phase=Phase.Warming;File.Delete(warmed);window.UpdateAutomatic();
                 if(window.failedArtifact!=4) throw new Exception("Moved warm video was authorized");
+                var prepared=VideoWindow.CreateMedia();prepared.UnloadedBehavior=MediaState.Manual;
+                prepared.Source=new Uri(warmed);window.emergencyCache=prepared;
+                window.emergencyCachePath=warmed;window.emergencyReadyAt=DateTime.UtcNow.AddSeconds(-1);
+                window.emergencyCacheHost.Children.Add(prepared);
+                if(!window.EmergencyPrepared) throw new Exception("Prepared emergency cache not ready");
+                var taken=window.TakeEmergencyCache();
+                if(!ReferenceEquals(prepared,taken)||taken.Source.LocalPath!=warmed||window.emergencyCacheHost.Children.Count!=0||
+                   taken.UnloadedBehavior!=MediaState.Manual||window.EmergencyPrepared) throw new Exception("Emergency handoff reopened/closed media or retained parent");
+                taken.Close();
             } finally { if(File.Exists(warmed)) File.Delete(warmed); }
         } finally { window.Close();app.Shutdown(); }
+    }
+    internal static int CacheMediaTest(string path,string report)
+    {
+        var app=new Application();var window=new ControllerWindow { Opacity=0,ShowInTaskbar=false,ShowActivated=false };
+        var watch=System.Diagnostics.Stopwatch.StartNew();var frame=new DispatcherFrame();
+        var poll=new DispatcherTimer { Interval=TimeSpan.FromMilliseconds(25) };
+        MediaElement prepared=null;bool transferred=false,passed=false;int opens=0;double readyMs=0;
+        try {
+            window.Show();window.settings=new VideoSettings();window.settings.Videos[5]=Path.GetFullPath(path);
+            window.linked=true;window.flags=1;window.contextAvailable=true;window.contextAt=DateTime.UtcNow;
+            window.museumState=1;window.automatic.IsChecked=true;window.PrepareEmergencyCache();
+            prepared=window.emergencyCache;if(prepared==null) return 1;
+            prepared.MediaOpened+=(s,e)=>opens++;
+            prepared.MediaEnded+=(s,e)=> { passed=transferred&&opens==1&&prepared.NaturalVideoWidth==1280&&prepared.NaturalVideoHeight==720;frame.Continue=false; };
+            prepared.MediaFailed+=(s,e)=>frame.Continue=false;
+            poll.Tick+=(s,e)=> {
+                if(watch.Elapsed.TotalSeconds>10) { frame.Continue=false;return; }
+                if(!transferred&&window.EmergencyPrepared) {
+                    readyMs=watch.Elapsed.TotalMilliseconds;prepared=window.TakeEmergencyCache();
+                    var host=new Grid { Width=1,Height=1,Opacity=0 };((Grid)window.Content).Children.Add(host);
+                    host.Children.Add(prepared);transferred=true;prepared.Play();
+                }
+            };
+            poll.Start();Dispatcher.PushFrame(frame);
+            if(report!=null) new XDocument(new XElement("emergencyCacheTest",new XAttribute("passed",passed),
+                new XAttribute("ready_ms",readyMs),new XAttribute("media_open_count",opens),new XAttribute("reparented",transferred))).Save(report);
+            return passed ? 0 : 1;
+        } finally { poll.Stop();if(prepared!=null) prepared.Close();window.Close();app.Shutdown(); }
     }
     internal ControllerWindow()
     {
@@ -280,6 +325,7 @@ sealed class ControllerWindow : Window
         var design = new Grid { Width=940,Height=750 };
         design.Children.Add(new ScrollViewer { Content=layout,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled });
         root.Children.Add(new Viewbox { Child=design,Stretch=Stretch.Uniform });
+        root.Children.Add(emergencyCacheHost);
         var header = new DockPanel { Margin = new Thickness(0,0,0,24) };
         header.Children.Add(new Image { Source = Icon, Width = 72, Height = 72, Margin = new Thickness(0,0,18,0) });
         var heading = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
@@ -302,6 +348,7 @@ sealed class ControllerWindow : Window
             "3. Windows扩展AnlogicHDMI：1280×720、60/59.94Hz、RGB8、SDR。\n4. 手动有声播放选择HDMI音频输出，48kHz/24-bit双声道PCM。\n"+
             "5. 点击“文物与应急视频配置”，选择五件文物及一支应急视频，再勾选联动。文件可放任意目录，路径自动保存。\n"+
             "文物视频静音循环，暂停随主板。主板SW4进入应急后，普通视频被撤销，改为静音循环应急指引。\n"+
+            "联动开启后后台准备应急首帧；下方显示“应急首帧：已缓存”后切入可复用缓存。停止或关闭联动会释放缓存。\n"+
             "应急解除立即撤销应急视频，不恢复旧文物视频。视频缺失、解码失败、信源或通信失效时保留板载应急图。\n"+
             "关闭联动仍使用原本地应急图。重连后若主板仍应急，重新申请应急授权；普通视频不会自行复播。\n"+
             "启动不自动开启联动；电脑和本程序必须持续运行。旧bit不支持应急视频，需烧新副板bit。\n"+
@@ -310,7 +357,7 @@ sealed class ControllerWindow : Window
         panel.Children.Add(MakeButton("文物与应急视频配置", ConfigureVideos));
         panel.Children.Add(automatic);
         automatic.Checked += (s,e) => { autoHold=false;failedArtifact=-1; if (video!=null) StopVideo("先退出手动视频，再按主板状态联动。"); else SetStatus("联动已开启；等待主板实际展示状态。"); };
-        automatic.Unchecked += (s,e) => { observedEmergency=false;if (autoSession||phase==Phase.Warming) StopVideo("联动已关闭，释放缓存并恢复本地显示。"); else { if(linked&&warmSupported&&(flags&16)!=0) Send(7);SetStatus("手动模式。"); } };
+        automatic.Unchecked += (s,e) => { observedEmergency=false;ClearEmergencyCache();emergencyFailedPath=null;if (autoSession||phase==Phase.Warming) StopVideo("联动已关闭，释放缓存并恢复本地显示。"); else { if(linked&&warmSupported&&(flags&16)!=0) Send(7);SetStatus("手动模式。"); } };
         var statePanel = new StackPanel();
         statePanel.Children.Add(new TextBlock { Text = "02  播放与连接状态", FontWeight = FontWeights.SemiBold, FontSize = 16, Margin = new Thickness(0,0,0,10) });
         status.MinHeight = 46; status.LineHeight = 24; statePanel.Children.Add(status);
@@ -376,7 +423,7 @@ sealed class ControllerWindow : Window
             }
             body.Children.Add(MakeButton("保存配置",()=> {
                 var updated=new VideoSettings { Videos=paths,Port=ports.SelectedItem as string ?? settings.Port };
-                try { updated.Save(VideoSettings.PathName);settings=updated;settingsValid=true;failedArtifact=-1;autoHold=false;if(phase==Phase.Warming) StopVideo("配置更新，重新准备首帧。");dialog.Close();SetStatus("视频配置已保存，移动文件后需重新选择。"); }
+                try { updated.Save(VideoSettings.PathName);settings=updated;settingsValid=true;failedArtifact=-1;autoHold=false;ClearEmergencyCache();emergencyFailedPath=null;if(phase==Phase.Warming) StopVideo("配置更新，重新准备首帧。");dialog.Close();SetStatus("视频配置已保存，移动文件后需重新选择。"); }
                 catch(IOException error) { MessageBox.Show(dialog,"保存失败："+error.Message); }
                 catch(UnauthorizedAccessException error) { MessageBox.Show(dialog,"保存失败："+error.Message); }
             }));
@@ -387,6 +434,7 @@ sealed class ControllerWindow : Window
     {
         if (phase != Phase.Idle && phase != Phase.Warming) return;
         failedArtifact=-1;
+        ClearEmergencyCache();emergencyFailedPath=null;
         string selected = ports.SelectedItem as string ?? settings.Port;
         ports.ItemsSource = SerialPort.GetPortNames().OrderBy(x => x).ToArray();
         ports.SelectedItem = selected; if (ports.SelectedIndex < 0 && ports.Items.Count == 1) ports.SelectedIndex = 0;
@@ -442,7 +490,8 @@ sealed class ControllerWindow : Window
             if(!context) { flags=(byte)(flags&127);mainStatus.Text="旧版副板bit：可手动播放，不能联动。";if(AutoEnabled) automatic.IsChecked=false;return; }
             museumArtifact=artifact;museumState=state;museumScene=scene;contextAt=DateTime.UtcNow;
             mainStatus.Text="主板："+((state&8)!=0 ? "应急" : (state&1)==0 ? "失联/未就绪" : (state&64)!=0 ? "启动/故障/恢复" : (state&2)==0 ? "总览" : (state&4)!=0 ? "暂停" : "展示")+
-                "  |  文物 "+(artifact<5 ? artifact.ToString() : "--")+"  |  "+((state&16)!=0 ? "手动浏览" : "自动讲解");
+                "  |  文物 "+(artifact<5 ? artifact.ToString() : "--")+"  |  "+((state&16)!=0 ? "手动浏览" : "自动讲解")+
+                (AutoEnabled ? "  |  应急首帧："+(EmergencyPrepared ? "已缓存" : activeArtifact==5 ? "使用中" : emergencyCache!=null ? "准备中" : emergencyFailedPath!=null&&emergencyFailedPath==settings.Videos[5] ? "准备失败" : "未缓存") : "");
         }
         if ((flags & 128) != 0) { if(autoSession) { autoHold=true;failedArtifact=activeArtifact; } StopVideo("副板拒绝授权：请检查信源和主板状态，重新开启联动可重试。"); return; }
         if (phase == Phase.Stopping && (acknowledgedCommand == 2 || acknowledgedCommand == 3 || acknowledgedCommand == 5 || acknowledgedCommand == 7) && (flags & 14) == 0) stopConfirmed = true;
@@ -459,6 +508,7 @@ sealed class ControllerWindow : Window
     void Disconnect()
     {
         linked = false; pending = false;
+        ClearEmergencyCache();
         contextKnown=false;contextAvailable=false;nextContext=true;warmSupported=true;warmHintSent=false;observedOverview=false;observedEmergency=false;
         if(autoSession) autoHold=true;
         var current = port; port = null;
@@ -466,6 +516,64 @@ sealed class ControllerWindow : Window
     }
     void StartVideo()
     { PrepareVideo(false); }
+    void ClearEmergencyCache()
+    {
+        var previous=emergencyCache;emergencyCache=null;emergencyCachePath=null;emergencyReadyAt=DateTime.MaxValue;
+        emergencyCacheHost.Children.Clear();
+        if(previous!=null) { previous.Stop();previous.Close(); }
+    }
+    MediaElement TakeEmergencyCache()
+    {
+        var prepared=emergencyCache;emergencyCache=null;emergencyCachePath=null;emergencyReadyAt=DateTime.MaxValue;
+        emergencyCacheHost.Children.Remove(prepared);return prepared;
+    }
+    void PrepareEmergencyCache()
+    {
+        if(!AutoEnabled||configuring||closeAfterStop||!linked||!ContextFresh||(flags&1)==0||activeArtifact==5) return;
+        string path=settings.Videos[5];
+        if(emergencyCache!=null) {
+            if(emergencyCachePath!=path||!File.Exists(path)) ClearEmergencyCache();
+            else { if((DateTime.UtcNow-emergencyCacheAt).TotalSeconds>10&&emergencyReadyAt==DateTime.MaxValue) {
+                       emergencyFailedPath=path;ClearEmergencyCache();SetStatus("应急首帧准备超时；保留板载应急图。"); }
+                   return; }
+        }
+        if(emergencyFailedPath==path||!File.Exists(path)) return;
+        try {
+            var prepared=VideoWindow.CreateMedia();prepared.UnloadedBehavior=MediaState.Manual;
+            emergencyCache=prepared;emergencyCachePath=path;emergencyCacheAt=DateTime.UtcNow;
+            emergencyCacheHost.Children.Add(prepared);
+            prepared.MediaOpened+=(s,e)=> {
+                if(!ReferenceEquals(emergencyCache,prepared)) return;
+                if(!prepared.HasVideo) { emergencyFailedPath=path;ClearEmergencyCache();return; }
+                prepared.Pause();prepared.Position=TimeSpan.Zero;emergencyReadyAt=DateTime.UtcNow.AddMilliseconds(120);
+            };
+            prepared.MediaFailed+=(s,e)=> { if(ReferenceEquals(emergencyCache,prepared)) {
+                emergencyFailedPath=path;ClearEmergencyCache();SetStatus("应急视频无法预解码；保留板载应急图。"); } };
+            prepared.Source=new Uri(path,UriKind.Absolute);prepared.Play();
+        } catch(Exception error) { emergencyFailedPath=path;ClearEmergencyCache();SetStatus("应急首帧准备失败："+error.Message); }
+    }
+    bool ActivatePreparedEmergency()
+    {
+        if(!linked||(flags&1)==0||!EmergencyPrepared||failedArtifact==5||activeArtifact==5||!File.Exists(settings.Videos[5])) return false;
+        var target=screens.SelectedItem as ScreenChoice;
+        if(target==null||target.Name.IndexOf("Anlogic",StringComparison.OrdinalIgnoreCase)<0||target.Screen.Primary||
+           target.Screen.Bounds.Width!=1280||target.Screen.Bounds.Height!=720) return false;
+        MediaElement prepared=TakeEmergencyCache();VideoWindow next=null;
+        try {
+            next=new VideoWindow(target.Screen,prepared);
+            var previous=video;video=next;activeArtifact=5;autoSession=true;autoHold=false;
+            opened=true;warmHintSent=false;phase=Phase.Preparing;releaseAt=DateTime.MaxValue;fileCheckedAt=DateTime.UtcNow;
+            prepareAt=DateTime.UtcNow;firstFrameAt=prepareAt.AddMilliseconds(34);
+            AttachVideoEvents(next);file.Text=settings.Videos[5];prepared.Play();
+            // Discard an old STOP/query ACK. Give the reparented surface two
+            // display frames before CMD06; do not reopen/decode the file.
+            if(previous!=null) { previous.Media.Stop();previous.Media.Close();previous.Close(); }
+            pending=false;
+            SetStatus("接管已缓存的应急首帧，即将申请应急显示授权。");return true;
+        } catch(Exception error) {
+            if(next==null) prepared.Close();failedArtifact=5;StopVideo("应急切入失败："+error.Message);return false;
+        }
+    }
     void PrepareVideo(bool warm)
     {
         var target = screens.SelectedItem as ScreenChoice;
@@ -474,7 +582,14 @@ sealed class ControllerWindow : Window
         if (!File.Exists(file.Text)) { SetStatus("请先选择存在的本地视频文件。"); return; }
         try {
             phase = warm ? Phase.Warming : Phase.Preparing; opened = false;warmHintSent=false;releaseAt = DateTime.MaxValue; prepareAt = DateTime.UtcNow;
-            video = new VideoWindow(target.Screen); var currentVideo = video;
+            video = new VideoWindow(target.Screen);
+            AttachVideoEvents(video);
+            video.Media.Source = new Uri(file.Text, UriKind.Absolute); video.Media.Play();
+            SetStatus("准备静音首帧；副板仍保持本地，待视频就绪后授权显示。");
+        } catch (Exception e) { if(AutoEnabled) failedArtifact=activeArtifact;StopVideo("无法播放：" + e.Message); }
+    }
+    void AttachVideoEvents(VideoWindow currentVideo)
+    {
             video.Media.MediaOpened += (s,e) => {
                 if (!ReferenceEquals(video,currentVideo) || phase != Phase.Preparing && phase != Phase.Warming) return;
                 if (!currentVideo.Media.HasVideo) { if(AutoEnabled) failedArtifact=activeArtifact;StopVideo("所选文件不包含可解码的视频画面。"); return; }
@@ -491,9 +606,6 @@ sealed class ControllerWindow : Window
             };
             video.Media.MediaFailed += (s,e) => { if (ReferenceEquals(video,currentVideo)) { if(AutoEnabled) failedArtifact=activeArtifact; StopVideo("视频解码失败：" + e.ErrorException.Message); } };
             video.Closing += (s,e) => { if (ReferenceEquals(video,currentVideo)) { e.Cancel = true; StopVideo("播放窗口关闭，副板恢复本地内容。"); } };
-            video.Media.Source = new Uri(file.Text, UriKind.Absolute); video.Media.Play();
-            SetStatus("准备静音首帧；副板仍保持本地，待视频就绪后授权显示。");
-        } catch (Exception e) { if(AutoEnabled) failedArtifact=activeArtifact;StopVideo("无法播放：" + e.Message); }
     }
     void PauseVideo()
     {
@@ -535,6 +647,7 @@ sealed class ControllerWindow : Window
         if(overview&&!observedOverview) { autoHold=false;failedArtifact=-1; }
         observedOverview=overview;
         int desired=ContextFresh ? Protocol.LinkedArtifact(museumState,museumArtifact) : -1;
+        if(desired==5&&ActivatePreparedEmergency()) return;
         if(autoSession&&video!=null&&activeArtifact>=0&&(DateTime.UtcNow-fileCheckedAt).TotalMilliseconds>=500) {
             fileCheckedAt=DateTime.UtcNow;
             if(!File.Exists(settings.Videos[activeArtifact])) { failedArtifact=activeArtifact;StopVideo("联动视频已移动或不可访问，请重新配置；回到本地显示。");return; }
@@ -563,6 +676,8 @@ sealed class ControllerWindow : Window
             if(!paused && phase==Phase.Paused) { video.Media.Play();phase=Phase.Playing;SetStatus("联动视频随主板继续，静音循环。"); }
         }
         if(phase!=Phase.Idle||pending||!linked||autoHold||failedArtifact==desired||(flags&1)==0) return;
+        if(desired==5&&emergencyCache!=null) { SetStatus("正在准备应急首帧，板载应急图保持显示。");return; }
+        if(desired==5&&emergencyFailedPath==settings.Videos[5]) { failedArtifact=5;SetStatus("应急视频准备失败，保留板载应急图。");return; }
         string path=settings.Videos[desired];
         if(!File.Exists(path)) { failedArtifact=desired;SetStatus(VideoSettings.Names[desired]+"视频未配置或已移动，请重新选择；应急时保留板载逃生图。");return; }
         file.Text=path;autoSession=true;activeArtifact=desired;fileCheckedAt=DateTime.UtcNow;StartVideo();
@@ -572,13 +687,16 @@ sealed class ControllerWindow : Window
     {
         DateTime now = DateTime.UtcNow;
         try {
-            if (phase == Phase.Stopping && (stopConfirmed || now >= stopDeadline)) { FinishStop(); return; }
+            if (phase == Phase.Stopping && (stopConfirmed || now >= stopDeadline)) {
+                if(AutoEnabled&&ContextFresh&&Protocol.LinkedArtifact(museumState,museumArtifact)==5&&EmergencyPrepared) UpdateAutomatic();
+                if(phase==Phase.Stopping) { FinishStop();return; }
+            }
             if (port == null || !port.IsOpen) return;
             if (pending && (now - sentAt).TotalMilliseconds > 250) {
                 if (attempts++ >= 3) { StopVideo("串口应答超时；请确认COM口和新副板bit。硬件最长约3秒回退。"); Disconnect(); return; }
                 port.Write(Protocol.Request(pendingCommand,pendingSeq),0,5); sentAt = now;
             }
-            UpdateAutomatic();
+            PrepareEmergencyCache();UpdateAutomatic();
             if(phase==Phase.Warming) {
                 if((flags&1)==0) { autoHold=true;StopVideo("HDMI信源失效，取消首帧准备。"); }
                 else if((now-prepareAt).TotalSeconds>10&&!opened) { failedArtifact=activeArtifact;StopVideo("首帧准备超时，请检查视频文件。"); }
@@ -592,7 +710,7 @@ sealed class ControllerWindow : Window
                 }
             }
             if (phase == Phase.Authorizing && (flags & 15) == 11) {
-                if (releaseAt == DateTime.MaxValue) releaseAt = now.AddMilliseconds(autoSession ? 100 : 700);
+                if (releaseAt == DateTime.MaxValue) releaseAt = now.AddMilliseconds(autoSession ? activeArtifact==5 ? 0 : 100 : 700);
                 if (now >= releaseAt) {
                     video.Media.IsMuted=autoSession;
                     if(autoSession&&activeArtifact!=5&&(museumState&4)!=0) { video.Media.Pause();phase=Phase.Paused; } else { video.Media.Play();phase=Phase.Playing; }
@@ -617,6 +735,7 @@ static class Program
             try { Protocol.SelfTest(); ControllerWindow.SelfTest();return 0; } catch { return 1; }
         }
         if (args.Length == 2 && args[0] == "--media-test") return MediaTest(args[1]);
+        if ((args.Length==2||args.Length==3)&&args[0]=="--cache-test") return ControllerWindow.CacheMediaTest(args[1],args.Length==3 ? args[2] : null);
         if ((args.Length == 2 || args.Length == 4) && args[0] == "--ui-test") {
             int width=args.Length==4 ? int.Parse(args[2]) : 940,height=args.Length==4 ? int.Parse(args[3]) : 750;
             var testApp = new Application(); var window = new ControllerWindow();
