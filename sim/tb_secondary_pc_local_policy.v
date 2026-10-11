@@ -6,6 +6,11 @@ wire hold;
 wire [7:0] shown;
 secondary_pc_local_policy #(.ENABLE(1)) dut(.armed(armed),.main_state(state),.cmd_type(kind),.cmd_mode(mode),.hold_carousel(hold),.display_mode(shown));
 wire old_hold;
+reg [7:0] hb_mode=3,hb_emergency=1,hb_error=0;
+reg hb_busy=1;
+wire recovery;
+secondary_pc_recovery_decode recovery_decode(.mode(hb_mode),.emergency(hb_emergency),
+    .error(hb_error),.app_busy(hb_busy),.recovery(recovery));
 wire [7:0] old_shown;
 secondary_pc_local_policy legacy(.armed(armed),.main_state(state),.cmd_type(kind),.cmd_mode(mode),.hold_carousel(old_hold),.display_mode(old_shown));
 reg clk=0,rst_n=0,valid=0,test_pass=0;
@@ -20,6 +25,14 @@ secondary_carousel_controller #(.PAGE_CYCLES(12),.STREAMING(1)) carousel(
     .page_index(page),.info_active(info),.resume_page_index(),.emergency_active(),.link_state(),
     .master_artifact(),.preload_artifact(),.info_artifact(),.active_route_id(),.cmd_result());
 initial begin
+    #1;if(recovery) $fatal(1,"real MAIN-4 emergency/busy heartbeat blocked emergency video");
+    hb_error=3;#1;if(!recovery) $fatal(1,"genuine media error suppressed by emergency");
+    hb_error=0;hb_mode=1;hb_emergency=0;#1;if(!recovery) $fatal(1,"post-emergency/KEY4 recovery not blocked");
+    hb_busy=0;#1;if(recovery) $fatal(1,"normal overview marked recovering");
+    hb_mode=0;#1;if(!recovery) $fatal(1,"startup not blocked");
+    hb_mode=4;hb_emergency=1;#1;if(!recovery) $fatal(1,"fault mode bypassed recovery");
+    hb_mode=3;hb_error=0;hb_busy=1;#1;if(recovery) $fatal(1,"valid emergency did not recover eligibility");
+    $display("PASS actual MAIN-4 emergency busy semantics; real fault/startup/exit recovery blocked");
     #1;armed=1;#1;if(hold||shown!=1) $fatal(1,"overview carousel frozen by prewarm");
     mode=2;#1;if(shown!=1) $fatal(1,"first heartbeat raced exported state and loaded intro");
     state=3;#1;if(!hold||shown!=1) $fatal(1,"intro flash or cache replacement before PC video");

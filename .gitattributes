@@ -25,3 +25,5 @@ seed/linked_video_fast_switch/* -text -whitespace
 seed/linked_video_fast_switch/*.json text whitespace
 seed/emergency_video/* -text -whitespace
 seed/emergency_video/*.json text whitespace
+seed/emergency_busy_fix/* -text -whitespace
+seed/emergency_busy_fix/*.json text whitespace

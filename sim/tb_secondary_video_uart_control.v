@@ -68,6 +68,11 @@ begin
         $fatal(1,"bad context snapshot/header/CRC");
 end endtask
 reg test_pass=0;
+reg [7:0] hb_mode=3,hb_emergency=1,hb_error=0;
+reg hb_busy=1;
+wire decoded_recovery;
+secondary_pc_recovery_decode hb_decode(.mode(hb_mode),.emergency(hb_emergency),
+    .error(hb_error),.app_busy(hb_busy),.recovery(decoded_recovery));
 integer i,base;
 reg [7:0] golden;
 initial begin
@@ -174,6 +179,18 @@ initial begin
         exchange(6,58,1,0);exchange(2,59,0,0);
         exchange(6,60,1,0);exchange(7,61,0,0);
         $display("PASS emergency lease watchdog, STOP and release preserve static fallback");
+        #1;museum_state={1'b0,decoded_recovery,2'b00,(hb_emergency!=0),2'b00,1'b1};
+        exchange(6,63,1,0);
+        hb_mode=1;hb_emergency=0;#1;
+        museum_state={1'b0,decoded_recovery,2'b00,(hb_emergency!=0),2'b00,1'b1};
+        repeat(3) @(negedge clk);if(enabled) $fatal(1,"post-emergency recovery retained grant");
+        exchange(6,64,0,1);
+        hb_mode=3;hb_emergency=1;hb_error=3;#1;
+        museum_state={1'b0,decoded_recovery,2'b00,(hb_emergency!=0),2'b00,1'b1};
+        exchange(6,65,0,1);
+        hb_error=0;#1;museum_state={1'b0,decoded_recovery,2'b00,(hb_emergency!=0),2'b00,1'b1};
+        exchange(6,66,1,0);exchange(2,67,0,0);
+        $display("PASS actual heartbeat busy -> normalized state -> emergency UART grant; real error/exit blocked");
     end else begin
         exchange(6,62,0,1);
     end

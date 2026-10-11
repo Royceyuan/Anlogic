@@ -15,12 +15,12 @@
 - 正式发布信息及成功种子：`release/manifest_secondary_uart_video.json`、`seed/uart_video`，种子7。
 - 必要电脑播放器：`tools/PCVideoPlayer/MuseumPCVideoPlayer.exe`；源代码及重编脚本同目录，无需安装Python或第三方播放器。
 - 新联动提速候选：`release/dual_fpga_museum_terminal_secondary_board_linked_video.bit`，SHA256 `5BDAA5478EAFA2E5E40B43F85B59FCA7F81FBA9C4C9F6570AEC6BE57F4561C9F`；使用当前播放器，主板bit不用更换。
-- 最新应急视频候选：`release/dual_fpga_museum_terminal_secondary_board_emergency_video.bit`，SHA256 `4539AC5420477519B57EC52DA627B29C8DF3AD67E274C5239756EC124ACD9E43`。
-- 当前源码的资源/时序及协议记录：`release/manifest_secondary_emergency_video.json`、`seed/emergency_video`。此前linked/uart清单和成功种子保留历史组合，播放器哈希以新清单为准。
+- 最新应急状态修正候选：`release/dual_fpga_museum_terminal_secondary_board_emergency_video.bit`，SHA256 `4B7807DD2ED3E07803DA4594736017D0928FF5C3C94080E21E58E1D338ED07D1`。
+- 当前源码的资源/时序及协议记录：`release/manifest_secondary_emergency_video.json`、`seed/emergency_busy_fix`。此前emergency/linked/uart清单和成功种子保留历史组合，播放器哈希以新清单为准。
 
 工程入口仍唯一。本轮只更改副板状态导出、UART授权/回报和播放器，不改HDMI物理数据路径、PLL、管脚或时序约束。旧入口和历史文件在Git/rubbish回溯；必要工具、素材及成功种子保留。
 
-已验收UART版setup/hold为+0.106/+0.021ns；上轮联动提速候选为+0.105/+0.021ns；当前应急视频候选为+0.114/+0.022ns，TNS均0。历史85E5C239基线证据仍保留在`seed/hdmi_museum/cleanup_verification.json`，仅作回溯，不是当前源码的报告。
+已验收UART版setup/hold为+0.106/+0.021ns；上轮联动提速候选为+0.105/+0.021ns；当前应急状态修正候选为+0.048/+0.023ns，TNS均0。历史85E5C239基线证据仍保留在`seed/hdmi_museum/cleanup_verification.json`，仅作回溯，不是当前源码的报告。
 
 ## 2. 接线、视频和优先级
 
@@ -73,7 +73,7 @@ CMD：01 START（输入有效且没有已知应急）、02 STOP、03 QUERY、04 
 | 3 | 最近已知应急；断线不自行清除 |
 | 4 | 主板确认的手动浏览模式，DISPLAY_STATUS bit42 |
 | 5 | 主板转场中；首次启动不等待转场结束，已播放时不因图片转场重启 |
-| 6 | 启动、故障或应用恢复 |
+| 6 | 启动、媒体故障或非应急的应用恢复；主板mode=3、应急有效且无媒体错误时，bit70的持续忙标志属于应急保持，不置此位 |
 | 7 | 最终全貌结束停留状态 |
 
 ARTIFACT为主板心跳中的文物0～4，启动未收到心跳时FF；失联保留最近已知编号但STATE bit0清0，软件不可据此启动。总览时该编号是当前高亮，STATE bit1为0；进入后才是实际展示文物。PHASE为实际图片槽0～4或总览FF。快照三个字段在应答开头锁存，避免串行发送期间被新心跳污染。
@@ -269,9 +269,11 @@ py -3 .\assets\emergency_video\render.py --ffmpeg "D:\VSCode\CodeFiles\Git_TD\An
 
 可指定本机其他包含libx264、drawtext及配套ffprobe的FFmpeg；采用Windows微软雅黑。脚本检查格式、完整解码和预览帧；`_work`是可移出的生成中间物。打包器和五件文物视频不变，TF卡不写入MP4。
 
-原种子7完整构建通过，setup +0.114ns、hold +0.022ns，TNS=0；LUT 11447/19600（58.40%）、FF 7293/19600（37.21%）、Slice 6582/9800（67.16%）、BRAM9K 21/64、BRAM32K 13/16、DSP 5/29、PLL 4/4、GCLK 10/16。相对上轮LUT +70、Slice +152，BRAM/DSP/PLL不增加；布局变化不视为RTL精确增量。原时钟、安全静音、ADC/SDC保持不变，PHY7002/PHY5079提示仍披露。报告和成功种子在`seed/emergency_video`，板测标志仍false。
+状态修正版采用原种子7完整构建通过，setup +0.048ns、hold +0.023ns，TNS=0；LUT 11403/19600（58.18%）、FF 7311/19600（37.30%）、Slice 6497/9800（66.30%）、BRAM9K 21/64、BRAM32K 13/16、DSP 5/29、PLL 4/4、GCLK 10/16。原时钟、安全静音、ADC/SDC保持不变，PHY7002/PHY5079提示仍披露。当前报告和成功种子在`seed/emergency_busy_fix`，前版`seed/emergency_video`全部保留；板测标志仍false。
 
-43条硬件仿真PASS：UART新/旧参数21条、集成HDMI11条、切源6条、其余按键/状态适配/MBP1会话/编码/本地缓存各1条。新增应急专用授权、普通拒绝、解除/失联/断源/恢复/看门狗回退和重连不得复用授权。PC自检通过旧XML兼容、缺片兜底、应急优先和解除不复播；完整FFmpeg解码及Windows媒体组件短片解码通过。保留原模型限制，不当作实板验证。
+45条硬件仿真PASS：UART新/旧参数22条、集成HDMI11条、切源6条、按键/状态适配/MBP1会话/编码各1条、本地缓存及心跳状态转换2条。包含实际主板的mode3/emergency1/busy1/error0组合，经真实转换模块到UART06成功授权；启动、媒体错误、非应急忙状态和应急退出后的恢复仍拒绝。其余应急抢占、解除/失联/断源/看门狗和重连不得复用授权回归不变。PC自检、旧XML兼容、缺片兜底、静音短片解码已有通过结果，本次EXE与MP4字节不变；保留原模型限制，不当作实板验证。
+
+2026-10-11板测问题修正：用户反馈软件收到“应急”但停在“暂停首帧准备”，屏幕仍为静态图。核对主板`recovery_busy=(recovery_state!=0 || emergency_active)`及心跳打包，确认应急全程会置bit70；前版副板将其直接当作STATE bit6恢复，导致PC选片及UART06同时被拦截。只在副板归一化状态含义，不改主板心跳格式、不让PC忽略真正故障。原应急视频配置路径已只读核验存在，播放器867CBBB6及视频A56EF8AE不用更换。旧失败候选4539AC54和生成中间物可在`rubbish/副板应急忙标志修复_20261011`回溯。
 
 上板操作和预期：
 

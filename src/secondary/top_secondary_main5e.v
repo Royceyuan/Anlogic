@@ -59,6 +59,10 @@ secondary_pc_local_policy #(.ENABLE(LINKED_VIDEO)) u_pc_local_policy(
     .armed(pc_link_armed),.main_state(pc_state),.cmd_type(cmd_type),.cmd_mode(cmd_mode),
     .hold_carousel(pc_cover),.display_mode(display_cmd_mode));
 reg pc_seen;
+wire pc_recovery_next;
+secondary_pc_recovery_decode u_pc_recovery_decode(
+    .mode(heartbeat_data[127:120]),.emergency(heartbeat_data[95:88]),
+    .error(heartbeat_data[79:72]),.app_busy(heartbeat_data[70]),.recovery(pc_recovery_next));
 reg [7:0] pc_id_q,pc_phase_q;
 reg pc_active_q,pc_paused_q,pc_emergency_q,pc_manual_q,pc_transition_q,pc_recovery_q,pc_finished_q;
 assign pc_artifact=pc_id_q;
@@ -77,7 +81,7 @@ always @(posedge clk_50m or posedge network_reset) begin
             pc_paused_q<=heartbeat_data[68];
             pc_emergency_q<=heartbeat_data[95:88]!=0;
             pc_transition_q<=heartbeat_data[103:96]==3;
-            pc_recovery_q<=heartbeat_data[70]||heartbeat_data[127:120]==0||heartbeat_data[127:120]==4;
+            pc_recovery_q<=pc_recovery_next;
             pc_finished_q<=heartbeat_data[103:96]==4;
         end else if(!peer_alive) pc_seen<=0;
         if(display_pulse) pc_manual_q<=display_data[42];
@@ -209,6 +213,16 @@ top_v66 #(
     .secondary_eng_diagnostic(diagnostic_data),
     .secondary_eng_result(control_result)
 );
+endmodule
+
+// MAIN-4 holds application busy for the entire emergency, not just reset.
+// A valid emergency hold is playable; real errors and post-emergency recovery
+// must still block PC grants. Main-board heartbeat format is unchanged.
+module secondary_pc_recovery_decode(
+    input wire [7:0] mode,emergency,error,input wire app_busy,output wire recovery
+);
+assign recovery=mode==0||mode==4||error!=0||
+                (app_busy&&!(mode==3&&emergency!=0));
 endmodule
 
 // Keep a complete carousel page behind the PC video, not an intro reload.
