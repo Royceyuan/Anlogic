@@ -27,16 +27,18 @@ wire local_pclk,local_sclk,local_ready,local_hs,local_vs,local_de;
 wire [23:0] local_rgb;
 wire application_clock;
 wire [7:0] pc_artifact,pc_state,pc_phase;
+wire pc_link_armed;
 // One explicit root GCLK feeds both application registers and PLL references;
 // do not let an unbuffered PLL reference bypass the application clock tree.
 EG_LOGIC_BUFG u_application_clock(.i(clk_50m),.o(application_clock));
-top_secondary_main5e #(.SHARED_MEDIA_ETH_PLL(1),.EXTERNAL_HDMI_PHY(1)) u_terminal(
+top_secondary_main5e #(.SHARED_MEDIA_ETH_PLL(1),.EXTERNAL_HDMI_PHY(1),.LINKED_VIDEO(1)) u_terminal(
     .clk_50m(application_clock),.sw(sw),.key_n(key_n),.led(led),.seg_data(seg_data),.seg_sel(seg_sel),
     .sd_clk(sd_clk),.sd_mosi(sd_mosi),.sd_miso(sd_miso),.sd_cs_n(sd_cs_n),
     .hdmi1_clk_p(),.hdmi1_d0_p(),.hdmi1_d1_p(),.hdmi1_d2_p(),
     .local_video_clk(local_pclk),.local_serial_clk(local_sclk),.local_video_rst_n(local_ready),
     .local_hs(local_hs),.local_vs(local_vs),.local_de(local_de),.local_rgb(local_rgb),
     .pc_artifact(pc_artifact),.pc_state(pc_state),.pc_phase(pc_phase),
+    .pc_link_armed(pc_link_armed),
     .eth_rgmii_rx_clk(eth_rgmii_rx_clk),.eth_rgmii_rx_ctl(eth_rgmii_rx_ctl),.eth_rgmii_rxd(eth_rgmii_rxd),
     .eth_rgmii_tx_clk(eth_rgmii_tx_clk),.eth_rgmii_tx_ctl(eth_rgmii_tx_ctl),.eth_rgmii_txd(eth_rgmii_txd),
     .eth_mdc(eth_mdc),.eth_mdio(eth_mdio));
@@ -56,6 +58,7 @@ secondary_video_uart_control #(.MUSEUM_LINK(1)) u_pc_video(
     .clk(application_clock),.rst_n(rst_n),.uart_rxd(uart_rxd),.uart_txd(uart_txd),
     .input_ready(external_ready),.external_selected(external_selected),
     .output_muted(output_muted),.play_enabled(pc_play_enabled),
+    .link_armed(pc_link_armed),
     .museum_artifact(pc_artifact),.museum_state(pc_state),.museum_phase(pc_phase));
 secondary_hdmi_source_switch u_switch(
     .clk_50m(application_clock),.rst_n(rst_n),.local_ready(local_ready),.external_ready(external_ready&&pc_play_enabled),

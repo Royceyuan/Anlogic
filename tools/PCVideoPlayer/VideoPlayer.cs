@@ -180,7 +180,7 @@ sealed class ScreenChoice
 
 sealed class ControllerWindow : Window
 {
-    enum Phase { Idle, Preparing, Authorizing, Playing, Paused, Stopping }
+    enum Phase { Idle, Warming, Preparing, Authorizing, Playing, Paused, Stopping }
     readonly ComboBox ports = new ComboBox(), screens = new ComboBox();
     readonly TextBox file = new TextBox { IsReadOnly = true };
     readonly TextBlock status = new TextBlock { TextWrapping = TextWrapping.Wrap };
@@ -203,6 +203,7 @@ sealed class ControllerWindow : Window
     int activeArtifact=-1,failedArtifact=-1;
     DateTime contextAt;
     DateTime fileCheckedAt;
+    bool warmHintSent,warmSupported=true,observedOverview;
     bool AutoEnabled { get { return automatic.IsChecked == true; } }
     bool ContextFresh { get { return contextAvailable && (DateTime.UtcNow-contextAt).TotalMilliseconds < 1500; } }
     internal static void SelfTest()
@@ -229,6 +230,16 @@ sealed class ControllerWindow : Window
             window.autoSession=true;window.activeArtifact=4;window.contextAt=DateTime.UtcNow.AddSeconds(-2);window.UpdateAutomatic();
             if(!window.autoHold) throw new Exception("Stale status retained automatic playback");
             window.FinishStop();
+            string warmed=Path.GetTempFileName();
+            try {
+                window.settings.Videos[4]=warmed;window.contextAt=DateTime.UtcNow;window.museumState=0x23;
+                window.museumArtifact=4;window.phase=Phase.Warming;window.activeArtifact=4;
+                window.opened=true;window.firstFrameAt=DateTime.UtcNow.AddSeconds(-1);window.autoHold=false;window.pending=false;
+                window.UpdateAutomatic();
+                if(window.phase!=Phase.Preparing||!window.autoSession) throw new Exception("Ready first frame waited for main transition");
+                window.autoSession=false;window.phase=Phase.Warming;File.Delete(warmed);window.UpdateAutomatic();
+                if(window.failedArtifact!=4) throw new Exception("Moved warm video was authorized");
+            } finally { if(File.Exists(warmed)) File.Delete(warmed); }
         } finally { window.Close();app.Shutdown(); }
     }
     internal ControllerWindow()
@@ -253,7 +264,9 @@ sealed class ControllerWindow : Window
         var root = new Grid { Background = new ImageBrush(Asset("museum_wallpaper")) { Stretch = Stretch.UniformToFill } };
         Content = root;
         var layout = new StackPanel { Margin = new Thickness(26) };
-        root.Children.Add(new ScrollViewer { Content = layout, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled });
+        var design = new Grid { Width=940,Height=750 };
+        design.Children.Add(new ScrollViewer { Content=layout,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled });
+        root.Children.Add(new Viewbox { Child=design,Stretch=Stretch.Uniform });
         var header = new DockPanel { Margin = new Thickness(0,0,0,24) };
         header.Children.Add(new Image { Source = Icon, Width = 72, Height = 72, Margin = new Thickness(0,0,18,0) });
         var heading = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
@@ -270,14 +283,14 @@ sealed class ControllerWindow : Window
         play.Background = new SolidColorBrush(Color.FromRgb(34,91,78)); play.Foreground = Brushes.Cornsilk;
         play.BorderBrush = play.Background;
         var actions = new WrapPanel { Margin = new Thickness(0,12,0,12) };
-        actions.Children.Add(play); actions.Children.Add(pause); actions.Children.Add(MakeButton("停止并回本地", () => { autoHold=true; StopVideo("已停止；重新开启联动或下一次从总览进入时才播放。"); }));
+        actions.Children.Add(play); actions.Children.Add(pause); actions.Children.Add(MakeButton("停止并回本地", () => { if(AutoEnabled) automatic.IsChecked=false;autoHold=true; StopVideo("已停止并释放首帧缓存；重新勾选联动可继续。"); }));
         actions.Children.Add(MakeButton("使用说明", () => MessageBox.Show(
             "1. 电脑HDMI→副板HDMIA；副板HDMIB→屏幕。\n2. 电脑USB→副板USB-UART Type-C，不是USB-JTAG。\n3. Windows扩展AnlogicHDMI：1280×720、60/59.94Hz、RGB8、SDR。\n4. 手动有声播放时选择AnlogicHDMI声音输出，48kHz/24-bit双声道PCM。\n5. 手动模式选视频再播放；联动模式先配置五件视频，再勾选联动。\n视频可放任意目录，路径自动保存；移动/删除后请重新选择。\n联动按实际展示文物，不跟随后台预载；自动循环且始终静音，暂停随主板。\n应急、恢复或失联退回本地；应急解除不恢复旧视频。\n启动不自动开启联动；电脑和本程序必须持续运行。旧版bit仅支持手动播放。\n软件使用Windows媒体组件，建议MP4(H.264/AAC)；不支持的编解码会明确报错。", "使用说明")));
         panel.Children.Add(actions);
         panel.Children.Add(MakeButton("五件文物视频配置", ConfigureVideos));
         panel.Children.Add(automatic);
         automatic.Checked += (s,e) => { autoHold=false;failedArtifact=-1; if (video!=null) StopVideo("先退出手动视频，再按主板状态联动。"); else SetStatus("联动已开启；等待主板实际展示状态。"); };
-        automatic.Unchecked += (s,e) => { if (autoSession) StopVideo("联动已关闭，恢复本地显示。"); else SetStatus("手动模式。"); };
+        automatic.Unchecked += (s,e) => { if (autoSession||phase==Phase.Warming) StopVideo("联动已关闭，释放缓存并恢复本地显示。"); else { if(linked&&warmSupported&&(flags&16)!=0) Send(7);SetStatus("手动模式。"); } };
         var statePanel = new StackPanel();
         statePanel.Children.Add(new TextBlock { Text = "02  播放与连接状态", FontWeight = FontWeights.SemiBold, FontSize = 16, Margin = new Thickness(0,0,0,10) });
         status.MinHeight = 46; status.LineHeight = 24; statePanel.Children.Add(status);
@@ -324,12 +337,14 @@ sealed class ControllerWindow : Window
     void SetStatus(string text) { status.Text = text; play.IsEnabled = linked && phase == Phase.Idle && !AutoEnabled; pause.IsEnabled = !autoSession && (phase == Phase.Playing || phase == Phase.Paused); }
     void ConfigureVideos()
     {
-        if (phase != Phase.Idle) { SetStatus("请先停止视频，再修改联动配置。"); return; }
+        if (phase != Phase.Idle && phase != Phase.Warming) { SetStatus("请先停止视频，再修改联动配置。"); return; }
         configuring=true;
         try {
             var dialog = new Window { Title="五件文物视频配置", Owner=this, Icon=Icon, Width=900, Height=440,
                 WindowStartupLocation=WindowStartupLocation.CenterOwner, FontFamily=FontFamily, FontSize=14, Background=Brushes.FloralWhite, Resources=Resources };
-            var body=new StackPanel { Margin=new Thickness(22) }; dialog.Content=body;
+            var body=new StackPanel { Margin=new Thickness(22) };
+            var design=new Grid { Width=900,Height=400 };design.Children.Add(body);
+            dialog.Content=new Viewbox { Child=design,Stretch=Stretch.Uniform };
             body.Children.Add(new TextBlock { Text="每件文物选择一个视频，位置不限；配置保存后下次自动恢复。", Margin=new Thickness(0,0,0,14) });
             string[] paths=(string[])settings.Videos.Clone();
             for(int i=0;i<5;i++) {
@@ -341,7 +356,7 @@ sealed class ControllerWindow : Window
             }
             body.Children.Add(MakeButton("保存配置",()=> {
                 var updated=new VideoSettings { Videos=paths,Port=ports.SelectedItem as string ?? settings.Port };
-                try { updated.Save(VideoSettings.PathName);settings=updated;settingsValid=true;failedArtifact=-1;autoHold=false;dialog.Close();SetStatus("视频配置已保存，移动文件后需重新选择。"); }
+                try { updated.Save(VideoSettings.PathName);settings=updated;settingsValid=true;failedArtifact=-1;autoHold=false;if(phase==Phase.Warming) StopVideo("配置更新，重新准备首帧。");dialog.Close();SetStatus("视频配置已保存，移动文件后需重新选择。"); }
                 catch(IOException error) { MessageBox.Show(dialog,"保存失败："+error.Message); }
                 catch(UnauthorizedAccessException error) { MessageBox.Show(dialog,"保存失败："+error.Message); }
             }));
@@ -350,7 +365,7 @@ sealed class ControllerWindow : Window
     }
     void Refresh()
     {
-        if (phase != Phase.Idle) return;
+        if (phase != Phase.Idle && phase != Phase.Warming) return;
         failedArtifact=-1;
         string selected = ports.SelectedItem as string ?? settings.Port;
         ports.ItemsSource = SerialPort.GetPortNames().OrderBy(x => x).ToArray();
@@ -366,7 +381,7 @@ sealed class ControllerWindow : Window
     }
     void Connect()
     {
-        if (phase != Phase.Idle) { StopVideo("先停止视频，再重新连接。"); return; }
+        if (phase != Phase.Idle) { if(phase==Phase.Warming) automatic.IsChecked=false;StopVideo("先停止视频，再重新连接。"); return; }
         StopVideo("重新连接"); Disconnect();
         string name = ports.SelectedItem as string;
         if (name == null) { SetStatus("请选择副板 CH340 对应的 COM 口。"); return; }
@@ -398,6 +413,10 @@ sealed class ControllerWindow : Window
         if (!ReferenceEquals(current,port) || !pending || seq != pendingSeq) return;
         byte acknowledgedCommand = pendingCommand;
         pending = false; flags = value; linked = true; replyAt = DateTime.UtcNow;
+        if(!AutoEnabled&&warmSupported&&(flags&16)!=0&&acknowledgedCommand!=7) { Send(7);return; }
+        if(acknowledgedCommand>=0x20&&acknowledgedCommand<=0x24&&(flags&128)!=0) {
+            warmSupported=false;flags=(byte)(flags&127);SetStatus("当前bit不支持返回缓存保持，请更新副板bit；首帧准备仍可使用。");return;
+        }
         if (acknowledgedCommand==5) {
             contextKnown=true;contextAvailable=context;
             if(!context) { flags=(byte)(flags&127);mainStatus.Text="旧版副板bit：可手动播放，不能联动。";if(AutoEnabled) automatic.IsChecked=false;return; }
@@ -406,7 +425,7 @@ sealed class ControllerWindow : Window
                 "  |  文物 "+(artifact<5 ? artifact.ToString() : "--")+"  |  "+((state&16)!=0 ? "手动浏览" : "自动讲解");
         }
         if ((flags & 128) != 0) { if(autoSession) { autoHold=true;failedArtifact=activeArtifact; } StopVideo("副板拒绝授权：请检查信源和主板状态，重新开启联动可重试。"); return; }
-        if (phase == Phase.Stopping && (acknowledgedCommand == 2 || acknowledgedCommand == 3 || acknowledgedCommand == 5) && (flags & 14) == 0) stopConfirmed = true;
+        if (phase == Phase.Stopping && (acknowledgedCommand == 2 || acknowledgedCommand == 3 || acknowledgedCommand == 5 || acknowledgedCommand == 7) && (flags & 14) == 0) stopConfirmed = true;
         if (phase == Phase.Idle && !AutoEnabled) SetStatus("已连接；HDMI输入" + ((flags & 1) != 0 ? "有效" : "未就绪") + "，当前保持副板本地内容。");
         else if (phase == Phase.Authorizing || phase == Phase.Playing || phase == Phase.Paused)
             if ((flags & 9) != 9) { if(autoSession) autoHold=true;StopVideo("HDMI信源失效或授权已撤销，已退回本地。请重新开启联动或从总览重新进入。"); }
@@ -420,25 +439,28 @@ sealed class ControllerWindow : Window
     void Disconnect()
     {
         linked = false; pending = false;
-        contextKnown=false;contextAvailable=false;nextContext=true;
+        contextKnown=false;contextAvailable=false;nextContext=true;warmSupported=true;warmHintSent=false;observedOverview=false;
         if(autoSession) autoHold=true;
         var current = port; port = null;
         if (current != null) current.Dispose();
     }
     void StartVideo()
+    { PrepareVideo(false); }
+    void PrepareVideo(bool warm)
     {
         var target = screens.SelectedItem as ScreenChoice;
-        if (!linked || phase != Phase.Idle || AutoEnabled && !autoSession) return;
+        if (!linked || phase != Phase.Idle || AutoEnabled && !autoSession && !warm) return;
         if (target == null || target.Name.IndexOf("Anlogic",StringComparison.OrdinalIgnoreCase) < 0 || target.Screen.Primary || target.Screen.Bounds.Width != 1280 || target.Screen.Bounds.Height != 720) { SetStatus("请选择1280×720的AnlogicHDMI扩展屏，不要选择电脑主屏或独立DP显示器。"); return; }
         if (!File.Exists(file.Text)) { SetStatus("请先选择存在的本地视频文件。"); return; }
         try {
-            phase = Phase.Preparing; opened = false; releaseAt = DateTime.MaxValue; prepareAt = DateTime.UtcNow;
+            phase = warm ? Phase.Warming : Phase.Preparing; opened = false;warmHintSent=false;releaseAt = DateTime.MaxValue; prepareAt = DateTime.UtcNow;
             video = new VideoWindow(target.Screen); var currentVideo = video;
             video.Media.MediaOpened += (s,e) => {
-                if (!ReferenceEquals(video,currentVideo) || phase != Phase.Preparing) return;
-                if (!currentVideo.Media.HasVideo) { if(autoSession) failedArtifact=activeArtifact;StopVideo("所选文件不包含可解码的视频画面。"); return; }
+                if (!ReferenceEquals(video,currentVideo) || phase != Phase.Preparing && phase != Phase.Warming) return;
+                if (!currentVideo.Media.HasVideo) { if(AutoEnabled) failedArtifact=activeArtifact;StopVideo("所选文件不包含可解码的视频画面。"); return; }
                 currentVideo.Media.Pause(); currentVideo.Media.Position = TimeSpan.Zero;
-                opened = true; firstFrameAt = DateTime.UtcNow.AddMilliseconds(300);
+                opened = true; firstFrameAt = DateTime.UtcNow.AddMilliseconds(120);
+                if(phase==Phase.Warming) SetStatus("文物"+activeArtifact+"首帧已准备；确认进入后直接申请显示，不主动展示电脑画面。");
             };
             video.Media.MediaEnded += (s,e) => {
                 if(!ReferenceEquals(video,currentVideo)) return;
@@ -447,11 +469,11 @@ sealed class ControllerWindow : Window
                     if((museumState&4)==0) currentVideo.Media.Play();else currentVideo.Media.Pause();
                 } else StopVideo("视频结束，副板恢复本地内容。");
             };
-            video.Media.MediaFailed += (s,e) => { if (ReferenceEquals(video,currentVideo)) { if(autoSession) failedArtifact=activeArtifact; StopVideo("视频解码失败：" + e.ErrorException.Message); } };
+            video.Media.MediaFailed += (s,e) => { if (ReferenceEquals(video,currentVideo)) { if(AutoEnabled) failedArtifact=activeArtifact; StopVideo("视频解码失败：" + e.ErrorException.Message); } };
             video.Closing += (s,e) => { if (ReferenceEquals(video,currentVideo)) { e.Cancel = true; StopVideo("播放窗口关闭，副板恢复本地内容。"); } };
             video.Media.Source = new Uri(file.Text, UriKind.Absolute); video.Media.Play();
             SetStatus("准备静音首帧；副板仍保持本地，待视频就绪后授权显示。");
-        } catch (Exception e) { if(autoSession) failedArtifact=activeArtifact;StopVideo("无法播放：" + e.Message); }
+        } catch (Exception e) { if(AutoEnabled) failedArtifact=activeArtifact;StopVideo("无法播放：" + e.Message); }
     }
     void PauseVideo()
     {
@@ -468,13 +490,13 @@ sealed class ControllerWindow : Window
         if (video != null) { video.Media.IsMuted = true; video.Media.Pause(); }
         // Keep the paused video covering the desktop until local output is
         // confirmed, or until the hardware watchdog must have expired.
-        try { Send(2); } catch (InvalidOperationException) { } catch (IOException) { } catch (TimeoutException) { }
+        try { Send(warmSupported&&(flags&16)!=0 ? (byte)7 : (byte)2); } catch (InvalidOperationException) { } catch (IOException) { } catch (TimeoutException) { }
         SetStatus(message);
     }
     void FinishStop()
     {
         phase = Phase.Idle; var previous = video; video = null;
-        autoSession=false;activeArtifact=-1;
+        autoSession=false;activeArtifact=-1;warmHintSent=false;
         if (previous != null) { previous.Media.Stop(); previous.Media.Close(); previous.Close(); }
         SetStatus(stopMessage ?? "已停止。");
         if (closeAfterStop && !closeNow) { closeNow = true; Close(); }
@@ -483,7 +505,9 @@ sealed class ControllerWindow : Window
     {
         if(!AutoEnabled||configuring||closeAfterStop) return;
         if(ContextFresh&&(museumState&0x48)!=0) autoHold=true;
-        if(ContextFresh&&(museumState&0x6b)==1&&museumScene==255) { autoHold=false;failedArtifact=-1; }
+        bool overview=ContextFresh&&(museumState&0x6b)==1&&museumScene==255;
+        if(overview&&!observedOverview) { autoHold=false;failedArtifact=-1; }
+        observedOverview=overview;
         int desired=ContextFresh ? Protocol.LinkedArtifact(museumState,museumArtifact) : -1;
         if(autoSession&&video!=null&&activeArtifact>=0&&(DateTime.UtcNow-fileCheckedAt).TotalMilliseconds>=500) {
             fileCheckedAt=DateTime.UtcNow;
@@ -491,6 +515,19 @@ sealed class ControllerWindow : Window
         }
         if(desired<0) {
             if(autoSession) { autoHold=true;StopVideo("主板应急、恢复、失联或已退出，回到副板本地。"); }
+            else if(ContextFresh&&(museumState&0x6b)==1&&museumArtifact<5&&!autoHold) {
+                if(phase==Phase.Warming&&activeArtifact!=museumArtifact) { StopVideo("总览高亮变化，准备下一件首帧。");return; }
+                if(phase==Phase.Idle&&!pending&&linked&&failedArtifact!=museumArtifact&&(flags&1)!=0) {
+                    string warmPath=settings.Videos[museumArtifact];
+                    if(File.Exists(warmPath)) { file.Text=warmPath;activeArtifact=museumArtifact;fileCheckedAt=DateTime.UtcNow;PrepareVideo(true); }
+                }
+            } else if(phase==Phase.Warming) { autoHold=true;StopVideo("暂停首帧准备，回到本地。"); }
+            return;
+        }
+        if(phase==Phase.Warming) {
+            if(activeArtifact!=desired) { StopVideo("文物变化，重新准备视频。");return; }
+            if(!File.Exists(settings.Videos[activeArtifact])) { failedArtifact=activeArtifact;StopVideo("已准备的视频被移动，请重新配置。");return; }
+            if(opened&&DateTime.UtcNow>=firstFrameAt&&!pending) { autoSession=true;phase=Phase.Preparing;prepareAt=DateTime.UtcNow; }
             return;
         }
         if(autoSession&&desired!=activeArtifact) { StopVideo("实际展示文物变化，先撤销上一视频。");return; }
@@ -499,7 +536,7 @@ sealed class ControllerWindow : Window
             if(paused && phase==Phase.Playing) { video.Media.Pause();phase=Phase.Paused;SetStatus("联动视频随主板暂停。"); }
             if(!paused && phase==Phase.Paused) { video.Media.Play();phase=Phase.Playing;SetStatus("联动视频随主板继续，静音循环。"); }
         }
-        if(phase!=Phase.Idle||pending||!linked||autoHold||failedArtifact==desired||(museumState&32)!=0||(flags&1)==0) return;
+        if(phase!=Phase.Idle||pending||!linked||autoHold||failedArtifact==desired||(flags&1)==0) return;
         string path=settings.Videos[desired];
         if(!File.Exists(path)) { failedArtifact=desired;SetStatus("文物"+desired+"的视频未配置或已移动，请在“五件文物视频配置”中重新选择；副板保持本地。");return; }
         file.Text=path;autoSession=true;activeArtifact=desired;fileCheckedAt=DateTime.UtcNow;StartVideo();
@@ -516,6 +553,11 @@ sealed class ControllerWindow : Window
                 port.Write(Protocol.Request(pendingCommand,pendingSeq),0,5); sentAt = now;
             }
             UpdateAutomatic();
+            if(phase==Phase.Warming) {
+                if((flags&1)==0) { autoHold=true;StopVideo("HDMI信源失效，取消首帧准备。"); }
+                else if((now-prepareAt).TotalSeconds>10&&!opened) { failedArtifact=activeArtifact;StopVideo("首帧准备超时，请检查视频文件。"); }
+                else if(opened&&now>=firstFrameAt&&!pending&&!warmHintSent&&warmSupported) { Send((byte)(0x20+activeArtifact));warmHintSent=true; }
+            }
             if(contextAvailable && (museumState&8)!=0 && video!=null) { autoHold=true;StopVideo("主板应急，外部视频授权已撤销。"); }
             if (phase == Phase.Preparing) {
                 if ((now - prepareAt).TotalSeconds > 10) { if(autoSession) failedArtifact=activeArtifact;StopVideo("视频或HDMI准备超时，请检查输入格式和视频编解码。"); return; }
@@ -524,16 +566,16 @@ sealed class ControllerWindow : Window
                 }
             }
             if (phase == Phase.Authorizing && (flags & 15) == 11) {
-                if (releaseAt == DateTime.MaxValue) releaseAt = now.AddMilliseconds(700);
+                if (releaseAt == DateTime.MaxValue) releaseAt = now.AddMilliseconds(autoSession ? 100 : 700);
                 if (now >= releaseAt) {
                     video.Media.IsMuted=autoSession;
                     if(autoSession&&(museumState&4)!=0) { video.Media.Pause();phase=Phase.Paused; } else { video.Media.Play();phase=Phase.Playing; }
                     SetStatus(autoSession ? "联动展示：文物"+activeArtifact+"，静音循环，暂停随主板。" : "正在播放；视频和声音均走HDMI，停止后回到本地内容。");
                 }
             }
-            if (!pending && (now - replyAt).TotalMilliseconds >= 250) {
+            if (!pending && (now - replyAt).TotalMilliseconds >= 50) {
                 if(!contextKnown || contextAvailable&&nextContext) { Send(5);nextContext=false; }
-                else { Send(phase == Phase.Idle || phase == Phase.Preparing || phase == Phase.Stopping ? (byte)3 : (byte)4);nextContext=true; }
+                else { Send(AutoEnabled||phase==Phase.Playing||phase==Phase.Paused||phase==Phase.Authorizing ? (byte)4 : (byte)3);nextContext=true; }
             }
         } catch (InvalidOperationException e2) { StopVideo("串口异常："+e2.Message); Disconnect(); }
           catch (IOException e2) { StopVideo("串口断开："+e2.Message); Disconnect(); }
@@ -549,15 +591,16 @@ static class Program
             try { Protocol.SelfTest(); ControllerWindow.SelfTest();return 0; } catch { return 1; }
         }
         if (args.Length == 2 && args[0] == "--media-test") return MediaTest(args[1]);
-        if (args.Length == 2 && args[0] == "--ui-test") {
+        if ((args.Length == 2 || args.Length == 4) && args[0] == "--ui-test") {
+            int width=args.Length==4 ? int.Parse(args[2]) : 940,height=args.Length==4 ? int.Parse(args[3]) : 750;
             var testApp = new Application(); var window = new ControllerWindow();
             var panel = (FrameworkElement)window.Content;
-            panel.Measure(new Size(940,750)); panel.Arrange(new Rect(0,0,940,750)); panel.UpdateLayout();
+            panel.Measure(new Size(width,height)); panel.Arrange(new Rect(0,0,width,height)); panel.UpdateLayout();
             var drawing = new DrawingVisual();
             using (var context = drawing.RenderOpen()) {
-                context.DrawRectangle(new VisualBrush(panel),null,new Rect(0,0,940,750));
+                context.DrawRectangle(new VisualBrush(panel),null,new Rect(0,0,width,height));
             }
-            var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(940,750,96,96,PixelFormats.Pbgra32);
+            var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(width,height,96,96,PixelFormats.Pbgra32);
             bitmap.Render(drawing);
             var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
             encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));

@@ -2,7 +2,7 @@
 // Only for HDMI integration simulation. Real media/network are independently
 // regressed; this model proves the top does not reset/stop them on source loss.
 module top_secondary_main5e #(
-    parameter SHARED_MEDIA_ETH_PLL=0,EXTERNAL_HDMI_PHY=0
+    parameter SHARED_MEDIA_ETH_PLL=0,EXTERNAL_HDMI_PHY=0,LINKED_VIDEO=0
 )(
     input wire clk_50m,
     input wire [3:0] sw,key_n,
@@ -15,6 +15,7 @@ module top_secondary_main5e #(
     output wire local_hs,local_vs,local_de,
     output wire [23:0] local_rgb,
     output wire [7:0] pc_artifact,pc_state,pc_phase,
+    input wire pc_link_armed,
     input wire eth_rgmii_rx_clk,eth_rgmii_rx_ctl,
     input wire [3:0] eth_rgmii_rxd,
     output wire eth_rgmii_tx_clk,eth_rgmii_tx_ctl,

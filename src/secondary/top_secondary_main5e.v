@@ -5,7 +5,8 @@
 // display and viewport requests over MBP1.
 module top_secondary_main5e #(
     parameter integer SHARED_MEDIA_ETH_PLL = 0,
-    parameter integer EXTERNAL_HDMI_PHY = 0
+    parameter integer EXTERNAL_HDMI_PHY = 0,
+    parameter integer LINKED_VIDEO = 0
 ) (
     input wire clk_50m,
     input wire [3:0] sw,
@@ -25,6 +26,7 @@ module top_secondary_main5e #(
     output wire local_hs, local_vs, local_de,
     output wire [23:0] local_rgb,
     output wire [7:0] pc_artifact, pc_state, pc_phase,
+    input wire pc_link_armed,
     input wire eth_rgmii_rx_clk,
     input wire eth_rgmii_rx_ctl,
     input wire [3:0] eth_rgmii_rxd,
@@ -51,6 +53,11 @@ wire [63:0] control_payload;
 wire manual_mode, manual_next;
 wire [3:0] help_switches;
 wire [7:0] media_seg_data, media_seg_sel;
+wire pc_cover;
+wire [7:0] display_cmd_mode;
+secondary_pc_local_policy #(.ENABLE(LINKED_VIDEO)) u_pc_local_policy(
+    .armed(pc_link_armed),.main_state(pc_state),.cmd_type(cmd_type),.cmd_mode(cmd_mode),
+    .hold_carousel(pc_cover),.display_mode(display_cmd_mode));
 reg pc_seen;
 reg [7:0] pc_id_q,pc_phase_q;
 reg pc_active_q,pc_paused_q,pc_emergency_q,pc_manual_q,pc_transition_q,pc_recovery_q,pc_finished_q;
@@ -185,14 +192,14 @@ top_v66 #(
     .uart_rxd(1'b1), .uart_txd(),
     .secondary_cmd_valid(cmd_valid), .secondary_cmd_type(cmd_type),
     .secondary_cmd_artifact_id(cmd_artifact_id),
-    .secondary_cmd_confirmed(1'b0), .secondary_cmd_mode(cmd_mode),
+    .secondary_cmd_confirmed(1'b0), .secondary_cmd_mode(display_cmd_mode),
     .secondary_cmd_lecture_phase(cmd_lecture_phase),
     .secondary_cmd_lecture_reason(8'd0),
     .secondary_cmd_emergency_id(16'd0),
     .secondary_cmd_route_id(8'd0),
     .secondary_cmd_emergency_active(cmd_emergency_active),
     .secondary_cmd_result(cmd_result),
-    .secondary_manual_mode(manual_mode),
+    .secondary_manual_mode(manual_mode||pc_cover),
     .secondary_manual_next(manual_next),
     .secondary_help_switches(help_switches),
     .secondary_eng_enable(1'b0),
@@ -202,6 +209,17 @@ top_v66 #(
     .secondary_eng_diagnostic(diagnostic_data),
     .secondary_eng_result(control_result)
 );
+endmodule
+
+// Keep a complete carousel page behind the PC video, not an intro reload.
+module secondary_pc_local_policy #(parameter ENABLE=0)(
+    input wire armed,input wire [7:0] main_state,cmd_type,cmd_mode,
+    output wire hold_carousel,output wire [7:0] display_mode
+);
+wire keep_local=ENABLE&&armed&&main_state[0]&&!main_state[3]&&!main_state[6];
+assign hold_carousel=keep_local&&main_state[1];
+// Gate incoming lecture mode without depending on snapshot update ordering.
+assign display_mode=keep_local&&cmd_type==8'h02&&cmd_mode==2 ? 8'd1 : cmd_mode;
 endmodule
 
 `default_nettype wire

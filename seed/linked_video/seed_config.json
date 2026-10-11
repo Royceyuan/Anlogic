@@ -10,7 +10,7 @@
   "setup_wns_ns":0.114,
   "hold_wns_ns":0.024,
   "tns_ns":0,
-  "bit_manifest":"release/manifest_secondary_linked_video.json",
+  "bit_manifest":"seed/linked_video/manifest_secondary_linked_video.json",
   "board_pass":false,
   "note":"Successfully routed and bit-generated with unchanged clock frequencies/phases, physical HDMI data path, ADC/SDC and exceptions. Board validation pending; previous accepted seed/uart_video preserved."
 }

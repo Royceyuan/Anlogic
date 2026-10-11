@@ -4,10 +4,11 @@ parameter LINK_TEST=1;
 reg clk=0,rst_n=0,rxd=1,ready=1;
 reg [7:0] museum_artifact=2,museum_state=0,museum_phase=0;
 always #10 clk=!clk;
-wire txd,enabled;
+wire txd,enabled,armed;
 secondary_video_uart_control #(.BAUD_DIV(8),.CLOCKS_PER_MS(200),.WATCHDOG_MS(40),.MUSEUM_LINK(LINK_TEST)) dut(
     .clk(clk),.rst_n(rst_n),.uart_rxd(rxd),.input_ready(ready),
     .external_selected(enabled),.output_muted(1'b0),.uart_txd(txd),.play_enabled(enabled),
+    .link_armed(armed),
     .museum_artifact(museum_artifact),.museum_state(museum_state),.museum_phase(museum_phase));
 wire [7:0] reply_byte;
 wire reply_valid;
@@ -112,6 +113,12 @@ initial begin
     if(replies[base+2]!=21||replies[base+3][3]) $fatal(1,"stale queued ACK after STOP");
     $display("PASS UART stopped reply channel cannot block STOP or retain stale authorization");
     if(LINK_TEST) begin
+        museum_state=8'h01;exchange(8'h22,29,0,0);
+        if(!armed||enabled) $fatal(1,"warm hint must not display video");
+        exchange(4,29,0,0);exchange(2,29,0,0);
+        if(!armed) $fatal(1,"warm return hint lost before explicit release");
+        exchange(7,29,0,0);if(armed) $fatal(1,"release did not clear warm hint");
+        museum_state=0;
         context_query(30);
         exchange(8'h12,31,0,1);
         museum_state=8'h03;museum_phase=3;context_query(32);
@@ -133,6 +140,11 @@ initial begin
         if(enabled) $fatal(1,"application recovery did not revoke video");
         museum_state=8'h01;exchange(8'h13,43,0,1);
         $display("PASS UART context CRC, actual artifact, pause, loss, emergency priority, no old resume and recovery");
+        museum_state=8'h01;exchange(8'h23,44,0,0);repeat(9000) @(negedge clk);
+        if(armed||enabled) $fatal(1,"warm hint survived PC loss");
+        exchange(8'h23,45,0,0);museum_state=8'h09;repeat(3) @(negedge clk);
+        if(armed) $fatal(1,"emergency retained intro suppression");
+        $display("PASS UART warm hint never authorizes AV; release, timeout and emergency restore local policy");
     end
     rst_n=0;repeat(5) @(negedge clk);if(enabled||txd!==1) $fatal(1,"reset unsafe");
     test_pass=1;$finish;

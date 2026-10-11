@@ -2,15 +2,16 @@
 `default_nettype none
 // Request: A5 5A command sequence CRC8. Reply: 5A A5 sequence flags CRC8.
 // CRC8/SMBUS: poly 07, init 00, no reflection/xorout, covers first four bytes.
-// Commands 1..4 unchanged; 5=context query, 10..14 hex=linked START artifact0..4.
+// Commands 1..4 unchanged; 5=context, 7=release warm/playback lease.
+// Hex 10..14=linked START, 20..24=ready-first-frame hint for artifact0..4.
 // Context reply: 5A A6 seq flags artifact state phase CRC8 (8 bytes).
-// Flags: bit0=input ready, bit1=selected, bit2=muted, bit3=authorized, bit7=reject.
+// Flags: bit0=ready, bit1=selected, bit2=muted, bit3=authorized, bit4=warm, bit7=reject.
 module secondary_video_uart_control #(
     parameter integer BAUD_DIV=434,CLOCKS_PER_MS=50000,WATCHDOG_MS=3000,MUSEUM_LINK=0
 )(
     input wire clk,rst_n,uart_rxd,input_ready,external_selected,output_muted,
     input wire [7:0] museum_artifact,museum_state,museum_phase,
-    output wire uart_txd,output reg play_enabled
+    output wire uart_txd,output reg play_enabled,output wire link_armed
 );
 function [7:0] crc8;
 input [7:0] crc,value;
@@ -38,10 +39,13 @@ reg [2:0] rx_state,tx_index;
 reg [7:0] command,sequence,rx_crc,tx_crc,reply_sequence,ack_sequence,ack_flags;
 reg [7:0] ack_artifact,ack_state,ack_phase,lease_artifact;
 reg reply_context,ack_context,linked_lease;
+reg warm_armed;
+reg [7:0] warm_artifact;
 reg reply_pending,reply_rejected,tx_active;
-wire [7:0] flags={reply_rejected,3'b000,play_enabled,output_muted,external_selected,input_ready};
+wire [7:0] flags={reply_rejected,2'b00,link_armed,play_enabled,output_muted,external_selected,input_ready};
 wire emergency_block=MUSEUM_LINK&&museum_state[3];
 wire linked_allowed=MUSEUM_LINK&&museum_state[0]&&museum_state[1]&&!museum_state[3]&&!museum_state[6];
+assign link_armed=MUSEUM_LINK&&warm_armed&&museum_state[0]&&!emergency_block&&!museum_state[6]&&museum_artifact==warm_artifact;
 reg [7:0] next_tx_data;
 always @* case(tx_index)
     0:next_tx_data=8'h5a;
@@ -62,14 +66,16 @@ always @(posedge clk or negedge rst_n) begin
         tx_data<=0;tx_valid<=0;
         reply_context<=0;ack_context<=0;linked_lease<=0;lease_artifact<=8'hff;
         ack_artifact<=8'hff;ack_state<=0;ack_phase<=8'hff;
+        warm_armed<=0;warm_artifact<=8'hff;
     end else begin
         tx_valid<=0;
         if(ms_tick) ms_cycles<=0;else ms_cycles<=ms_cycles+1'b1;
         if(!input_ready||emergency_block||
            (linked_lease&&(!linked_allowed||museum_artifact!=lease_artifact))) play_enabled<=0;
+        if(!input_ready||emergency_block||(MUSEUM_LINK&&(!museum_state[0]||museum_state[6]||museum_artifact!=warm_artifact))) warm_armed<=0;
         if(ms_tick) begin
-            if(play_enabled) begin
-                if(lease_ms==WATCHDOG_MS-1) begin play_enabled<=0;lease_ms<=0;end
+            if(play_enabled||warm_armed) begin
+                if(lease_ms==WATCHDOG_MS-1) begin play_enabled<=0;warm_armed<=0;lease_ms<=0;end
                 else lease_ms<=lease_ms+1'b1;
             end else lease_ms<=0;
             if(rx_state!=0) begin
@@ -107,11 +113,16 @@ always @(posedge clk or negedge rst_n) begin
                                else reply_rejected<=1;
                             2: begin play_enabled<=0;lease_ms<=0;linked_lease<=0;end
                             3: ;
-                            4: if(play_enabled) lease_ms<=0;
+                            4: if(play_enabled||warm_armed) lease_ms<=0;
                             5: if(!MUSEUM_LINK) reply_rejected<=1;
+                            7: if(MUSEUM_LINK) begin warm_armed<=0;play_enabled<=0;linked_lease<=0;lease_ms<=0;end
+                               else reply_rejected<=1;
                             default: if(command>=8'h10&&command<=8'h14&&input_ready&&linked_allowed&&
                                         museum_artifact==command-8'h10) begin
                                 play_enabled<=1;lease_ms<=0;linked_lease<=1;lease_artifact<=museum_artifact;
+                            end else if(command>=8'h20&&command<=8'h24&&MUSEUM_LINK&&input_ready&&
+                                        museum_state[0]&&!emergency_block&&!museum_state[6]&&museum_artifact==command-8'h20) begin
+                                warm_armed<=1;warm_artifact<=museum_artifact;lease_ms<=0;
                             end else reply_rejected<=1;
                         endcase
                     end else if(rx_data==8'ha5) begin rx_state<=1;rx_crc<=crc8(0,8'ha5);end
