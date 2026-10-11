@@ -1,7 +1,8 @@
 {
   "release":"secondary_museum_emergency_clock_keep_20261011",
-  "status":"rtl_pc_cache_and_timing_verified_pending_board_switch_latency_test",
+  "status":"board_report_emergency_blackout_about_4s_unresolved",
   "board_pass":false,
+  "board_feedback":{"date":"2026-10-11","source":"user report after testing the new version","emergency_switch_blackout_s_approx":4,"latency_fix_passed":false,"instrumented_measurement":false},
   "project":"dual_fpga_museum_terminal_secondary_board.al",
   "top":"top_secondary_hdmi_museum",
   "bit":"release/dual_fpga_museum_terminal_secondary_board_emergency_video_fast_switch.bit",
