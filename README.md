@@ -360,3 +360,5 @@ Start-Process .\tools\PCVideoPlayer\MuseumPCVideoPlayer.exe -ArgumentList '--cac
 原种子7综合、布局布线、STA/DRC和bitgen通过：setup +0.115ns、hold +0.027ns，TNS0，无multi-drive/abnormal timing path；原PHY7002/5079警告继续披露。LUT 11433/19600（58.33%）、FF 7313/19600（37.31%）、Slice 6549/9800（66.83%），BRAM9K21/64、BRAM32K13/16、DSP5/29、PLL4/4、GCLK10/16。相对B6候选LUT -41、FF +1、Slice +29；未改约束或增加时序例外。成功报告在`seed/matched_timing`。
 
 仿真：同频/原参数两次集成各13条PASS，共26；原官方EDID音视频直通5条、UART新旧23条、切源7条、本地缓存/应急状态2条，共63条。检查首选频率、名称、范围、两块校验和及音频能力，且实际驱动75MHz输入；原74.25MHz路径仍通过。保持原缩减帧几何、厂商初始化X提示及数据岛样式边界，不当作真实音频包、PC驱动枚举或实体显示器延迟验证。board_pass=false，等待本次板测。
+
+2026-10-11停工续接：用户已提供AnlogicHDMI75活动信号1280×720、60.61Hz截图；只读QueryDisplayConfig也确认像素时钟75000000Hz、总时序1650×750。最新固定图记录中发CMD06至有效输出ACK为66.5ms，软件回报至用户点击为3002.1ms（含点击反应），没有展示出明显黑屏改善。不能继续归咎视频解码或未选到新EDID；同频/同極性不足以保证相位、帧起点和有效符号连续。本地编码没有HDMI数据岛、PC流保留数据岛，流类型切换也待核查，尚非已证实唯一根因。board_pass仍false。用户要求今晚仅记录、明天继续；未再改逻辑或生成bit。详细续接记录位于工作区`记录文档/副板HDMI切源黑屏_续接记录_20261011.md`，不属于独立副板仓库内容；本段及发布清单保留仓库内关键事实。

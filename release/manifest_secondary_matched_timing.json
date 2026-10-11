@@ -1,7 +1,8 @@
 {
   "release":"secondary_museum_matched_timing_candidate_20261011",
-  "status":"simulation_and_timing_passed_pending_pc_mode_and_board_latency_test",
+  "status":"actual_pc75_confirmed_no_demonstrated_blackout_improvement",
   "board_pass":false,
+  "board_feedback":{"date":"2026-10-11","source":"user fixed-pattern trace and Windows screenshot; read-only QueryDisplayConfig corroboration","pc_name":"AnlogicHDMI75","pc_pixel_clock_hz":75000000,"pc_active":"1280x720","pc_total":"1650x750","pc_refresh_hz":60.606,"cmd06_to_valid_output_ack_ms":66.5,"software_output_to_user_click_ms":3002.1,"user_click_includes_reaction_time":true,"frequency_difference_alone_insufficient":true,"blackout_resolved":false,"unique_root_cause_not_proven":true},
   "project":"dual_fpga_museum_terminal_secondary_board.al",
   "top":"top_secondary_hdmi_museum",
   "top_parameter":{"MATCH_PC_TIMING":1},
