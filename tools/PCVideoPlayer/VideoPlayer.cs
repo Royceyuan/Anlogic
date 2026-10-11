@@ -162,6 +162,21 @@ sealed class VideoWindow : Window
         if(!SetWindowPos(new WindowInteropHelper(this).Handle,new IntPtr(-1),0,0,0,0,0x13))
             throw new System.ComponentModel.Win32Exception("无法显示已准备的视频窗口");
     }
+    internal static FrameworkElement FixedPattern()
+    {
+        var grid=new Grid { Width=1280,Height=720,Background=Brushes.Navy };
+        for(int i=0;i<4;i++) grid.ColumnDefinitions.Add(new ColumnDefinition());
+        Brush[] colors={Brushes.DarkRed,Brushes.DarkGreen,Brushes.DarkBlue,Brushes.DarkGoldenrod};
+        for(int i=0;i<4;i++) {
+            var stripe=new Border { Background=colors[i] };Grid.SetColumn(stripe,i);grid.Children.Add(stripe);
+        }
+        var text=new TextBlock { Text="固定画面对照测试\n无视频解码 · 应急授权链路\n看到此画面后点击软件中的“屏幕已显示”",
+            FontFamily=new FontFamily("Microsoft YaHei UI"),FontSize=42,Foreground=Brushes.White,
+            TextAlignment=TextAlignment.Center,HorizontalAlignment=HorizontalAlignment.Center,
+            VerticalAlignment=VerticalAlignment.Center,Background=Brushes.Navy,Padding=new Thickness(24) };
+        Grid.SetColumnSpan(text,4);grid.Children.Add(text);
+        return new Viewbox { Child=grid,Stretch=Stretch.Uniform };
+    }
     [DllImport("user32.dll")] static extern bool SetWindowPos(IntPtr hwnd, IntPtr after, int x, int y, int width, int height, uint flags);
 }
 
@@ -206,6 +221,12 @@ sealed class ControllerWindow : Window
     readonly TextBlock status = new TextBlock { TextWrapping = TextWrapping.Wrap };
     readonly TextBlock mainStatus = new TextBlock { TextWrapping = TextWrapping.Wrap, FontSize = 13, Margin = new Thickness(0,8,0,0) };
     readonly CheckBox automatic = new CheckBox { Content = "联动模式：文物视频 / 应急优先（静音）", Margin = new Thickness(4,12,0,4) };
+    readonly CheckBox fixedTest = new CheckBox { Content="黑屏对照：应急时显示固定测试图（不解码视频）",Margin=new Thickness(4,8,0,4) };
+    readonly TextBlock switchTiming = new TextBlock { TextWrapping=TextWrapping.Wrap,FontSize=12,Margin=new Thickness(4,6,4,0) };
+    readonly List<string> switchTrace = new List<string>();
+    readonly System.Diagnostics.Stopwatch switchWatch = new System.Diagnostics.Stopwatch();
+    readonly Button screenSeen;
+    bool FixedTest { get { return fixedTest.IsChecked==true; } }
     readonly DispatcherTimer timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
     MediaElement emergencyCache;
     VideoWindow emergencyCacheWindow;
@@ -236,6 +257,21 @@ sealed class ControllerWindow : Window
     {
         var app=new Application();var window=new ControllerWindow();
         try {
+            var pattern=VideoWindow.FixedPattern();
+            if(!(pattern is Viewbox)||((Viewbox)pattern).Child is MediaElement) throw new Exception("Test pattern must not decode media");
+            pattern.Measure(new Size(1280,720));pattern.Arrange(new Rect(0,0,1280,720));pattern.UpdateLayout();
+            var patternBitmap=new RenderTargetBitmap(1280,720,96,96,PixelFormats.Pbgra32);patternBitmap.Render(pattern);
+            Color[] stripeColors={Colors.DarkRed,Colors.DarkGreen,Colors.DarkBlue,Colors.DarkGoldenrod};
+            for(int i=0;i<4;i++) {
+                var pixel=new byte[4];patternBitmap.CopyPixels(new Int32Rect(i*320+100,60,1,1),pixel,4,0);
+                if(pixel[0]!=stripeColors[i].B||pixel[1]!=stripeColors[i].G||pixel[2]!=stripeColors[i].R||pixel[3]!=255)
+                    throw new Exception("Static diagnostic stripe not rendered");
+            }
+            window.fixedTest.IsChecked=true;window.TraceSwitch("self-check");
+            if(window.switchTrace.Count!=2||!window.switchTiming.Text.Contains("self-check")) throw new Exception("Switch trace missing");
+            for(int i=0;i<150;i++) window.TraceSwitch("trace-bound-"+i);
+            if(window.switchTrace.Count!=100||!window.switchTiming.Text.Contains("trace-bound-149")) throw new Exception("Unbounded or stale switch trace");
+            window.fixedTest.IsChecked=false;
             window.settings=new VideoSettings();window.linked=true;window.flags=1;
             window.contextAvailable=true;window.contextAt=DateTime.UtcNow;
             window.museumArtifact=2;window.museumState=3;window.automatic.IsChecked=true;
@@ -288,14 +324,15 @@ sealed class ControllerWindow : Window
             } finally { if(File.Exists(warmed)) File.Delete(warmed); }
         } finally { window.Close();app.Shutdown(); }
     }
-    internal static int CacheMediaTest(string path,string report)
+    internal static int CacheMediaTest(string path,string report,bool fixedPattern = false)
     {
         var app=new Application();var window=new ControllerWindow { Opacity=0,ShowInTaskbar=false,ShowActivated=false };
         var watch=System.Diagnostics.Stopwatch.StartNew();var frame=new DispatcherFrame();
         var poll=new DispatcherTimer { Interval=TimeSpan.FromMilliseconds(25) };
         MediaElement prepared=null;VideoWindow surface=null;bool transferred=false,passed=false;int opens=0;double readyMs=0;
         try {
-            window.Show();window.settings=new VideoSettings();window.settings.Videos[5]=Path.GetFullPath(path);
+            window.Show();window.settings=new VideoSettings();window.settings.Videos[5]=fixedPattern ? "" : Path.GetFullPath(path);
+            window.fixedTest.IsChecked=fixedPattern;
             window.linked=true;window.flags=1;window.contextAvailable=true;window.contextAt=DateTime.UtcNow;
             window.museumState=1;window.automatic.IsChecked=true;window.PrepareEmergencyCache(true);
             prepared=window.emergencyCache;if(prepared==null) return 1;
@@ -310,6 +347,11 @@ sealed class ControllerWindow : Window
                 if(!transferred&&window.EmergencyPrepared) {
                     readyMs=watch.Elapsed.TotalMilliseconds;var taken=window.TakeEmergencyCache();
                     transferred=ReferenceEquals(taken,surface)&&ReferenceEquals(taken.Media,prepared)&&ReferenceEquals(taken.Content,prepared);
+                    if(fixedPattern) {
+                        transferred=ReferenceEquals(taken,surface)&&ReferenceEquals(taken.Media,prepared)&&taken.Content is Viewbox;
+                        passed=transferred&&opens==0&&prepared.Source==null&&surface.SurfaceWidth==1280&&surface.SurfaceHeight==720;
+                        frame.Continue=false;return;
+                    }
                     if(!transferred) { frame.Continue=false;return; }
                     prepared.Play();
                 }
@@ -318,7 +360,8 @@ sealed class ControllerWindow : Window
             if(report!=null) new XDocument(new XElement("emergencyCacheTest",new XAttribute("passed",passed),
                 new XAttribute("ready_ms",readyMs),new XAttribute("media_open_count",opens),new XAttribute("same_window",transferred),
                 new XAttribute("reparented",false),new XAttribute("surface_width",surface.SurfaceWidth),
-                new XAttribute("surface_height",surface.SurfaceHeight),new XAttribute("offscreen_test",true))).Save(report);
+                new XAttribute("surface_height",surface.SurfaceHeight),new XAttribute("offscreen_test",true),
+                new XAttribute("fixed_test",fixedPattern),new XAttribute("media_source_is_null",prepared.Source==null))).Save(report);
             return passed ? 0 : 1;
         } finally { poll.Stop();if(prepared!=null) prepared.Close();if(surface!=null) surface.Close();window.Close();app.Shutdown(); }
     }
@@ -377,12 +420,21 @@ sealed class ControllerWindow : Window
         panel.Children.Add(actions);
         panel.Children.Add(MakeButton("文物与应急视频配置", ConfigureVideos));
         panel.Children.Add(automatic);
+        panel.Children.Add(fixedTest);
+        fixedTest.Checked += (s,e) => { ClearEmergencyCache();emergencyFailedPath=null;failedArtifact=-1;
+            switchTrace.Clear();switchWatch.Restart();TraceSwitch("固定图模式开启；尚未授权输出"); };
+        fixedTest.Unchecked += (s,e) => { ClearEmergencyCache();emergencyFailedPath=null;failedArtifact=-1; };
         automatic.Checked += (s,e) => { autoHold=false;failedArtifact=-1; if (video!=null) StopVideo("先退出手动视频，再按主板状态联动。"); else SetStatus("联动已开启；等待主板实际展示状态。"); };
         automatic.Unchecked += (s,e) => { observedEmergency=false;ClearEmergencyCache();emergencyFailedPath=null;if (autoSession||phase==Phase.Warming) StopVideo("联动已关闭，释放缓存并恢复本地显示。"); else { if(linked&&warmSupported&&(flags&16)!=0) Send(7);SetStatus("手动模式。"); } };
         var statePanel = new StackPanel();
         statePanel.Children.Add(new TextBlock { Text = "02  播放与连接状态", FontWeight = FontWeights.SemiBold, FontSize = 16, Margin = new Thickness(0,0,0,10) });
         status.MinHeight = 46; status.LineHeight = 24; statePanel.Children.Add(status);
         statePanel.Children.Add(mainStatus);
+        var timingActions=new WrapPanel();
+        screenSeen=MakeButton("屏幕已显示",()=>TraceSwitch("用户确认屏幕已显示（含点击反应时间，不是仪器测量）"));
+        screenSeen.IsEnabled=false;timingActions.Children.Add(screenSeen);
+        timingActions.Children.Add(MakeButton("复制切换时序",()=>Clipboard.SetText(switchTrace.Count==0 ? "尚无对照记录" : String.Join(Environment.NewLine,switchTrace))));
+        statePanel.Children.Add(timingActions);statePanel.Children.Add(switchTiming);
         var stateCard = Card(statePanel); stateCard.Margin = new Thickness(0,16,0,0); layout.Children.Add(stateCard);
         Refresh(); SetStatus("先连接副板串口；未点击播放时，HDMI 常连接仍保持本地展示。");
         try { settings=VideoSettings.Load(VideoSettings.PathName); Refresh(); }
@@ -422,7 +474,17 @@ sealed class ControllerWindow : Window
         control.BorderBrush = new SolidColorBrush(Color.FromRgb(193,206,195));
         row.Children.Add(control); return row;
     }
-    void SetStatus(string text) { status.Text = text; play.IsEnabled = linked && phase == Phase.Idle && !AutoEnabled; pause.IsEnabled = !autoSession && (phase == Phase.Playing || phase == Phase.Paused); }
+    void SetStatus(string text) { status.Text = text; play.IsEnabled = linked && phase == Phase.Idle && !AutoEnabled; pause.IsEnabled = !autoSession && (phase == Phase.Playing || phase == Phase.Paused);
+        fixedTest.IsEnabled=phase==Phase.Idle||phase==Phase.Warming;
+        screenSeen.IsEnabled=FixedTest&&activeArtifact==5&&phase==Phase.Playing; }
+    void TraceSwitch(string message)
+    {
+        if(!FixedTest) return;
+        switchTrace.Add(switchWatch.Elapsed.TotalMilliseconds.ToString("F1",System.Globalization.CultureInfo.InvariantCulture)+" ms  "+message);
+        // ponytail: bound an interactive diagnostic, not an all-day telemetry log.
+        if(switchTrace.Count>100) switchTrace.RemoveAt(0);
+        switchTiming.Text=String.Join(Environment.NewLine,switchTrace.Skip(Math.Max(0,switchTrace.Count-5)));
+    }
     void ConfigureVideos()
     {
         if (phase != Phase.Idle && phase != Phase.Warming) { SetStatus("请先停止视频，再修改联动配置。"); return; }
@@ -500,8 +562,10 @@ sealed class ControllerWindow : Window
     void Acknowledge(SerialPort current, byte seq, byte value, bool context, byte artifact, byte state, byte scene)
     {
         if (!ReferenceEquals(current,port) || !pending || seq != pendingSeq) return;
-        byte acknowledgedCommand = pendingCommand;
+        byte acknowledgedCommand = pendingCommand,previousFlags=flags;
         pending = false; flags = value; linked = true; replyAt = DateTime.UtcNow;
+        if(acknowledgedCommand==6||acknowledgedCommand==2||acknowledgedCommand==7||previousFlags!=flags)
+            TraceSwitch("收到ACK CMD="+acknowledgedCommand.ToString("X2")+" FLAGS="+flags.ToString("X2"));
         if(!AutoEnabled&&warmSupported&&(flags&16)!=0&&acknowledgedCommand!=7) { Send(7);return; }
         if(acknowledgedCommand>=0x20&&acknowledgedCommand<=0x24&&(flags&128)!=0) {
             warmSupported=false;flags=(byte)(flags&127);SetStatus("当前bit不支持返回缓存保持，请更新副板bit；首帧准备仍可使用。");return;
@@ -509,6 +573,7 @@ sealed class ControllerWindow : Window
         if (acknowledgedCommand==5) {
             contextKnown=true;contextAvailable=context;
             if(!context) { flags=(byte)(flags&127);mainStatus.Text="旧版副板bit：可手动播放，不能联动。";if(AutoEnabled) automatic.IsChecked=false;return; }
+            if(state!=museumState) TraceSwitch("收到主板状态 STATE="+state.ToString("X2")+" FLAGS="+flags.ToString("X2"));
             museumArtifact=artifact;museumState=state;museumScene=scene;contextAt=DateTime.UtcNow;
             mainStatus.Text="主板："+((state&8)!=0 ? "应急" : (state&1)==0 ? "失联/未就绪" : (state&64)!=0 ? "启动/故障/恢复" : (state&2)==0 ? "总览" : (state&4)!=0 ? "暂停" : "展示")+
                 "  |  文物 "+(artifact<5 ? artifact.ToString() : "--")+"  |  "+((state&16)!=0 ? "手动浏览" : "自动讲解")+
@@ -523,6 +588,7 @@ sealed class ControllerWindow : Window
     void Send(byte command)
     {
         if (port == null || !port.IsOpen) return;
+        if(command==6||command==2||command==7) TraceSwitch("发送授权/撤销 CMD="+command.ToString("X2"));
         pendingCommand = command; pendingSeq = ++nextSeq; attempts = 1; pending = true; sentAt = DateTime.UtcNow;
         port.Write(Protocol.Request(command, pendingSeq), 0, 5);
     }
@@ -556,16 +622,16 @@ sealed class ControllerWindow : Window
         var target=screens.SelectedItem as ScreenChoice;
         if(!offscreenTest&&(target==null||target.Name.IndexOf("Anlogic",StringComparison.OrdinalIgnoreCase)<0||target.Screen.Primary||
             target.Screen.Bounds.Width!=1280||target.Screen.Bounds.Height!=720)) { ClearEmergencyCache();return; }
-        string path=settings.Videos[5];
+        string path=FixedTest ? "[fixed-test]" : settings.Videos[5];
         if(emergencyCache!=null) {
-            if(emergencyCachePath!=path||!File.Exists(path)||!offscreenTest&&emergencyCacheWindow.ScreenName!=target.Screen.DeviceName) ClearEmergencyCache();
+            if(emergencyCachePath!=path||!FixedTest&&!File.Exists(path)||!offscreenTest&&emergencyCacheWindow.ScreenName!=target.Screen.DeviceName) ClearEmergencyCache();
             else { if((DateTime.UtcNow-emergencyCacheAt).TotalSeconds>10&&emergencyReadyAt==DateTime.MaxValue) {
                        emergencyFailedPath=path;ClearEmergencyCache();SetStatus("应急首帧准备超时；保留板载应急图。"); }
                    else if(!emergencyCachePaused&&DateTime.UtcNow>=emergencyReadyAt) {
                        emergencyCache.Pause();emergencyCachePaused=true;emergencyReadyAt=DateTime.UtcNow.AddMilliseconds(34); }
                    return; }
         }
-        if(emergencyFailedPath==path||!File.Exists(path)) return;
+        if(emergencyFailedPath==path||!FixedTest&&!File.Exists(path)) return;
         try {
             var surface=new VideoWindow(offscreenTest ? Forms.Screen.PrimaryScreen : target.Screen,offscreenTest,true);
             // Decode on the final monitor, at final size, behind ordinary video.
@@ -573,6 +639,11 @@ sealed class ControllerWindow : Window
             surface.Topmost=false;emergencyCacheWindow=surface;
             var prepared=surface.Media;
             emergencyCache=prepared;emergencyCachePath=path;emergencyCacheAt=DateTime.UtcNow;
+            if(FixedTest) {
+                surface.Content=VideoWindow.FixedPattern();surface.UpdateLayout();
+                emergencyCachePaused=true;emergencyReadyAt=DateTime.UtcNow.AddMilliseconds(200);
+                TraceSwitch("固定图已布局到1280×720目标窗口；等待合成，不代表屏幕已显示");return;
+            }
             prepared.MediaOpened+=(s,e)=> {
                 if(!ReferenceEquals(emergencyCache,prepared)) return;
                 if(!prepared.HasVideo) { emergencyFailedPath=path;ClearEmergencyCache();return; }
@@ -588,7 +659,7 @@ sealed class ControllerWindow : Window
     }
     bool ActivatePreparedEmergency()
     {
-        if(!linked||(flags&1)==0||!EmergencyPrepared||failedArtifact==5||activeArtifact==5||!File.Exists(settings.Videos[5])) return false;
+        if(!linked||(flags&1)==0||!EmergencyPrepared||failedArtifact==5||activeArtifact==5||!FixedTest&&!File.Exists(settings.Videos[5])) return false;
         var target=screens.SelectedItem as ScreenChoice;
         if(target==null||target.Name.IndexOf("Anlogic",StringComparison.OrdinalIgnoreCase)<0||target.Screen.Primary||
            target.Screen.Bounds.Width!=1280||target.Screen.Bounds.Height!=720) return false;
@@ -598,7 +669,8 @@ sealed class ControllerWindow : Window
             var previous=video;video=next;activeArtifact=5;autoSession=true;autoHold=false;
             opened=true;warmHintSent=false;phase=Phase.Preparing;releaseAt=DateTime.MaxValue;fileCheckedAt=DateTime.UtcNow;
             prepareAt=DateTime.UtcNow;firstFrameAt=prepareAt;
-            AttachVideoEvents(next);file.Text=settings.Videos[5];next.Media.Play();
+            AttachVideoEvents(next);file.Text=settings.Videos[5];if(!FixedTest) next.Media.Play();
+            TraceSwitch("接管同一固定图窗口，无Source/MediaOpened/视频解码");
             // Discard an old STOP/query ACK. No new surface or decoder is
             // created here: the paused frame already occupies the HDMI target.
             if(previous!=null) { previous.Media.Stop();previous.Media.Close();previous.Close(); }
@@ -685,7 +757,7 @@ sealed class ControllerWindow : Window
         if(desired==5&&ActivatePreparedEmergency()) return;
         if(autoSession&&video!=null&&activeArtifact>=0&&(DateTime.UtcNow-fileCheckedAt).TotalMilliseconds>=500) {
             fileCheckedAt=DateTime.UtcNow;
-            if(!File.Exists(settings.Videos[activeArtifact])) { failedArtifact=activeArtifact;StopVideo("联动视频已移动或不可访问，请重新配置；回到本地显示。");return; }
+            if(!(FixedTest&&activeArtifact==5)&&!File.Exists(settings.Videos[activeArtifact])) { failedArtifact=activeArtifact;StopVideo("联动视频已移动或不可访问，请重新配置；回到本地显示。");return; }
         }
         if(desired<0) {
             if(autoSession) { autoHold=!overview;StopVideo("主板应急、恢复、失联或已退出，回到副板本地。"); }
@@ -712,7 +784,8 @@ sealed class ControllerWindow : Window
         }
         if(phase!=Phase.Idle||pending||!linked||autoHold||failedArtifact==desired||(flags&1)==0) return;
         if(desired==5&&emergencyCache!=null) { SetStatus("正在准备应急首帧，板载应急图保持显示。");return; }
-        if(desired==5&&emergencyFailedPath==settings.Videos[5]) { failedArtifact=5;SetStatus("应急视频准备失败，保留板载应急图。");return; }
+        if(desired==5&&FixedTest) { SetStatus("固定测试图尚未准备；检查AnlogicHDMI目标和信源。不会回退到视频解码。");return; }
+        if(desired==5&&!FixedTest&&emergencyFailedPath==settings.Videos[5]) { failedArtifact=5;SetStatus("应急视频准备失败，保留板载应急图。");return; }
         string path=settings.Videos[desired];
         if(!File.Exists(path)) { failedArtifact=desired;SetStatus(VideoSettings.Names[desired]+"视频未配置或已移动，请重新选择；应急时保留板载逃生图。");return; }
         file.Text=path;autoSession=true;activeArtifact=desired;fileCheckedAt=DateTime.UtcNow;StartVideo();
@@ -748,8 +821,10 @@ sealed class ControllerWindow : Window
                 if (releaseAt == DateTime.MaxValue) releaseAt = now.AddMilliseconds(autoSession ? activeArtifact==5 ? 0 : 100 : 700);
                 if (now >= releaseAt) {
                     video.Media.IsMuted=autoSession;
-                    if(autoSession&&activeArtifact!=5&&(museumState&4)!=0) { video.Media.Pause();phase=Phase.Paused; } else { video.Media.Play();phase=Phase.Playing; }
-                    SetStatus(autoSession ? activeArtifact==5 ? "应急疏散指引：静音循环，解除应急立即返回本地。" : "联动展示：文物"+activeArtifact+"，静音循环，暂停随主板。" : "正在播放；视频和声音均走HDMI，停止后回到本地内容。");
+                    if(autoSession&&activeArtifact!=5&&(museumState&4)!=0) { video.Media.Pause();phase=Phase.Paused; }
+                    else { if(!(FixedTest&&activeArtifact==5)) video.Media.Play();phase=Phase.Playing; }
+                    if(FixedTest&&activeArtifact==5) TraceSwitch("副板回报已切入/解除静音/应急授权 FLAGS="+flags.ToString("X2")+"；请观察实屏");
+                    SetStatus(FixedTest&&activeArtifact==5 ? "固定图已获副板授权；看到彩色测试图后点击“屏幕已显示”，再复制切换时序。" : autoSession ? activeArtifact==5 ? "应急疏散指引：静音循环，解除应急立即返回本地。" : "联动展示：文物"+activeArtifact+"，静音循环，暂停随主板。" : "正在播放；视频和声音均走HDMI，停止后回到本地内容。");
                 }
             }
             if (!pending && (now - replyAt).TotalMilliseconds >= 50) {
@@ -771,6 +846,7 @@ static class Program
         }
         if (args.Length == 2 && args[0] == "--media-test") return MediaTest(args[1]);
         if ((args.Length==2||args.Length==3)&&args[0]=="--cache-test") return ControllerWindow.CacheMediaTest(args[1],args.Length==3 ? args[2] : null);
+        if(args.Length==2&&args[0]=="--pattern-test") return ControllerWindow.CacheMediaTest(null,args[1],true);
         if ((args.Length == 2 || args.Length == 4) && args[0] == "--ui-test") {
             int width=args.Length==4 ? int.Parse(args[2]) : 940,height=args.Length==4 ? int.Parse(args[3]) : 750;
             var testApp = new Application(); var window = new ControllerWindow();
