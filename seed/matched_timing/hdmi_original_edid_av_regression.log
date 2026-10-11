@@ -1,0 +1,199 @@
+# do run_secondary_hdmi_av_diag.do
+# D:/TD_6.2.1/sim_release/eg4
+# Model Technology ModelSim SE-64 vlog 10.6e Compiler 2018.06 Jun 23 2018
+# Start time: 22:23:28 on Oct 11,2026
+# vlog -work work_hdmi_av D:/TD_6.2.1/sim_release/eg4/eg_logic_arith.v D:/TD_6.2.1/sim_release/eg4/eg_logic_bram.v D:/TD_6.2.1/sim_release/eg4/eg_logic_clk.v D:/TD_6.2.1/sim_release/eg4/eg_logic_config.v D:/TD_6.2.1/sim_release/eg4/eg_logic_dram.v D:/TD_6.2.1/sim_release/eg4/eg_logic_dram16x4.v D:/TD_6.2.1/sim_release/eg4/eg_logic_fifo.v D:/TD_6.2.1/sim_release/eg4/eg_logic_gate.v D:/TD_6.2.1/sim_release/eg4/eg_logic_io.v D:/TD_6.2.1/sim_release/eg4/eg_logic_iobuf.v D:/TD_6.2.1/sim_release/eg4/eg_logic_mult.v D:/TD_6.2.1/sim_release/eg4/eg_logic_ramfifo.v D:/TD_6.2.1/sim_release/eg4/eg_phy_adc.v D:/TD_6.2.1/sim_release/eg4/eg_phy_bankref.v D:/TD_6.2.1/sim_release/eg4/eg_phy_bram.v D:/TD_6.2.1/sim_release/eg4/eg_phy_bram32k.v D:/TD_6.2.1/sim_release/eg4/eg_phy_clk.v D:/TD_6.2.1/sim_release/eg4/eg_phy_config.v D:/TD_6.2.1/sim_release/eg4/eg_phy_csb.v D:/TD_6.2.1/sim_release/eg4/eg_phy_ddr_8m_16.v D:/TD_6.2.1/sim_release/eg4/eg_phy_dff.v D:/TD_6.2.1/sim_release/eg4/eg_phy_fifo.v D:/TD_6.2.1/sim_release/eg4/eg_phy_glbl.v D:/TD_6.2.1/sim_release/eg4/eg_phy_lslice.v D:/TD_6.2.1/sim_release/eg4/eg_phy_mslice.v D:/TD_6.2.1/sim_release/eg4/eg_phy_mult18.v D:/TD_6.2.1/sim_release/eg4/eg_phy_osc.v D:/TD_6.2.1/sim_release/eg4/eg_phy_pad.v D:/TD_6.2.1/sim_release/eg4/eg_phy_pll.v D:/TD_6.2.1/sim_release/eg4/eg_phy_pwrmnt.v D:/TD_6.2.1/sim_release/eg4/eg_phy_sdram_2m_32.v 
+# -- Compiling module EG_LOGIC_SEQ_DIV
+# -- Compiling module EG_LOGIC_BUFG
+# -- Compiling module EG_LOGIC_BUFIO
+# -- Compiling module EG_LOGIC_BUFGMUX
+# -- Compiling module EG_LOGIC_MBOOT
+# -- Compiling module EG_LOGIC_DNA
+# -- Compiling module EG_LOGIC_GSRN
+# -- Compiling module EG_LOGIC_CCLK
+# -- Compiling module EG_LOGIC_DRAM
+# -- Compiling module EG_LOGIC_DRAM16X4
+# -- Compiling module EG_LOGIC_FIFO
+# -- Compiling module EG_LOGIC_BUF
+# -- Compiling module EG_LOGIC_IDELAY
+# -- Compiling module EG_LOGIC_IDDR
+# -- Compiling module EG_LOGIC_ODDR
+# -- Compiling module EG_LOGIC_IDDRx2
+# -- Compiling module EG_LOGIC_ODELAY
+# -- Compiling module EG_LOGIC_ODDRx2
+# -- Compiling module EG_LOGIC_ODDRx2l
+# -- Compiling module EG_LOGIC_IBUF
+# -- Compiling module EG_LOGIC_OBUF
+# -- Compiling module EG_LOGIC_IOTRIBUF
+# -- Compiling module EG_LOGIC_MULT
+# -- Compiling module EG_LOGIC_RAMFIFO
+# -- Compiling module gray2bin
+# -- Compiling module gray_count
+# -- Compiling module showahead_buffer
+# -- Compiling module EG_PHY_ADC
+# -- Compiling module HARD_SAR12_ADC
+# -- Compiling module EG_PHY_BANKREF
+# -- Compiling module EG_PHY_BRAM
+# -- Compiling module EG_PHY_BRAM32K
+# -- Compiling module EG_PHY_GCLK
+# -- Compiling module EG_PHY_IOCLK
+# -- Compiling module EG_PHY_CLKDIV
+# -- Compiling module EG_PHY_CONFIG
+# -- Compiling module EG_PHY_DDR_8M_16
+# -- Compiling module dff_slice_half
+# -- Compiling module pfb_dffctrl
+# -- Compiling module dff_slice
+# -- Compiling module EG_PHY_FIFO
+# -- Compiling module glbl
+# -- Compiling module EG_PHY_LSLICE
+# -- Compiling module EG_PHY_MSLICE
+# -- Compiling module EG_PHY_MULT18
+# -- Compiling module EG_PHY_OSC
+# -- Compiling module EG_PHY_PAD
+# -- Compiling module EG_PHY_PLL
+# -- Compiling module prediv_mux
+# -- Compiling module eg_dphase_sel
+# -- Compiling module eg_clko_premux
+# -- Compiling module eg_clko_ctrl
+# -- Compiling module eg_pll_div128
+# -- Compiling module eg_pll_div2
+# -- Compiling module EG_PHY_PWRMNT
+# -- Compiling module EG_PHY_SDRAM_2M_32
+# 
+# Top level modules:
+# 	EG_LOGIC_SEQ_DIV
+# 	EG_LOGIC_BUFG
+# 	EG_LOGIC_BUFIO
+# 	EG_LOGIC_BUFGMUX
+# 	EG_LOGIC_MBOOT
+# 	EG_LOGIC_DNA
+# 	EG_LOGIC_GSRN
+# 	EG_LOGIC_CCLK
+# 	EG_LOGIC_DRAM
+# 	EG_LOGIC_DRAM16X4
+# 	EG_LOGIC_FIFO
+# 	EG_LOGIC_BUF
+# 	EG_LOGIC_IDELAY
+# 	EG_LOGIC_ODELAY
+# 	EG_LOGIC_ODDRx2l
+# 	EG_LOGIC_IBUF
+# 	EG_LOGIC_OBUF
+# 	EG_LOGIC_IOTRIBUF
+# 	EG_LOGIC_MULT
+# 	EG_LOGIC_RAMFIFO
+# 	EG_PHY_ADC
+# 	EG_PHY_BANKREF
+# 	EG_PHY_BRAM
+# 	EG_PHY_BRAM32K
+# 	EG_PHY_GCLK
+# 	EG_PHY_CONFIG
+# 	EG_PHY_DDR_8M_16
+# 	EG_PHY_FIFO
+# 	glbl
+# 	EG_PHY_MULT18
+# 	EG_PHY_OSC
+# 	EG_PHY_PAD
+# 	EG_PHY_PLL
+# 	EG_PHY_PWRMNT
+# 	EG_PHY_SDRAM_2M_32
+# End time: 22:23:32 on Oct 11,2026, Elapsed time: 0:00:04
+# Errors: 0, Warnings: 0
+# Model Technology ModelSim SE-64 vlog 10.6e Compiler 2018.06 Jun 23 2018
+# Start time: 22:23:32 on Oct 11,2026
+# vlog -work work_hdmi_av ../src/common/reset_sync.v ../src/common/seg_hex_display.v ../src/clock/hdmi_relay_clock.v ../src/video/hdmi_edid_720p.v ../src/video/hdmi_relay_phy.v ../src/video/hdmi_tmds_monitor.v ../vendor/official_hdmi_loop_edid/myedid_new.v ../vendor/official_hdmi_loop_edid/i2c_edid.v ../vendor/official_hdmi_loop_edid/i2cSlaveTop.v ../src/secondary/top_secondary_hdmi_relay_diag.v top_secondary_hdmi_av_reference.v tb_secondary_hdmi_av_diag.v 
+# -- Compiling module reset_sync
+# -- Compiling module seg_hex_display
+# -- Compiling module hdmi_relay_clock
+# -- Compiling module hdmi_edid_720p
+# -- Compiling module hdmi_relay_phy
+# -- Compiling module hdmi_tmds_monitor
+# -- Compiling module myedid_new
+# -- Compiling module i2c_edid
+# ** Warning: ../vendor/official_hdmi_loop_edid/i2c_edid.v(39): (vlog-2600) [RDGN] - Redundant digits in numeric literal.
+# ** Warning: ../vendor/official_hdmi_loop_edid/i2c_edid.v(40): (vlog-2600) [RDGN] - Redundant digits in numeric literal.
+# ** Warning: ../vendor/official_hdmi_loop_edid/i2c_edid.v(84): (vlog-2600) [RDGN] - Redundant digits in numeric literal.
+# ** Warning: ../vendor/official_hdmi_loop_edid/i2c_edid.v(85): (vlog-2600) [RDGN] - Redundant digits in numeric literal.
+# -- Compiling module i2cSlaveTop
+# -- Compiling module top_secondary_hdmi_relay_diag
+# -- Compiling module top_secondary_hdmi_av_diag
+# -- Compiling module tb_secondary_hdmi_av_diag
+# 
+# Top level modules:
+# 	tb_secondary_hdmi_av_diag
+# End time: 22:23:32 on Oct 11,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 4
+# vsim -c -voptargs="+acc" -onfinish stop -lib work_hdmi_av tb_secondary_hdmi_av_diag glbl 
+# Start time: 22:23:32 on Oct 11,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# ** Warning: D:/TD_6.2.1/sim_release/eg4/eg_logic_bram.v(59): (vopt-2697) <protected> of part-select into '<protected>' is out of bounds.
+# ** Warning: D:/TD_6.2.1/sim_release/eg4/eg_logic_bram.v(59): (vopt-2697) <protected> of part-select into '<protected>' is out of bounds.
+# ** Note: (vopt-143) Recognized 1 FSM in module "hdmi_edid_720p(fast)".
+# ** Note: (vopt-143) Recognized 1 FSM in module "i2c_edid(fast)".
+# ** Warning: top_secondary_hdmi_av_reference.v(17): (vopt-2685) [TFMPC] - Too few port connections for 'u_relay'.  Expected 21, found 16.
+# ** Warning: top_secondary_hdmi_av_reference.v(17): (vopt-2718) [TFMPC] - Missing connection for port 'relay_pairs'.
+# ** Warning: top_secondary_hdmi_av_reference.v(17): (vopt-2718) [TFMPC] - Missing connection for port 'application_rst_n'.
+# ** Warning: top_secondary_hdmi_av_reference.v(17): (vopt-2718) [TFMPC] - Missing connection for port 'relay_blank'.
+# ** Warning: top_secondary_hdmi_av_reference.v(17): (vopt-2718) [TFMPC] - Missing connection for port 'relay_valid'.
+# ** Warning: top_secondary_hdmi_av_reference.v(17): (vopt-2718) [TFMPC] - Missing connection for port 'relay_sclk'.
+# //  ModelSim SE-64 10.6e Jun 23 2018
+# //
+# //  Copyright 1991-2018 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  ModelSim SE-64 and its associated documentation contain trade
+# //  secrets and commercial or financial information that are the property of
+# //  Mentor Graphics Corporation and are privileged, confidential,
+# //  and exempt from disclosure under the Freedom of Information Act,
+# //  5 U.S.C. Section 552. Furthermore, this information
+# //  is prohibited from disclosure under the Trade Secrets Act,
+# //  18 U.S.C. Section 1905.
+# //
+# Loading work.tb_secondary_hdmi_av_diag(fast)
+# Loading work.top_secondary_hdmi_av_diag(fast)
+# Loading work.top_secondary_hdmi_relay_diag(fast)
+# Loading work.i2cSlaveTop(fast)
+# Loading work.i2c_edid(fast)
+# Loading work.myedid_new(fast)
+# Loading work.hdmi_edid_720p(fast)
+# Loading work.hdmi_relay_clock(fast)
+# Loading work.EG_LOGIC_BUFG(fast)
+# Loading work.EG_PHY_PLL(fast)
+# Loading work.eg_dphase_sel(fast)
+# Loading work.eg_dphase_sel(fast__1)
+# Loading work.prediv_mux(fast)
+# Loading work.eg_pll_div2(fast)
+# Loading work.eg_clko_premux(fast)
+# Loading work.eg_pll_div128(fast)
+# Loading work.eg_pll_div128(fast__1)
+# Loading work.eg_pll_div128(fast__2)
+# Loading work.eg_pll_div128(fast__3)
+# Loading work.eg_clko_ctrl(fast)
+# Loading work.reset_sync(fast)
+# Loading work.hdmi_relay_phy(fast)
+# Loading work.EG_LOGIC_IDDRx2(fast)
+# Loading work.EG_LOGIC_ODDR(fast)
+# Loading work.hdmi_tmds_monitor(fast)
+# Loading work.seg_hex_display(fast)
+# Loading work.glbl(fast)
+# ** Warning: (vsim-3015) ../src/clock/hdmi_relay_clock.v(61): [PCDPC] - Port size (5) does not match connection size (1) for port 'load_reg'. The port definition is at: D:/TD_6.2.1/sim_release/eg4/eg_phy_pll.v(25).
+#    Time: 0 fs  Iteration: 0  Instance: /tb_secondary_hdmi_av_diag/dut/u_relay/u_clock/u_rx_pll File: D:/TD_6.2.1/sim_release/eg4/eg_phy_pll.v
+# incase
+# 
+# ******************** : The Attribute            REFCLK_DIV on pll instance tb_secondary_hdmi_av_diag.dut.u_relay.u_clock.u_rx_pll.para_int_range_chk is set to           1.  Legal values for this attribute are           1 to         128.
+# ******************** : The Attribute             FBCLK_DIV on pll instance tb_secondary_hdmi_av_diag.dut.u_relay.u_clock.u_rx_pll.para_int_range_chk is set to           1.  Legal values for this attribute are           1 to         128.
+# ******************** : The Attribute             CLKC0_DIV on pll instance tb_secondary_hdmi_av_diag.dut.u_relay.u_clock.u_rx_pll.para_int_range_chk is set to           2.  Legal values for this attribute are           1 to         128.
+# ******************** : The Attribute             CLKC1_DIV on pll instance tb_secondary_hdmi_av_diag.dut.u_relay.u_clock.u_rx_pll.para_int_range_chk is set to           4.  Legal values for this attribute are           1 to         128.
+# ******************** : The Attribute             CLKC2_DIV on pll instance tb_secondary_hdmi_av_diag.dut.u_relay.u_clock.u_rx_pll.para_int_range_chk is set to          10.  Legal values for this attribute are           1 to         128.
+# ******************** : The Attribute             CLKC3_DIV on pll instance tb_secondary_hdmi_av_diag.dut.u_relay.u_clock.u_rx_pll.para_int_range_chk is set to           1.  Legal values for this attribute are           1 to         128.
+# ******************** : The Attribute             CLKC4_DIV on pll instance tb_secondary_hdmi_av_diag.dut.u_relay.u_clock.u_rx_pll.para_int_range_chk is set to           1.  Legal values for this attribute are           1 to         128.
+# PASS official HPD asserts independently of HDMI source clock
+# PASS official ROM both blocks read/checksum while passive monitor never drives SDA
+# PASS A-input/B-output candidate qualifies source without sink-HPD gate
+# PASS all four lanes including clock and island-style payload keep common delay          11 UI
+# PASS source reconnect requalifies while official EDID remains available
+# ** Note: $finish    : tb_secondary_hdmi_av_diag.v(147)
+#    Time: 6613410 ns  Iteration: 2  Instance: /tb_secondary_hdmi_av_diag
+# Break in Module tb_secondary_hdmi_av_diag at tb_secondary_hdmi_av_diag.v line 147
+# Stopped at tb_secondary_hdmi_av_diag.v line 147
+# End time: 22:23:39 on Oct 11,2026, Elapsed time: 0:00:07
+# Errors: 0, Warnings: 9

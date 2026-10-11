@@ -22,6 +22,7 @@ module myedid_new ( doa, dia, addra, clka, wea, rsta );
 	parameter DATA_DEPTH_B = 256;
 	parameter REGMODE_A    = "OUTREG";
 	parameter WRITEMODE_A  = "NORMAL";
+	parameter EDID_INIT_FILE = "edid_1280720_with_audio.mif";
 
 	output [DATA_WIDTH_A-1:0] doa;
 
@@ -47,7 +48,7 @@ module myedid_new ( doa, dia, addra, clka, wea, rsta );
 				.IMPLEMENT("9K"),
 				.DEBUGGABLE("NO"),
 				.PACKABLE("NO"),
-				.INIT_FILE("edid_1280720_with_audio.mif"),
+				.INIT_FILE(EDID_INIT_FILE),
 				.FILL_ALL("NONE"))
 			inst(
 				.dia(dia),

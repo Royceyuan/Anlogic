@@ -1,5 +1,7 @@
 `timescale 1ns / 100fs
-module tb_secondary_hdmi_museum;
+module tb_secondary_hdmi_museum #(
+    parameter integer MATCH_TIMING=1
+);
 reg clk=0,scl=1,master_low=0,source_enabled=0;
 reg uart_rxd=1;
 always #10 clk=!clk;
@@ -18,11 +20,14 @@ top_secondary_hdmi_museum dut(.clk_50m(clk),.hdmi_a_clk_p(incoming[3]),
     .led(led),.seg_data(seg),.seg_sel(sel));
 defparam dut.u_relay.u_clock.CLOCKS_PER_MS=500;
 defparam dut.u_switch.SETTLE_CYCLES=64;
+defparam dut.MATCH_PC_TIMING=MATCH_TIMING;
 defparam dut.u_pc_video.BAUD_DIV=8;
 defparam dut.u_relay.u_monitor.H_TOTAL=192;
 defparam dut.u_relay.u_monitor.V_TOTAL=16;
 defparam dut.u_relay.u_monitor.GOOD_FRAMES=2;
-defparam dut.u_relay.g_official_edid.u_slave.u2_iic.myedid_new_ram.inst.INIT_FILE="../vendor/official_hdmi_loop_edid/edid_1280720_with_audio.mif";
+defparam dut.u_relay.g_official_edid.u_slave.u2_iic.myedid_new_ram.inst.INIT_FILE=MATCH_TIMING ?
+    "../vendor/official_hdmi_loop_edid/edid_1280720_75m_with_audio.mif" :
+    "../vendor/official_hdmi_loop_edid/edid_1280720_with_audio.mif";
 function [9:0] control;
 input vs,hs;
 begin case({vs,hs})
@@ -76,7 +81,7 @@ initial forever begin
         else if(x>=190) begin a=10'h2cc;b=10'h133;c=10'h2cc;end
         for(bit_index=0;bit_index<10;bit_index=bit_index+1) begin
             incoming=source_enabled ? {bit_index<5,c[bit_index],b[bit_index],a[bit_index]} : 0;
-            #1.34680135;
+            #(MATCH_TIMING ? 1.33333333 : 1.34680135);
         end
     end
 end
@@ -129,6 +134,7 @@ always @(dut.u_relay.sclk) if(checking) begin
 end
 integer i,sum0=0,sum1=0;
 reg [7:0] data;
+localparam [103:0] MATCH_NAME="AnlogicHDMI75";
 reg test_pass=0;
 initial begin
     wait(dut.u_relay.rst_n);repeat(200) @(posedge clk);
@@ -139,15 +145,25 @@ initial begin
     release dut.u_relay.g_official_edid.u_slave.hpd_reset_cnt;
     if(!hpd || dut.u_relay.clock_valid) $fatal(1,"EDID handshake wrongly requires video clock");
     $display("PASS official HPD asserts independently of HDMI source clock");
+    if(dut.u_local.hs!==(MATCH_TIMING ? ~dut.local_hs : dut.local_hs)||
+       dut.u_local.vs!==(MATCH_TIMING ? ~dut.local_vs : dut.local_vs)) $fatal(1,"local sync polarity mapping");
+    $display("PASS local sync polarity follows the selected timing profile");
     start_i2c;send_byte(8'ha0);send_byte(0);start_i2c;send_byte(8'ha1);
     for(i=0;i<256;i=i+1) begin
         read_byte(data,i!=255);
         if(i==0 && data!=0) $fatal(1,"official EDID header");
         if(i>0 && i<7 && data!=8'hff) $fatal(1,"official EDID header ff");
-        if(i==54 && data!=1) $fatal(1,"official preferred pixel clock low byte");
+        if(i==54 && data!=(MATCH_TIMING ? 8'h4c : 8'h01)) $fatal(1,"preferred pixel clock low byte");
         if(i==55 && data!=8'h1d) $fatal(1,"official preferred pixel clock high byte");
         if(i==144 && data!=8'h09) $fatal(1,"official EDID 2-channel LPCM descriptor");
         if((i==145 || i==146) && data!=8'h04) $fatal(1,"official EDID 48kHz/24-bit audio capability");
+        if(i==71 && data!=8'h1e) $fatal(1,"preferred positive sync polarity");
+        if(MATCH_TIMING && i==10 && data!=8'h31) $fatal(1,"distinct test product ID missing");
+        if(MATCH_TIMING && i==93 && data!=8'hfc) $fatal(1,"name descriptor corrupted");
+        if(MATCH_TIMING && i==111 && data!=8'hfd) $fatal(1,"monitor range descriptor corrupted");
+        if(MATCH_TIMING && i==114 && data!=61) $fatal(1,"75MHz frame rate exceeds declared monitor range");
+        if(MATCH_TIMING && i==116 && data!=46) $fatal(1,"75MHz line rate exceeds declared monitor range");
+        if(MATCH_TIMING && i>=95 && i<=107 && data!=MATCH_NAME[(107-i)*8+:8]) $fatal(1,"matched-profile monitor name");
         if(i<128) sum0=sum0+data;else sum1=sum1+data;
     end
     scl=0;master_low=1;#1000;scl=1;#1000;master_low=0;#1000;
@@ -156,6 +172,8 @@ initial begin
     $display("PASS official ROM both blocks read/checksum while passive monitor never drives SDA");
     source_enabled=1;wait(dut.u_relay.format_ff[1]);
     repeat(100) @(posedge clk);
+    if(MATCH_TIMING && (dut.u_relay.measured_edges<749 || dut.u_relay.measured_edges>751)) $fatal(1,"75MHz source clock was not actually exercised");
+    $display("PASS qualified source clock and preferred profile agree, matched=%d",MATCH_TIMING);
     if(dut.external_selected||dut.pc_play_enabled) $fatal(1,"valid desktop auto-selected without UART START");
     $display("PASS valid connected PC stays local until UART authorizes video");
     uart_command(1,1);wait(dut.external_selected&&!dut.output_muted);

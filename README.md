@@ -17,15 +17,16 @@
 - 新联动提速候选：`release/dual_fpga_museum_terminal_secondary_board_linked_video.bit`，SHA256 `5BDAA5478EAFA2E5E40B43F85B59FCA7F81FBA9C4C9F6570AEC6BE57F4561C9F`；使用当前播放器，主板bit不用更换。
 - 应急状态修正回退候选：`release/dual_fpga_museum_terminal_secondary_board_emergency_video.bit`，SHA256 `4B7807DD2ED3E07803DA4594736017D0928FF5C3C94080E21E58E1D338ED07D1`。
 - 最新黑屏提速候选：`release/dual_fpga_museum_terminal_secondary_board_emergency_video_fast_switch.bit`，SHA256 `B6D55A66487E2292FA60B089F5B02A2D3BDB539E7D52B4FC4AD5A3BF3837AC35`；配套新版播放器，第12节说明。
-- 当前源码的资源/时序及协议记录：`release/manifest_secondary_emergency_video.json`、`seed/emergency_clock_keep`。此前成功种子和旧bit保留回退，播放器哈希以新清单为准。
+- 最新同频/同步极性候选：`release/dual_fpga_museum_terminal_secondary_board_matched_timing.bit`，SHA256 `255884F5777FA5C83637E3075FAC00FCF716F768DF5147D4FE700DFB3927DE90`。B6D55A66为上一版回退，第13节说明这次时序测试；不标为零黑屏已通过。
+- 当前源码的资源/时序记录：`release/manifest_secondary_matched_timing.json`、`seed/matched_timing`。协议/对照播放器见`manifest_secondary_emergency_video.json`。此前成功种子和旧bit保留回退。
 
-工程入口仍唯一。最新修改保持三个数据通道静音，但有效信源切换等待期间不再一起复位TMDS时钟通道；PLL、管脚、时序约束和UART协议不改。旧入口和历史文件在Git/rubbish回溯；必要工具、素材及成功种子保留。
+工程入口仍唯一。当前候选将上游优选EDID频率及本地编码同步极性匹配；延续时钟通道保留、三个数据通道安全静音。PLL、管脚、时序约束、媒体读写和UART协议不改。旧入口和历史文件在Git/rubbish回溯；必要工具、素材及成功种子保留。
 
 已验收UART版setup/hold为+0.106/+0.021ns；上轮联动提速候选为+0.105/+0.021ns；应急状态修正候选为+0.048/+0.023ns；最新切换候选为+0.090/+0.023ns，TNS均0。历史85E5C239基线证据仍保留在`seed/hdmi_museum/cleanup_verification.json`，仅作回溯，不是当前源码的报告。
 
 ## 2. 接线、视频和优先级
 
-显示器始终接副板 **HDMIB**；电脑自身HDMI输出接 **HDMIA**；双板网线、主板已验证版本保持不变。本地页面也从B输出。电脑选择AnlogicHDMI目标，输出1280×720、60/59.94Hz、RGB8、SDR；不要把独立DP连接的显示器设置当作FPGA输入。电脑解码本地视频，FPGA转发HDMI，不需要以太网视频软件。
+显示器始终接副板 **HDMIB**；电脑自身HDMI输出接 **HDMIA**；双板网线、主板已验证版本保持不变。本地页面也从B输出。旧bit电脑选择AnlogicHDMI目标，输出1280×720、60/59.94Hz；当前同频候选优选AnlogicHDMI75、约60.61Hz，第13节说明。均使用RGB8、SDR；不要把独立DP连接的显示器设置当作FPGA输入。电脑解码本地视频，FPGA转发HDMI，不需要以太网视频软件。
 
 声音选择AnlogicHDMI对应HDMI设备，双声道48kHz24-bit LPCM，由B送显示器，不经副板功放。显示器须有音频播放能力。暂不支持1080p输入、HDCP、HDR、深色或压缩音频位流。
 
@@ -37,7 +38,7 @@
 
 1. 电脑HDMI→副板HDMIA，副板HDMIB→屏幕；双板以太网仍直连原端口。
 2. 电脑USB→副板板载USB-UART Type-C（CH340），不是USB-JTAG；UART RX=F12、TX=D12，与官方第16例一致。需要系统已安装CH340驱动，程序不自动安装驱动。
-3. Windows启用AnlogicHDMI为扩展屏，保持1280×720、60/59.94Hz、RGB8、SDR；声音输出选择AnlogicHDMI，双声道48kHz/24-bit PCM。电脑自身视频编码可不同，解码后由GPU按这一路显示格式输出。程序不更改显示器/音频系统设置。
+3. Windows启用FPGA的AnlogicHDMI扩展屏，保持1280×720、RGB8、SDR；旧bit为60/59.94Hz，同频候选确认AnlogicHDMI75约60.61Hz。声音输出选择此HDMI目标，双声道48kHz/24-bit PCM。电脑自身视频编码可不同，解码后由GPU按这一路显示格式输出。程序不更改独立显示器/音频系统设置。
 4. 双击电脑播放器，选择副板COM口并连接、选择AnlogicHDMI扩展屏、选择本地视频，点“播放到副屏”。若读不到对应EDID名称，程序拒绝把独立DP或主屏误当成HDMI视频目标。
 5. 程序先静音准备全屏首帧，再授权并等待输出稳定后播放。暂停保留画面及保活；停止/结束先撤销授权并确认本地输出，再关闭置顶视频窗。串口失联时保留视频窗至硬件看门狗超时，避免正常停止时露出桌面。强杀程序无法保留窗口，最长约3秒才退回本地，不宣称此异常场景完全无桌面闪现。
 
@@ -332,3 +333,30 @@ Start-Process .\tools\PCVideoPlayer\MuseumPCVideoPlayer.exe -ArgumentList '--cac
 判读：先看收到应急→发CMD06→有效输出回报之间是否已有秒级等待；若这段短而固定图仍约4秒后才出现，视频文件解码不足以解释延迟，应重点定位硬件切源/显示器重锁及公共呈现路径；若固定图明显快于原视频，优先检查播放器媒体呈现。测试本身不能断言4秒只来自显示器重锁。GUI默认关闭对照时保留原视频行为。
 
 可复现检查：原`--self-test`增加四色像素渲染及记录检查；`--pattern-test <输出XML路径>`在1280×720离屏窗口预备同一固定图，验证Source为空、MediaOpened计数0、不更换窗口/父级。`tools/PCVideoPlayer/pattern_validation.xml`保留结果；原完整视频解码和`--cache-test`回归继续通过。离屏测试不发送串口命令，不代替本次上板对照。
+
+## 13. 同频/同同步极性候选（2026-10-11，待上板）
+
+固定图板测已确认也要黑屏约3～4秒。用户日志：电脑收到应急STATE09=6257.1ms，发送CMD06=6408.7ms，收到授权FLAGS29=6412.3ms，收到外部已选择且解除静音FLAGS2B=6489.1ms，软件更新状态=6563.2ms，用户点击看到画面=9831.3ms。授权应答3.6ms、发送至有效输出回报80.4ms；回报至点击约3.3秒含点击反应，不能作为精确光学延迟。结合用户对固定图黑屏的确认，视频文件解码不足以解释这段延迟；尚未证明只由显示器重锁造成。
+
+最小同频候选并非帧缓存/统一输出架构：
+
+- 原本地输出75MHz、1650×750总时序，约60.606Hz；本地行场同步在扫描器中为负极性。原PC优选EDID为74.25MHz、同总时序、正极性同步，存在不同频率/极性。
+- 新增`edid_1280720_75m_with_audio.mif`，第一详细时序设为75MHz，分辨率、消隐、同步宽度及正极性不变。显示名称AnlogicHDMI75、产品编号49用于和旧目标区分；范围上限61Hz/46kHz包含60.606Hz/45.455kHz。重算两块校验和为0x2A/0xEF。原标准60Hz详细时序及CTA兼容模式保留，只取消旧60Hz的native优先标记，音频及厂商数据块不改。[字段及同步标志按Linux内核EDID结构核对](https://raw.githubusercontent.com/torvalds/linux/master/include/drm/drm_edid.h)。
+- 只在`top_secondary_hdmi_museum/u_local`编码入口反相本地HS/VS，使输出与PC优选时序同为正极性。坐标、DE、像素、TF/SDRAM读写、本地75MHz PLL、原始PC音视频转发、授权及1ms安全静音不变。不新增PLL、帧缓存或音频重新编码。
+- 顶层`MATCH_PC_TIMING=1`为当前候选；0恢复原EDID及本地极性。共享接收诊断模块新增选项默认0，官方握手ROM默认仍为旧标准MIF，不改变旧诊断入口。修改参数后必须重新综合、布局布线并生成bit，不可把旧db当新源码使用。bitgen门槛包含新MIF依赖，完整手动重建不依赖rubbish。
+
+新bit `release/dual_fpga_museum_terminal_secondary_board_matched_timing.bit`，SHA256 `255884F5777FA5C83637E3075FAC00FCF716F768DF5147D4FE700DFB3927DE90`。播放器仍用F971894C版，无需替换EXE；主板、TF素材和MBP1不改。回退B6D55A66 bit及旧MIF保留。当前正式唯一入口仍为根目录`.al`。
+
+上板步骤与预期：
+
+1. 主板SW4先置0，停止并关闭播放器；烧新副板bit。先验证无PC时本地轮播、简介、说明页及双板按键/拨码功能正常。
+2. 电脑HDMI接副板A，B接显示器；必要时只拔插电脑→副板A的线让PC重新读EDID。电脑应新增/识别AnlogicHDMI75，启用其1280×720、RGB8、SDR扩展桌面。不要调整G52 Max的独立DP通道。
+3. 在Windows高级显示设置选AnlogicHDMI75，确认活动信号刷新率约60.61Hz。GPU是否选择新优选格式只能实机确认；若仍60Hz，本次同频假设未建立，不能把结果视为同频测试失败。不要强行设不支持的自定义格式。
+4. 打开原对照播放器，刷新并选AnlogicHDMI75，连接串口；先勾黑屏对照、再勾联动，等已缓存。主板SW4=1，记录固定图出现时间并复制时序；置0确认恢复。期望黑屏缩短，但此候选尚不能保证。
+5. 取消黑屏对照，再测正常应急视频、普通文物联动/暂停/退出、手动有声播放、拔HDMI/串口/网线回退及重连。新HDMI目标可能需要重新选择对应音频输出，仍48kHz24-bit双声道PCM。
+
+限制：同名义频率不等于同一个时钟，两路相位/帧起点仍独立，且本地DVI式编码与PC HDMI数据岛模式不同。1ms数据静音依旧存在。若确认60.61Hz仍黑屏数秒，应继续分析帧相位、有效符号连续性及HDMI/DVI流类型变化，不能继续归咎视频解码。最终连续输出方案仍可能需要跟随输入扫描/跨时钟缓冲和音频保持，这次不声称已完成。若新EDID不能识别或本地/音频功能异常，先回退B6D55A66，不丢失原工程。
+
+原种子7综合、布局布线、STA/DRC和bitgen通过：setup +0.115ns、hold +0.027ns，TNS0，无multi-drive/abnormal timing path；原PHY7002/5079警告继续披露。LUT 11433/19600（58.33%）、FF 7313/19600（37.31%）、Slice 6549/9800（66.83%），BRAM9K21/64、BRAM32K13/16、DSP5/29、PLL4/4、GCLK10/16。相对B6候选LUT -41、FF +1、Slice +29；未改约束或增加时序例外。成功报告在`seed/matched_timing`。
+
+仿真：同频/原参数两次集成各13条PASS，共26；原官方EDID音视频直通5条、UART新旧23条、切源7条、本地缓存/应急状态2条，共63条。检查首选频率、名称、范围、两块校验和及音频能力，且实际驱动75MHz输入；原74.25MHz路径仍通过。保持原缩减帧几何、厂商初始化X提示及数据岛样式边界，不当作真实音频包、PC驱动枚举或实体显示器延迟验证。board_pass=false，等待本次板测。

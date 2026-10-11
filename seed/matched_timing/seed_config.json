@@ -1,0 +1,18 @@
+{
+  "tool":"TD 6.2.168116",
+  "project":"dual_fpga_museum_terminal_secondary_board.al",
+  "top":"top_secondary_hdmi_museum",
+  "top_parameter":{"MATCH_PC_TIMING":1},
+  "build_script":"scripts/synthesize_and_route.tcl",
+  "place_seed":7,
+  "shared_pll_location":"x000y000",
+  "rx_pll_location":"x000y071",
+  "pair_regions":{"lane0":[38,8,2,4],"lane1":[38,12,2,4]},
+  "setup_wns_ns":0.115,
+  "hold_wns_ns":0.027,
+  "tns_ns":0,
+  "bit_manifest":"release/manifest_secondary_matched_timing.json",
+  "bit_sha256":"255884F5777FA5C83637E3075FAC00FCF716F768DF5147D4FE700DFB3927DE90",
+  "board_pass":false,
+  "note":"75MHz preferred upstream EDID and positive local output sync. Standard EDID and legacy parameter path retained. No phase lock, PLL or constraints changed."
+}

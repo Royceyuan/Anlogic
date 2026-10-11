@@ -9,4 +9,8 @@ vlog -work work_hdmi_museum ../src/common/reset_sync.v ../src/common/seg_hex_dis
 vsim -c -voptargs=+acc -onfinish stop -lib work_hdmi_museum tb_secondary_hdmi_museum glbl
 run -all
 if {[examine -radix unsigned /tb_secondary_hdmi_museum/test_pass] != 1} {quit -code 1 -f}
+quit -sim
+vsim -c -voptargs=+acc -onfinish stop -lib work_hdmi_museum tb_secondary_hdmi_museum glbl -gMATCH_TIMING=0
+run -all
+if {[examine -radix unsigned /tb_secondary_hdmi_museum/test_pass] != 1} {quit -code 1 -f}
 quit -f

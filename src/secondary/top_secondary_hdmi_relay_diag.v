@@ -6,7 +6,8 @@ module top_secondary_hdmi_relay_diag #(
     parameter integer HPD_LOW_CYCLES=10000000,
     parameter integer USE_OFFICIAL_EDID=0,
     parameter integer REQUIRE_SINK_HPD=1,
-    parameter integer EXTERNAL_TRANSMITTER=0
+    parameter integer EXTERNAL_TRANSMITTER=0,
+    parameter integer MATCH_LOCAL_CLOCK_EDID=0
 )(
     input wire clk_50m,
     input wire hdmi_b_clk_p,hdmi_b_d0_p,hdmi_b_d1_p,hdmi_b_d2_p,
@@ -47,6 +48,8 @@ generate if(USE_OFFICIAL_EDID) begin : g_official_edid
     // Keep the user-board-verified handshake and ROM, not the RGB/DVI path.
     i2cSlaveTop u_slave(.SYS_CLK(clk_50m),.rst(!rst_n),.scl(hdmi_b_scl),
         .sda(hdmi_b_sda),.hpd_reset(edid_ready),.LED());
+    defparam u_slave.u2_iic.myedid_new_ram.EDID_INIT_FILE=MATCH_LOCAL_CLOCK_EDID ?
+        "edid_1280720_75m_with_audio.mif" : "edid_1280720_with_audio.mif";
     wire [7:0] observer_bus;
     hdmi_edid_720p u_observer(.clk(clk_50m),.rst_n(rst_n),.enable(rst_n),
         .scl(hdmi_b_scl),.sda(hdmi_b_sda),.sda_low(),

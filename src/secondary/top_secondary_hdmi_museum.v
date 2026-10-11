@@ -2,7 +2,11 @@
 `default_nettype none
 // Integrated candidate: A receives PC HDMI, B is the only display output.
 // UART authorizes AV; emergency revokes ordinary AV, allowing only CMD06 AV.
-module top_secondary_hdmi_museum(
+module top_secondary_hdmi_museum #(
+    // ponytail: frequency/polarity matching, not phase-locked seamless output.
+    // Zero restores the original 74.25 MHz EDID and local sync polarity.
+    parameter integer MATCH_PC_TIMING=1
+)(
     input wire clk_50m,
     input wire uart_rxd,
     output wire uart_txd,
@@ -45,7 +49,7 @@ top_secondary_main5e #(.SHARED_MEDIA_ETH_PLL(1),.EXTERNAL_HDMI_PHY(1),.LINKED_VI
 wire external_sclk,external_ready,external_blank,rst_n;
 wire [7:0] external_pairs,local_pairs;
 wire external_selected,output_muted,pc_play_enabled;
-top_secondary_hdmi_relay_diag #(.USE_OFFICIAL_EDID(1),.REQUIRE_SINK_HPD(0),.EXTERNAL_TRANSMITTER(1)) u_relay(
+top_secondary_hdmi_relay_diag #(.USE_OFFICIAL_EDID(1),.REQUIRE_SINK_HPD(0),.EXTERNAL_TRANSMITTER(1),.MATCH_LOCAL_CLOCK_EDID(MATCH_PC_TIMING)) u_relay(
     .clk_50m(application_clock),.hdmi_b_clk_p(hdmi_a_clk_p),
     .hdmi_b_d0_p(hdmi_a_d0_p),.hdmi_b_d1_p(hdmi_a_d1_p),.hdmi_b_d2_p(hdmi_a_d2_p),
     .hdmi_b_scl(hdmi_a_scl),.hdmi_b_sda(hdmi_a_sda),.hdmi_b_hpd(hdmi_a_hpd),.hdmi_a_hpd(hdmi_b_hpd),
@@ -53,7 +57,8 @@ top_secondary_hdmi_relay_diag #(.USE_OFFICIAL_EDID(1),.REQUIRE_SINK_HPD(0),.EXTE
     .relay_sclk(external_sclk),.relay_valid(external_ready),.relay_blank(external_blank),.relay_pairs(external_pairs),.application_rst_n(rst_n));
 secondary_hdmi_local_pairs u_local(
     .pixel_clk(local_pclk),.serial_clk(local_sclk),.rst_n(local_ready),
-    .hs(local_hs),.vs(local_vs),.de(local_de),.rgb(local_rgb),.pairs(local_pairs));
+    .hs(MATCH_PC_TIMING ? ~local_hs : local_hs),.vs(MATCH_PC_TIMING ? ~local_vs : local_vs),
+    .de(local_de),.rgb(local_rgb),.pairs(local_pairs));
 secondary_video_uart_control #(.MUSEUM_LINK(1)) u_pc_video(
     .clk(application_clock),.rst_n(rst_n),.uart_rxd(uart_rxd),.uart_txd(uart_txd),
     .input_ready(external_ready),.external_selected(external_selected),

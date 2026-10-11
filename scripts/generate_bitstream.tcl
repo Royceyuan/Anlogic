@@ -17,6 +17,7 @@ set required_files [list $project_file vendor/anlogic_lab6/sdram/enc_file/global
 foreach {entry path} [regexp -all -inline {<File Path="([^"]+)"} $project] {lappend required_files $path}
 lappend required_files src/secondary/secondary_help_font.vh
 lappend required_files vendor/official_hdmi_loop_edid/edid_1280720_with_audio.mif
+lappend required_files vendor/official_hdmi_loop_edid/edid_1280720_75m_with_audio.mif
 foreach file $required_files {if {![file exists [file join $root $file]] || [file mtime [file join $root $file]] > [file mtime $db]} {set good 0}}
 if {!$good} {puts "REFUSED: stale P&R, warnings, or failed timing"; exit}
 cd $root

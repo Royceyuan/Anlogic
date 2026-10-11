@@ -29,3 +29,5 @@ seed/emergency_busy_fix/* -text -whitespace
 seed/emergency_busy_fix/*.json text whitespace
 seed/emergency_clock_keep/* -text -whitespace
 seed/emergency_clock_keep/*.json text whitespace
+seed/matched_timing/* -text -whitespace
+seed/matched_timing/*.json text whitespace
