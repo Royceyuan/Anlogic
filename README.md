@@ -134,3 +134,24 @@ Get-FileHash -LiteralPath ./release/dual_fpga_museum_terminal_main_board_hdmi_b.
 所有移出内容位于 `D:\VSCode\CodeFiles\Git_TD\rubbish\双板软件与旧位流整理_20261003`；软件、仿真、构建和最终文档整理分别有CSV清单，记录原/目标路径、长度和SHA256。旧文档在 `finalization/Anlogic/docs`，旧工程介绍也留有备份。需要恢复时移动回清单中的原路径，勿覆盖当前文件。归档不随普通Git拉取提供；当前工程自身具备构建所需全部硬件依赖。
 
 此前进一步审核及独立重建证据位于`rubbish/project_audit_20261003`。本次2026-10-10整理归档为`D:\VSCode\CodeFiles\Git_TD\rubbish\主板整理_20261010_1234c41`，最终仅移出旧A口bit及校验文件。软件曾暂移后已按用户要求完整恢复原路径，归档中有恢复记录；没有删除软件。核验当前工程依赖和发布bit不变；不因纯文件整理重复修改布局。主板工作区原有未提交源码改动不在本次整理提交中。
+
+## 素材打包软件界面与重建
+
+双击 `tools/MuseumTFPackager/MuseumTFPackager.exe`，无终端窗口。2026-10-11 更新仅涉及桌面界面：墨绿博物馆背景、米白操作卡片、生成按钮及专用 TF 图标；素材检查、转换、名称生成、切图句、字幕校准和错误处理保持原行为，不需要更换 FPGA bit 或 TF 素材。
+
+必须整体保留此目录的 `AlignmentWorker`、`models`、`ffmpeg`、许可证和清单。新增三个 Python 源文件是当前 EXE 的必要重建源码，不是历史脚本；`verify.py` 是临时素材回归，不写 TF 卡。原音频/字幕时间轴不因 UI 更新改变，校准仍可能有低置信度句子，需按软件说明试听。
+
+重建 GUI（在工程根目录；模型和校准组件直接使用随附版本，不重新下载）：
+
+```powershell
+py -3 -m venv _build_tools_venv
+& .\_build_tools_venv\Scripts\python.exe -m pip install Pillow==12.3.0 PyInstaller==6.22.3
+& .\tools\MuseumTFPackager\build.ps1 -Python "$PWD\_build_tools_venv\Scripts\python.exe"
+& .\_build_tools_venv\Scripts\python.exe .\tools\MuseumTFPackager\verify.py
+```
+
+关闭正在运行的打包器后重建。构建先生成候选 EXE，再替换当前 EXE，更新 SHA256 和离线清单；临时构建输出可移入 rubbish。回归覆盖 GUI 切图句和后台生成、只读可滚动说明页、31 文件回读、自动切点、字幕格式与多种 WAV 转换；`--baseline 旧版.exe` 可追加逐文件对比，`--preview 路径.png` 可保存实际界面。
+
+`theme` 保留重建所需 PNG/ICO，运行时嵌入 EXE。背景和图标使用内置 imagegen 生成：背景提示为暗墨绿博物馆、青铜暖光、右侧陈列器物、左中留白、无文字；图标提示为透明外缘的墨绿圆角底、象牙白博物馆门廊、青铜 TF 卡、无文字。ICO 含 16～256 像素尺寸；Pillow 仅作尺寸与 ICO 格式转换。
+
+本轮已核验：31 个 TF 输出与原 EXE 逐文件 SHA256 一致；独立 EXE 在无外部 Python 的临时目录可检查/生成；多宽高比与超上限图片、SRT 编码、PCM8/24、float、ADPCM、mu-law WAV 回归通过。业务函数、GUI 回调、名称/字幕编码与原 EXE 的字节码及常量一致；清单内 2576 个文件逐一回读，模型、校准工作器、FFmpeg 和许可证字节不变。未重新训练模型或改变校准算法，也不将格式回归等同于语义同步验收。两板已验收 bit 校验值保持不变。
