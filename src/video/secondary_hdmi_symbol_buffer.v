@@ -1,0 +1,95 @@
+`timescale 1ns / 1ps
+`default_nettype none
+// Independent fixed-output-clock experiment, not yet the product output.
+// Preserve RGB, preambles, guards and complete encoded AV packets verbatim.
+// Only a run of identical ordinary control words can absorb clock drift.
+// ponytail: symbol-rate retiming, not frame genlock. The output selector must
+// still preserve frame boundaries and revoke unauthorized PC video/audio.
+// Raw PC ACR/PCM must keep the recovered PC clock. Do not use this buffer to
+// change that clock without regenerating ACR and verifying audio rate/sync.
+module secondary_hdmi_symbol_buffer (
+    input wire rst_n,write_clk,read_clk,input_valid,
+    input wire [29:0] input_symbols,
+    output reg [29:0] output_symbols,
+    output wire output_valid,
+    output wire fault
+);
+localparam [8:0] LOW=128,HIGH=384,START=256;
+function ordinary_control;
+input [29:0] word;
+begin
+    ordinary_control=word[29:10]=={10'h354,10'h354} &&
+        (word[9:0]==10'h354 || word[9:0]==10'h0ab ||
+         word[9:0]==10'h154 || word[9:0]==10'h2ab);
+end
+endfunction
+reg [1:0] write_reset,read_reset;
+always @(posedge write_clk or negedge rst_n)
+    if(!rst_n) write_reset<=3;else write_reset<={write_reset[0],1'b0};
+always @(posedge read_clk or negedge rst_n)
+    if(!rst_n) read_reset<=3;else read_reset<={read_reset[0],1'b0};
+wire [8:0] write_count,read_count;
+wire full,empty,fifo_valid;
+wire [29:0] fifo_word;
+reg write_fault,read_fault;
+reg [29:0] write_previous;
+reg [2:0] write_run,read_run;
+reg draining,started;
+reg [1:0] write_fault_ff;
+// Retain at least four identical ordinary control words before shortening a
+// run. Video/island preambles differ on green/red and can never be dropped.
+wire drop=input_valid && write_count>=HIGH && write_run==4 &&
+    ordinary_control(input_symbols) && input_symbols==write_previous;
+wire write_enable=input_valid && !drop && !write_reset[1] && !write_fault;
+always @(posedge write_clk or negedge rst_n) begin
+    if(!rst_n) begin write_fault<=0;write_previous<=0;write_run<=0;end
+    else if(!write_reset[1] && input_valid) begin
+        if(write_enable && full) write_fault<=1;
+        if(!drop) begin
+            write_previous<=input_symbols;
+            if(ordinary_control(input_symbols)) begin
+                if(input_symbols!=write_previous) write_run<=1;
+                else if(write_run<4) write_run<=write_run+1'b1;
+            end else write_run<=0;
+        end
+    end
+end
+// NOREG reads have one clock latency. Decide a hold from the word being
+// emitted now, never blindly repeat an outstanding preamble/packet read.
+wire [29:0] current_word=fifo_valid ? fifo_word : output_symbols;
+wire repeat_safe=ordinary_control(current_word) && current_word==output_symbols && read_run>=3;
+wire repeat_control=started && read_count<=LOW && repeat_safe;
+wire read_enable=draining && !read_reset[1] && !read_fault &&
+    !write_fault_ff[1] && !repeat_control;
+rfifo_32_32_512 #(.DATA_WIDTH_W(30),.DATA_WIDTH_R(30)) u_fifo(
+    .rst(!rst_n),.clkw(write_clk),.clkr(read_clk),.we(write_enable),
+    .di(input_symbols),.re(read_enable),.dout(fifo_word),.valid(fifo_valid),
+    .full_flag(full),.empty_flag(empty),.afull(),.aempty(),
+    .wrusedw(write_count),.rdusedw(read_count));
+always @(posedge read_clk or negedge rst_n) begin
+    if(!rst_n) begin
+        write_fault_ff<=0;read_fault<=0;draining<=0;started<=0;
+        output_symbols<={10'h354,10'h354,10'h354};read_run<=0;
+    end else begin
+        write_fault_ff<={write_fault_ff[0],write_fault};
+        if(!read_reset[1]) begin
+            if(read_count>=START) draining<=1;
+            // The first read after a hold also has one clock of latency.
+            // Bridge that single pipeline bubble with the same control word;
+            // an actually empty FIFO or a protected word is not repeatable.
+            if(started && !fifo_valid && (!repeat_safe || empty)) read_fault<=1;
+            if(fifo_valid && !read_fault && !write_fault_ff[1]) begin
+                output_symbols<=fifo_word;
+                if(ordinary_control(fifo_word)) begin
+                    if(fifo_word!=output_symbols) read_run<=1;
+                    else if(read_run<4) read_run<=read_run+1'b1;
+                    if(read_run>=3 && fifo_word==output_symbols) started<=1;
+                end else read_run<=0;
+            end
+        end
+    end
+end
+assign fault=read_fault || write_fault_ff[1];
+assign output_valid=rst_n && started && !fault;
+endmodule
+`default_nettype wire

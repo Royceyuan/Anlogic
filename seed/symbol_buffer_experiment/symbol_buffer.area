@@ -1,0 +1,42 @@
+standard
+***Report Model: secondary_hdmi_symbol_buffer Device: EG4S20BG256***
+
+IO Statistics
+#IO                        66   out of    188   35.11%
+  #input                   34
+  #output                  32
+  #inout                    0
+
+LUT Statistics
+#Total_luts               154
+  #lut4                   131
+  #lut5                    23
+  #lut6                     0
+  #lut5_mx41                0
+  #lut4_alu1b               0
+
+Utilization Statistics
+#lut                      202   out of  19600    1.03%
+#reg                      142   out of  19600    0.72%
+#bram                       2   out of     64    3.12%
+  #bram9k                   2
+  #fifo9k                   0
+#bram32k                    0   out of     16    0.00%
+#dsp                        0   out of     29    0.00%
+#pad                       66   out of    188   35.11%
+  #ireg                    30
+  #oreg                    30
+  #treg                     0
+#pll                        0   out of      4    0.00%
+#gclk                       0   out of     16    0.00%
+
+Report Hierarchy Area:
++------------------------------------------------------------------------------------------------------------------------+
+|Instance                |Module                                            |lut     |ripple  |seq     |bram    |dsp     |
++------------------------------------------------------------------------------------------------------------------------+
+|top                     |secondary_hdmi_symbol_buffer                      |178     |24      |202     |2       |0       |
+|  u_fifo                |rfifo_32_32_512                                   |58      |18      |96      |2       |0       |
+|    ram_inst            |ram_infer_rfifo_32_32_512                         |0       |0       |0       |2       |0       |
+|    rd_to_wr_cross_inst |fifo_cross_domain_addr_process_al_rfifo_32_32_512 |16      |0       |36      |0       |0       |
+|    wr_to_rd_cross_inst |fifo_cross_domain_addr_process_al_rfifo_32_32_512 |16      |0       |36      |0       |0       |
++------------------------------------------------------------------------------------------------------------------------+

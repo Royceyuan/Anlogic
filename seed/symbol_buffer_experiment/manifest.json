@@ -1,0 +1,21 @@
+{
+  "status":"independent_symbol_buffer_verified_not_integrated",
+  "date":"2026-10-12",
+  "product_base_commit":"48886ab",
+  "production_entry_changed":false,
+  "new_bit_generated":false,
+  "board_pass":false,
+  "seamless_switch_verified":false,
+  "rtl":"src/video/secondary_hdmi_symbol_buffer.v",
+  "dependency":"vendor/anlogic_lab6/al_ip/afifo_32_16_256.v",
+  "simulation_script":"sim/run_secondary_hdmi_symbol_buffer.do",
+  "resource_script":"scripts/check_hdmi_symbol_buffer.tcl",
+  "standalone_gate_resources":{"lut":202,"register":142,"bram9k":2,"bram32k":0,"dsp":0,"pll":0},
+  "placement_and_sta_done":false,
+  "simulation_passes":{"symbol_buffer":7,"existing_uart":23,"existing_source_switch":7,"existing_tmds_monitor":6},
+  "bit_exact_protected_words":{"nominal":57880,"fast_2500ppm":57926,"slow_2500ppm":57782},
+  "control_only_corrections":{"fast_dropped":121,"slow_repeated":129},
+  "warnings":"Existing vendor unused SDP RAM ports and monitor test unconnected control_period. No simulation/compiler error.",
+  "limits":"Packet-shaped encoded transport vectors, not decoded PCM, full 720p timing, integrated authorization or optical latency. Buffer alone does not genlock raster. PC ACR/audio must retain recovered clock or be regenerated before independent-clock retiming.",
+  "next":"Evaluate continuous recovered-PC output clock with native pixels on that clock, phase/frame alignment, common serializer and safe cable-loss local fallback; preserve authorization and all existing media/network features."
+}

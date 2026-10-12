@@ -1,6 +1,7 @@
 {
   "release":"secondary_museum_native_hdmi_stream_candidate_20261012",
-  "status":"native_encoder_and_timing_verified_pending_real_switch_latency_test",
+  "status":"board_feedback_no_switch_latency_improvement",
+  "board_feedback":{"date":"2026-10-12","grant_sent_ms":13110.8,"grant_ack_ms":13113.4,"output_ack_ms":13176.8,"software_output_report_ms":13236.3,"user_visible_confirmation_ms":16476.2,"report_to_click_ms":3239.9,"measurement_limit":"User click includes reaction time, not an optical measurement. Fixed-pattern result still provides no evidence of a seamless switch."},
   "board_pass":false,
   "seamless_switch_verified":false,
   "project":"dual_fpga_museum_terminal_secondary_board.al",
