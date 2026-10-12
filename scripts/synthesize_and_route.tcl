@@ -25,7 +25,9 @@ flow_status -file [file join $secondary_build secondary_main5e_syn.status]
 export_db [file join $secondary_build secondary_main5e_gate.db]
 
 set place_seed 7
-set pair_regions {0 8 1 12}
+set pair_regions {0 8 1 2}
+# Lane1 input IOL is at x040y005. Keep its capture-to-falling-edge
+# mux/register bank beside that pad instead of seven rows away (y012).
 # Keep real half-cycle paths near their source IOLs; no timing exceptions.
 foreach {lane origin_y} $pair_regions {
     set pair_cells [get_cells -hier -regexp [format {u_relay/u_phy/g_lane\[%d\].*(transmit_pair|output_pair).*} $lane]]

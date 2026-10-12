@@ -18,9 +18,10 @@
 - 应急状态修正回退候选：`release/dual_fpga_museum_terminal_secondary_board_emergency_video.bit`，SHA256 `4B7807DD2ED3E07803DA4594736017D0928FF5C3C94080E21E58E1D338ED07D1`。
 - 最新黑屏提速候选：`release/dual_fpga_museum_terminal_secondary_board_emergency_video_fast_switch.bit`，SHA256 `B6D55A66487E2292FA60B089F5B02A2D3BDB539E7D52B4FC4AD5A3BF3837AC35`；配套新版播放器，第12节说明。
 - 最新同频/同步极性候选：`release/dual_fpga_museum_terminal_secondary_board_matched_timing.bit`，SHA256 `255884F5777FA5C83637E3075FAC00FCF716F768DF5147D4FE700DFB3927DE90`。B6D55A66为上一版回退，第13节说明这次时序测试；不标为零黑屏已通过。
-- 当前源码的资源/时序记录：`release/manifest_secondary_matched_timing.json`、`seed/matched_timing`。协议/对照播放器见`manifest_secondary_emergency_video.json`。此前成功种子和旧bit保留回退。
+- 最新本地 HDMI 流候选：`release/dual_fpga_museum_terminal_secondary_board_native_hdmi_stream.bit`，SHA256 `28ADB40FADCC021E4ADAAD2368CFDAAF4F7F998ED2974C07F1EAE2BABF2B227F`；第14节说明。上一版同频候选仍保留回退。
+- 当前源码的资源/时序记录：`release/manifest_secondary_native_hdmi_stream.json`、`seed/native_hdmi_stream`。协议/对照播放器见`manifest_secondary_emergency_video.json`。此前成功种子和旧bit保留回退。
 
-工程入口仍唯一。当前候选将上游优选EDID频率及本地编码同步极性匹配；延续时钟通道保留、三个数据通道安全静音。PLL、管脚、时序约束、媒体读写和UART协议不改。旧入口和历史文件在Git/rubbish回溯；必要工具、素材及成功种子保留。
+工程入口仍唯一。当前候选用已有官方发送核将本地RGB编码成带保护带/信息包的HDMI流，保留上轮EDID；延续时钟通道保留、三个数据通道安全静音。PLL、管脚、时序约束、媒体读写和UART协议不改。旧入口和历史文件在Git/rubbish回溯；必要工具、素材及成功种子保留。
 
 已验收UART版setup/hold为+0.106/+0.021ns；上轮联动提速候选为+0.105/+0.021ns；应急状态修正候选为+0.048/+0.023ns；最新切换候选为+0.090/+0.023ns，TNS均0。历史85E5C239基线证据仍保留在`seed/hdmi_museum/cleanup_verification.json`，仅作回溯，不是当前源码的报告。
 
@@ -361,4 +362,46 @@ Start-Process .\tools\PCVideoPlayer\MuseumPCVideoPlayer.exe -ArgumentList '--cac
 
 仿真：同频/原参数两次集成各13条PASS，共26；原官方EDID音视频直通5条、UART新旧23条、切源7条、本地缓存/应急状态2条，共63条。检查首选频率、名称、范围、两块校验和及音频能力，且实际驱动75MHz输入；原74.25MHz路径仍通过。保持原缩减帧几何、厂商初始化X提示及数据岛样式边界，不当作真实音频包、PC驱动枚举或实体显示器延迟验证。board_pass=false，等待本次板测。
 
-2026-10-11停工续接：用户已提供AnlogicHDMI75活动信号1280×720、60.61Hz截图；只读QueryDisplayConfig也确认像素时钟75000000Hz、总时序1650×750。最新固定图记录中发CMD06至有效输出ACK为66.5ms，软件回报至用户点击为3002.1ms（含点击反应），没有展示出明显黑屏改善。不能继续归咎视频解码或未选到新EDID；同频/同極性不足以保证相位、帧起点和有效符号连续。本地编码没有HDMI数据岛、PC流保留数据岛，流类型切换也待核查，尚非已证实唯一根因。board_pass仍false。用户要求今晚仅记录、明天继续；未再改逻辑或生成bit。详细续接记录位于工作区`记录文档/副板HDMI切源黑屏_续接记录_20261011.md`，不属于独立副板仓库内容；本段及发布清单保留仓库内关键事实。
+2026-10-11停工续接：用户已提供AnlogicHDMI75活动信号1280×720、60.61Hz截图；只读QueryDisplayConfig也确认像素时钟75000000Hz、总时序1650×750。最新固定图记录中发CMD06至有效输出ACK为66.5ms，软件回报至用户点击为3002.1ms（含点击反应），没有展示出明显黑屏改善。不能继续归咎视频解码或未选到新EDID；同频/同极性不足以保证相位、帧起点和有效符号连续。当时本地编码没有HDMI数据岛、PC流保留数据岛，流类型切换也待核查，尚非已证实唯一根因。board_pass仍false。用户要求当晚仅记录、次日继续；当晚未再改逻辑或生成bit。详细续接记录位于工作区`记录文档/副板HDMI切源黑屏_续接记录_20261011.md`，不属于独立副板仓库内容；本段及发布清单保留仓库内关键事实。
+
+## 14. 本地 HDMI 流编码候选（2026-10-12）
+
+用户确认优先实现简介/本地画面到视频的无缝衔接。“等待视频就绪并达到简介阅读时长再播放”的流程留作后期，不在本轮实现；不因讨论自行取消当前应急视频功能。保持播放器、主板、TF素材、MBP1及按键分配不变。
+
+本轮先检验流类型差异：旧本地路径只有RGB/控制字符，而PC路径是含HDMI数据岛、InfoFrame及音频的完整流。[HDMI发送实现区分DVI与带辅助数据的HDMI](https://github.com/hdl-util/hdmi/blob/master/src/hdmi.sv)。这种差异可能影响显示器切源识别，但尚未证明它是长黑屏的唯一原因。
+
+### 实施与可回退性
+
+- 从主板现有官方第5例依赖原样复用`vendor/official_ref/lab_ex5_i2s_audio_hdmi/hdmi_1_4b_transmitter_core_wrapper.enc.v`，SHA256 `867E0B0BDD874BC383D00918C9E1BE3FE01EDF41F343B6A0D73E262776596A63`。副板保留独立副本并加入唯一AL入口，重建不依赖主板路径或rubbish；主板源文件未修改。
+- 新`src/video/secondary_hdmi_packet_symbols.v`适配本地完整720p像素，发送视频前导、保护带及AVI等信息包。75MHz非标准优选时序采用AVI VIC0，不冒充标准CEA VIC4。音频输入和ACR有效均为0，本地不发PCM样本；PC四通道音视频仍走原始转发路径，未解码或重新编码。
+- 单纯复用主板旧适配逻辑在初始锁定时会跳过首像素；无条件重放又会在后续帧重复首像素。动态图样暴露了这两个问题。当前适配在初始获取时提供SOF启动拍，实际像素随后输出；锁定后提前给帧起始事件而不多发有效像素。行末标志与像素延迟对齐，完整动态图样验证首像素、行宽及行顺序。该适配只用于这一官方发送核，不宣称通用AXIS背压转换器；当前连续720p输入测试无背压，主板旧适配器未改。
+- `secondary_hdmi_local_pairs`保留原序列化链。HDMI_PACKETS默认0，旧调用保持原DVI路径；正式候选顶层`LOCAL_HDMI_PACKETS=1`启用新编码，0可恢复旧本地路径。原`MATCH_PC_TIMING=1`及AnlogicHDMI75 EDID不变。
+- 使用官方核输出锁定状态及实际三通道控制字符判定本地就绪/消隐，不再把输入DE直接当作新发送核的输出消隐。源切换仍保留1ms数据静音；没有统一两路时钟相位或帧起点，不是最终连续帧输出架构。
+- 布局中曾出现接收lane1的-0.097ns违例，bitgen正确拒绝。报告指出输入IOL位于x040y005、相关寄存器被约束在y012附近。只将该寄存器组移至`[38,2,2,4]`，lane0仍`[38,8,2,4]`；种子7、PLL相位、ADC/SDC和时序例外不变，不靠降低时钟或掩盖路径闭合。
+
+### 当前交付与验证
+
+bit：`release/dual_fpga_museum_terminal_secondary_board_native_hdmi_stream.bit`，SHA256 `28ADB40FADCC021E4ADAAD2368CFDAAF4F7F998ED2974C07F1EAE2BABF2B227F`。播放器仍F971894C版本。回退255884F5同频bit及B6D55A66此前bit均保留。
+
+最终综合/布局布线/STA/DRC/bitgen通过：setup +0.113ns、hold +0.022ns、TNS0，无multi-drive/abnormal timing path；原PHY7002/5079提示仍披露。LUT12363/19600（63.08%）、FF8268/19600（42.18%）、Slice7097/9800（72.42%）、BRAM9K29/64、BRAM32K13/16、DSP5/29、PLL4/4、GCLK10/16。相对同频候选LUT+930、FF+955、Slice+548、BRAM9K+8，其他不增加。新增核的缓存消耗来自官方视频/音频FIFO，即使本地音频未启用，当前综合仍保留相关RAM；未为优化它们改动加密IP。
+
+成功种子和报告：`seed/native_hdmi_stream`。新增完整原生测试：
+
+```powershell
+cd sim
+& D:\Modelsim\win64\vsim.exe -c -do run_secondary_hdmi_packet_symbols.do
+```
+
+该测试使用实际75/375MHz功能模型、完整1280×720光栅和带X/Y坐标的动态图样，逐像素解码验证顺序/行宽，检查视频前导与保护带、AVI版本/长度/校验和/VIC0、头部和四个子包的BCH、无本地PCM样本，并与官方序列化器比较实际四通道输出。初期测试解析只看数据岛第一个Null包且把子包位布局看错，已依据[数据岛包/ECC实现](https://github.com/hdl-util/hdmi/blob/master/src/packet_assembler.sv)修正测试器，不放宽校验条件。
+
+本轮共65条PASS：原生720p动态图样/包/串行6条，原集成双时序26条、旧本地序列化1条、UART新旧23条、切源7条、本地状态/缓存2条。集成短测试仍用媒体/网络stub且关闭新增编码；新编码由完整光栅测试单独覆盖，不能描述为全部TF/网络/真实PC音频系统集成仿真。官方加密IP原有端口宽度/初始化提示保留。没有实体显示器光学测量，因此`seamless_switch_verified=false`、`board_pass=false`。
+
+### 上板顺序和预期
+
+1. 主板SW4置0，关闭播放器，烧本轮副板bit；主板及TF卡不改。先不接PC或不授权，确认原轮播、简介、SW4说明页、应急静态图及双板控制正常，尤其注意首列/行边缘和中文是否完整。
+2. 仍保持PC→副板A、副板B→屏幕。AnlogicHDMI75及60.61Hz条件与上一轮相同，不再要求调整独立DP通道。使用同一播放器，连接串口、刷新目标。
+3. 先用固定图对照，重复主板SW4触发并复制时序，观察是否明显缩短原约4秒黑屏。该测试隔离的是本地DVI/HDMI类型差异，不代表时钟已经相位锁定。
+4. 关闭对照，再测普通文物视频、暂停/继续、停止回本地、手动有声视频，以及应急申请/解除/断线回退。双板按键、手动模式和网线重连同步仍需回归，不以STA通过代替板测。
+5. 若仍约4秒，记录为本候选未解决，不继续把原因归为视频加载；下一步应实现连续输出时钟/扫描与受控内容交接，并核算跨时钟缓存、SDRAM带宽和音频同步。若本地显示/音频出现异常，立即回退255884F5并回报具体现象。
+
+本轮目标仍是无缝衔接，但交付仅为经过仿真/时序验证的候选，不宣称无缝已完成或保证显示器不重锁。原生编码会有少量流水/行缓存延迟，精确物理延迟尚未测量。

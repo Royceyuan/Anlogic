@@ -5,7 +5,10 @@
 module top_secondary_hdmi_museum #(
     // ponytail: frequency/polarity matching, not phase-locked seamless output.
     // Zero restores the original 74.25 MHz EDID and local sync polarity.
-    parameter integer MATCH_PC_TIMING=1
+    parameter integer MATCH_PC_TIMING=1,
+    // Native HDMI stream candidate. Zero restores the previous DVI encoder;
+    // no PC payload, clocks or source-authorization rules are changed here.
+    parameter integer LOCAL_HDMI_PACKETS=1
 )(
     input wire clk_50m,
     input wire uart_rxd,
@@ -55,10 +58,11 @@ top_secondary_hdmi_relay_diag #(.USE_OFFICIAL_EDID(1),.REQUIRE_SINK_HPD(0),.EXTE
     .hdmi_b_scl(hdmi_a_scl),.hdmi_b_sda(hdmi_a_sda),.hdmi_b_hpd(hdmi_a_hpd),.hdmi_a_hpd(hdmi_b_hpd),
     .hdmi1_clk_p(),.hdmi1_d0_p(),.hdmi1_d1_p(),.hdmi1_d2_p(),.led(),.seg_data(),.seg_sel(),
     .relay_sclk(external_sclk),.relay_valid(external_ready),.relay_blank(external_blank),.relay_pairs(external_pairs),.application_rst_n(rst_n));
-secondary_hdmi_local_pairs u_local(
+wire local_encoder_ready,local_encoder_blank;
+secondary_hdmi_local_pairs #(.HDMI_PACKETS(LOCAL_HDMI_PACKETS)) u_local(
     .pixel_clk(local_pclk),.serial_clk(local_sclk),.rst_n(local_ready),
     .hs(MATCH_PC_TIMING ? ~local_hs : local_hs),.vs(MATCH_PC_TIMING ? ~local_vs : local_vs),
-    .de(local_de),.rgb(local_rgb),.pairs(local_pairs));
+    .de(local_de),.rgb(local_rgb),.pairs(local_pairs),.encoder_ready(local_encoder_ready),.encoder_blank(local_encoder_blank));
 secondary_video_uart_control #(.MUSEUM_LINK(1)) u_pc_video(
     .clk(application_clock),.rst_n(rst_n),.uart_rxd(uart_rxd),.uart_txd(uart_txd),
     .input_ready(external_ready),.external_selected(external_selected),
@@ -66,8 +70,8 @@ secondary_video_uart_control #(.MUSEUM_LINK(1)) u_pc_video(
     .link_armed(pc_link_armed),
     .museum_artifact(pc_artifact),.museum_state(pc_state),.museum_phase(pc_phase));
 secondary_hdmi_source_switch u_switch(
-    .clk_50m(application_clock),.rst_n(rst_n),.local_ready(local_ready),.external_ready(external_ready&&pc_play_enabled),
-    .local_blank(!local_de),.external_blank(external_blank),
+    .clk_50m(application_clock),.rst_n(rst_n),.local_ready(local_ready&&local_encoder_ready),.external_ready(external_ready&&pc_play_enabled),
+    .local_blank(local_encoder_blank),.external_blank(external_blank),
     .local_sclk(local_sclk),.external_sclk(external_sclk),.local_pairs(local_pairs),.external_pairs(external_pairs),
     .external_selected(external_selected),.output_muted(output_muted),
     .serial_out({hdmi_b_clk_p,hdmi_b_d2_p,hdmi_b_d1_p,hdmi_b_d0_p}));
