@@ -1,0 +1,20 @@
+{
+  "date":"2026-10-12",
+  "status":"shared_serializer_and_aligned_frame_guard_verified_not_full_genlock",
+  "production_clock_mux_replaced":false,
+  "new_bit_generated":false,
+  "board_pass":false,
+  "physical_blackout_measured":false,
+  "legacy_production_settle_cycles":50000,
+  "legacy_data_reset_min_ms":1.000168491,
+  "legacy_data_reset_max_ms":1.000170321,
+  "aligned_fixture_request_to_permission_ms":[15.817464,0.020674],
+  "frame_period_ms":16.5,
+  "latency_limit":"RTL durations and test-fixture permission wait, not physical display blackout. No new common-clock physical output is connected yet.",
+  "standalone_resources":{"handoff":{"lut":9,"register":2},"existing_serializer":{"lut":34,"register":46},"bram":0,"dsp":0,"pll":0},
+  "tests":{"handoff_guard":5,"production_settle_source_switch":7,"vendor_serializer_comparison":1,"native_full_720p_packets":6,"legacy_integrated_profiles":26},
+  "limits":"Frame phase is made coincident by an explicit test fixture. Native renderer genlock, packet-safe mute on revocation, integrated common PHY clocks, real PC audio, optical latency, product P&R and STA are pending. Original protected-IP initialization/width warnings remain.",
+  "unchanged_bit":"release/dual_fpga_museum_terminal_secondary_board_native_hdmi_stream.bit",
+  "unchanged_bit_sha256":"28ADB40FADCC021E4ADAAD2368CFDAAF4F7F998ED2974C07F1EAE2BABF2B227F",
+  "next":"Align real native scan to recovered PC raster; compose authorized content and valid silent packets before one continuous output serializer; validate input loss/local-clock fallback without altering media/network behavior."
+}

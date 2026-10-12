@@ -36,3 +36,5 @@ seed/native_hdmi_stream/*.json text whitespace
 vendor/official_ref/lab_ex5_i2s_audio_hdmi/hdmi_1_4b_transmitter_core_wrapper.enc.v -text -whitespace
 seed/symbol_buffer_experiment/* -text -whitespace
 seed/symbol_buffer_experiment/*.json text whitespace
+seed/frame_handoff_experiment/* -text -whitespace
+seed/frame_handoff_experiment/*.json text whitespace

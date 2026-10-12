@@ -1,0 +1,38 @@
+standard
+***Report Model: secondary_hdmi_frame_handoff Device: EG4S20BG256***
+
+IO Statistics
+#IO                        14   out of    188    7.45%
+  #input                   11
+  #output                   3
+  #inout                    0
+
+LUT Statistics
+#Total_luts                 9
+  #lut4                     7
+  #lut5                     2
+  #lut6                     0
+  #lut5_mx41                0
+  #lut4_alu1b               0
+
+Utilization Statistics
+#lut                        9   out of  19600    0.05%
+#reg                        2   out of  19600    0.01%
+#bram                       0   out of     64    0.00%
+  #bram9k                   0
+  #fifo9k                   0
+#bram32k                    0   out of     16    0.00%
+#dsp                        0   out of     29    0.00%
+#pad                       14   out of    188    7.45%
+  #ireg                     0
+  #oreg                     2
+  #treg                     0
+#pll                        0   out of      4    0.00%
+#gclk                       0   out of     16    0.00%
+
+Report Hierarchy Area:
++------------------------------------------------------------------------------------+
+|Instance |Module                       |lut     |ripple  |seq     |bram    |dsp     |
++------------------------------------------------------------------------------------+
+|top      |secondary_hdmi_frame_handoff |9       |0       |4       |0       |0       |
++------------------------------------------------------------------------------------+
