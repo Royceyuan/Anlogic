@@ -11,7 +11,7 @@
   "setup_wns_ns":0.113,
   "hold_wns_ns":0.022,
   "tns_ns":0,
-  "bit_manifest":"release/manifest_secondary_native_hdmi_stream.json",
+  "bit_manifest":"seed/release_history/manifest_secondary_native_hdmi_stream.json",
   "bit_sha256":"28ADB40FADCC021E4ADAAD2368CFDAAF4F7F998ED2974C07F1EAE2BABF2B227F",
   "board_pass":false,
   "note":"Native HDMI packet encoder and first-pixel adapter verified; separate-phase output switching remains. No clock/PLL/SDC relaxation."

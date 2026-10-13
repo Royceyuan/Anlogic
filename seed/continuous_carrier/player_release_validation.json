@@ -1,0 +1,18 @@
+{
+  "date": "2026-10-13",
+  "player_sha256": "F1BE955412AE7CF97EA0252A3E91BFBA0A41C4F9B3E6AA7CAEC4C327A9D8BAEC",
+  "build_and_self_test": "PASS: UART framing, configuration, linkage/fallback, only linkage checkbox and status controls",
+  "ui_render_and_visual_review": "PASS: 940x750 and 1600x1000; no comparison, timing or screen-confirm controls; normal controls visible",
+  "media_test": "PASS: actual H264/AAC emergency clip decode and end event",
+  "cache_test": "PASS: player_cache_validation.xml; one MediaOpened, same 1280x720 window and parent, offscreen test",
+  "source_hashes_unchanged": 96,
+  "al_file_paths_present": 89,
+  "accepted_bit_unchanged": true,
+  "rtl_or_constraints_modified": false,
+  "hardware_rebuild_required": false,
+  "archive": "D:/VSCode/CodeFiles/Git_TD/rubbish/secondary_player_release_20261013",
+  "moved_archive_files": 17,
+  "moved_archive_bytes": 7742537,
+  "historical_manifests_preserved_in": "seed/release_history",
+  "limits": "Software checks do not measure optical blackout or replace board tests. User accepted the unchanged common-carrier bit before this UI-only cleanup. Main-board working changes untouched."
+}

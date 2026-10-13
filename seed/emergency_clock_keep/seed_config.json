@@ -10,7 +10,7 @@
   "setup_wns_ns":0.090,
   "hold_wns_ns":0.023,
   "tns_ns":0,
-  "bit_manifest":"release/manifest_secondary_emergency_video.json",
+  "bit_manifest":"seed/release_history/manifest_secondary_emergency_video.json",
   "bit_sha256":"B6D55A66487E2292FA60B089F5B02A2D3BDB539E7D52B4FC4AD5A3BF3837AC35",
   "board_pass":false,
   "note":"Keep qualified TMDS clock during data mute. PLL, constraints, authorization and main board unchanged. Monitor re-lock latency needs board test."

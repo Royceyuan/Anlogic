@@ -12,7 +12,7 @@
   "setup_wns_ns": 0.106,
   "hold_wns_ns": 0.021,
   "tns_ns": 0,
-  "bit_manifest": "release/manifest_secondary_uart_video.json",
+  "bit_manifest": "seed/release_history/manifest_secondary_uart_video.json",
   "board_pass": true,
   "board_pass_evidence": "2026-10-11 user confirms current functions work and meet expectations.",
   "note": "Reports preserve the accepted build. No PLL frequencies/phases, asynchronous groups, pair region constraints or original HDMI physical data path were changed. No extra DSP/BRAM/PLL. Board functional pass reported by user; no unstated test counts or durations claimed."

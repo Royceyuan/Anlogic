@@ -10,7 +10,7 @@
   "setup_wns_ns":0.105,
   "hold_wns_ns":0.021,
   "tns_ns":0,
-  "bit_manifest":"release/manifest_secondary_linked_video.json",
+  "bit_manifest":"seed/release_history/manifest_secondary_linked_video.json",
   "bit_sha256":"5BDAA5478EAFA2E5E40B43F85B59FCA7F81FBA9C4C9F6570AEC6BE57F4561C9F",
   "board_pass":false,
   "note":"First-frame hint and cached local carousel return. Existing PLL/ADC/SDC/physical AV path unchanged. Previously successful seeds preserved."

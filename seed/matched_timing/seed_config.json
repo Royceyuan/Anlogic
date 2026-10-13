@@ -11,7 +11,7 @@
   "setup_wns_ns":0.115,
   "hold_wns_ns":0.027,
   "tns_ns":0,
-  "bit_manifest":"release/manifest_secondary_matched_timing.json",
+  "bit_manifest":"seed/release_history/manifest_secondary_matched_timing.json",
   "bit_sha256":"255884F5777FA5C83637E3075FAC00FCF716F768DF5147D4FE700DFB3927DE90",
   "board_pass":false,
   "note":"75MHz preferred upstream EDID and positive local output sync. Standard EDID and legacy parameter path retained. No phase lock, PLL or constraints changed."

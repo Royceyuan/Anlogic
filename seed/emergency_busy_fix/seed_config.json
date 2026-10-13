@@ -10,7 +10,7 @@
   "setup_wns_ns":0.048,
   "hold_wns_ns":0.023,
   "tns_ns":0,
-  "bit_manifest":"release/manifest_secondary_emergency_video.json",
+  "bit_manifest":"seed/release_history/manifest_secondary_emergency_video.json",
   "bit_sha256":"4B7807DD2ED3E07803DA4594736017D0928FF5C3C94080E21E58E1D338ED07D1",
   "board_pass":false,
   "note":"Normalize real MAIN-4 emergency/busy heartbeat before UART export. Main board, player, video, clocks and constraints unchanged."
