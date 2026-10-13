@@ -55,7 +55,13 @@ always @(posedge clk or negedge rst_n) begin
         media_pixel <= word_pixel(pre_x,pre_y,11'd410,10'd312,
                                   error_frame ? 4'd9 : 4'd8);
         main_pixel <= word_pixel(pre_x,pre_y,11'd36,10'd680,4'd6);
-        link_pixel <= word_pixel(pre_x,pre_y,11'd840,10'd680,link_word);
+        // Select the finished one-bit masks, not an ASCII word before the
+        // glyph lookup. Link state must not cross both lookup muxes in a pixel.
+        case (link_frame)
+            2'd1: link_pixel <= word_pixel(pre_x,pre_y,11'd840,10'd680,4'd3);
+            2'd2: link_pixel <= word_pixel(pre_x,pre_y,11'd840,10'd680,4'd4);
+            default: link_pixel <= word_pixel(pre_x,pre_y,11'd840,10'd680,4'd2);
+        endcase
         artifact_pixel <= digit_pixel(pre_x,pre_y,artifact_frame);
         if (x == 11'd0 && y == 10'd0) begin
             emergency_frame <= emergency_bitmap_video;
@@ -203,8 +209,6 @@ function digit_pixel;
     end
 endfunction
 
-wire [3:0] link_word = (link_frame == 2'd1) ? 4'd3 :
-                       (link_frame == 2'd2) ? 4'd4 : 4'd2;
 always @(*) begin
     rgb = 24'h000000;
     if (de) begin

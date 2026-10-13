@@ -1,0 +1,386 @@
+[
+  {
+    "path": "constraints/secondary_hdmi_museum.adc",
+    "sha256": "02A7D954B879907FD5219ADB2E06E277071AF1DDD6DDD3211C02A2FCA05F9D3F"
+  },
+  {
+    "path": "constraints/secondary_hdmi_museum.sdc",
+    "sha256": "1420A4B9716DA2CDA93F1851C61C172797C8EEB09954A3F8654F944CB6972EB1"
+  },
+  {
+    "path": "dual_fpga_museum_terminal_secondary_board.al",
+    "sha256": "9C588BCAA04F1E03CA350DB4A036956314E0658A448CA86513F6BE0695B35DC8"
+  },
+  {
+    "path": "scripts/generate_bitstream.tcl",
+    "sha256": "5B0A43BB7ABA965473B9DA8328EDCD9DAEF80EA9969E82ECAC54EBCB2201F90B"
+  },
+  {
+    "path": "scripts/synthesize_and_route.tcl",
+    "sha256": "2C82D760BDC619D4F7819BEB21BB15C7F20F33B0A74703B9B4B4E116ED4BDC9E"
+  },
+  {
+    "path": "src/clock/hdmi_relay_clock.v",
+    "sha256": "A4A3DD20A6D0805BE3BC3AFFCB90F9355EB78166C271BC057622CC983675CA66"
+  },
+  {
+    "path": "src/clock/secondary_media_eth_pll.v",
+    "sha256": "389588B04CD5A2871B421B5C045C00D7F0B0714A1591FFB8F6438BBA65E9D398"
+  },
+  {
+    "path": "src/clock/sys_pll_50m_phase144_native720.v",
+    "sha256": "C6959AF1BF5528105159C5049A573C20EAF7D459A9D4D3FC5F99563205D7F4AE"
+  },
+  {
+    "path": "src/clock/video_pll_75m.v",
+    "sha256": "0D27232FFDDCED7159F5AF5379AB7620F25098D218619729A4209B207DDAFECB"
+  },
+  {
+    "path": "src/common/reset_sync.v",
+    "sha256": "0A50EF656A0417F8DFF61CEA48BD353F1FC3147667C4C1984EB4C5FDD2CDC737"
+  },
+  {
+    "path": "src/common/seg_hex_display.v",
+    "sha256": "534C1BCCA5DA859C7018BFA93A72BBD85A0803538EDCF9B0D4AF0CEF27BE3BE7"
+  },
+  {
+    "path": "src/common/uart_byte_io.v",
+    "sha256": "572CC2585D298B51201F5C95B1476F5644E668FDA06C21AA343EA08E5B218500"
+  },
+  {
+    "path": "src/ethernet/mbp1_codec.v",
+    "sha256": "0D05A817427EE8643B4E16EFC2E5E7879609DDCAFB4658F0334C1C710A1F44D6"
+  },
+  {
+    "path": "src/ethernet/mbp1_fixed_udp.v",
+    "sha256": "E63B9C0216CD68EE7B89581526ECCA8448CB061083AB8590FF6721FD4AC5902C"
+  },
+  {
+    "path": "src/ethernet/mbp1_secondary_endpoint.v",
+    "sha256": "E4E6750ACA71E4BE813DB1F39574B49F8FAF562C97B2C18EC12413BAC9CE04E5"
+  },
+  {
+    "path": "src/ethernet/mdio_clause22_monitor.v",
+    "sha256": "4935FEED29863FE6A70A7B276F6F6C7174980E4F9A753A0B98BA2414BEABB5AC"
+  },
+  {
+    "path": "src/input/key_debounce.v",
+    "sha256": "C498915ACDE5C365FD94BEE384DA6DFF78EF4FA59C1CE8191B537357C2949E23"
+  },
+  {
+    "path": "src/memory/anlogic_frame_store.v",
+    "sha256": "9C190FEC86F5FCC358E0225F6E676457323EAFD1B55750E8AB720C538EBBCBE1"
+  },
+  {
+    "path": "src/memory/sdram_bmp_row_top_v66.v",
+    "sha256": "5AC6588EB5E0CBF2E48EA7179A7976DD6424F58ABDE6796B086271C46BD6C7B2"
+  },
+  {
+    "path": "src/secondary/secondary_carousel_controller.v",
+    "sha256": "9582864472EC079ED1DC2FB1D3B7ADDC3A3CD3EBAB8B7E3998095A38E9EF1369"
+  },
+  {
+    "path": "src/secondary/secondary_help_font.vh",
+    "sha256": "C8E662968D7642CBC3A692D2DD7B3FF149AD81FC0B34D65B811B631B20871C92"
+  },
+  {
+    "path": "src/secondary/secondary_help_overlay.v",
+    "sha256": "539297DCDAFEBDEEEAAF8E74FD11A24B88FF861F26111284E8B5AD62FD3DF173"
+  },
+  {
+    "path": "src/secondary/secondary_main5e_keys.v",
+    "sha256": "725D67C7D9AD07189B628351A84367BC6620A2AEF4D3DA68CB6180C99432AEA2"
+  },
+  {
+    "path": "src/secondary/secondary_main5e_status_adapter.v",
+    "sha256": "7C99191D6B900B9A7307F619177E8F373DDABB67684C2EF694C59A3DF439ED1F"
+  },
+  {
+    "path": "src/secondary/secondary_page_overlay.v",
+    "sha256": "ACE8918E56F025AB5C360CD39198CCE0E18FFA55CAF71325FEF59A3430BC67E2"
+  },
+  {
+    "path": "src/secondary/secondary_video_uart_control.v",
+    "sha256": "5AFAD3253161FD4546B2A4DA7A6C38F4EE188683C131DC64F244D59EE224F62C"
+  },
+  {
+    "path": "src/secondary/top_secondary_hdmi_museum.v",
+    "sha256": "E9E08F426315FCA2E49F7550A727E14ABE9AA84B7F17FB3035852C74AC0DC65A"
+  },
+  {
+    "path": "src/secondary/top_secondary_hdmi_relay_diag.v",
+    "sha256": "7064BD20CA6D3951ABF68636CA8F32D15B4CD0DE5B5C637DB7579D1EF10B1FDF"
+  },
+  {
+    "path": "src/secondary/top_secondary_main5e_netdiag.v",
+    "sha256": "DF767F034C9C2F05A5A2D3A4E516AE1945B0F9CFF1C14B3CBF566B7E39D18DE3"
+  },
+  {
+    "path": "src/secondary/top_secondary_main5e.v",
+    "sha256": "C4CE561ECD8F1D028EC6360259199DAD36A4FDA1A4ACFD575BBE6A3ED4079827"
+  },
+  {
+    "path": "src/secondary/top_secondary_shared_clock.v",
+    "sha256": "628B0A2D439A5B19B9BBDEA5651D522B20D01991E0EC1EAB954631D2097314C0"
+  },
+  {
+    "path": "src/storage/adaptive_row_ram.v",
+    "sha256": "48C9752F3AA9ECA96FE4E9878479FFD0E7F85640EA64AA125BD6F9E78CBA8235"
+  },
+  {
+    "path": "src/storage/al_dp_ram16.v",
+    "sha256": "A57C09B252E697E932CCCF9396CDCF3E216BEA986B89430A728BB01E2A31E435"
+  },
+  {
+    "path": "src/storage/bmp_row_buffer.v",
+    "sha256": "3BD05C950C0E8812276CEC5A63F9C120AD596455AF24D165023B2650CC0A6701"
+  },
+  {
+    "path": "src/storage/bmp_sdram_row_writer.v",
+    "sha256": "ED168AE3723F29B7B6E6368A0A11DE912142723671BCB0D7C0AC0FB008DA9E8B"
+  },
+  {
+    "path": "src/storage/fat32_image_loader.v",
+    "sha256": "A5E054A0115ADD3175CCF4E48B7FA3624414CABC82AB4BCA7869EF9F8172E161"
+  },
+  {
+    "path": "src/storage/rgb565_stream_packer_ready.v",
+    "sha256": "DD9DDF2273BF8F8D313683DFB1FCFE55857EBAD2251BCCB4E171E4643C59FD05"
+  },
+  {
+    "path": "src/video/hdmi_edid_720p.v",
+    "sha256": "20FF04ECF7CB10AD2D79A0B6A8F138B6EF03677221D7AEBAA2FEE4F65681B475"
+  },
+  {
+    "path": "src/video/hdmi_relay_phy.v",
+    "sha256": "B013205272865257EC65D9AFDDE4FEAEEE714E1EFC9AE14DA6A408FC742CB3F5"
+  },
+  {
+    "path": "src/video/hdmi_tmds_monitor.v",
+    "sha256": "A4144CA83F4CA1A3CBE063327F6EA7F88948D8DFB5D4BB60C311571CA14D8D89"
+  },
+  {
+    "path": "src/video/product_show_controller.v",
+    "sha256": "897FD3ECD8817B3BC190E732C6CFE1661893E6DC74D114E51046DF1AD5BC1A75"
+  },
+  {
+    "path": "src/video/rgb888_adjust.v",
+    "sha256": "929B4558BE593DAC7CE52075AD3B419FC7F3A39E35C91E45AF739825DAE5A010"
+  },
+  {
+    "path": "src/video/secondary_hdmi_carrier_clock.v",
+    "sha256": "AC39585EB6E8E282E949BE8461B1770552D84A5F8D8DDD416EB67FF3F59C183A"
+  },
+  {
+    "path": "src/video/secondary_hdmi_common_symbols.v",
+    "sha256": "253CAB2EFFAD651070D006BE09F70DC764824A07E0631FA217A6B7DE0E4AA5BA"
+  },
+  {
+    "path": "src/video/secondary_hdmi_frame_handoff.v",
+    "sha256": "04D9EB59BAC591982F89676E9F28BE3D72EC5BFC876FCE0749BB019737DF15BB"
+  },
+  {
+    "path": "src/video/secondary_hdmi_local_pairs.v",
+    "sha256": "4B3D48224B3D1410D3898D4EACE298BC9431220135B5ECDF32DE6A4C8E653D48"
+  },
+  {
+    "path": "src/video/secondary_hdmi_packet_symbols.v",
+    "sha256": "432B2FED280C400795B28A810B913331DF00415824CF33CBACF3997855EB3F14"
+  },
+  {
+    "path": "src/video/secondary_hdmi_pc_raster.v",
+    "sha256": "A22A8AC74FB515DEC75FF7B8C3B4F1D6F19957FAFA1B621E99255200F47A17AD"
+  },
+  {
+    "path": "src/video/secondary_hdmi_source_switch.v",
+    "sha256": "FCBD06611F3018B62221A7F16165E773E9A1B331FEA16A62DB206C61D9D1B372"
+  },
+  {
+    "path": "src/video/secondary_hdmi_symbol_buffer.v",
+    "sha256": "E4E4FD894F83883DC41D760C82F93016DDF370CE61ADA037108C414557182F95"
+  },
+  {
+    "path": "src/video/secondary_hdmi_symbol_pairs.v",
+    "sha256": "AB97E3CBB4ED3024FF37913133B44864E95B398DE5FD86E8C07D4AFC9925469E"
+  },
+  {
+    "path": "src/video/transition_theme_controller.v",
+    "sha256": "6D716CC7F7B0AC8E7B5DF25D2AEF53EAB34D221B945DBB2F5E5F04B2BD1D7A8A"
+  },
+  {
+    "path": "src/video/video_fade.v",
+    "sha256": "196D4917E1685B5A00C58F202F9320053676BF34577C4D4CC2F19AEC9963A290"
+  },
+  {
+    "path": "src/video/video_timing_640x480_pclk.v",
+    "sha256": "49DE1E6E28617FB829DF973E2ED9FB7E47F878712F0AC899F58DF7BECE366695"
+  },
+  {
+    "path": "src/video/video_transition_mask.v",
+    "sha256": "EDD37EEAA35E771007E8AAA207CB313710B038E9982A3D6C03FDCCD939364843"
+  },
+  {
+    "path": "vendor/anlogic_hx4s20_udp/par_ph1demo/al_ip/pll_gen.v",
+    "sha256": "83ACF5D318070806D0ED0986F04F0D5A37BD98735728F1AC4BE7B0CC982455C0"
+  },
+  {
+    "path": "vendor/anlogic_hx4s20_udp/par_ph1demo/al_ip/rx_pll.v",
+    "sha256": "0C5FCDC0E921F076884F90F0E188E4B0E632BBEA8266026B1A174BFB8DD7AB24"
+  },
+  {
+    "path": "vendor/anlogic_hx4s20_udp/par_ph1demo/al_ip/TEMAC_CORE_gate.v",
+    "sha256": "96167779D09373CF3AC131ECFA8A2B5D25EC28E4A7FBC446B0B1C5FE01036EEB"
+  },
+  {
+    "path": "vendor/anlogic_hx4s20_udp/par_ph1demo/al_ip/TEMAC_CORE.ipc",
+    "sha256": "80A8B8DAFFA2C465EDC80DF2143013C3B399D762F08E5501B0A2431537CBF6D8"
+  },
+  {
+    "path": "vendor/anlogic_hx4s20_udp/src/clk_gen_rst_gen.v",
+    "sha256": "22394CF13EF897E679EF3D72B91150EEEA0FF53474AC3FA73D292231D8F74577"
+  },
+  {
+    "path": "vendor/anlogic_hx4s20_udp/src/div_clk_gen.v",
+    "sha256": "D33D57F0D70D8D05A9E7B81FB5B56690505C6127D119A24F8DCB49C96E2AFE7A"
+  },
+  {
+    "path": "vendor/anlogic_hx4s20_udp/src/IDDR.v",
+    "sha256": "CBF4C3C34DAFE672AA7CCC010440E01FC7DBDDF428BDE868319D8D0580208F53"
+  },
+  {
+    "path": "vendor/anlogic_hx4s20_udp/src/ODDR.v",
+    "sha256": "D3EDB14DAEBDCB028E1CB3A8C6C944556FA28568C04E8A0193C868F654AD3A84"
+  },
+  {
+    "path": "vendor/anlogic_hx4s20_udp/src/RAMB16_S9_S9.v",
+    "sha256": "457278A570CF5A9F6E8280A4C2860154A785E7E110D46F5E6F9C2AA263FE4287"
+  },
+  {
+    "path": "vendor/anlogic_hx4s20_udp/src/rgmii_interface.v",
+    "sha256": "CFE987991204FF5D307FBE9043DC0C42F3B9D9CF4F5BCCFD6F9E8A3D8EA7C5D4"
+  },
+  {
+    "path": "vendor/anlogic_hx4s20_udp/src/rx_client_fifo.v",
+    "sha256": "FF1BE590E136905CD36B19B99869EAB8596CADDDB820EBFA63ABD6BC2674C04B"
+  },
+  {
+    "path": "vendor/anlogic_hx4s20_udp/src/temac_block.v",
+    "sha256": "CBB801F21AB7DB5312F1BDC6B107C3480E709309BC7377B9D85678519D34CD78"
+  },
+  {
+    "path": "vendor/anlogic_hx4s20_udp/src/temac_clk_gen.v",
+    "sha256": "B1B3474B1A97CC96A73297BE56C4D3FC8322891CD3D6F83B3560D2FE95C126D3"
+  },
+  {
+    "path": "vendor/anlogic_hx4s20_udp/src/tx_client_fifo.v",
+    "sha256": "F4A118BA55C737B26B1A1498402A5CE5E710E30AB4FB34CA8FEB49F23C2333BC"
+  },
+  {
+    "path": "vendor/anlogic_hx4s20_udp/src/tx_clk_en_gen.v",
+    "sha256": "DA8C09E5308E8BEBBFDFACAAD7D83F5F9371811F54A8F6203E452E40649B02E9"
+  },
+  {
+    "path": "vendor/anlogic_lab6/al_ip/afifo_16_32_256.v",
+    "sha256": "32C86A05D74F05C19E38AD87D73040530F6430FEE6ACBF9B4D4DF8900152B4ED"
+  },
+  {
+    "path": "vendor/anlogic_lab6/al_ip/afifo_32_16_256.v",
+    "sha256": "5E6D776E929E5FD2AA457786E259D5573E7424B49C1FE5804F20D8A96329B230"
+  },
+  {
+    "path": "vendor/anlogic_lab6/frame_fifo_read.v",
+    "sha256": "9620C3151B0A905B7DEFAFF8048AF2938368737B9CE27696E3021E495DBCFC1D"
+  },
+  {
+    "path": "vendor/anlogic_lab6/frame_fifo_write.v",
+    "sha256": "202042F62448CC1BC8B73F2EC70FF4A012969BB5E8F4226A9E8E0CCA7E9D37F0"
+  },
+  {
+    "path": "vendor/anlogic_lab6/frame_read_write.v",
+    "sha256": "118D27A3AEFBD3FA241CCE1491015D7F54161ACD523A526FD4CFF5EA66EF3C96"
+  },
+  {
+    "path": "vendor/anlogic_lab6/sdram/enc_file/global_def.v",
+    "sha256": "398A6F849990F421C65D3D65DB4A2E09824811B61D027CC375C99BD3D2F2E896"
+  },
+  {
+    "path": "vendor/anlogic_lab6/sdram/enc_file/sdr_as_ram.enc.v",
+    "sha256": "3FC0299E910B80FCA5EB5D644F6C62232E0B7E40F01701084C2D98B044F07AFF"
+  },
+  {
+    "path": "vendor/anlogic_lab6/sdram/enc_file/sdr_init_ref.enc.v",
+    "sha256": "101157CA6B08281A3BF7746AF36FA69FC3521B560A960CAD4BF7FBCB3BD16E44"
+  },
+  {
+    "path": "vendor/anlogic_lab6/sdram/enc_file/sdr_wrrd.enc.v",
+    "sha256": "C7D7FE07D75F66AA88D9F986B3006319C995162434F104F9990664B374CDFDD2"
+  },
+  {
+    "path": "vendor/anlogic_lab6/sdram/sdram.v",
+    "sha256": "E3859F8E09180EF2DD36365143134A081B91F7A133BA2870F9106D03E0225E2C"
+  },
+  {
+    "path": "vendor/official_hdmi_loop_edid/edid_1280720_75m_with_audio.mif",
+    "sha256": "75A4B17C2E8E903A0CC761246E6BB210857FCCF84E16858EDE0BBEF6B81B29A9"
+  },
+  {
+    "path": "vendor/official_hdmi_loop_edid/edid_1280720_with_audio.mif",
+    "sha256": "798892BBCC43E0ABDBAE3F5B58B07C2D0C90B40965337EE950B1368D85B75EDE"
+  },
+  {
+    "path": "vendor/official_hdmi_loop_edid/i2c_edid.v",
+    "sha256": "4A3B5075584B48715EA262E896955F3E2FEB17A345DC856C96C03743869BE91E"
+  },
+  {
+    "path": "vendor/official_hdmi_loop_edid/i2cSlaveTop.v",
+    "sha256": "7F5B67B17AAB07BC638DB8C46FD9E053B18FDCDDB7CBC12B74A5EC64406F38E9"
+  },
+  {
+    "path": "vendor/official_hdmi_loop_edid/myedid_new.v",
+    "sha256": "975DDEB8A84B566E19E5D95402CD9131059B178BF9AEDA80358B73A417B84B39"
+  },
+  {
+    "path": "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/DVITransmitter.enc.vhd",
+    "sha256": "FA009E816FC717374679DBA8096C518DC6F3FFBC2389D440A1724D9487EC1674"
+  },
+  {
+    "path": "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/SerializerN_1_lvds_dat.enc.vhd",
+    "sha256": "2215E28372D39D6CB155F5B87FEB39FA578CCA39223CEDB9E712CA7413D7783E"
+  },
+  {
+    "path": "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/SerializerN_1_lvds.enc.vhd",
+    "sha256": "D5FB9B03E33A0E43398E1E963036BBD87FD386C23AF1B79F23E3D32E87B1DD63"
+  },
+  {
+    "path": "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/TMDSEncoder.enc.vhd",
+    "sha256": "F87572D7CE8539276E280C411FE46F42F3282210D7C53601CFD6C8ECB8C71BEB"
+  },
+  {
+    "path": "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/hdmi_tx.vhd",
+    "sha256": "DC91FE383C0001B1CE71B91BBD8DEEE2FF3C6FC14E5B973CB33E168653264AA5"
+  },
+  {
+    "path": "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/sd_card/sd_card_cmd.v",
+    "sha256": "0220AF147042E24F2DA4A56DD8C22909D1FF5B3FA2B86ACA86B3C52291ADE7C3"
+  },
+  {
+    "path": "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/sd_card/sd_card_sec_read_write.v",
+    "sha256": "562FF43E6544728D09143FED377DFC67AF37ACE1CE3351FDCC56306B3B8A00EC"
+  },
+  {
+    "path": "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/sd_card/sd_card_top.v",
+    "sha256": "9875D2603C55DBD66C961CB26D23834F525242BA6E5209ABF5BDEEE44E8A4426"
+  },
+  {
+    "path": "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/sd_card/spi_master.v",
+    "sha256": "A8C1CCE7D22A6BD32D2CF08D441723858085EB05424E462487844C571EC102F2"
+  },
+  {
+    "path": "vendor/official_ref/lab_ex_6_tf_sdram_hdmi/video_delay.v",
+    "sha256": "F47C4B63F8BAA6D8874C87DCA5B72DFDADD19F4A107403DA98752BCE98936433"
+  },
+  {
+    "path": "vendor/official_ref/lab_ex5_i2s_audio_hdmi/hdmi_1_4b_transmitter_core_wrapper.enc.v",
+    "sha256": "867E0B0BDD874BC383D00918C9E1BE3FE01EDF41F343B6A0D73E262776596A63"
+  }
+]

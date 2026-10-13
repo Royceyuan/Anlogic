@@ -1,0 +1,23 @@
+{
+  "tool":"TD 6.2.168116",
+  "project":"dual_fpga_museum_terminal_secondary_board.al",
+  "top":"top_secondary_hdmi_museum",
+  "top_parameters":{"COMMON_OUTPUT":1,"MATCH_PC_TIMING":1,"LOCAL_HDMI_PACKETS":1},
+  "build_script":"scripts/synthesize_and_route.tcl",
+  "bitgen_script":"scripts/generate_bitstream.tcl",
+  "place_seed":7,
+  "shared_pll_location":"x000y000",
+  "rx_pll_location":"x000y071",
+  "legacy_pair_bounds_applied":false,
+  "source_hashes":"seed/continuous_carrier/source_hashes.json",
+  "source_count":96,
+  "bit_manifest":"release/manifest_secondary_continuous_carrier.json",
+  "bit_sha256":"656CD6BE5EC64411918EC60A1FDF29C05F011AB5C5A69478748177AAF08ED588",
+  "setup_wns_ns":0.023,
+  "hold_wns_ns":0.022,
+  "setup_tns_ns":0,
+  "hold_tns_ns":0,
+  "resources":{"lut":12421,"ff":8207,"slice":7073,"bram9k":28,"bram32k":13,"dsp":5,"pll":4,"gclk":11},
+  "board_pass":false,
+  "note":"Common recovered pixel/serial carrier with both real mux modes constrained. No new broad CDC timing exclusions. Legacy serial pair banks removed by elaboration, so their old placement bounds are not applied. Existing PHY7002 and PHY5079 warnings retained. Board acceptance and optical blackout measurement remain pending."
+}

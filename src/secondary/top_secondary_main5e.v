@@ -6,9 +6,15 @@
 module top_secondary_main5e #(
     parameter integer SHARED_MEDIA_ETH_PLL = 0,
     parameter integer EXTERNAL_HDMI_PHY = 0,
-    parameter integer LINKED_VIDEO = 0
+    parameter integer LINKED_VIDEO = 0,
+    parameter integer SHARED_VIDEO_RASTER = 0
 ) (
     input wire clk_50m,
+    input wire shared_video_clk,shared_serial_clk,shared_raster_valid,shared_clock_stable,
+    input wire shared_raster_hs,shared_raster_vs,shared_raster_de,
+    input wire [10:0] shared_raster_x,
+    input wire [9:0] shared_raster_y,
+    output wire native_video_clk,native_serial_clk,native_clock_ready,
     input wire [3:0] sw,
     input wire [3:0] key_n,
     output wire [3:0] led,
@@ -174,6 +180,7 @@ top_v66 #(
     .LINEBUF_SCALE(0), .SECONDARY_STREAMING(1),
     .SHARED_MEMORY_CLOCKS(SHARED_MEDIA_ETH_PLL),
     .EXTERNAL_HDMI_PHY(EXTERNAL_HDMI_PHY),
+    .SHARED_VIDEO_RASTER(SHARED_VIDEO_RASTER),
     .SECONDARY_ENGINEERING(0), .SECONDARY_HELP(1),
     .RESOURCE_OPT_CONSTANT_MULT(1),
     .ENABLE_SUBTITLE(0), .ENABLE_AUDIO_VISUALIZER(0),
@@ -184,6 +191,12 @@ top_v66 #(
 ) u_display (
     .clk_50m(clk_50m), .key_n(4'b1111), .sw(4'b0001),
     .shared_mem_clk(shared_mem_clk), .shared_mem_clk_sft(shared_mem_clk_sft),
+    .shared_video_clk(shared_video_clk),.shared_serial_clk(shared_serial_clk),
+    .shared_clock_stable(shared_clock_stable),
+    .shared_raster_valid(shared_raster_valid),.shared_raster_hs(shared_raster_hs),
+    .shared_raster_vs(shared_raster_vs),.shared_raster_de(shared_raster_de),
+    .shared_raster_x(shared_raster_x),.shared_raster_y(shared_raster_y),
+    .native_video_clk(native_video_clk),.native_serial_clk(native_serial_clk),.native_clock_ready(native_clock_ready),
     .led(led), .seg_data(media_seg_data), .seg_sel(media_seg_sel),
     .sd_clk(sd_clk), .sd_mosi(sd_mosi), .sd_miso(sd_miso), .sd_cs_n(sd_cs_n),
     .vga_hs(), .vga_vs(), .vga_d(),

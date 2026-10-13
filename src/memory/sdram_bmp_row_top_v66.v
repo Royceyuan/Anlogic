@@ -61,6 +61,7 @@ module top_v66 #(
     parameter integer SOURCE_H = VIDEO_H,
     parameter integer SHARED_MEMORY_CLOCKS = 0,
     parameter integer EXTERNAL_HDMI_PHY = 0,
+    parameter integer SHARED_VIDEO_RASTER = 0,
     parameter integer LINEBUF_SCALE = 0,
     parameter integer LINEBUF_REGISTER_READ = 0,
     parameter integer LINEBUF_NOREG_SYNC_READ = 0,
@@ -103,6 +104,11 @@ module top_v66 #(
     input  wire        clk_50m,
     input  wire        shared_mem_clk,
     input  wire        shared_mem_clk_sft,
+    input  wire        shared_video_clk,shared_serial_clk,shared_raster_valid,shared_clock_stable,
+    input  wire        shared_raster_hs,shared_raster_vs,shared_raster_de,
+    input  wire [10:0] shared_raster_x,
+    input  wire [9:0]  shared_raster_y,
+    output wire        native_video_clk,native_serial_clk,native_clock_ready,
     input  wire [3:0]  key_n,
     input  wire [3:0]  sw,
     output wire [3:0]  led,
@@ -165,9 +171,12 @@ wire mem_clk;
 wire mem_clk_sft;
 wire video_clk;
 wire video_clk_5x;
+assign video_clk=SHARED_VIDEO_RASTER?shared_video_clk:native_video_clk;
+assign video_clk_5x=SHARED_VIDEO_RASTER?shared_serial_clk:native_serial_clk;
 wire mem_rst_n;
 wire video_rst_n;
 wire init_done;
+assign native_clock_ready=init_done;
 wire init_ref_valid;
 wire mem_busy;
 wire write_rst_n;
@@ -1116,7 +1125,7 @@ reset_sync u_write_reset_sync (
 reset_sync u_video_reset_sync (
     // Keep the video/FIFO read side quiescent until SDRAM initialization
     // completes after FPGA power-up. KEY1 is reserved for the OSD panel.
-    .clk(video_clk), .arst_n(init_done), .srst_n(video_rst_n)
+    .clk(video_clk), .arst_n(init_done && (!SHARED_VIDEO_RASTER || shared_clock_stable)), .srst_n(video_rst_n)
 );
 
 generate
@@ -1135,22 +1144,22 @@ generate
     if (VIDEO_MODE_1280) begin : g_video_pll_1280
         video_pll_75m u_video_pll (
             .refclk(clk_50m), .reset(~mem_rst_n),
-            .clk0_out(video_clk), .clk1_out(video_clk_5x)
+            .clk0_out(native_video_clk), .clk1_out(native_serial_clk)
         );
     end else if (VIDEO_MODE_1024) begin : g_video_pll_1024
         video_pll_65m u_video_pll (
             .refclk(clk_50m), .reset(~mem_rst_n),
-            .clk0_out(video_clk), .clk1_out(video_clk_5x)
+            .clk0_out(native_video_clk), .clk1_out(native_serial_clk)
         );
     end else if (VIDEO_MODE_800) begin : g_video_pll_800
         video_pll_40m u_video_pll (
             .refclk(clk_50m), .reset(~mem_rst_n),
-            .clk0_out(video_clk), .clk1_out(video_clk_5x)
+            .clk0_out(native_video_clk), .clk1_out(native_serial_clk)
         );
     end else begin : g_video_pll_640
         video_pll u_video_pll (
             .refclk(clk_50m), .reset(~mem_rst_n),
-            .clk0_out(video_clk), .clk1_out(video_clk_5x)
+            .clk0_out(native_video_clk), .clk1_out(native_serial_clk)
         );
     end
 endgenerate
@@ -2096,8 +2105,18 @@ always @(posedge clk_50m or negedge write_rst_n) begin
     end
 end
 
+reg shared_raster_valid_d,shared_read_restart_pending;
+reg shared_recover_pending,initial_published_ff1,initial_published_ff2;
+always @(posedge video_clk or negedge video_rst_n)
+    if(!video_rst_n) begin initial_published_ff1<=0;initial_published_ff2<=0;end
+    else begin initial_published_ff1<=initial_frame_published;initial_published_ff2<=initial_published_ff1;end
+always @(posedge video_clk or negedge video_rst_n)
+    if(!video_rst_n) shared_raster_valid_d<=0;
+    else shared_raster_valid_d<=shared_raster_valid;
 always @(posedge video_clk or negedge video_rst_n) begin
     if (!video_rst_n) begin
+        shared_read_restart_pending<=0;
+        shared_recover_pending<=SHARED_VIDEO_RASTER;
         ready_ff1          <= 1'b0;
         ready_ff2          <= 1'b0;
         published_frame_ff1<= 1'b0;
@@ -2442,9 +2461,40 @@ always @(posedge video_clk or negedge video_rst_n) begin
 
     if (!video_run)
         pair_word_valid <= 1'b0;
+    // Clock switching resets ONLY pixel-domain logic. A cached publication
+    // toggle can be zero, so explicitly resume the existing read handshake
+    // from the still-valid cache rather than waiting for a new TF load.
+    if(SHARED_VIDEO_RASTER && shared_recover_pending && initial_published_ff2 &&
+       !read_req_r && !read_ack_ff2 && !read_accepted && !read_ready && !video_run) begin
+        shared_recover_pending<=0;
+        display_media_index<=desired_display_media_index;
+        display_info_slot<=preload_select_info_slot_ff2;
+        display_frame_index<=desired_display_media_index[0];
+        display_source_width_bcd<=preload_select_source_width_ff2;
+        display_source_height_bcd<=preload_select_source_height_ff2;
+        read_req_r<=1;
+    end
+    if(SHARED_VIDEO_RASTER && (read_req_r || read_accepted || read_ready || video_run))
+        shared_recover_pending<=0;
+    // A carrier/raster change restarts ONLY the existing read-frame request.
+    // The vendor transaction handshake drains accepted SDRAM work; do not
+    // reset the memory controller, writers, media tags or publication toggle.
+    if(SHARED_VIDEO_RASTER && shared_raster_valid!=shared_raster_valid_d &&
+       (video_run || read_accepted || read_ready || read_req_r))
+        shared_read_restart_pending<=1;
+    if(SHARED_VIDEO_RASTER && shared_read_restart_pending &&
+       !read_req_r && !read_ack_ff2 && !video_de_i) begin
+        shared_read_restart_pending<=0;
+        video_run<=0;read_accepted<=0;read_ready<=0;read_req_r<=1;
+        read_prefill_count<=0;pair_phase<=0;pair_word_valid<=0;
+        underflow_seen<=0;
+    end
     end
 end
 
+wire native_hs_i,native_vs_i,native_de_i,native_frame_tick;
+wire [10:0] native_x_i;
+wire [9:0] native_y_i;
 video_timing_640x480_pclk #(
     .H_VISIBLE(VIDEO_W),
     .H_FRONT(H_FRONT),
@@ -2457,9 +2507,16 @@ video_timing_640x480_pclk #(
     .X_BITS(11)
 ) u_video_timing (
     .clk(video_clk), .rst_n(video_rst_n),
-    .hs(video_hs_i), .vs(video_vs_i), .de(video_de_i),
-    .x(video_x_i), .y(video_y_i), .frame_tick(video_frame_tick)
+    .hs(native_hs_i), .vs(native_vs_i), .de(native_de_i),
+    .x(native_x_i), .y(native_y_i), .frame_tick(native_frame_tick)
 );
+wire shared_scan=SHARED_VIDEO_RASTER && shared_raster_valid;
+assign video_hs_i=shared_scan?shared_raster_hs:native_hs_i;
+assign video_vs_i=shared_scan?shared_raster_vs:native_vs_i;
+assign video_de_i=shared_scan?shared_raster_de:native_de_i;
+assign video_x_i=shared_scan?shared_raster_x:native_x_i;
+assign video_y_i=shared_scan?shared_raster_y:native_y_i;
+assign video_frame_tick=shared_scan?(shared_raster_x==0 && shared_raster_y==0):native_frame_tick;
 
 video_delay u_video_delay (
     .video_clk(video_clk), .rst(~video_rst_n), .read_en(video_read_en),
@@ -2512,7 +2569,7 @@ generate
 endgenerate
 
 video_transition_mask #(
-    .VIDEO_W(VIDEO_W), .VIDEO_H(VIDEO_H)
+    .VIDEO_W(VIDEO_W), .VIDEO_H(VIDEO_H),.REGISTER_SHAPE(SHARED_VIDEO_RASTER)
 ) u_video_transition_mask (
     .clk           (video_clk),
     .rst_n         (video_rst_n),

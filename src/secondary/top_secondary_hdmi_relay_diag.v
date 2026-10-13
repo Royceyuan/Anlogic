@@ -19,7 +19,9 @@ module top_secondary_hdmi_relay_diag #(
     output wire [3:0] led,
     output wire [7:0] seg_data,seg_sel,
     output wire relay_sclk, relay_valid, relay_blank, application_rst_n,
-    output wire [7:0] relay_pairs
+    output wire [7:0] relay_pairs,
+    output wire relay_capture_clk,relay_pixel_clk,relay_symbols_valid,
+    output wire [29:0] relay_symbols
 );
 reg [15:0] startup=0;
 always @(posedge clk_50m) if(startup!=16'hffff) startup<=startup+1'b1;
@@ -134,7 +136,10 @@ hdmi_relay_phy #(.EXTERNAL_TRANSMITTER(EXTERNAL_TRANSMITTER)) u_phy(.pclk(pclk),
     .serial_in({hdmi_b_clk_p,hdmi_b_d2_p,hdmi_b_d1_p,hdmi_b_d0_p}),
     .nibbles(nibbles),.serial_out(outgoing),.parallel_pairs(relay_pairs));
 hdmi_tmds_monitor u_monitor(.clk(pclk),.rst_n(rx_reset_n),.nibbles(nibbles[11:0]),
-    .lanes_locked(lanes_locked),.format_ok(format_ok),.frame_toggle(frame_toggle),.bit_offsets(bit_offsets),.control_period(relay_blank));
+    .lanes_locked(lanes_locked),.format_ok(format_ok),.frame_toggle(frame_toggle),.bit_offsets(bit_offsets),.control_period(relay_blank),
+    .symbols_valid(relay_symbols_valid),.symbols(relay_symbols));
+assign relay_capture_clk=pclk;
+assign relay_pixel_clk=pixel_clk;
 assign {hdmi1_clk_p,hdmi1_d2_p,hdmi1_d1_p,hdmi1_d0_p}=outgoing;
 assign led={format_ff[1],pll_ff[1],clock_valid,heartbeat[24]};
 reg [2:0] transmit_ff1,transmit_ff2;

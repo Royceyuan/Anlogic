@@ -49,6 +49,34 @@ task check;
     begin if (!condition) begin $display("FAIL: %0s", reason); $fatal(1); end end
 endtask
 
+// Compare every link-text pixel and its clipping edges against the original
+// generic word renderer. The registered mask must retain its one-cycle delay.
+task check_link_masks;
+    integer state, px, py;
+    reg [3:0] word_id;
+    reg expected;
+    begin
+        for (state=0; state<4; state=state+1) begin
+            link_state_50m = state;
+            step(4); frame();
+            word_id = (state == 1) ? 4'd3 : (state == 2) ? 4'd4 : 4'd2;
+            for (py=679; py<=708; py=py+1) begin
+                for (px=0; px<2048; px=px+1) begin
+                    @(negedge clk);
+                    pre_x = px; pre_y = py;
+                    expected = dut.word_pixel(pre_x,pre_y,11'd840,10'd680,word_id);
+                    step(1);
+                    if (dut.link_pixel !== expected) begin
+                        $display("FAIL: link mask state=%0d x=%0d y=%0d",state,px,py);
+                        $fatal(1);
+                    end
+                end
+            end
+        end
+        $display("PASS: all four link states preserve 245760 pixels and one-cycle timing");
+    end
+endtask
+
 initial begin
     step(2);
     @(negedge clk); rst_n = 1'b1;
@@ -96,6 +124,7 @@ initial begin
     pre_x = 410; pre_y = 312; step(1);
     x = 410; y = 312; #1;
     check(rgb == 24'hFFFFFF, "pipelined media error text");
+    check_link_masks();
     $display("PASS: SECONDARY emergency bitmap, wait and media placeholders");
     $finish;
 end

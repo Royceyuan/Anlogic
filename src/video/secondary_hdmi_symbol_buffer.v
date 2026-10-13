@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 `default_nettype none
-// Independent fixed-output-clock experiment, not yet the product output.
+// Capture-to-pixel symbol buffer for the common recovered-clock output.
 // Preserve RGB, preambles, guards and complete encoded AV packets verbatim.
 // Only a run of identical ordinary control words can absorb clock drift.
 // ponytail: symbol-rate retiming, not frame genlock. The output selector must
@@ -32,23 +32,46 @@ wire [8:0] write_count,read_count;
 wire full,empty,fifo_valid;
 wire [29:0] fifo_word;
 reg write_fault,read_fault;
-reg [29:0] write_previous;
+reg write_high;
 reg [2:0] write_run,read_run;
 reg draining,started;
-reg [1:0] write_fault_ff;
+reg write_fault_first,write_fault_second;
+wire [1:0] write_fault_ff={write_fault_second,write_fault_first};
+// First CDC stage on the distant read falling edge, then the ordinary rising
+// edge. Keep the two-flop containment without a 0.665ns nominal setup edge.
+always @(negedge read_clk or negedge rst_n)
+    if(!rst_n) write_fault_first<=0;else write_fault_first<=write_fault;
+reg input_valid_q,input_control_q,input_same_q;
+reg [29:0] input_word_q,last_input_word;
+always @(posedge write_clk or negedge rst_n) begin
+    if(!rst_n) begin
+        input_valid_q<=0;input_control_q<=0;input_same_q<=0;input_word_q<=0;last_input_word<=0;
+    end else begin
+        input_valid_q<=input_valid && !write_reset[1];
+        if(input_valid) begin
+            input_word_q<=input_symbols;input_control_q<=ordinary_control(input_symbols);
+            input_same_q<=input_symbols==last_input_word;last_input_word<=input_symbols;
+        end
+    end
+end
 // Retain at least four identical ordinary control words before shortening a
 // run. Video/island preambles differ on green/red and can never be dropped.
-wire drop=input_valid && write_count>=HIGH && write_run==4 &&
-    ordinary_control(input_symbols) && input_symbols==write_previous;
-wire write_enable=input_valid && !drop && !write_reset[1] && !write_fault;
+// HIGH leaves 127 entries below full. Register the water mark so the FIFO
+// address subtractor is not in the 187.5MHz RAM write-enable path; its one
+// capture-clock delay can add at most one word before control shortening.
+wire drop=input_valid_q && write_high && write_run==4 && input_control_q && input_same_q;
+wire write_enable=input_valid_q && !drop && !write_reset[1] && !write_fault;
 always @(posedge write_clk or negedge rst_n) begin
-    if(!rst_n) begin write_fault<=0;write_previous<=0;write_run<=0;end
-    else if(!write_reset[1] && input_valid) begin
+    if(!rst_n) write_high<=0;
+    else write_high<=write_count>=HIGH;
+end
+always @(posedge write_clk or negedge rst_n) begin
+    if(!rst_n) begin write_fault<=0;write_run<=0;end
+    else if(!write_reset[1] && input_valid_q) begin
         if(write_enable && full) write_fault<=1;
         if(!drop) begin
-            write_previous<=input_symbols;
-            if(ordinary_control(input_symbols)) begin
-                if(input_symbols!=write_previous) write_run<=1;
+            if(input_control_q) begin
+                if(!input_same_q) write_run<=1;
                 else if(write_run<4) write_run<=write_run+1'b1;
             end else write_run<=0;
         end
@@ -61,17 +84,17 @@ wire repeat_safe=ordinary_control(current_word) && current_word==output_symbols 
 wire repeat_control=started && read_count<=LOW && repeat_safe;
 wire read_enable=draining && !read_reset[1] && !read_fault &&
     !write_fault_ff[1] && !repeat_control;
-rfifo_32_32_512 #(.DATA_WIDTH_W(30),.DATA_WIDTH_R(30)) u_fifo(
+rfifo_32_32_512 #(.DATA_WIDTH_W(30),.DATA_WIDTH_R(30),.NEGATIVE_READ_SYNC(1)) u_fifo(
     .rst(!rst_n),.clkw(write_clk),.clkr(read_clk),.we(write_enable),
-    .di(input_symbols),.re(read_enable),.dout(fifo_word),.valid(fifo_valid),
+    .di(input_word_q),.re(read_enable),.dout(fifo_word),.valid(fifo_valid),
     .full_flag(full),.empty_flag(empty),.afull(),.aempty(),
     .wrusedw(write_count),.rdusedw(read_count));
 always @(posedge read_clk or negedge rst_n) begin
     if(!rst_n) begin
-        write_fault_ff<=0;read_fault<=0;draining<=0;started<=0;
+        write_fault_second<=0;read_fault<=0;draining<=0;started<=0;
         output_symbols<={10'h354,10'h354,10'h354};read_run<=0;
     end else begin
-        write_fault_ff<={write_fault_ff[0],write_fault};
+        write_fault_second<=write_fault_first;
         if(!read_reset[1]) begin
             if(read_count>=START) draining<=1;
             // The first read after a hold also has one clock of latency.

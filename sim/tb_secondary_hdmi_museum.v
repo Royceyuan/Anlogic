@@ -19,7 +19,8 @@ top_secondary_hdmi_museum dut(.clk_50m(clk),.hdmi_a_clk_p(incoming[3]),
     .hdmi_b_d1_p(outgoing[1]),.hdmi_b_d2_p(outgoing[2]),
     .led(led),.seg_data(seg),.seg_sel(sel));
 defparam dut.u_relay.u_clock.CLOCKS_PER_MS=500;
-defparam dut.u_switch.SETTLE_CYCLES=64;
+defparam dut.COMMON_OUTPUT=0;
+defparam dut.g_legacy.u_switch.SETTLE_CYCLES=64;
 defparam dut.MATCH_PC_TIMING=MATCH_TIMING;
 // The native packet encoder is exercised at full 720p geometry in its own
 // regression; this short integration test keeps its media/network stub.

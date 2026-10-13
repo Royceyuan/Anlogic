@@ -4,12 +4,13 @@
 
 当前正式版包含USB串口授权播放：HDMI常连接不自动展示桌面，电脑播放器发START才显示视频，STOP或失联自动回本地。主板及MBP1不变。2026-10-11用户确认“目前功能正常，符合预期”，并要求整理推送；只记录这项功能验收，不补写未提供的长测次数或电气裕量结论。
 
-**当前源码与播放器已增加应急视频优先联动；新副板bit已完成仿真、综合、布局布线和bitgen，尚待上板验收。** 五件文物视频继续支持，主板、TF素材和MBP1不修改。保留已验收版本与上轮联动候选用于回退，不把旧版验收转用于新功能。
+**当前源码已接入共用输出时钟、统一序列化及帧边界交接，构建与验收状态以第17节为准。** 第12～16节保留历次黑屏排查证据，旧版验收不能转用于本次改动。五件文物及应急视频联动继续支持。
 
 ## 1. 唯一入口与已验证bit
 
 - TD入口：`dual_fpga_museum_terminal_secondary_board.al`。
 - RTL顶层：`src/secondary/top_secondary_hdmi_museum.v`，模块名`top_secondary_hdmi_museum`。
+- **本轮新bit（待上板验收）**：`release/dual_fpga_museum_terminal_secondary_board_continuous_carrier.bit`，SHA256 `656CD6BE5EC64411918EC60A1FDF29C05F011AB5C5A69478748177AAF08ED588`，654090字节；配套`manifest_secondary_continuous_carrier.json`，第17节说明。
 - 唯一已上板bit：`release/dual_fpga_museum_terminal_secondary_board_uart_video.bit`，654090字节。
 - SHA256：`E6C0A247EA0731ACC9FA4182A09A70A814D32BDF6339456FA8EEB2381DD270AF`，校验文件与bit同名，后缀`.sha256`。
 - 正式发布信息及成功种子：`release/manifest_secondary_uart_video.json`、`seed/uart_video`，种子7。
@@ -19,9 +20,9 @@
 - 最新黑屏提速候选：`release/dual_fpga_museum_terminal_secondary_board_emergency_video_fast_switch.bit`，SHA256 `B6D55A66487E2292FA60B089F5B02A2D3BDB539E7D52B4FC4AD5A3BF3837AC35`；配套新版播放器，第12节说明。
 - 最新同频/同步极性候选：`release/dual_fpga_museum_terminal_secondary_board_matched_timing.bit`，SHA256 `255884F5777FA5C83637E3075FAC00FCF716F768DF5147D4FE700DFB3927DE90`。B6D55A66为上一版回退，第13节说明这次时序测试；不标为零黑屏已通过。
 - 最新本地 HDMI 流候选：`release/dual_fpga_museum_terminal_secondary_board_native_hdmi_stream.bit`，SHA256 `28ADB40FADCC021E4ADAAD2368CFDAAF4F7F998ED2974C07F1EAE2BABF2B227F`；第14节说明。上一版同频候选仍保留回退。
-- 当前源码的资源/时序记录：`release/manifest_secondary_native_hdmi_stream.json`、`seed/native_hdmi_stream`。协议/对照播放器见`manifest_secondary_emergency_video.json`。此前成功种子和旧bit保留回退。
+- 当前源码的资源/时序记录：`seed/continuous_carrier`，第17节说明。`manifest_secondary_native_hdmi_stream.json`和`seed/native_hdmi_stream`属于上一候选；此前成功种子和旧bit保留回退。
 
-工程入口仍唯一。当前候选用已有官方发送核将本地RGB编码成带保护带/信息包的HDMI流，保留上轮EDID；延续时钟通道保留、三个数据通道安全静音。PLL、管脚、时序约束、媒体读写和UART协议不改。旧入口和历史文件在Git/rubbish回溯；必要工具、素材及成功种子保留。
+工程入口仍唯一。上列bit为已发布版本及历史回退；当前共用载波实现见第17节。必要播放器、素材、完整源码和成功种子均保留。
 
 已验收UART版setup/hold为+0.106/+0.021ns；上轮联动提速候选为+0.105/+0.021ns；应急状态修正候选为+0.048/+0.023ns；最新切换候选为+0.090/+0.023ns，TNS均0。历史85E5C239基线证据仍保留在`seed/hdmi_museum/cleanup_verification.json`，仅作回溯，不是当前源码的报告。
 
@@ -463,3 +464,49 @@ $env:SECONDARY_HDMI_PROBE='serializer'
 ```
 
 本轮45条PASS和两项资源试算保存在`seed/frame_handoff_experiment`。主板、播放器、TF卡和所有发布bit不变；普通授权与应急安全规则不放宽。**下一步仍需真正把本地扫描对齐至恢复的PC时钟/光栅、统一PC与本地编码出口、实现有效静音/黑像素包，并验证插拔回退。**完成前不要求烧录仅抽取模块却仍使用旧切源路径的版本；现有28ADB40F bit可继续保留，但无缝功能未通过。
+
+## 17. 共用载波、同一序列化出口（2026-10-13）
+
+正式顶层默认 `COMMON_OUTPUT=1`。PC信号稳定存在时，本地简介和PC视频使用同一组恢复时钟、实际PC行场及四通道序列化器。UART开始、停止和应急授权只改变内容选择；开始交接等待对齐的垂直消隐，等待期间继续显示本地画面。PC物理插拔或输入失效时才更换载波时钟，因此该异常场景仍可能触发显示器重锁。
+
+### 实现与边界
+
+- `secondary_hdmi_carrier_clock`复用现有PLL，通过像素/串行时钟选择器跟随已确认的PC输入。增加两种输出时钟模式的实际SDC关系，未降低时钟频率、扩大输入支持范围或增加PLL。
+- `secondary_hdmi_symbol_buffer`接收对齐的30bit符号，复用512深度官方FIFO；只在安全普通控制区调整水位，保护有效视频、前导、保护带和音频包。写侧水位寄存切断长组合路径。官方FIFO新增默认关闭的下降沿同步选项，仅本缓冲启用，其他FIFO调用保持原行为。
+- `secondary_hdmi_pc_raster`解析实际行场，原媒体渲染跟随该扫描。实际本地像素流水线25级加TMDS编码3级；`secondary_hdmi_common_symbols`使用28拍BRAM延迟对齐PC原始流，再由同一个`secondary_hdmi_symbol_pairs`发送。
+- 未授权时用本地画面替换PC有效像素，保留必要AVI等信息及ACR参考；双声道layout-0 LPCM样本改为零，重算奇偶/BCH。授权后原始音视频符号逐位保留。撤销发生在包中间时，该单个包可能失效；后续完整包为有效静音，不能描述为所有异常时刻均包无损。输入仍限定EDID约定的RGB8/SDR/720p及双声道LPCM。
+- 物理载波更换只复位像素域，图片缓存、TF读取、SDRAM刷新和网络继续运行；缓存发布标志为零时也能恢复读图，先等待旧读响应结束。新增FIFO故障恢复会清理接收缓存及解析器，撤销旧授权后重新获取；它不会把普通视频权限扩展到应急。
+- 状态文字改成固定字形计算后的单bit选择，逐像素等价，未增加像素流水线级数。没有修改主板、播放器、TF卡或音画字幕时间轴。
+
+### 编译与复现
+
+使用唯一 `.al` 入口，或在副板根目录运行 `powershell -ExecutionPolicy Bypass -File .\scripts\build.ps1`。脚本完整执行综合、布局布线、STA及bitgen；时序和依赖门禁拒绝不合格或过期数据库。当前成功布局种子为7，证据保存在 `seed/continuous_carrier`，`source_hashes.json`记录96项源码/依赖/构建脚本校验值。
+
+最终布局布线：setup +0.023ns、hold +0.022ns，TNS均0。LUT12421/19600（63.37%），FF8207/19600（41.87%），Slice7073/9800（72.17%），BRAM9K28/64，BRAM32K13/16，DSP5/29，PLL4/4，GCLK11/16。相对28ADB40F本地HDMI流候选，LUT+58、FF−61、Slice−24、BRAM9K−1、GCLK+1。无多驱动/异常时序路径；保留原PHY7002位置提示和SDRAM时钟本地布线PHY5079提示，均详见console及timing报告。
+
+回归命令位于 `sim`：
+
+```powershell
+& D:\Modelsim\win64\vsim.exe -c -do run_secondary_hdmi_symbol_buffer.do
+& D:\Modelsim\win64\vsim.exe -c -do run_secondary_local.do
+& D:\Modelsim\win64\vsim.exe -c -do run_secondary_hdmi_common_output.do
+& D:\Modelsim\win64\vsim.exe -c -do run_secondary_hdmi_carrier_clock.do
+& D:\Modelsim\win64\vsim.exe -c -do run_secondary_hdmi_pll_model.do
+& D:\Modelsim\win64\vsim.exe -c -do run_secondary_hdmi_common_ingress.do
+```
+
+已完成：缓冲7项、实际渲染/音视频包6项、载波/四通道序列化5项、完整输入I/O至输出I/O 5项、PLL模型精度复现1项、本地页4项（含四种链路状态245760个文字像素等价）、原HDMI路径26项、帮助页加载1项、UART23项及按键1项，共79条PASS。完整I/O测试验证授权/停止无物理时钟间断或数据输出复位、输入仍有效时FIFO异常自行恢复且旧授权撤销、真实停钟回到本地；错误数0。所有最终日志保存在`seed/continuous_carrier`。
+
+音频包测试使用完整1650×750光栅、实际本地渲染和TMDS编码，但媒体/SDRAM读取采用响应模型；完整I/O测试使用实际厂商I/O/PLL功能模型和UART，媒体/网络为stub，输入向量不含音频岛。两项共同提供图像/包/物理串行链的功能证据，不能合称真实TF/网络/PC声音系统的全部实板验证。初始化时的厂商未知值和测试未接端口提示保留。
+
+厂商PLL功能模型对`$realtime`周期差乘1e8后取整判断失锁。独立复现确认，13.33ns测试时钟在约2^26ns后出现浮点舍入误判；改用二进制精确可表示的13.34375ns（约74.941MHz）周期后不再误判。完整输入测试采用1fs精度和该周期，仍在接收范围内；不改厂商模型、不强制锁定信号，也不修改生产PLL/EDID/SDC。最终完整重跑至68.186ms模拟时间通过全部5项，未把此前的模型误报计为通过。
+
+仿真能确认板内换源是否产生时钟间断、数据复位或坏符号，不能测得显示器内部锁定时间。当前修复目标是在HDMI已稳定连接时减少原约4秒黑屏；`board_pass`和`seamless_switch_verified`须等待上板反馈，不能由时序闭合替代。
+
+### 上板预期与验收
+
+1. 只更新副板。电脑HDMI仍接A，显示屏接B；现有播放器、AnlogicHDMI75目标、主板和TF卡继续使用。
+2. 先确认无PC授权时的轮播、文物简介、SW4说明页及静态应急页正常。PC连接建立时仍可能有一次重新锁定。
+3. 待播放器显示信源就绪，先使用原固定图对照，再测文物联动和主板SW4应急。预期从本地到视频、停止返回本地时保持同一输出时钟和行场，显著减少此前换源黑屏；视频首帧未准备好时仍保留本地内容。
+4. 检查有声手动视频、暂停/继续、应急抢占与解除；拔插HDMI后应回本地并重新申请播放。检查双板调参、手动模式及网线重连同步，确认缓存和控制无回归。
+5. 若仍约4秒，记录“本轮实屏未改善”，保留固定图测试日志与录像；不要根据软件ACK显示“已切入”推断屏幕已经显示。原已验收UART版及28ADB40F候选均可回退。

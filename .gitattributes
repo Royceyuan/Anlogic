@@ -38,3 +38,5 @@ seed/symbol_buffer_experiment/* -text -whitespace
 seed/symbol_buffer_experiment/*.json text whitespace
 seed/frame_handoff_experiment/* -text -whitespace
 seed/frame_handoff_experiment/*.json text whitespace
+seed/continuous_carrier/* -text -whitespace
+seed/continuous_carrier/*.json text whitespace

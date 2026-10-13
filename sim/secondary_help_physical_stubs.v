@@ -45,8 +45,15 @@ module anlogic_frame_store #(
 
 assign init_done = rst_n; assign init_ref_valid=0; assign mem_busy=0;
 assign write_req_ack=write_req; assign write_finish=0; assign write_fifo_full=0;
+`ifdef COMMON_HDMI_TEST
+reg [2:0] req_ff=0;
+always @(posedge mem_clk) req_ff<={req_ff[1:0],read_req};
+assign read_req_ack=req_ff[2];assign read_finish=0;
+assign read_fifo_valid=1;assign read_fifo_empty=0;assign read_data=32'h52aa52aa;
+`else
 assign read_req_ack=read_req; assign read_finish=0;
 assign read_fifo_valid=0; assign read_fifo_empty=1; assign read_data=0;
+`endif
 endmodule
 
 module sys_pll(input refclk,reset,output clk0_out,clk1_out,clk2_out);

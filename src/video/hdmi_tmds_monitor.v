@@ -12,7 +12,9 @@ module hdmi_tmds_monitor #(
     output reg format_ok,
     output reg frame_toggle,
     output wire [11:0] bit_offsets,
-    output wire control_period
+    output wire control_period,
+    output wire symbols_valid,
+    output wire [29:0] symbols
 );
 reg [3:0] bits_used;
 reg [13:0] reservoir [0:2];
@@ -24,6 +26,8 @@ reg [2:0] lane_lock;
 reg [9:0] aligned [0:2];
 reg [3:0] aligned_offset [0:2];
 reg aligned_valid;
+assign symbols_valid=aligned_valid && lanes_locked;
+assign symbols={aligned[2],aligned[1],aligned[0]};
 reg [19:0] shifted_word [0:2];
 reg [3:0] shifted_offset [0:2];
 reg shifted_valid;

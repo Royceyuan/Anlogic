@@ -9,9 +9,9 @@ module secondary_hdmi_local_pairs #(
     input wire [23:0] rgb,
     output wire [7:0] pairs,
     output wire encoder_ready,
-    output wire encoder_blank
+    output wire encoder_blank,
+    output wire [39:0] symbols
 );
-wire [39:0] symbols;
 function is_control;
 input [9:0] code;
 begin is_control=code==10'h354||code==10'h0ab||code==10'h154||code==10'h2ab;end

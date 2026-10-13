@@ -1,0 +1,26 @@
+Location         : D:\VSCode\CodeFiles\Git_TD\Anlogic2
+Running with     : Tang Dynasty v6.2.168116
+                   Copyright (c) 2012-2025 Anlogic Inc.
+Top Model        : top_secondary_hdmi_museum
+Device           : EG4S20BG256
+Speed            : NA
+
+Timing Mode      : final
+Setup            : WNS    23ps  TNS        0ps  NUM_FEPS     0
+Hold             : WNS    22ps  TNS        0ps  NUM_FEPS     0
+
+Flow Statistics  :
+---------------------------------------------------------------------------------------------------
+     command     |  #calls  |  wall time   |  cpu time(s)  |  used memory(mb)  |  peak memory(mb)  
+---------------------------------------------------------------------------------------------------
+      route      |    1     |  1m21s(38%)  |   112(41%)    |       1104        |       1104        
+  optimize_rtl   |    1     |   45s(21%)   |    43(15%)    |        513        |        571        
+      place      |    1     |   44s(20%)   |    73(27%)    |        719        |        719        
+  optimize_gate  |    1     |   35s(16%)   |    34(12%)    |        604        |        604        
+    fix_hold     |    1     |    8s(3%)    |     7(2%)     |       1105        |       1105        
+  import_device  |    1     |    0s(0%)    |     0(0%)     |        83         |        83         
+    read_adc     |    1     |    0s(0%)    |     0(0%)     |        359        |        359        
+    read_sdc     |    1     |    0s(0%)    |     0(0%)     |        360        |        360        
+---------------------------------------------------------------------------------------------------
+      total      |    8     |    3m33s     |      269      |       1105        |       1105        
+---------------------------------------------------------------------------------------------------

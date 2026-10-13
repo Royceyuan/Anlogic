@@ -1,0 +1,142 @@
+# do run_secondary_help_load.do
+# Model Technology ModelSim SE-64 vlog 10.6e Compiler 2018.06 Jun 23 2018
+# Start time: 21:26:23 on Oct 12,2026
+# vlog -work work_secondary_help_load ../src/storage/rgb565_stream_packer_ready.v 
+# -- Compiling module rgb565_stream_packer_ready
+# 
+# Top level modules:
+# 	rgb565_stream_packer_ready
+# End time: 21:26:23 on Oct 12,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# Model Technology ModelSim SE-64 vlog 10.6e Compiler 2018.06 Jun 23 2018
+# Start time: 21:26:23 on Oct 12,2026
+# vlog "+define+SIM" "+incdir+.." -work work_secondary_help_load ../src/common/reset_sync.v ../src/common/seg_hex_display.v ../src/input/key_debounce.v ../src/video/video_timing_640x480_pclk.v ../vendor/official_ref/lab_ex_6_tf_sdram_hdmi/video_delay.v ../src/storage/fat32_image_loader.v ../src/storage/adaptive_row_ram.v ../src/storage/al_dp_ram16.v ../src/storage/bmp_row_buffer.v ../src/storage/bmp_sdram_row_writer.v ../src/video/rgb888_adjust.v ../src/video/video_fade.v ../src/video/video_transition_mask.v ../src/video/transition_theme_controller.v ../src/video/product_show_controller.v ../src/secondary/secondary_carousel_controller.v ../src/secondary/secondary_page_overlay.v ../src/secondary/secondary_help_overlay.v ../src/memory/sdram_bmp_row_top_v66.v secondary_help_physical_stubs.v tb_secondary_help_load.v 
+# -- Compiling module reset_sync
+# -- Compiling module seg_hex_display
+# -- Compiling module key_debounce
+# -- Compiling module video_timing_640x480_pclk
+# -- Compiling module video_delay
+# -- Compiling module fat32_image_loader
+# -- Compiling module EG_LOGIC_BRAM
+# -- Compiling module adaptive_row_ram
+# -- Compiling module al_dp_ram16
+# -- Compiling module bmp_row_buffer
+# -- Compiling module bmp_sdram_row_writer
+# -- Compiling module rgb888_adjust
+# -- Compiling module video_fade
+# -- Compiling module video_transition_mask
+# -- Compiling module transition_theme_controller
+# -- Compiling module product_show_controller
+# -- Compiling module secondary_carousel_controller
+# -- Compiling module secondary_page_overlay
+# -- Compiling module secondary_help_overlay
+# -- Compiling module top_v66
+# -- Compiling module anlogic_frame_store
+# -- Compiling module sys_pll
+# -- Compiling module video_pll_75m
+# -- Compiling module hdmi_tx
+# -- Compiling module sd_card_top
+# -- Compiling module tb_secondary_help_load
+# 
+# Top level modules:
+# 	tb_secondary_help_load
+# End time: 21:26:23 on Oct 12,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# vsim -c -novopt -onfinish stop -lib work_secondary_help_load tb_secondary_help_load 
+# Start time: 21:26:23 on Oct 12,2026
+# ** Warning: (vsim-8891) All optimizations are turned off because the -novopt switch is in effect. This will cause your simulation to run very slowly. If you are using this switch to preserve visibility for Debug or PLI features please see the User's Manual section on Preserving Object Visibility with vopt.
+# //  ModelSim SE-64 10.6e Jun 23 2018
+# //
+# //  Copyright 1991-2018 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  ModelSim SE-64 and its associated documentation contain trade
+# //  secrets and commercial or financial information that are the property of
+# //  Mentor Graphics Corporation and are privileged, confidential,
+# //  and exempt from disclosure under the Freedom of Information Act,
+# //  5 U.S.C. Section 552. Furthermore, this information
+# //  is prohibited from disclosure under the Trade Secrets Act,
+# //  18 U.S.C. Section 1905.
+# //
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic2/sim/work_secondary_help_load.tb_secondary_help_load
+# Loading work_secondary_help_load.tb_secondary_help_load
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic2/sim/work_secondary_help_load.top_v66
+# Loading work_secondary_help_load.top_v66
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic2/sim/work_secondary_help_load.transition_theme_controller
+# Loading work_secondary_help_load.transition_theme_controller
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic2/sim/work_secondary_help_load.product_show_controller
+# Loading work_secondary_help_load.product_show_controller
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic2/sim/work_secondary_help_load.reset_sync
+# Loading work_secondary_help_load.reset_sync
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic2/sim/work_secondary_help_load.key_debounce
+# Loading work_secondary_help_load.key_debounce
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic2/sim/work_secondary_help_load.sd_card_top
+# Loading work_secondary_help_load.sd_card_top
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic2/sim/work_secondary_help_load.fat32_image_loader
+# Loading work_secondary_help_load.fat32_image_loader
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic2/sim/work_secondary_help_load.anlogic_frame_store
+# Loading work_secondary_help_load.anlogic_frame_store
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic2/sim/work_secondary_help_load.video_timing_640x480_pclk
+# Loading work_secondary_help_load.video_timing_640x480_pclk
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic2/sim/work_secondary_help_load.video_delay
+# Loading work_secondary_help_load.video_delay
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic2/sim/work_secondary_help_load.rgb888_adjust
+# Loading work_secondary_help_load.rgb888_adjust
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic2/sim/work_secondary_help_load.video_transition_mask
+# Loading work_secondary_help_load.video_transition_mask
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic2/sim/work_secondary_help_load.seg_hex_display
+# Loading work_secondary_help_load.seg_hex_display
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic2/sim/work_secondary_help_load.secondary_carousel_controller
+# Loading work_secondary_help_load.secondary_carousel_controller
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic2/sim/work_secondary_help_load.sys_pll
+# Loading work_secondary_help_load.sys_pll
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic2/sim/work_secondary_help_load.video_pll_75m
+# Loading work_secondary_help_load.video_pll_75m
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic2/sim/work_secondary_help_load.bmp_row_buffer
+# Loading work_secondary_help_load.bmp_row_buffer
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic2/sim/work_secondary_help_load.adaptive_row_ram
+# Loading work_secondary_help_load.adaptive_row_ram
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic2/sim/work_secondary_help_load.EG_LOGIC_BRAM
+# Loading work_secondary_help_load.EG_LOGIC_BRAM
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic2/sim/work_secondary_help_load.bmp_sdram_row_writer
+# Loading work_secondary_help_load.bmp_sdram_row_writer
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic2/sim/work_secondary_help_load.rgb565_stream_packer_ready
+# Loading work_secondary_help_load.rgb565_stream_packer_ready
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic2/sim/work_secondary_help_load.video_fade
+# Loading work_secondary_help_load.video_fade
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic2/sim/work_secondary_help_load.secondary_page_overlay
+# Loading work_secondary_help_load.secondary_page_overlay
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic2/sim/work_secondary_help_load.secondary_help_overlay
+# Loading work_secondary_help_load.secondary_help_overlay
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic2/sim/work_secondary_help_load.hdmi_tx
+# Loading work_secondary_help_load.hdmi_tx
+# ** Warning: (vsim-3017) tb_secondary_help_load.v(26): [TFMPC] - Too few port connections. Expected 62, found 41.
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_help_load/dut File: ../src/memory/sdram_bmp_row_top_v66.v
+# ** Warning: (vsim-3722) tb_secondary_help_load.v(26): [TFMPC] - Missing connection for port 'shared_mem_clk'.
+# ** Warning: (vsim-3722) tb_secondary_help_load.v(26): [TFMPC] - Missing connection for port 'shared_mem_clk_sft'.
+# ** Warning: (vsim-3722) tb_secondary_help_load.v(26): [TFMPC] - Missing connection for port 'shared_video_clk'.
+# ** Warning: (vsim-3722) tb_secondary_help_load.v(26): [TFMPC] - Missing connection for port 'shared_serial_clk'.
+# ** Warning: (vsim-3722) tb_secondary_help_load.v(26): [TFMPC] - Missing connection for port 'shared_raster_valid'.
+# ** Warning: (vsim-3722) tb_secondary_help_load.v(26): [TFMPC] - Missing connection for port 'shared_clock_stable'.
+# ** Warning: (vsim-3722) tb_secondary_help_load.v(26): [TFMPC] - Missing connection for port 'shared_raster_hs'.
+# ** Warning: (vsim-3722) tb_secondary_help_load.v(26): [TFMPC] - Missing connection for port 'shared_raster_vs'.
+# ** Warning: (vsim-3722) tb_secondary_help_load.v(26): [TFMPC] - Missing connection for port 'shared_raster_de'.
+# ** Warning: (vsim-3722) tb_secondary_help_load.v(26): [TFMPC] - Missing connection for port 'shared_raster_x'.
+# ** Warning: (vsim-3722) tb_secondary_help_load.v(26): [TFMPC] - Missing connection for port 'shared_raster_y'.
+# ** Warning: (vsim-3722) tb_secondary_help_load.v(26): [TFMPC] - Missing connection for port 'native_video_clk'.
+# ** Warning: (vsim-3722) tb_secondary_help_load.v(26): [TFMPC] - Missing connection for port 'native_serial_clk'.
+# ** Warning: (vsim-3722) tb_secondary_help_load.v(26): [TFMPC] - Missing connection for port 'native_clock_ready'.
+# ** Warning: (vsim-3722) tb_secondary_help_load.v(26): [TFMPC] - Missing connection for port 'local_video_clk'.
+# ** Warning: (vsim-3722) tb_secondary_help_load.v(26): [TFMPC] - Missing connection for port 'local_serial_clk'.
+# ** Warning: (vsim-3722) tb_secondary_help_load.v(26): [TFMPC] - Missing connection for port 'local_video_rst_n'.
+# ** Warning: (vsim-3722) tb_secondary_help_load.v(26): [TFMPC] - Missing connection for port 'local_hs'.
+# ** Warning: (vsim-3722) tb_secondary_help_load.v(26): [TFMPC] - Missing connection for port 'local_vs'.
+# ** Warning: (vsim-3722) tb_secondary_help_load.v(26): [TFMPC] - Missing connection for port 'local_de'.
+# ** Warning: (vsim-3722) tb_secondary_help_load.v(26): [TFMPC] - Missing connection for port 'local_rgb'.
+# PASS real top media scheduler: fixed dual-size target, native help cache, help once, no SDRAM write, emergency priority, SW4 isolation, missing help recovery, scan delay aligned
+# ** Note: $finish    : tb_secondary_help_load.v(145)
+#    Time: 1270 ns  Iteration: 1  Instance: /tb_secondary_help_load
+# Break in Module tb_secondary_help_load at tb_secondary_help_load.v line 145
+# Stopped at tb_secondary_help_load.v line 145
+# End time: 21:26:26 on Oct 12,2026, Elapsed time: 0:00:03
+# Errors: 0, Warnings: 23

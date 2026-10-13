@@ -11,6 +11,9 @@ cd $secondary_root
 open_project [file join $secondary_root $project] -single_run
 load_run_param -run syn_1
 elaborate -top $top
+foreach required_pin {g_carrier$u_carrier/u_pixel_mux.clko g_carrier$u_carrier/u_serial_mux.clko} {
+    if {[llength [get_pins $required_pin]]!=1} {error "Missing common-carrier clock target $required_pin"}
+}
 read_adc [file join $secondary_root $adc]
 clear_sdc -user
 read_sdc [file join $secondary_root $sdc]
@@ -32,9 +35,12 @@ set pair_regions {0 8 1 2}
 foreach {lane origin_y} $pair_regions {
     set pair_cells [get_cells -hier -regexp [format {u_relay/u_phy/g_lane\[%d\].*(transmit_pair|output_pair).*} $lane]]
     puts "AV lane$lane pair cells: $pair_cells"
-    if {[llength $pair_cells]!=6} {error "AV lane$lane pair placement no longer matches the netlist"}
-    create_bound av_lane${lane}_pairs -mode fixed -width 2 -height 4 -origin [list 38 $origin_y]
-    add_cells_to_bound -bound av_lane${lane}_pairs -cells $pair_cells
+    # Common-symbol output removes the old raw serial relay TX pair bank.
+    # Preserve the proven bound only if that legacy bank is actually present.
+    if {[llength $pair_cells]==6} {
+        create_bound av_lane${lane}_pairs -mode fixed -width 2 -height 4 -origin [list 38 $origin_y]
+        add_cells_to_bound -bound av_lane${lane}_pairs -cells $pair_cells
+    } elseif {[llength $pair_cells]!=0} {error "AV lane$lane pair bank changed unexpectedly"}
 }
 set_param place seed $place_seed
 place

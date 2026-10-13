@@ -17,7 +17,8 @@ module rfifo_32_32_512 #(parameter DATA_WIDTH_W = 32,
         parameter AL_FULL_NUM = 509, 
         parameter AL_EMPTY_NUM = 2, 
         parameter SHOW_AHEAD_EN = 1'b0, 
-        parameter OUTREG_EN = "NOREG") (
+        parameter OUTREG_EN = "NOREG",
+        parameter NEGATIVE_READ_SYNC = 0) (
     //SHOWAHEAD mode enable
     //OUTREG, NOREG
     //independent clock mode,fixed as asynchronous reset
@@ -217,7 +218,7 @@ module rfifo_32_32_512 #(parameter DATA_WIDTH_W = 32,
                 .primary_addr_i(rd_addr), 
                 .secondary_addr_o(rd_to_wr_addr)) ; 
     // fifo write address synchronous to read clock domain using gray code
-    fifo_cross_domain_addr_process_al_rfifo_32_32_512 #(.ADDR_WIDTH(ADDR_WIDTH_W)) wr_to_rd_cross_inst (.primary_asreset_i(wr_rst), 
+    fifo_cross_domain_addr_process_al_rfifo_32_32_512 #(.ADDR_WIDTH(ADDR_WIDTH_W),.FIRST_FALLING(NEGATIVE_READ_SYNC)) wr_to_rd_cross_inst (.primary_asreset_i(wr_rst),
                 .secondary_asreset_i(rd_rst), 
                 .primary_clk_i(clkw), 
                 .secondary_clk_i(clkr), 
@@ -247,7 +248,7 @@ endmodule
 
 
 `timescale 1ns/1ps
-module fifo_cross_domain_addr_process_al_rfifo_32_32_512 #(parameter ADDR_WIDTH = 9) (
+module fifo_cross_domain_addr_process_al_rfifo_32_32_512 #(parameter ADDR_WIDTH = 9,parameter FIRST_FALLING = 0) (
     input primary_asreset_i, 
     input secondary_asreset_i, 
     input primary_clk_i, 
@@ -300,6 +301,13 @@ module fifo_cross_domain_addr_process_al_rfifo_32_32_512 #(parameter ADDR_WIDTH 
     // secondary clock Domain
     //--------------------------------------------------------------------
     // synchronize primary address grey code onto the secondary clock
+    generate if(FIRST_FALLING) begin:g_falling_sync
+    // New symbol FIFO only: preserve a FULL cycle of metastability settling
+    // between the first two CDC stages, then decode on the rising read edge.
+    always @(negedge secondary_clk_i or posedge secondary_asreset_i)
+        if(secondary_asreset_i) begin sync_r1<=0;primary_addr_gray_sync<=0;end
+        else begin sync_r1<=primary_addr_gray_reg;primary_addr_gray_sync<=sync_r1;end
+    end else begin:g_rising_sync
     always
         @(posedge secondary_clk_i or 
             posedge secondary_asreset_i)
@@ -315,6 +323,7 @@ module fifo_cross_domain_addr_process_al_rfifo_32_32_512 #(parameter ADDR_WIDTH 
                     primary_addr_gray_sync <=  sync_r1 ;
                 end
         end
+    end endgenerate
     // convert the synchronized primary address grey code back to binary
     always
         @(posedge secondary_clk_i or 

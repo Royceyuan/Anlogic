@@ -55,13 +55,13 @@ always @(negedge write_clk) begin
         end
     end
 end
-always @(posedge write_clk) if(rst_n && input_valid) begin
-    if(dut.drop) begin
+always @(posedge write_clk) if(rst_n) begin
+    if(dut.input_valid_q && dut.drop) begin
         drops=drops+1;
-        if(!ordinary(input_symbols) || dut.write_run!=4)
+        if(!ordinary(dut.input_word_q) || dut.write_run!=4)
             $fatal(1,"dropped a protected symbol or minimum control run");
     end
-    if(check_stream && !ordinary(input_symbols)) begin
+    if(input_valid && check_stream && !ordinary(input_symbols)) begin
         if(tail>=200000) $fatal(1,"scoreboard limit");
         expected[tail]=input_symbols;tail=tail+1;
     end

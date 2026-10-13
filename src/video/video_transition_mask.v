@@ -5,7 +5,8 @@
 // fade path or the full-brightness path before this geometry-only mask.
 module video_transition_mask #(
     parameter integer VIDEO_W = 800,
-    parameter integer VIDEO_H = 600
+    parameter integer VIDEO_H = 600,
+    parameter integer REGISTER_SHAPE = 0
 ) (
     input  wire        clk,
     input  wire        rst_n,
@@ -23,7 +24,16 @@ module video_transition_mask #(
 );
 
 reg [4:0] phase_step;
-reg [4:0] shape_step;
+reg [4:0] shape_raw;
+wire [4:0] shape_step;
+generate if(REGISTER_SHAPE) begin:g_shape_pipe
+    reg [4:0] q;
+    always @(posedge clk or negedge rst_n)
+        if(!rst_n) q<=0;else if(!de) q<=shape_raw;
+    assign shape_step=q;
+end else begin:g_shape_direct
+    assign shape_step=shape_raw;
+end endgenerate
 reg reveal;
 reg [10:0] h_limit;
 reg [9:0] v_limit;
@@ -47,7 +57,7 @@ always @(*) begin
                  ((progress >= 6'd16) ? progress[4:0] - 5'd16 : 5'd0);
     if (phase_step > 5'd16)
         phase_step = 5'd16;
-    shape_step = closing ? (5'd16 - phase_step) : phase_step;
+    shape_raw = closing ? (5'd16 - phase_step) : phase_step;
 
     // Sixteen geometry steps make both endpoints exact: the old source is
     // fully hidden at the midpoint and the new source starts fully hidden.
