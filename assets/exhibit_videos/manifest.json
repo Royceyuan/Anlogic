@@ -1,0 +1,165 @@
+{
+  "schema": 1,
+  "date": "2026-10-14",
+  "type": "visitor_orbit_final_delivery",
+  "format": "H.264 1280x720 60fps yuv420p; silent AAC 48000 stereo",
+  "narration_rule": "ceil((wav_duration_seconds + 2) * 60) frames",
+  "hardware_changed": false,
+  "files": [
+    {
+      "path": "游客环绕制作说明.md",
+      "bytes": 6717,
+      "sha256": "cdbdb7d003bf07fe2ea3b46e5a2103d230fc89d8bedb7fecca14ca4cd7637f5d"
+    },
+    {
+      "path": "final/01_越王勾践剑_平放环绕正式版.mp4",
+      "bytes": 11477733,
+      "sha256": "531cda04a600410833eec63a9d48d2c6a6361b3ca6fd5fa114d86e8310196211"
+    },
+    {
+      "path": "final/02_四羊方尊_游客环绕正式版.mp4",
+      "bytes": 36427606,
+      "sha256": "8dfe39adfa361812aeee4fe7e34fda2c707a9b04ca6537121346c09a6c638c06"
+    },
+    {
+      "path": "final/03_金缕玉衣_游客环绕正式版.mp4",
+      "bytes": 33391527,
+      "sha256": "324549b6cb20a8146ef6fd5137dc203ae6ebeb6b52bcd7ee678ef49d434a0b20"
+    },
+    {
+      "path": "final/04_马踏飞燕_游客环绕正式版.mp4",
+      "bytes": 17830227,
+      "sha256": "7d8ba21b27aa13bca2d5677157643739236b7f13402cd3f596bc4454416204d6"
+    },
+    {
+      "path": "final/05_长信宫灯_游客环绕正式版.mp4",
+      "bytes": 26803703,
+      "sha256": "b3d70164b1fb95e200da08059f4ea300d7dcd220747ab1dc9974f9cd2881f4af"
+    },
+    {
+      "path": "narration/0.wav",
+      "bytes": 3856974,
+      "sha256": "12f00d6bc4a271e360545b82afc7f3210ccb05ecfa1b340ebf3d03b771164e54"
+    },
+    {
+      "path": "narration/1.wav",
+      "bytes": 4080462,
+      "sha256": "82d53ca80e055f3a3c13ac69bc49eae78f8c97ee886068de532d876a5640d1e5"
+    },
+    {
+      "path": "narration/2.wav",
+      "bytes": 4142670,
+      "sha256": "389ccbe186638bd0605ad417becc8bae58392c4c2862469f50157a3bbdcb7285"
+    },
+    {
+      "path": "narration/3.wav",
+      "bytes": 3954894,
+      "sha256": "13c01938e1f504d61a2c26ad028eff8c88f059f162ed18028a8eacca744e6b38"
+    },
+    {
+      "path": "narration/4.wav",
+      "bytes": 4101198,
+      "sha256": "400de89b9511c109a328eac43f646da07b8c9b3d5477ff70cd6ae29c2d533cd4"
+    },
+    {
+      "path": "orbit_remaining.py",
+      "bytes": 14311,
+      "sha256": "94114f243cee07dcc8269721f01f0f85c0d41831654c0a198ef6743204e3106a"
+    },
+    {
+      "path": "orbit_sample.py",
+      "bytes": 15124,
+      "sha256": "4ba4713530926d95e7654357f2c3b8dc6279f09a865409abec77edc197eb2851"
+    },
+    {
+      "path": "orbit_textures/1.png",
+      "bytes": 2325594,
+      "sha256": "b7a01b8f856e739a56db4136930f000cc38d8db4daa1fc8916ec912f5d8afebd"
+    },
+    {
+      "path": "orbit_textures/2.png",
+      "bytes": 1269296,
+      "sha256": "30f35a87af554e3be43b0cdd8e376df54e82f67ccd7c49284875cf8bce3a8e1a"
+    },
+    {
+      "path": "orbit_textures/3.png",
+      "bytes": 876025,
+      "sha256": "2f3e1e96603e25e6591dfe976fc546d06e6244a4894de7c4ee6a7ea1537ab850"
+    },
+    {
+      "path": "orbit_textures/4.png",
+      "bytes": 1927014,
+      "sha256": "844b8b4f2ce397db4c8d05bf3019f71e8cc952952ec920dd979a22fd5a0d7b9f"
+    },
+    {
+      "path": "orbit_validation/1.json",
+      "bytes": 4281,
+      "sha256": "6e67e544e2bc9fa22db7424e395c0aeb809c1f19899f3fed432a9e934236b826"
+    },
+    {
+      "path": "orbit_validation/2.json",
+      "bytes": 4281,
+      "sha256": "36e31b77f3fadacd8a3e021c0d435a1212d024e73dfca08002eadc697c98acfa"
+    },
+    {
+      "path": "orbit_validation/3.json",
+      "bytes": 4281,
+      "sha256": "1f4a87c11ee2826bf367db3a379e89895419a74d4156e41ec2e18cec4d38705e"
+    },
+    {
+      "path": "orbit_validation/4.json",
+      "bytes": 4280,
+      "sha256": "6977b07f373e3ee873e7ef8185befc4a0ac06e59ece41f8fa22d4509167ffe18"
+    },
+    {
+      "path": "orbit_validation/player_validation.log",
+      "bytes": 626,
+      "sha256": "0379c744d0a869ec7826288c7b97bb74ae7f85f8a8c4dd82fd1986fd334cb804"
+    },
+    {
+      "path": "source/0/0.png",
+      "bytes": 741739,
+      "sha256": "8968aae7968b6e20fb2f6bedcbd2a29f0bd3e0b3d5d8276b54379d5e6afc0201"
+    },
+    {
+      "path": "source/0/1.png",
+      "bytes": 1968244,
+      "sha256": "59430c59f1b5712e0a3db381560e3818bb5ce1b48fd9eb69827917a40c30b1fc"
+    },
+    {
+      "path": "source/1/0.png",
+      "bytes": 1876813,
+      "sha256": "0f0974a8e142b3f399fa4b01e4002546244da9f5844c106ba442269437590a7f"
+    },
+    {
+      "path": "source/2/0.png",
+      "bytes": 1387936,
+      "sha256": "8132581c1a8f63e0f2527f286544b94f77619221a4ca1ca161a22e2b44ab7a3d"
+    },
+    {
+      "path": "source/3/0.png",
+      "bytes": 1656550,
+      "sha256": "b709726c868253f7c499e189158c699bb59ddaf472987e541a270aea72a1af4f"
+    },
+    {
+      "path": "source/4/0.png",
+      "bytes": 1310570,
+      "sha256": "dbbe7c201c7b9141dddb8c6d544cc427aa6cb6affbc1c0b36e5dd28fde493c40"
+    },
+    {
+      "path": "sword_horizontal_validation.json",
+      "bytes": 4291,
+      "sha256": "ac8047265fb4e374daab7b1d65351d82d3748d71bb720328dc518fc98dd71df5"
+    },
+    {
+      "path": "verify_player.cs",
+      "bytes": 6485,
+      "sha256": "893bcd3af7c048e7ad4cbd6e7b768e94f8469aadd91c8ccc4ae1816746fb3d8c"
+    },
+    {
+      "path": "verify_player.ps1",
+      "bytes": 2288,
+      "sha256": "90c3ced1a84975fe617f722f1fdd98a5999ac758c4f579e9d0e695fd8929859f"
+    }
+  ]
+}

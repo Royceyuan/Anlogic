@@ -31,3 +31,5 @@ Thumbs.db
 .vscode/*.user
 # Reproducible video rendering intermediates, not final emergency media.
 assets/emergency_video/_work/
+assets/exhibit_videos/final/*.partial.mp4
+!assets/exhibit_videos/orbit_validation/player_validation.log

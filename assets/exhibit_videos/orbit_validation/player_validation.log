@@ -1,0 +1,6 @@
+PASS file=01_越王勾践剑_平放环绕正式版.mp4 open/pause/resume/loop/emergency-revoke/stop; seconds=4.76
+PASS file=02_四羊方尊_游客环绕正式版.mp4 open/pause/resume/loop/emergency-revoke/stop; seconds=4.35
+PASS file=03_金缕玉衣_游客环绕正式版.mp4 open/pause/resume/loop/emergency-revoke/stop; seconds=4.66
+PASS file=04_马踏飞燕_游客环绕正式版.mp4 open/pause/resume/loop/emergency-revoke/stop; seconds=4.69
+PASS file=05_长信宫灯_游客环绕正式版.mp4 open/pause/resume/loop/emergency-revoke/stop; seconds=4.72
+PASS: five real-media control/loop sequences; no hardware I/O
