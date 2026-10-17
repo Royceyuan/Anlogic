@@ -1,0 +1,55 @@
+# do run_fat32_bmp_adaptive.do
+# Model Technology ModelSim SE-64 vlog 10.6e Compiler 2018.06 Jun 23 2018
+# Start time: 23:20:01 on Oct 16,2026
+# vlog "+define+SIM" -work work_bmp_adaptive_v72 ../src/storage/al_dp_ram16.v ../src/storage/adaptive_row_ram.v ../src/storage/fat32_image_loader.v ../src/storage/bmp_row_buffer.v ../src/storage/rgb565_stream_packer_ready.v ../src/storage/bmp_sdram_block_writer.v ../src/storage/bmp_sdram_row_writer.v 
+# -- Compiling module al_dp_ram16
+# -- Compiling module EG_LOGIC_BRAM
+# -- Compiling module adaptive_row_ram
+# -- Compiling module fat32_image_loader
+# -- Compiling module bmp_row_buffer
+# -- Compiling module bmp_row_bank_ram
+# -- Compiling module rgb565_stream_packer_ready
+# -- Compiling module bmp_sdram_block_writer
+# -- Compiling module bmp_sdram_row_writer
+# 
+# Top level modules:
+# 	fat32_image_loader
+# 	bmp_row_buffer
+# 	bmp_sdram_block_writer
+# 	bmp_sdram_row_writer
+# End time: 23:20:01 on Oct 16,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# Model Technology ModelSim SE-64 vlog 10.6e Compiler 2018.06 Jun 23 2018
+# Start time: 23:20:01 on Oct 16,2026
+# vlog -work work_bmp_adaptive_v72 tb_fat32_bmp_adaptive_loader.v 
+# -- Compiling module tb_fat32_bmp_adaptive_loader
+# 
+# Top level modules:
+# 	tb_fat32_bmp_adaptive_loader
+# End time: 23:20:01 on Oct 16,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# vsim -lib work_bmp_adaptive_v72 tb_fat32_bmp_adaptive_loader -gRESOURCE_OPT_CONSTANT_MULT=1 -gBMP_MAX_HEIGHT=1080 -gSOURCE_H=1080 -gDISK_BYTES=8388608 -gIMAGE_W=960 -gTOP_DOWN=0 -gIMAGE_ADDR_BITS=19 -gIMAGE_H=540 -gUSE_BLOCK_WRITER=0 -gBMP_MAX_WIDTH=1920 -gSOURCE_W=1920 
+# Start time: 23:20:01 on Oct 16,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# ** Warning: tb_fat32_bmp_adaptive_loader.v(179): (vopt-2685) [TFMPC] - Too few port connections for 'u_writer'.  Expected 23, found 21.
+# ** Warning: tb_fat32_bmp_adaptive_loader.v(179): (vopt-2718) [TFMPC] - Missing connection for port 'abort_done'.
+# ** Warning: tb_fat32_bmp_adaptive_loader.v(179): (vopt-2718) [TFMPC] - Missing connection for port 'abort'.
+# //  ModelSim SE-64 10.6e Jun 23 2018
+# //
+# //  Copyright 1991-2018 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  ModelSim SE-64 and its associated documentation contain trade
+# //  secrets and commercial or financial information that are the property of
+# //  Mentor Graphics Corporation and are privileged, confidential,
+# //  and exempt from disclosure under the Freedom of Information Act,
+# //  5 U.S.C. Section 552. Furthermore, this information
+# //  is prohibited from disclosure under the Trade Secrets Act,
+# //  18 U.S.C. Section 1905.
+# //
+# Loading work.tb_fat32_bmp_adaptive_loader(fast)
+# Adaptive BMP: PASS source=1920x1080 top_down=0 row_padding=0 output=960x540
+# ** Note: $finish    : tb_fat32_bmp_adaptive_loader.v(546)
+#    Time: 192054030 ns  Iteration: 1  Instance: /tb_fat32_bmp_adaptive_loader
+# End time: 23:20:08 on Oct 16,2026, Elapsed time: 0:00:07
+# Errors: 0, Warnings: 3

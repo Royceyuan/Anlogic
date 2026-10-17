@@ -1,0 +1,20 @@
+{
+  "status": "board_pass",
+  "board_acceptance_date": "2026-10-17",
+  "board_acceptance": "User confirmed both delivered versions: ok没问题. No quantified long-duration reliability claim.",
+  "date": "2026-10-16",
+  "bit": "dual_fpga_museum_terminal_main_board_startup_read_fix.bit",
+  "sha256": "BE70117B90A6E707EABD6A53FAB6D9CEE6E056460CB6ECC1F6D5149AE10530E2",
+  "base_commit": "fcf8b25f9f5cdf83fb48f04c720149e0bf5379e9",
+  "rtl_change": "Require the final SDRAM response valid before read burst completion; no state-machine or clock changes.",
+  "modified_rtl_sha256": "414A1F1826436E35A00379E808A9979275836E45A649C2B099A1D07C9DE9CB10",
+  "preexisting_changes": "Existing adaptive-loader test edits and row-writer working-tree state preserved; not reverted or claimed as this fix.",
+  "seed": 4,
+  "setup_wns_ns": 0.254,
+  "hold_wns_ns": 0.022,
+  "setup_tns_ns": 0,
+  "hold_tns_ns": 0,
+  "resources": {"lut": 16902, "ff": 11435, "slice": 9592, "bram9k": 43, "bram32k": 10, "dsp": 13, "pll": 4},
+  "evidence": "seed/startup_read_fix",
+  "limits": "Delayed final-response arbitration defect reproduced in simulation; new bit accepted on board. This does not establish an exclusive cause or a statistical zero failure rate for intermittent 60b6. Previous bit archived outside the project; historical seed evidence retained."
+}

@@ -4,6 +4,17 @@
 
 ## 工程入口与当前位流
 
+### 当前发布：读突发收尾修复（2026-10-17 上板通过）
+
+- 当前 bit：`release/dual_fpga_museum_terminal_main_board_startup_read_fix.bit`，SHA256 `BE70117B90A6E707EABD6A53FAB6D9CEE6E056460CB6ECC1F6D5149AE10530E2`。仍从 HDMIB 输出。用户于2026-10-17确认“ok没问题”；旧 bit 已移入工程外 rubbish，历史成功种子与报告保留。
+- 用户反馈：偶发冷启动 `60b6`，有 HDMI 信号且 OSD 可见，最近暂未再次复现，KEY4 是否能恢复未知。代码中该读数表示加载状态 6、行号低四位 B、帧尚未完成，并不是独立故障编号；不能仅凭它断言 TF 卡、PLL 或 HDMI 损坏。
+- 已复现缺陷：`vendor/anlogic_lab6/frame_fifo_read.v` 只按“已收到长度减一”判断突发结束，最后一个数据延迟时会提前撤销读占用。现在增加最终返回有效条件，完整收齐后才释放仲裁。不改图片加载状态机、SD 时钟、音画时间轴、缓存布局或 KEY4 流程。
+- `sim/run_frame_fifo_read_completion.do` 对旧条件复现失败，修复后完整/尾部短突发、最后返回延迟和正常连续返回均通过；原 PLL 启动、SD 退出隔离、1920×1080/1672×941/640×480 自适应读取测试通过。新 bit 已获用户上板认可，但不将此等同于证明 `60b6` 的唯一根因或长期零故障。
+- seed=4；setup +0.254ns、hold +0.022ns、TNS 均为 0。LUT 16902、FF 11435、Slice 9592、BRAM9K 43、BRAM32K 10、DSP 13、PLL 4。构建/DRC/bitgen/测试证据保留在 `seed/startup_read_fix`；原 `seed/hdmi_b` 不变。既有时钟/硬核位置警告保留，无新增时序豁免。
+- 验收：先烧录主板新 bit，断电重启数次，确认五栏、名称和预载正常；再验证自动讲解及字幕、暂停缩放/平移、KEY4、手动→自动和应急。若再次停住，记录数码管是否一直不变、OSD 是否有具体名称，以及 KEY4 能否恢复。副板启动 SW3 自动同步需配合副板 `startup_sync` 新 bit；无需改 TF 素材或播放器。
+
+release 只保留当前已验收 bit；工程入口、源码/IP、约束、构建脚本、回归源码、成功种子、完整素材打包软件及必要媒体均保留。构建数据库、ModelSim 工作库和重复日志移入工程外 rubbish，重编时自动生成。
+
 | 项目 | 路径 |
 |---|---|
 | 唯一TD入口 | `dual_fpga_museum_terminal_main_board.al` |
@@ -11,14 +22,14 @@
 | 系统集成 | `src/top/museum_main_board_top.v` |
 | 管脚约束 | `constraints/museum_main_board_pins.adc` |
 | 时序约束 | `constraints/museum_main_board_timing.sdc` |
-| 唯一当前已验收bit | `release/dual_fpga_museum_terminal_main_board_hdmi_b.bit` |
-| bit校验值 | `release/dual_fpga_museum_terminal_main_board_hdmi_b.sha256` |
+| 唯一当前已验收bit | `release/dual_fpga_museum_terminal_main_board_startup_read_fix.bit` |
+| bit校验值 | `release/dual_fpga_museum_terminal_main_board_startup_read_fix.bit.sha256` |
 | 必要素材制作软件 | `tools/MuseumTFPackager/MuseumTFPackager.exe`，须保留整个同级运行目录 |
-| 成功种子及最终报告 | B口：`seed/hdmi_b/`，种子4；旧A口：`seed/`，种子1 |
+| 成功种子及最终报告 | 当前：`seed/startup_read_fix/`，种子4；历史B口：`seed/hdmi_b/`；旧A口：`seed/` |
 
-当前B口bit SHA-256：`29351E9BCBB3420392381AF14B8D0ECF3EF3EFD50C3BE0EB6EB95EF2B342AACF`。2026-10-10用户上板确认“没问题”；本轮整理不改变bit，不需要重新烧录或写卡。此前极低概率80C6仍是待观察项，不把这次接口验收宣称为完全消除该问题。用户原有未提交源码修改完整保留，不夹带提交，也不将其宣称为当前bit的构建输入。
+此前HDMIB基线 SHA-256 为 `29351E9BCBB3420392381AF14B8D0ECF3EF3EFD50C3BE0EB6EB95EF2B342AACF`，已归档，不再作为当前下载入口。此次整理不改变新 bit 字节或TF卡。此前极低概率80C6仍是待观察项；用户原有未提交的自适应测试修改和行写入文件工作区状态完整保留，不夹带提交。
 
-### 当前HDMIB输出变更
+### 历史基线：HDMIB输出迁移（以下资源与哈希不是当前发布值）
 
 2026-10-10按用户要求，将主板输出从HDMIA迁移至HDMIB。仅修改ADC中的六个物理管脚，顶层及媒体RTL不变：CLK=C3、D2=E1、D1=F1、D0=G5、DDC SCL=P2、SDA=R2。内部`hdmi1_*`仍是同一组逻辑信号名，不表示当前物理A口。
 
@@ -94,7 +105,7 @@ Set-Location -LiteralPath D:\VSCode\CodeFiles\Git_TD\Anlogic
 # 确认上一步成功，检查 _build_flash_startup_repair/museum_main_board_final.ts
 # setup/hold WNS非负，TNS均为0，再执行：
 & D:\TD_6.2.1\bin\td_commands_prompt.exe scripts/bitgen_flash_startup_repair.tcl
-Get-FileHash -LiteralPath ./release/dual_fpga_museum_terminal_main_board_hdmi_b.bit -Algorithm SHA256
+Get-FileHash -LiteralPath ./release/dual_fpga_museum_terminal_main_board_startup_read_fix.bit -Algorithm SHA256
 ```
 
 4. 检查TD输出无ERROR，完整构建的DRC通过，bitgen明确输出 `Generate bits file`；确认新bit的文件时间和SHA256后再烧录。只看进程退出码或目录里有旧bit不能证明生成成功。自行修改后产生的新bit不自动继承当前发布bit的上板验收。

@@ -87,7 +87,9 @@ assign O_rd_busy = (state == S_READ_BURST);//读指令期间
 // clocking and refresh. Wait for every returned word before the next burst.
 // Finish on the final returned word itself.  Waiting for a further valid
 // cycle works only when the SDRAM presents an uninterrupted data burst.
-assign rd_burst_finish = (rd_vld &&
+// The counter alone also equals len-1 while the final response is delayed.
+// Keep read ownership until that response is actually valid.
+assign rd_burst_finish = (rd_vld && Sdr_rd_en &&
                           (read_data_cnt == (active_burst_len - 1'b1)));
 assign read_finish = (state == S_END) ? 1'b1 : 1'b0;             //read finish at state 'S_END'
 assign App_rd_en = App_rd_en_d0;
