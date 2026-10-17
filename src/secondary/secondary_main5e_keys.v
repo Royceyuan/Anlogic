@@ -36,7 +36,6 @@ reg [127:0] hb;
 reg [95:0] display;
 reg hb_seen, display_seen;
 reg desired_manual_d, mode_retry_ready;
-reg [3:0] mode_attempts;
 wire [7:0] hb_artifact = hb[119:112];
 wire [7:0] hb_phase = hb[111:104];
 // SW4 changes only the local help page. All four remote keys remain active.
@@ -114,7 +113,7 @@ always @(posedge clk or posedge rst) begin
     if (rst) begin
         sw_ff1 <= 0; sw_ff2 <= 0; sw_stable <= 0; sw_settle <= 0;
         hb <= 0; display <= 0; hb_seen <= 0; display_seen <= 0;
-        desired_manual_d <= 0; mode_retry_ready <= 1; mode_attempts <= 0;
+        desired_manual_d <= 0; mode_retry_ready <= 1;
         control_request <= 0; control_type <= 0; control_payload <= 0;
     end else begin
         sw_ff1 <= sw; sw_ff2 <= sw_ff1;
@@ -129,21 +128,23 @@ always @(posedge clk or posedge rst) begin
         desired_manual_d <= sw_stable[2];
         if (!peer_alive) begin
             hb_seen <= 0; display_seen <= 0;
-            mode_retry_ready <= 1; mode_attempts <= 0;
+            mode_retry_ready <= 1;
         end else if (desired_manual_d != sw_stable[2] || mode_matches ||
                      hb_restoring || hb_emergency) begin
-            mode_retry_ready <= 1; mode_attempts <= 0;
+            mode_retry_ready <= 1;
         end else if (heartbeat_pulse && control_ready) mode_retry_ready <= 1;
         control_request <= 0;
         if (!control_request && control_ready && peer_alive && hb_seen &&
             display_seen && main_safe) begin
             // Reconcile the switch with applied state after recovery/reconnection.
-            // BUSY gets a new sequence only after a fresh heartbeat, at most 10 times.
-            if (manual_supported && !mode_matches && mode_retry_ready && mode_attempts < 10) begin
+            // BUSY gets a new sequence only after a fresh heartbeat. Loading
+            // can outlast ten heartbeats; reconcile until applied state matches.
+            // Individual packet retries remain bounded by the endpoint.
+            if (manual_supported && !mode_matches && mode_retry_ready) begin
                 control_type <= 8'h17;
                 control_payload <= {7'd0,sw_stable[2],56'd0};
                 control_request <= 1;
-                mode_retry_ready <= 0; mode_attempts <= mode_attempts + 1'b1;
+                mode_retry_ready <= 0;
             end else if ((|key_press) && mode_matches) begin
             if (mode == 2'b00) begin
                 control_type <= 8'h13;

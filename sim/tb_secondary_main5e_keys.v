@@ -6,12 +6,14 @@ reg [127:0] hb=128'h01020001000000800000000000000000;
 reg [95:0] display=96'h000302030301000000000000;
 reg hb_pulse=0, display_pulse=0;
 reg ready=1, peer_alive=1, supported=1;
+reg [3:0] switches=0;
+reg passed=0;
 wire request;
 wire [7:0] request_type;
 wire [63:0] request_payload;
 wire manual_mode, manual_next;
 secondary_main5e_keys dut (
-    .clk(clk), .rst(rst), .sw(4'd0), .key_n(4'hf),
+    .clk(clk), .rst(rst), .sw(switches), .key_n(4'hf),
     .heartbeat_pulse(hb_pulse), .heartbeat_data(hb),
     .display_pulse(display_pulse), .display_data(display),
     .control_ready(ready), .peer_alive(peer_alive), .manual_supported(supported),
@@ -175,17 +177,43 @@ initial begin
     hb[95:88]=0;
     snapshot();
     if (!request || request_type!=8'h17) $fatal(1,"valid state must re-arm after emergency");
-    repeat(11) snapshot();
-    if (dut.mode_attempts!=10 || request) $fatal(1,"BUSY retries must be bounded");
+    repeat(12) begin
+        snapshot();
+        if (!request || request_type!=8'h17)
+            $fatal(1,"slow startup must not exhaust switch reconciliation");
+        repeat(8) begin
+            @(negedge clk);
+            if (request) $fatal(1,"retry requires a fresh heartbeat");
+        end
+    end
     hb[70]=1;
     snapshot();
-    if (request || dut.mode_attempts!=0) $fatal(1,"KEY4 recovery must reset exhausted mode retries");
+    if (request) $fatal(1,"KEY4 recovery must block mode requests");
     hb[70]=0;
     snapshot();
     if (!request || request_type!=8'h17) $fatal(1,"held SW3 must re-arm after KEY4 recovery");
     release dut.sw_stable;
+    // Real cold boot: SW3 is already high; no physical edge after reset.
+    rst=1; switches=4'b0100; peer_alive=0; ready=0;
+    display[42]=0;
+    repeat(3) @(negedge clk); rst=0;
+    repeat(1000010) @(negedge clk);
+    if (dut.sw_stable!=4'b0100 || request)
+        $fatal(1,"initial switch sampling or disconnected suppression");
+    peer_alive=1; ready=1;
+    repeat(3) @(negedge clk);
+    if (request) $fatal(1,"startup must wait for fresh peer status");
+    snapshot();
+    if (!request || request_type!=8'h17 || request_payload!=64'h0100000000000000)
+        $fatal(1,"initial manual switch was not synchronized");
+    ready=0; display[42]=1; snapshot(); ready=1;
+    repeat(12) begin
+        snapshot();
+        if (request) $fatal(1,"matching applied mode must stop reconciliation");
+    end
+    passed=1;
     $display("PASS tb_secondary_main5e_keys");
     $finish;
 end
-initial begin #10000; $fatal(1,"timeout"); end
+initial begin #20000000; $fatal(1,"timeout"); end
 endmodule

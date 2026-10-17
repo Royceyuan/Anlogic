@@ -1,0 +1,20 @@
+{
+  "status": "board_pass",
+  "board_acceptance_date": "2026-10-17",
+  "board_acceptance": "User confirmed both delivered versions: ok没问题. No unreported exhaustive hardware test claimed.",
+  "date": "2026-10-16",
+  "bit": "dual_fpga_museum_terminal_secondary_board_startup_sync.bit",
+  "sha256": "777248242971AE2621A97E2C65A42345A28F4C3776B2E7CE044A1858700A47E4",
+  "base_commit": "0f895e3b9689037b94803dc1f223947e5492a65e",
+  "rtl_change": "Remove lifetime ten-attempt limit for SW3 reconciliation; retain fresh-heartbeat pacing and endpoint transaction retry limits.",
+  "modified_rtl_sha256": "0BFDF998FA647DCFCF39021C733A47F22D96734432F12AC3AB3A831AD5514BBC",
+  "seed": 8,
+  "setup_wns_ns": 0.051,
+  "hold_wns_ns": 0.022,
+  "setup_tns_ns": 0,
+  "hold_tns_ns": 0,
+  "resources": {"lut": 12402, "ff": 8207, "slice": 7101, "bram9k": 28, "bram32k": 13, "dsp": 5, "pll": 4},
+  "tests": ["Cold switch sampling without a post-reset edge", "More than ten BUSY responses", "No heartbeat means no repeat flood", "Matching state stops reconciliation", "Existing key groups, recovery and endpoint reconnect regression"],
+  "evidence": "seed/startup_sync",
+  "limits": "New bit accepted on board. HDMI, UART, help page and media RTL unchanged. Previous bit archived outside the project; historical seed evidence retained."
+}

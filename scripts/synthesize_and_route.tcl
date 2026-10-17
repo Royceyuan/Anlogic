@@ -27,7 +27,7 @@ report_timing_summary -file [file join $secondary_build secondary_main5e_gate.ti
 flow_status -file [file join $secondary_build secondary_main5e_syn.status]
 export_db [file join $secondary_build secondary_main5e_gate.db]
 
-set place_seed 7
+set place_seed 8
 set pair_regions {0 8 1 2}
 # Lane1 input IOL is at x040y005. Keep its capture-to-falling-edge
 # mux/register bank beside that pad instead of seven rows away (y012).

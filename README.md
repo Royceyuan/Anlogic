@@ -2,17 +2,26 @@
 
 适用安路HX4S20C（EG4S20BG256）。包含本地轮播/简介、应急图、两栏说明页、双板以太网控制、自动/手动同步，以及USB串口授权的PC HDMI音视频联动。
 
-2026-10-13，用户上板反馈换源黑屏“确实减少了，在我接受范围内”。当前共用载波版本据此记录为本项上板验收通过；不宣称零黑屏、量化光学延迟或未经执行的长测通过。本轮仅精简播放器调试界面及整理发布文件，不修改已验收硬件。
+2026-10-13，共用载波基线获用户确认换源黑屏缩短至可接受范围。2026-10-17，用户确认启动同步新版“ok没问题”，现作为正式发布；不宣称零黑屏、量化光学延迟或未经执行的长测通过。
+
+### 当前发布：启动时同步 SW3（2026-10-17 上板通过）
+
+- 当前 bit：`release/dual_fpga_museum_terminal_secondary_board_startup_sync.bit`，SHA256 `777248242971AE2621A97E2C65A42345A28F4C3776B2E7CE044A1858700A47E4`。旧共用载波 bit 已移入工程外 rubbish；历史清单及成功种子保留。
+- 原因：主板 SD 初始化完成后就会上报总览状态，但五栏缓存未完成时仍会对模式切换返回 BUSY。原副板累计尝试十次后停止，后续主板就绪也不再自动同步；这与“启动前 SW3 已为 1，必须再拨动才生效”相符。
+- 修复：复用既有 HELLO、状态查询及 SW3 实际状态核对，不新增报文。取消整个会话的十次同步上限；不匹配时仅随新心跳再试，匹配即停止。单条报文的有界重传、能力校验、失联/应急/恢复保护不变。
+- 验证：旧代码在超过十次暂不接受的测试中失败，修复后通过；覆盖真实拨码消抖（上电前 SW3=1）、等待新状态、匹配后停止、无新心跳不连续发送，以及原四组按键/手动/恢复测试。`sim/run_secondary_main5e_keys.do` 与 `sim/run_secondary_main5e_endpoint.do` 通过。
+- 布局 seed=8；setup +0.051ns、hold +0.022ns、TNS 均为 0。LUT 12402、FF 8207、Slice 7101、BRAM9K 28、BRAM32K 13、DSP 5、PLL 4。证据在 `seed/startup_sync`；历史成功 seed=7 不删除。既有 PHY7002/PHY5079 警告保留，未增加时序豁免。
+- 上板：先把副板 SW3 拨到 1，再给两板上电，整个加载期间不动 SW3；主板素材就绪并完成状态同步后 OSD 应显示手动。分别检查主板先开/副板先开，再检查 SW3=0、网线重连、调参/平移和 HDMI 联动。加载期间不强制提前开放讲解。
 
 ## 1. 唯一入口与已验证bit
 
 - TD入口：`dual_fpga_museum_terminal_secondary_board.al`。
 - RTL顶层：`src/secondary/top_secondary_hdmi_museum.v`，模块名`top_secondary_hdmi_museum`。
-- 当前已验收bit：`release/dual_fpga_museum_terminal_secondary_board_continuous_carrier.bit`，654090字节。
-- SHA256：`656CD6BE5EC64411918EC60A1FDF29C05F011AB5C5A69478748177AAF08ED588`；校验文件为bit路径加`.sha256`。
-- 发布清单：`release/manifest_secondary_continuous_carrier.json`；成功种子7及最终证据在`seed/continuous_carrier`。
+- 当前已验收bit：`release/dual_fpga_museum_terminal_secondary_board_startup_sync.bit`，654090字节。
+- SHA256：`777248242971AE2621A97E2C65A42345A28F4C3776B2E7CE044A1858700A47E4`；校验文件为bit路径加`.sha256`。
+- 发布清单：`release/manifest_secondary_startup_sync.json`；成功种子8及最终证据在`seed/startup_sync`。历史种子7保留在`seed/continuous_carrier`。
 - 必要播放器：`tools/PCVideoPlayer/MuseumPCVideoPlayer.exe`，源码、重编脚本、图标、壁纸及校验值同目录，无需Python或第三方播放器。
-- release只保留当前bit；旧bit和旧播放器已归档到rubbish，可从Git历史回溯。历史成功种子及原始报告均保留，历史清单集中在`seed/release_history`，其中旧路径只表示当时产物，不是当前编译依赖。
+- release只保留当前已验收bit；旧bit、构建数据库和仿真工作库移入工程外rubbish，可恢复。完整播放器、正式视频、复现输入、源码/IP、构建脚本及回归源码均保留。历史成功种子及原始报告不删除，历史清单集中在`seed/release_history`，其中旧路径只表示当时产物，不是当前编译依赖。
 
 ## 2. 接线、视频和优先级
 
@@ -154,27 +163,27 @@ SW3=0请求自动讲解，=1请求手动浏览；以主板实际回报为准，�
 执行综合、合法化、布局、布线、hold修复、STA、DRC和bitgen。新bit/报告输出到`build/`，**不自动覆盖已上板release bit**；可用`-TD`指定编译器路径。
 
 3. 手动TD Tcl：从工程根目录执行`source scripts/synthesize_and_route.tcl`，成功后执行`source scripts/generate_bitstream.tcl`。
-4. 种子**7**；ADC固定共享PLL x000y000、接收PLL x000y071。当前共用出口已移除旧DDR发送pair bank，构建Tcl只在旧bank实际存在时应用局部布局。GUI默认流程不包含全部门禁，完整复现以脚本为准。
+4. 当前种子**8**；ADC固定共享PLL x000y000、接收PLL x000y071。当前共用出口已移除旧DDR发送pair bank，构建Tcl只在旧bank实际存在时应用局部布局。GUI默认流程不包含全部门禁，完整复现以脚本为准。
 5. bitgen拒绝setup/hold违例、TNS非0、多驱动/异常路径、陈旧数据库或缺失依赖。新bit板测后再发布，不把编译成功等同于上板通过。
 
-发布STA：setup +0.023ns、hold +0.022ns，TNS均0；共用载波两种实际时钟模式均检查。相关50MHz域未作为假CDC屏蔽。功能上板通过不等于完成量化动态眼图/电气裕量验证。原厂SDRAM位置提示PHY-7002及一个局部时钟段PHY-5079保留并披露，重定位后实际路径纳入STA；无多驱动/异常路径，PLL分频/相位未为闭合时序更改。
+发布STA：setup +0.051ns、hold +0.022ns，TNS均0；共用载波两种实际时钟模式均检查。相关50MHz域未作为假CDC屏蔽。功能上板通过不等于完成量化动态眼图/电气裕量验证。原厂SDRAM位置提示PHY-7002及一个局部时钟段PHY-5079保留并披露，重定位后实际路径纳入STA；无多驱动/异常路径，PLL分频/相位未为闭合时序更改。
 
 ## 7. 资源、回归与成功种子
 
 | 资源 | 当前已验收版本 |
 |---|---:|
-| LUT | 12421/19600，63.37% |
+| LUT | 12402/19600，63.28% |
 | FF | 8207/19600，41.87% |
-| Slice | 7073/9800，72.17% |
+| Slice | 7101/9800，72.46% |
 | BRAM9K | 28/64 |
 | BRAM32K | 13/16 |
 | DSP | 5/29 |
 | PLL | 4/4 |
 | GCLK | 11/16 |
 
-setup +0.023ns、hold +0.022ns，TNS均0；现有PHY7002位置提示和PHY5079局部时钟布线提示保留披露。完整报告及96项构建输入校验在`seed/continuous_carrier`。本轮播放器界面变化不增加FPGA资源。
+setup +0.051ns、hold +0.022ns，TNS均0；现有PHY7002位置提示和PHY5079局部时钟布线提示保留披露。当前报告及启动同步回归在`seed/startup_sync`，历史共用载波报告及96项输入校验仍在`seed/continuous_carrier`。本轮未修改播放器或HDMI链路。
 
-最新硬件回归共79条PASS，覆盖缓冲、公共输出、实际I/O和PLL模型、页面字形、UART及按键；具体命令和仿真边界见第10节。其他已有回归源码保留在sim，ModelSim工作库和日志可重新生成；`run_secondary_frame_store_alignment.do`从工程根目录运行，其余以do脚本内相对路径为准，通常从sim运行。历史成功seed不删除，报告旧路径不是重编依赖。
+共用载波基线硬件回归共79条PASS，覆盖缓冲、公共输出、实际I/O和PLL模型、页面字形、UART及按键；具体命令和仿真边界见第10节。本轮启动同步另行完成按键与协议端点回归，未重复声称运行全部基线测试。其他已有回归源码保留在sim，ModelSim工作库和日志可重新生成；`run_secondary_frame_store_alignment.do`从工程根目录运行，其余以do脚本内相对路径为准，通常从sim运行。历史成功seed不删除，报告旧路径不是重编依赖。
 
 ## 8. 验收与整理边界
 
@@ -220,7 +229,7 @@ Start-Process .\tools\PCVideoPlayer\MuseumPCVideoPlayer.exe -ArgumentList '--med
 
 使用唯一 `.al` 入口，或在副板根目录运行 `powershell -ExecutionPolicy Bypass -File .\scripts\build.ps1`。脚本完整执行综合、布局布线、STA及bitgen；时序和依赖门禁拒绝不合格或过期数据库。当前成功布局种子为7，证据保存在 `seed/continuous_carrier`，`source_hashes.json`记录96项源码/依赖/构建脚本校验值。
 
-最终布局布线：setup +0.023ns、hold +0.022ns，TNS均0。LUT12421/19600（63.37%），FF8207/19600（41.87%），Slice7073/9800（72.17%），BRAM9K28/64，BRAM32K13/16，DSP5/29，PLL4/4，GCLK11/16。相对28ADB40F本地HDMI流候选，LUT+58、FF−61、Slice−24、BRAM9K−1、GCLK+1。无多驱动/异常时序路径；保留原PHY7002位置提示和SDRAM时钟本地布线PHY5079提示，均详见console及timing报告。
+历史共用载波基线布局布线：setup +0.023ns、hold +0.022ns，TNS均0。LUT12421/19600（63.37%），FF8207/19600（41.87%），Slice7073/9800（72.17%），BRAM9K28/64，BRAM32K13/16，DSP5/29，PLL4/4，GCLK11/16。此处仅说明该阶段结果，当前发布资源和时序以第7节为准。无多驱动/异常时序路径；保留原PHY7002位置提示和SDRAM时钟本地布线PHY5079提示。
 
 回归命令位于 `sim`：
 
