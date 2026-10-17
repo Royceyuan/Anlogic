@@ -4,15 +4,13 @@
 
 ## 工程入口与当前位流
 
-### 后续回归修复：总览换文物时的音频FIFO满等待
+### 回退记录（2026-10-17）
 
-倍速版上板认可后，用户补充：第五件手动结束、切回自动并拨到000，偶发停在8008且不能进入文物0。8008是图片读取/写入完成状态，不足以证明拨码未触发图片读取。仿真复现了音频读者在`S_REQ_DATA`等待FIFO空位期间不处理换轨的问题：总览/手动不消费音频，旧轨FIFO满后不能发出换轨ACK，无法触发现有的清FIFO和音频重备流程。
+按用户要求，撤回后续`preload_switch_fix`候选，恢复此前确认通过的倍速bit（SHA-256 `CB1A72BBA4A9B8FBCE50BC492B30A8E8DEB84F139347C84C1A5DC1327E2C3C48`）及对应RTL。撤销音频读者的空闲换轨重启修改，并撤下相关候选构建脚本及专项测试改动；副板与播放器保持此前已验收倍速版。
 
-本次只在无在途扇区的等待点复用音频会话重启和换轨ACK，不清图片缓存、不复位SD/SDRAM、不改副板协议或音画时间轴。`sim/run_fat32_wav_streamer.do`新增满FIFO的AUDIO4→AUDIO0测试，修复前失败、修复后通过；同时覆盖共享FAT几何保留、正常跨簇音频、轻量恢复及错误报告。手动控制器增加第五件→文物0→第五件的四图重备测试。修复候选构建使用`scripts/build_preload_switch_fix.tcl`及`scripts/bitgen_preload_switch_fix.tcl`，原倍速bit保留，待修复版完成时序和上板验证后再替换正式发布。
+实板反馈：手动模式返回五栏总览后拨码仍可能无法预载，改自动也不能恢复，需KEY4；随后用户报告CONFIG重配置后自动讲解无音频和字幕。前次单模块满FIFO仿真通过不足以证明已定位实板根因，现撤回该修复结论。回退本身不是这些问题已解决的证明；本轮不继续修复或生成新bit。
 
-修复候选：`release/dual_fpga_museum_terminal_main_board_preload_switch_fix.bit`；SHA-256 `48A91691652B4460AA907E901F474EF659B6F32891B028DE5E2E2EFB1B2AA498`。seed=1，重开布线检查点后以`hold_fix_iteration=20`执行增量布线及hold修复；setup +0.184ns、hold +0.022ns、TNS均0，DRC/bitgen通过，未放宽SDC。LUT16980、FF11430、Slice9593/9800、BRAM9K43、BRAM32K10、DSP13、PLL4；对比倍速版LUT多10、FF少10、Slice多60，其余不变。7组回归及修复前失败日志、99项源码/构建输入校验保存在`seed/preload_switch_fix`。**该修复bit待上板复测**，副板与播放器无需重新更换。
-
-本次复测：第五件手动浏览后用KEY2退出，副板SW3切回0，等待两秒使旧音频预备FIFO满，再把主板SW1～3拨到000；KEY1高亮文物0，待就绪后KEY2进入，确认图片、音频和字幕正常。反复切回第五件再重复；也检查SW3保持1时返回总览后换文物。无需用KEY4绕过此问题。
+撤回的bit（SHA-256开头`48A91691`）、脚本及诊断草稿可从工程外`rubbish/withdrawn_preload_switch_fix_20261017`恢复；原始时序/仿真证据继续保留在`seed/preload_switch_fix`，状态为已撤回，不是当前发布依据。请将下方倍速bit重新烧入Flash并断电重启；仅按CONFIG仍会重新加载板上Flash原有内容，不会读取电脑上回退的文件。
 
 ### 当前发布：FPGA内1×/2×/3×同步倍速（2026-10-17 上板通过）
 
@@ -37,7 +35,7 @@ TF专项演示：第五件`IMAGE4.BMP`、`ART4D1.BMP`～`ART4D3.BMP`已换为640
 - seed=4；setup +0.254ns、hold +0.022ns、TNS 均为 0。LUT 16902、FF 11435、Slice 9592、BRAM9K 43、BRAM32K 10、DSP 13、PLL 4。构建/DRC/bitgen/测试证据保留在 `seed/startup_read_fix`；原 `seed/hdmi_b` 不变。既有时钟/硬核位置警告保留，无新增时序豁免。
 - 验收：先烧录主板新 bit，断电重启数次，确认五栏、名称和预载正常；再验证自动讲解及字幕、暂停缩放/平移、KEY4、手动→自动和应急。若再次停住，记录数码管是否一直不变、OSD 是否有具体名称，以及 KEY4 能否恢复。副板启动 SW3 自动同步需配合副板 `startup_sync` 新 bit；无需改 TF 素材或播放器。
 
-release 保留最新已验收 bit、明确标记的本轮修复候选及各自校验/清单、必要媒体；候选验收后再归档旧bit。工程入口、源码/IP、约束、构建脚本、回归源码、成功种子、完整素材打包软件及必要媒体均保留。旧位流、构建数据库、ModelSim 工作库和重复日志移入工程外 rubbish，重编时自动生成构建产物。
+release 只保留当前回退到的已验收倍速bit、校验/清单及必要媒体。工程入口、源码/IP、约束、构建脚本、回归源码、成功种子、完整素材打包软件及必要媒体均保留。旧位流、构建数据库、ModelSim 工作库和重复日志移入工程外 rubbish，重编时自动生成构建产物。
 
 | 项目 | 路径 |
 |---|---|
@@ -123,7 +121,6 @@ MBP1版本1，20字节头、业务payload及2字节CRC，总长 `22+N`，多字�
 
 手动全流程：
 
-当前工作区包含换轨修复，复现修复候选时将下面两条TD命令替换为`scripts/build_preload_switch_fix.tcl`和`scripts/bitgen_preload_switch_fix.tcl`，检查`_build_preload_switch_fix/museum_main_board_final.ts`与对应`preload_switch_fix.bit`；该脚本完整重建并包含成功种子1及增量hold修复，不依赖rubbish或旧数据库。下面倍速脚本和历史报告继续保留；用修改后的源码运行旧脚本不会自动重现旧bit字节或继承其板测结论。
 
 1. 用 `D:\TD_6.2.1\bin` 中的TD图形界面打开根目录唯一 `.al`，确认器件为 `EG4S20BG256`、顶层为 `dual_fpga_museum_terminal_main_board`。
 2. 在工程文件树审核 `src/top/museum_main_board_top.v`，沿模块实例检查 `src/memory`、`src/video`、`src/audio`、`src/ethernet` 等源码；IP及约束同样必须保留。

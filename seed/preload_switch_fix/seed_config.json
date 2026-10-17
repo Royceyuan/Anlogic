@@ -1,6 +1,6 @@
 {
   "date": "2026-10-17",
-  "status": "timing_pass_board_test_pending",
+  "status": "withdrawn_board_regression",
   "bit": "dual_fpga_museum_terminal_main_board_preload_switch_fix.bit",
   "sha256": "48A91691652B4460AA907E901F474EF659B6F32891B028DE5E2E2EFB1B2AA498",
   "base_commit": "3270d48f3a63543385d66e2c5889b17d49b1a986",
@@ -20,5 +20,5 @@
     "pll": 4
   },
   "evidence": "seed/preload_switch_fix",
-  "limits": "Full old-track FIFO deadlock reproduced before fix; seven regression groups pass after fix. Board reproduction and acceptance of this candidate remain pending. Accepted playback_speed bit is retained with its known issue disclosed."
+  "limits": "WITHDRAWN at user request. Board reports: manual/automatic artifact switching still stalls, and after CONFIG automatic lecture has no audio/subtitles. Simulation results do not establish the board root cause. Bit and build scripts archived outside the project; historical evidence retained only."
 }

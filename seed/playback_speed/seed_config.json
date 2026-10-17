@@ -1,6 +1,6 @@
 {
   "date": "2026-10-17",
-  "status": "board_pass_with_known_issue",
+  "status": "board_pass_rollback_target",
   "board_acceptance": "2026-10-17: user confirmed passing; cleanup, commit and push requested",
   "bit": "dual_fpga_museum_terminal_main_board_playback_speed.bit",
   "sha256": "CB1A72BBA4A9B8FBCE50BC492B30A8E8DEB84F139347C84C1A5DC1327E2C3C48",
@@ -25,5 +25,5 @@
     "lut": 16902
   },
   "evidence": "seed/playback_speed",
-  "limits": "Later regression: an old-track full FIFO can block artifact changes after manual exit. A separate preload_switch_fix candidate is being verified. No exhaustive or long-duration hardware pass claimed."
+  "limits": "User-requested rollback to the previously accepted playback-speed release. Manual preload failure remains unresolved; the later preload_switch_fix candidate was withdrawn after hardware regression reports. No new fix or long-duration hardware pass claimed."
 }
