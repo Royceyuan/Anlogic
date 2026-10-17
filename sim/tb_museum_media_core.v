@@ -72,7 +72,7 @@ module tb_museum_media_core #(
         .VIDEO_W(TB_VIDEO_W), .VIDEO_H(TB_VIDEO_H), .VIDEO_BURST_WORDS(4),
         .VIDEO_MODE_1280(1),
         .ENABLE_OSD(PHASE1_TEST || PHASE2_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST),
-        .ENABLE_FADE(PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || LIGHT_BAND_TEST),
+        .ENABLE_FADE(PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || LIGHT_BAND_TEST || MAIN5_CONTROLS_TEST),
         .VIDEO_SEQUENCE(0), .VIDEO_BIN(0), .ADAPTIVE_BMP(1),
         .PRELOAD_BOTH_IMAGES(PRELOAD_TEST || MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || MAIN3_ZOOM_TEST || MAIN5_CONTROLS_TEST || MAIN5_REMOTE_TEST),
         .MULTI_IMAGE_BMP(MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || MAIN3_ZOOM_TEST || MAIN5_CONTROLS_TEST || MAIN5_REMOTE_TEST),
@@ -1010,18 +1010,58 @@ module tb_museum_media_core #(
                 $fatal(1, "overview KEY3 did not exclusively hide overview OSD");
             force dut.lecture_active = 1'b1;
             force dut.overview_enable_video = 1'b0;
-            repeat (3) @(negedge clk_50m);
+            repeat (10) @(negedge clk_50m);
             force dut.key_press_pulse = 4'b0100;
             @(negedge clk_50m); release dut.key_press_pulse;
-            if (dut.overview_osd_visible || dut.normal_waveform_visible)
-                $fatal(1, "lecture KEY3 did not exclusively hide normal waveform");
+            repeat (10) @(negedge clk_50m);
+            if (dut.overview_osd_visible || !dut.normal_waveform_visible || dut.playback_speed_video!=1)
+                $fatal(1, "lecture KEY3 did not select 2x while retaining waveform");
+            force dut.lecture_paused = 1'b1;
             force dut.key_press_pulse = 4'b0100;
             @(negedge clk_50m); release dut.key_press_pulse;
-            if (!dut.normal_waveform_visible)
-                $fatal(1, "lecture KEY3 did not restore normal waveform");
+            repeat (10) @(negedge clk_50m);
+            if (dut.playback_speed_video!=2 || dut.main5_heartbeat[18:17]!=2)
+                $fatal(1, "paused KEY3 did not select/report 3x");
+            // Exercise all existing masks at 3x at their closing/opening
+            // boundaries: the larger step must land on, never cross, the end.
+            force dut.video_run=1;
+            force dut.video_frame_tick=1;
+            force dut.switch_pending=0;
+            force dut.lecture_paused_ff2=0;
+            force dut.transition_pace=0;
+            for(mode_check=0;mode_check<8;mode_check=mode_check+1) begin
+                force dut.transition_mode=mode_check[2:0];
+                force dut.fade_out_active=1;
+                @(negedge dut.video_clk);
+                dut.transition_progress=(mode_check==5 ? 64 : mode_check==7 ? 32 : 16)-1;
+                dut.fade_level=1;
+                @(posedge dut.video_clk);#1;
+                if(mode_check==0 ? dut.fade_level!=0 :
+                   dut.transition_progress!=(mode_check==5 ? 64 : mode_check==7 ? 32 : 16))
+                    $fatal(1,"3x closing transition overshot mode=%d",mode_check);
+                force dut.fade_out_active=0;
+                @(negedge dut.video_clk);
+                dut.transition_progress=(mode_check==5 ? 128 : mode_check==7 ? 64 : 32)-1;
+                dut.fade_level=15;
+                @(posedge dut.video_clk);#1;
+                if(mode_check==0 ? dut.fade_level!=16 :
+                   dut.transition_progress!=(mode_check==5 ? 128 : mode_check==7 ? 64 : 32))
+                    $fatal(1,"3x opening transition overshot mode=%d",mode_check);
+            end
+            release dut.video_run;release dut.video_frame_tick;release dut.switch_pending;
+            release dut.lecture_paused_ff2;release dut.transition_mode;release dut.fade_out_active;
+            release dut.transition_pace;
+            @(negedge clk_50m);
+            force dut.key_press_pulse = 4'b0100;
+            @(negedge clk_50m); release dut.key_press_pulse;
+            repeat (10) @(negedge clk_50m);
+            if (dut.playback_speed_video!=0) $fatal(1,"KEY3 speed wrap failed");
+            release dut.lecture_paused;
             release dut.lecture_active;
             release dut.overview_enable_video;
-            $display("PASS MAIN5 KEY3 overview OSD / lecture waveform split");
+            repeat (10) @(negedge clk_50m);
+            if(dut.playback_speed_video!=0) $fatal(1,"overview retained speed");
+            $display("PASS MAIN5 KEY3 overview OSD / lecture 1x-2x-3x, paused selection and telemetry");
             $finish;
         end
 

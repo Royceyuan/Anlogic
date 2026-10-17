@@ -16,6 +16,7 @@ wire [9:0] source_y = dut.source_y;
 integer direction, origin, progress, step, expected_left, expected_offset;
 integer zoom_case, pan_case, column, expected_column;
 integer row, expected_row, expected_source_row;
+reg [9:0] old_first_row,old_row_count,old_last_row;
 
 always #5 clk=~clk;
 
@@ -47,6 +48,18 @@ task check_map;
 endtask
 
 initial begin
+    // Compare the shortened read-end expression with the previous truncated
+    // arithmetic over every encoded signed pan, including out-of-range values.
+    for(zoom_case=0;zoom_case<2;zoom_case=zoom_case+1)
+      for(pan_case=-32768;pan_case<32768;pan_case=pan_case+1) begin
+        zoom_2x=zoom_case;pan_y=pan_case;#1;
+        old_first_row=zoom_case ? 135+pan_case : pan_case<0 ? 0 : pan_case;
+        old_row_count=zoom_case ? 270 : 540-(pan_case<0 ? -pan_case : pan_case);
+        old_last_row=old_first_row+old_row_count-1;
+        if(dut.last_row!==old_last_row || dut.row_count!==old_row_count)
+            $fatal(1,"read extent changed zoom=%d pan=%d",zoom_case,pan_case);
+      end
+    zoom_2x=0;pan_y=0;
     repeat(3) @(posedge clk); rst_n=1;
     @(negedge clk); zoom_2x=1; source_start=1;
     @(posedge clk); #1; source_start=0;

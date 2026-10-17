@@ -101,7 +101,9 @@ wire [9:0] zoom_row_start = ZOOM_ROW_START + pan_y_effective;
 wire [9:0] first_row = zoom_2x ? zoom_row_start :
                       pan_y_effective[15] ? 10'd0 : pan_y_effective[9:0];
 wire [9:0] row_count = zoom_2x ? SRC_H/2 :
-                      SRC_H - (pan_y_effective[15] ? -pan_y_effective : pan_y_effective);
+                      pan_y_effective[15] ? SRC_H + pan_y_effective : SRC_H - pan_y_effective;
+wire [9:0] last_row = zoom_2x ? ZOOM_ROW_START + SRC_H/2 - 1 + pan_y_effective :
+                     pan_y_effective[15] ? SRC_H - 1 + pan_y_effective : SRC_H - 1;
 wire [20:0] frame_word_count = WORDS_PER_ROW * row_count;
 wire [20:0] zoom_word_offset;
 generate if (WORDS_PER_ROW == 480) begin : g_zoom_offset_480
@@ -242,16 +244,11 @@ assign display_epoch = video_epoch ^
                        (video_started && video_de && video_x == 11'd0 &&
                         video_y == 10'd0);
 assign preload_epoch = video_started ? ~video_epoch : video_epoch;
-assign source_row_hit  = in_picture && (slot_valid[0] && slot_epoch[0] == display_epoch &&
-                         (slot_tag0 == mapped_y[9:0]) ? 1'b1 :
-                         slot_valid[1] && slot_epoch[1] == display_epoch &&
-                         (slot_tag1 == mapped_y[9:0]) ? 1'b1 :
-                         slot_valid[2] && slot_epoch[2] == display_epoch &&
-                         (slot_tag2 == mapped_y[9:0]) ? 1'b1 : 1'b0);
-assign source_row_slot = (slot_valid[0] && slot_epoch[0] == display_epoch &&
-                          (slot_tag0 == mapped_y[9:0])) ? 2'd0 :
-                         (slot_valid[1] && slot_epoch[1] == display_epoch &&
-                          (slot_tag1 == mapped_y[9:0])) ? 2'd1 : 2'd2;
+wire [2:0] row_match = {slot_valid[2] && slot_epoch[2] == display_epoch && slot_tag2 == mapped_y[9:0],
+                        slot_valid[1] && slot_epoch[1] == display_epoch && slot_tag1 == mapped_y[9:0],
+                        slot_valid[0] && slot_epoch[0] == display_epoch && slot_tag0 == mapped_y[9:0]};
+assign source_row_hit = in_picture && (|row_match);
+assign source_row_slot = row_match[0] ? 2'd0 : row_match[1] ? 2'd1 : 2'd2;
 
 assign free_slot0 = !slot_valid[0];
 assign free_slot1 = !slot_valid[1];
@@ -370,7 +367,7 @@ always @(posedge clk or negedge rst_n) begin
             active_source_y_start <= zoom_2x ? {1'b0,zoom_row_start} :
                                                {pan_y_effective[9],pan_y_effective[9:0]};
             active_zoom_row_start <= first_row;
-            active_row_end     <= first_row + row_count - 1'b1;
+            active_row_end     <= last_row;
             load_row          <= first_row;
             load_slot         <= 2'd0;
             // A restarted stream preloads the epoch that the next frame-start

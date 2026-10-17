@@ -8,6 +8,10 @@ seed/*.json text
 # Keep native TD reports byte-for-byte, including their table padding.
 seed/hdmi_b/* -text -whitespace
 seed/hdmi_b/*.json text whitespace
+seed/playback_speed/* -text -whitespace
+seed/playback_speed/*.json text whitespace
+seed/preload_switch_fix/* -text -whitespace
+seed/preload_switch_fix/*.json text whitespace
 tools/Package_tool/*.exe filter=lfs diff=lfs merge=lfs -text
 
 # Complete offline packager: preserve runtime bytes; large binaries use LFS.

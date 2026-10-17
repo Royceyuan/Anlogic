@@ -1,0 +1,49 @@
+# do run_status_osd.do
+# Model Technology ModelSim SE-64 vlog 10.6e Compiler 2018.06 Jun 23 2018
+# Start time: 21:35:40 on Oct 17,2026
+# vlog -work work_main5_osd_vendor D:/TD_6.2.1/sim_release/eg4/eg_phy_glbl.v D:/TD_6.2.1/sim_release/eg4/eg_phy_bram32k.v D:/TD_6.2.1/sim_release/eg4/eg_logic_bram.v ../src/video/uart_subtitle_overlay.v ../src/video/museum_status_osd.v tb_museum_status_osd.v 
+# -- Compiling module glbl
+# -- Compiling module EG_PHY_BRAM32K
+# -- Compiling module uart_subtitle_overlay
+# -- Compiling module subtitle_bitmap_ram
+# -- Compiling module uart_subtitle_rx
+# -- Compiling module uart_subtitle_tx
+# -- Compiling module museum_status_osd
+# -- Compiling module tb_museum_status_osd
+# 
+# Top level modules:
+# 	glbl
+# 	uart_subtitle_overlay
+# 	tb_museum_status_osd
+# End time: 21:35:41 on Oct 17,2026, Elapsed time: 0:00:01
+# Errors: 0, Warnings: 0
+# vsim -c -voptargs="+acc" -onfinish stop -lib work_main5_osd_vendor tb_museum_status_osd glbl 
+# Start time: 21:35:41 on Oct 17,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# ** Warning: D:/TD_6.2.1/sim_release/eg4/eg_logic_bram.v(59): (vopt-2697) <protected> of part-select into '<protected>' is out of bounds.
+# ** Warning: D:/TD_6.2.1/sim_release/eg4/eg_logic_bram.v(59): (vopt-2697) <protected> of part-select into '<protected>' is out of bounds.
+# //  ModelSim SE-64 10.6e Jun 23 2018
+# //
+# //  Copyright 1991-2018 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  ModelSim SE-64 and its associated documentation contain trade
+# //  secrets and commercial or financial information that are the property of
+# //  Mentor Graphics Corporation and are privileged, confidential,
+# //  and exempt from disclosure under the Freedom of Information Act,
+# //  5 U.S.C. Section 552. Furthermore, this information
+# //  is prohibited from disclosure under the Trade Secrets Act,
+# //  18 U.S.C. Section 1905.
+# //
+# Loading work.tb_museum_status_osd(fast)
+# Loading work.museum_status_osd(fast)
+# Loading work.subtitle_bitmap_ram(fast)
+# Loading work.EG_PHY_BRAM32K(fast)
+# Loading work.glbl(fast)
+# PASS tb_museum_status_osd enable, TF name, pixel alignment
+# ** Note: $finish    : tb_museum_status_osd.v(134)
+#    Time: 134426 ns  Iteration: 0  Instance: /tb_museum_status_osd
+# Break in Module tb_museum_status_osd at tb_museum_status_osd.v line 134
+# Stopped at tb_museum_status_osd.v line 134
+# End time: 21:35:43 on Oct 17,2026, Elapsed time: 0:00:02
+# Errors: 0, Warnings: 2

@@ -2,6 +2,7 @@
 module tb_rgb888_picture_adjust;
 reg clk = 0;
 reg rst_n = 0;
+reg test_pass = 0;
 always #5 clk = ~clk;
 reg de = 1;
 reg [23:0] rgb = 24'h4080c0;
@@ -117,6 +118,7 @@ initial begin
         if(n>=2 && out!==expected_pipe[2])
             $fatal(1,"color streaming pipeline mismatch");
     end
+    test_pass=1;
     $display("PASS: MAIN5 color, full clip domain and per-cycle pipeline");
     $finish;
 end

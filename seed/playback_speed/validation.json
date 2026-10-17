@@ -1,0 +1,126 @@
+[
+  {
+    "log": "final_run_audio_sample_phase.log",
+    "result": "PASS",
+    "checks": [
+      "# PASS reduced sample phase: 3 clocks x legacy/speed-enabled 1x; pause/mute/underflow; 500000 cycles each"
+    ]
+  },
+  {
+    "log": "final_run_audio_playback_speed.log",
+    "result": "PASS",
+    "checks": [
+      "# PASS 1x/2x/3x: fixed48k, exact source counts/PCM, pause speed/resume, underflow/mute, 50MHz CDC"
+    ]
+  },
+  {
+    "log": "final_run_subtitle_playback_speed.log",
+    "result": "PASS",
+    "checks": [
+      "# PASS tb_museum_subtitle_overlay"
+    ]
+  },
+  {
+    "log": "v2_speed_transition.log",
+    "result": "PASS",
+    "checks": [
+      "# PASS MAIN5 KEY3 overview OSD / lecture 1x-2x-3x, paused selection and telemetry"
+    ]
+  },
+  {
+    "log": "v2_run_rgb888_picture_adjust.log",
+    "result": "PASS",
+    "checks": [
+      "# PASS: MAIN5 color, full clip domain and per-cycle pipeline"
+    ]
+  },
+  {
+    "log": "v2_run_video_geometry_optimization.log",
+    "result": "PASS",
+    "checks": [
+      "# PASS tb_audio_visualizer_overlay",
+      "# PASS linebuf 1x/2x, all legal X pan/columns, 4096 recenter geometries, 2097152 Y mappings",
+      "# PASS zoom stream has no row-cache underflow",
+      "# PASS 1x/2x pan continuous frames, 20/40 pixels and edge"
+    ]
+  },
+  {
+    "log": "final_run_viewport_pan_stream.log",
+    "result": "PASS",
+    "checks": [
+      "# PASS zoom stream has no row-cache underflow",
+      "# PASS 1x/2x pan continuous frames, 20/40 pixels and edge",
+      "# PASS zoom stream has no row-cache underflow",
+      "# PASS 1x/2x pan continuous frames, 20/40 pixels and edge"
+    ]
+  },
+  {
+    "log": "final_run_remote_controls.log",
+    "result": "PASS",
+    "checks": [
+      "# PASS MAIN5 manual mode/command validation/silent state report",
+      "# PASS MAIN5 KEY4 restores 1x centered overview from paused 2x pan",
+      "# PASS MAIN5 remote preset/adjust/viewport/priority"
+    ]
+  },
+  {
+    "log": "speed_run_local_manual_test.log",
+    "result": "PASS",
+    "checks": [
+      "# PASS MAIN5 manual mode/command validation/silent state report",
+      "# PASS local manual enter/cycle/wrap/busy/cache/bounce/exit/recovery",
+      "# PASS MAIN5 KEY4 restores 1x centered overview from paused 2x pan",
+      "# PASS MAIN5 remote preset/adjust/viewport/priority"
+    ]
+  },
+  {
+    "log": "final_run_application_recovery.log",
+    "result": "PASS",
+    "checks": [
+      "# PASS MAIN3 KEY4 drain/reset/reinit, timeout retry, repeated-key isolation"
+    ]
+  },
+  {
+    "log": "speed_run_emergency_mode.log",
+    "result": "PASS",
+    "checks": [
+      "# PASS emergency overlay priority, exclusive 48 kHz alarm and 2097152-coordinate equivalence"
+    ]
+  },
+  {
+    "log": "speed_run_light_band.log",
+    "result": "PASS",
+    "checks": [
+      "# PASS black-edge/diamond geometry, no midpoint light, blanking and 3-cycle alignment",
+      "# PASS light-band selection, 64-frame duration, pause, delayed prefetch and recovery"
+    ]
+  },
+  {
+    "log": "speed_run_fat32_wav_streamer.log",
+    "result": "PASS",
+    "checks": [
+      "# PASS tb_fat32_wav_streamer"
+    ]
+  },
+  {
+    "log": "speed_run_frame_fifo_read_completion.log",
+    "result": "PASS",
+    "checks": [
+      "# PASS read completion: full and partial bursts retain ownership until last valid return"
+    ]
+  },
+  {
+    "log": "speed_run_status_osd.log",
+    "result": "PASS",
+    "checks": [
+      "# PASS tb_museum_status_osd enable, TF name, pixel alignment"
+    ]
+  },
+  {
+    "log": "lecture_speed_regression.log",
+    "result": "PASS",
+    "checks": [
+      "# PASS tb_museum_lecture_controller"
+    ]
+  }
+]

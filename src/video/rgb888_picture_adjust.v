@@ -38,14 +38,11 @@ endfunction
 
 function signed [11:0] saturate_delta;
     input signed [11:0] d;
-    input signed [11:0] luma;
     input [2:0] factor;
-    input round_up;
     reg signed [15:0] product;
     begin
         product = d * $signed({1'b0, factor});
-        saturate_delta = luma + (product >>> 2) +
-                         (round_up && (d[1:0] != 2'd0));
+        saturate_delta = product >>> 2;
     end
 endfunction
 
@@ -88,13 +85,14 @@ reg signed [11:0] cr, cg, cb, temperature_offset_q;
 reg [2:0] saturation_index_q;
 reg de_q;
 wire signed [11:0] y_next = (cr >>> 2) + (cg >>> 1) + (cb >>> 2);
-reg signed [11:0] y_q, dr_q, dg_q, db_q, temperature_offset_q2;
+wire signed [11:0] dr_next = cr-y_next, dg_next = cg-y_next, db_next = cb-y_next;
+wire saturation_round = saturation_index_q == 3'd2;
+reg signed [11:0] red_base_q2, green_base_q2, blue_base_q2, dr_q, dg_q, db_q;
 reg [2:0] saturation_factor_q2;
-reg saturation_round_q2;
 reg de_q2;
-wire signed [11:0] sr = saturate_delta(dr_q, y_q, saturation_factor_q2, saturation_round_q2) + temperature_offset_q2;
-wire signed [11:0] sg = saturate_delta(dg_q, y_q, saturation_factor_q2, saturation_round_q2);
-wire signed [11:0] sb = saturate_delta(db_q, y_q, saturation_factor_q2, saturation_round_q2) - temperature_offset_q2;
+wire signed [11:0] sr = saturate_delta(dr_q, saturation_factor_q2) + red_base_q2;
+wire signed [11:0] sg = saturate_delta(dg_q, saturation_factor_q2) + green_base_q2;
+wire signed [11:0] sb = saturate_delta(db_q, saturation_factor_q2) + blue_base_q2;
 
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
@@ -104,13 +102,13 @@ always @(posedge clk or negedge rst_n) begin
         temperature_offset_q <= 12'sd0;
         saturation_index_q <= 3'd3;
         de_q <= 1'b0;
-        y_q <= 12'sd0;
+        red_base_q2 <= 12'sd0;
+        green_base_q2 <= 12'sd0;
+        blue_base_q2 <= 12'sd0;
         dr_q <= 12'sd0;
         dg_q <= 12'sd0;
         db_q <= 12'sd0;
-        temperature_offset_q2 <= 12'sd0;
         saturation_factor_q2 <= 3'd4;
-        saturation_round_q2 <= 1'b0;
         de_q2 <= 1'b0;
         rgb_out <= 24'd0;
     end else begin
@@ -120,11 +118,15 @@ always @(posedge clk or negedge rst_n) begin
         temperature_offset_q <= temperature_offset;
         saturation_index_q <= saturation_index;
         de_q <= de;
-        y_q <= y_next;
-        dr_q <= cr - y_next;
-        dg_q <= cg - y_next;
-        db_q <= cb - y_next;
-        temperature_offset_q2 <= temperature_offset_q;
+        // Move the channel offsets/rounding before the existing stage-2
+        // registers. Pixel arithmetic and the three-clock latency are exact;
+        // only one addition remains after each saturation multiplier.
+        red_base_q2 <= y_next + temperature_offset_q + (saturation_round && dr_next[1:0]!=0);
+        green_base_q2 <= y_next + (saturation_round && dg_next[1:0]!=0);
+        blue_base_q2 <= y_next - temperature_offset_q + (saturation_round && db_next[1:0]!=0);
+        dr_q <= dr_next;
+        dg_q <= dg_next;
+        db_q <= db_next;
         // Decode alongside luma/delta registers, not in front of the DSP.
         case (saturation_index_q)
             3'd0: saturation_factor_q2 <= 3'd0;
@@ -134,7 +136,6 @@ always @(posedge clk or negedge rst_n) begin
             3'd5: saturation_factor_q2 <= 3'd6;
             default: saturation_factor_q2 <= 3'd4;
         endcase
-        saturation_round_q2 <= saturation_index_q == 3'd2;
         de_q2 <= de_q;
         rgb_out <= de_q2 ? {clip(sr), clip(sg), clip(sb)} : 24'd0;
     end

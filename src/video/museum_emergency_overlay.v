@@ -121,13 +121,25 @@ module emergency_alarm_48k #(
     output reg signed [15:0] sample_right
 );
 
-localparam [31:0] SAMPLE_TICK_THRESHOLD = CLK_HZ - SAMPLE_RATE_HZ;
+function integer rate_gcd;
+    input integer a,b;
+    integer remainder;
+    begin
+        while (b != 0) begin remainder=a%b; a=b; b=remainder; end
+        rate_gcd=a;
+    end
+endfunction
+localparam integer RATE_UNIT = rate_gcd(CLK_HZ,SAMPLE_RATE_HZ);
+localparam integer SAMPLE_STEP = SAMPLE_RATE_HZ/RATE_UNIT;
+localparam integer SAMPLE_MODULUS = CLK_HZ/RATE_UNIT;
+localparam integer SAMPLE_BITS = SAMPLE_MODULUS>1 ? $clog2(SAMPLE_MODULUS) : 1;
+localparam integer SAMPLE_TICK_THRESHOLD = SAMPLE_MODULUS-SAMPLE_STEP;
 localparam [63:0] PHASE_SCALE = 64'd4_294_967_296;
 localparam [31:0] PHASE_STEP_LOW = (PHASE_SCALE * 64'd660) / SAMPLE_RATE_HZ;
 localparam [31:0] PHASE_STEP_HIGH = (PHASE_SCALE * 64'd880) / SAMPLE_RATE_HZ;
 localparam integer HALF_SECOND_SAMPLES = SAMPLE_RATE_HZ / 2;
 
-reg [31:0] sample_acc;
+reg [SAMPLE_BITS-1:0] sample_acc;
 reg [31:0] tone_phase;
 reg [14:0] cadence_count;
 reg tone_high;
@@ -165,7 +177,7 @@ always @(posedge clk or negedge rst_n) begin
             end else
                 cadence_count <= cadence_count + 1'b1;
         end else begin
-            sample_acc <= sample_acc + SAMPLE_RATE_HZ;
+            sample_acc <= sample_acc + SAMPLE_STEP;
         end
     end
 end

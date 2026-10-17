@@ -1,0 +1,45 @@
+# do run_subtitle_playback_speed.do
+# Model Technology ModelSim SE-64 vlog 10.6e Compiler 2018.06 Jun 23 2018
+# Start time: 21:53:13 on Oct 17,2026
+# vlog "+define+SIM" -work work_subtitle_speed ../src/video/uart_subtitle_overlay.v ../src/video/museum_subtitle_overlay.v tb_museum_subtitle_overlay.v 
+# -- Compiling module uart_subtitle_overlay
+# -- Compiling module subtitle_bitmap_ram
+# -- Compiling module uart_subtitle_rx
+# -- Compiling module uart_subtitle_tx
+# -- Compiling module museum_subtitle_overlay
+# -- Compiling module tb_museum_subtitle_overlay
+# 
+# Top level modules:
+# 	uart_subtitle_overlay
+# 	tb_museum_subtitle_overlay
+# End time: 21:53:13 on Oct 17,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# vsim -novopt -onfinish stop -lib work_subtitle_speed tb_museum_subtitle_overlay -gSPEED_TEST=1 -gPIPE_RAM_OUTPUT=1 
+# Start time: 21:53:13 on Oct 17,2026
+# ** Warning: (vsim-8891) All optimizations are turned off because the -novopt switch is in effect. This will cause your simulation to run very slowly. If you are using this switch to preserve visibility for Debug or PLI features please see the User's Manual section on Preserving Object Visibility with vopt.
+# //  ModelSim SE-64 10.6e Jun 23 2018
+# //
+# //  Copyright 1991-2018 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  ModelSim SE-64 and its associated documentation contain trade
+# //  secrets and commercial or financial information that are the property of
+# //  Mentor Graphics Corporation and are privileged, confidential,
+# //  and exempt from disclosure under the Freedom of Information Act,
+# //  5 U.S.C. Section 552. Furthermore, this information
+# //  is prohibited from disclosure under the Trade Secrets Act,
+# //  18 U.S.C. Section 1905.
+# //
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_subtitle_speed.tb_museum_subtitle_overlay
+# Loading work_subtitle_speed.tb_museum_subtitle_overlay
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_subtitle_speed.museum_subtitle_overlay
+# Loading work_subtitle_speed.museum_subtitle_overlay
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_subtitle_speed.subtitle_bitmap_ram
+# Loading work_subtitle_speed.subtitle_bitmap_ram
+# PASS tb_museum_subtitle_overlay
+# ** Note: $finish    : tb_museum_subtitle_overlay.v(214)
+#    Time: 1354197900 ps  Iteration: 1  Instance: /tb_museum_subtitle_overlay
+# Break in Module tb_museum_subtitle_overlay at tb_museum_subtitle_overlay.v line 214
+# Stopped at tb_museum_subtitle_overlay.v line 214
+# End time: 21:53:15 on Oct 17,2026, Elapsed time: 0:00:02
+# Errors: 0, Warnings: 1

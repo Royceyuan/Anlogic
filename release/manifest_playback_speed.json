@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-17",
+  "status": "board_pass_with_known_issue",
+  "board_acceptance": "2026-10-17: user confirmed passing; cleanup, commit and push requested",
+  "bit": "dual_fpga_museum_terminal_main_board_playback_speed.bit",
+  "sha256": "CB1A72BBA4A9B8FBCE50BC492B30A8E8DEB84F139347C84C1A5DC1327E2C3C48",
+  "base_commit": "3270d48f3a63543385d66e2c5889b17d49b1a986",
+  "seed": 4,
+  "setup_wns_ns": 0.095,
+  "hold_wns_ns": 0.024,
+  "setup_tns_ns": 0,
+  "hold_tns_ns": 0,
+  "resources": {
+    "lut": 16970,
+    "ff": 11440,
+    "bram9k": 43,
+    "bram32k": 10,
+    "dsp": 13,
+    "pll": 4,
+    "slice": 9533
+  },
+  "accepted_baseline": {
+    "ff": 11435,
+    "slice": 9592,
+    "lut": 16902
+  },
+  "evidence": "seed/playback_speed",
+  "limits": "Later regression: an old-track full FIFO can block artifact changes after manual exit. A separate preload_switch_fix candidate is being verified. No exhaustive or long-duration hardware pass claimed."
+}

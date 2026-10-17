@@ -1,0 +1,44 @@
+# do run_museum_lecture.do
+# if {[file exists work_main2_lecture]} {vdel -lib work_main2_lecture -all}
+# vlib work_main2_lecture
+# vmap work work_main2_lecture
+# Model Technology ModelSim SE-64 vmap 10.6e Lib Mapping Utility 2018.06 Jun 23 2018
+# vmap work work_main2_lecture 
+# Modifying modelsim.ini
+# vlog ../src/video/museum_lecture_controller.v ../sim/tb_museum_lecture_controller.v
+# Model Technology ModelSim SE-64 vlog 10.6e Compiler 2018.06 Jun 23 2018
+# Start time: 21:28:43 on Oct 17,2026
+# vlog ../src/video/museum_lecture_controller.v ../sim/tb_museum_lecture_controller.v 
+# -- Compiling module museum_lecture_controller
+# -- Compiling module tb_museum_lecture_controller
+# 
+# Top level modules:
+# 	tb_museum_lecture_controller
+# End time: 21:28:43 on Oct 17,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# vsim -c tb_museum_lecture_controller -do "run -all; quit -f"
+# vsim -c tb_museum_lecture_controller -do "run -all; quit -f" 
+# Start time: 21:28:44 on Oct 17,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# ** Warning: ../sim/tb_museum_lecture_controller.v(23): (vopt-2685) [TFMPC] - Too few port connections for 'dut'.  Expected 50, found 49.
+# ** Warning: ../sim/tb_museum_lecture_controller.v(23): (vopt-2718) [TFMPC] - Missing connection for port 'cached_artifact'.
+# //  ModelSim SE-64 10.6e Jun 23 2018
+# //
+# //  Copyright 1991-2018 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  ModelSim SE-64 and its associated documentation contain trade
+# //  secrets and commercial or financial information that are the property of
+# //  Mentor Graphics Corporation and are privileged, confidential,
+# //  and exempt from disclosure under the Freedom of Information Act,
+# //  5 U.S.C. Section 552. Furthermore, this information
+# //  is prohibited from disclosure under the Trade Secrets Act,
+# //  18 U.S.C. Section 1905.
+# //
+# Loading work.tb_museum_lecture_controller(fast)
+# run -all
+# PASS tb_museum_lecture_controller
+# ** Note: $finish    : ../sim/tb_museum_lecture_controller.v(232)
+#    Time: 1660 ns  Iteration: 1  Instance: /tb_museum_lecture_controller
+# End time: 21:28:47 on Oct 17,2026, Elapsed time: 0:00:03
+# Errors: 0, Warnings: 2

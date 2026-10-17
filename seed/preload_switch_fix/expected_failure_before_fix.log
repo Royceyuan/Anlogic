@@ -1,0 +1,39 @@
+# do run_fat32_wav_streamer.do
+# Model Technology ModelSim SE-64 vmap 10.6e Lib Mapping Utility 2018.06 Jun 23 2018
+# vmap work work_wav 
+# Copying D:/Modelsim/win64/../modelsim.ini to modelsim.ini
+# Modifying modelsim.ini
+# Model Technology ModelSim SE-64 vlog 10.6e Compiler 2018.06 Jun 23 2018
+# Start time: 22:23:51 on Oct 17,2026
+# vlog "+define+SIM" -work work_wav ../src/audio/fat32_wav_streamer.v tb_fat32_wav_streamer.v 
+# -- Compiling module fat32_wav_streamer
+# -- Compiling module tb_fat32_wav_streamer
+# 
+# Top level modules:
+# 	tb_fat32_wav_streamer
+# End time: 22:23:52 on Oct 17,2026, Elapsed time: 0:00:01
+# Errors: 0, Warnings: 0
+# vsim -c -lib work_wav tb_fat32_wav_streamer -do "run -all; quit -f" 
+# Start time: 22:23:52 on Oct 17,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# //  ModelSim SE-64 10.6e Jun 23 2018
+# //
+# //  Copyright 1991-2018 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  ModelSim SE-64 and its associated documentation contain trade
+# //  secrets and commercial or financial information that are the property of
+# //  Mentor Graphics Corporation and are privileged, confidential,
+# //  and exempt from disclosure under the Freedom of Information Act,
+# //  5 U.S.C. Section 552. Furthermore, this information
+# //  is prohibited from disclosure under the Trade Secrets Act,
+# //  18 U.S.C. Section 1905.
+# //
+# Loading work.tb_fat32_wav_streamer(fast)
+# run -all
+# ** Fatal: full FIFO blocked AUDIO4->AUDIO0 switch/retained stale ready
+#    Time: 216400 ns  Scope: tb_fat32_wav_streamer File: tb_fat32_wav_streamer.v Line: 138
+# ** Note: $finish    : tb_fat32_wav_streamer.v(138)
+#    Time: 216400 ns  Iteration: 1  Instance: /tb_fat32_wav_streamer
+# End time: 22:23:54 on Oct 17,2026, Elapsed time: 0:00:02
+# Errors: 1, Warnings: 0

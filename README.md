@@ -4,16 +4,40 @@
 
 ## 工程入口与当前位流
 
-### 当前发布：读突发收尾修复（2026-10-17 上板通过）
+### 后续回归修复：总览换文物时的音频FIFO满等待
 
-- 当前 bit：`release/dual_fpga_museum_terminal_main_board_startup_read_fix.bit`，SHA256 `BE70117B90A6E707EABD6A53FAB6D9CEE6E056460CB6ECC1F6D5149AE10530E2`。仍从 HDMIB 输出。用户于2026-10-17确认“ok没问题”；旧 bit 已移入工程外 rubbish，历史成功种子与报告保留。
+倍速版上板认可后，用户补充：第五件手动结束、切回自动并拨到000，偶发停在8008且不能进入文物0。8008是图片读取/写入完成状态，不足以证明拨码未触发图片读取。仿真复现了音频读者在`S_REQ_DATA`等待FIFO空位期间不处理换轨的问题：总览/手动不消费音频，旧轨FIFO满后不能发出换轨ACK，无法触发现有的清FIFO和音频重备流程。
+
+本次只在无在途扇区的等待点复用音频会话重启和换轨ACK，不清图片缓存、不复位SD/SDRAM、不改副板协议或音画时间轴。`sim/run_fat32_wav_streamer.do`新增满FIFO的AUDIO4→AUDIO0测试，修复前失败、修复后通过；同时覆盖共享FAT几何保留、正常跨簇音频、轻量恢复及错误报告。手动控制器增加第五件→文物0→第五件的四图重备测试。修复候选构建使用`scripts/build_preload_switch_fix.tcl`及`scripts/bitgen_preload_switch_fix.tcl`，原倍速bit保留，待修复版完成时序和上板验证后再替换正式发布。
+
+修复候选：`release/dual_fpga_museum_terminal_main_board_preload_switch_fix.bit`；SHA-256 `48A91691652B4460AA907E901F474EF659B6F32891B028DE5E2E2EFB1B2AA498`。seed=1，重开布线检查点后以`hold_fix_iteration=20`执行增量布线及hold修复；setup +0.184ns、hold +0.022ns、TNS均0，DRC/bitgen通过，未放宽SDC。LUT16980、FF11430、Slice9593/9800、BRAM9K43、BRAM32K10、DSP13、PLL4；对比倍速版LUT多10、FF少10、Slice多60，其余不变。7组回归及修复前失败日志、99项源码/构建输入校验保存在`seed/preload_switch_fix`。**该修复bit待上板复测**，副板与播放器无需重新更换。
+
+本次复测：第五件手动浏览后用KEY2退出，副板SW3切回0，等待两秒使旧音频预备FIFO满，再把主板SW1～3拨到000；KEY1高亮文物0，待就绪后KEY2进入，确认图片、音频和字幕正常。反复切回第五件再重复；也检查SW3保持1时返回总览后换文物。无需用KEY4绕过此问题。
+
+### 当前发布：FPGA内1×/2×/3×同步倍速（2026-10-17 上板通过）
+
+当前源码将自动讲解中的KEY3改为1×→2×→3×→1×，暂停期间也可切速；总览KEY3仍控制OSD，手动KEY3仍切图。左上角`SPD1x/2x/3x`表示播放速度，`ZOOM1x/2x`仍表示图像缩放。自动讲解波形保持显示，暂停时隐藏归零。每次退出、恢复、应急或进入手动后回到1×。
+
+HDMI仍输出48kHz；每个输出周期按倍速消费1/2/3个源PCM帧，音高相应升高。切速不重读WAV、不清FIFO、不从头播放。字幕和图片切点继续使用实际消费的源帧位置，字幕渐变与转场同步加快并保持暂停冻结，结束后的约1.2秒停留保留。轮播时长配置方式为：素材软件设置四个切图句形成源时间轴；运行时KEY3选择其1倍、1/2或1/3墙钟时长。暂停时间不计入推进时间；不是给每张图片另设独立秒数。
+
+本轮先约分PCM/应急采样相位并收窄已知计数范围，再接入倍速；颜色偏移提前合并到既有流水级，视口读区与行匹配作等价简化。仿真覆盖原48k逐拍对照、3×源帧计数和50MHz跨时钟、暂停切速、字幕淡变、全部转场边界、颜色逐拍输出、完整视口流和既有恢复流程。
+
+当前bit：`release/dual_fpga_museum_terminal_main_board_playback_speed.bit`，SHA-256 `CB1A72BBA4A9B8FBCE50BC492B30A8E8DEB84F139347C84C1A5DC1327E2C3C48`。seed=4，setup +0.095ns、hold +0.024ns、TNS均0，DRC和bitgen通过；LUT16970、FF11440、Slice9533/9800、BRAM9K43、BRAM32K10、DSP13、PLL4。相较已验收基线，新增倍速后的Slice少59，LUT多68，FF多5，BRAM/DSP/PLL不变；不将其描述为所有资源均减少或已获得大量布局余量。报告、源码校验清单和回归结果保留在`seed/playback_speed`，构建脚本为`scripts/build_playback_speed.tcl`和`scripts/bitgen_playback_speed.tcl`。用户确认“通过，整理，commit并push”，本轮记录为**上板通过**；不据此声称未经执行的长期或穷举硬件测试通过。旧`startup_read_fix`位流及清单移入工程外`rubbish/playback_speed_board_pass_20261017/main`，成功种子仍保留。
+
+后续回归操作：配套烧录两板`playback_speed`发布版；第一件自动讲解中按KEY3切1×/2×/3×，确认声音、字幕和切图共同加快，暂停切速/缩放/平移后继续；KEY4恢复应为1×播放速度、1×缩放和居中总览；第五件手动KEY3循环四张640×480图，再切回自动连续讲解两次确认字幕；最后检查SW4应急与退出、重连后的SW3同步。启用新播放器联动时，PC状态与视频应跟随倍速和暂停。真实听感、3×读卡余量、实屏转场和联动延迟仍以上板结果为准。
+
+TF专项演示：第五件`IMAGE4.BMP`、`ART4D1.BMP`～`ART4D3.BMP`已换为640×480、24-bit、BI_RGB图片，无内嵌黑边；第一件多分辨率素材保持原状。原图、生成提示和校验记录在工程外`../记录文档/长信宫灯640x480_20261017`。素材替换无需重烧bit。
+
+### 历史基线：读突发收尾修复（2026-10-17 上板通过，位流已归档）
+
+- 当时发布 bit：`dual_fpga_museum_terminal_main_board_startup_read_fix.bit`，SHA256 `BE70117B90A6E707EABD6A53FAB6D9CEE6E056460CB6ECC1F6D5149AE10530E2`。仍从 HDMIB 输出。用户于2026-10-17确认“ok没问题”；现已移入工程外 rubbish，历史成功种子与报告保留。
 - 用户反馈：偶发冷启动 `60b6`，有 HDMI 信号且 OSD 可见，最近暂未再次复现，KEY4 是否能恢复未知。代码中该读数表示加载状态 6、行号低四位 B、帧尚未完成，并不是独立故障编号；不能仅凭它断言 TF 卡、PLL 或 HDMI 损坏。
 - 已复现缺陷：`vendor/anlogic_lab6/frame_fifo_read.v` 只按“已收到长度减一”判断突发结束，最后一个数据延迟时会提前撤销读占用。现在增加最终返回有效条件，完整收齐后才释放仲裁。不改图片加载状态机、SD 时钟、音画时间轴、缓存布局或 KEY4 流程。
 - `sim/run_frame_fifo_read_completion.do` 对旧条件复现失败，修复后完整/尾部短突发、最后返回延迟和正常连续返回均通过；原 PLL 启动、SD 退出隔离、1920×1080/1672×941/640×480 自适应读取测试通过。新 bit 已获用户上板认可，但不将此等同于证明 `60b6` 的唯一根因或长期零故障。
 - seed=4；setup +0.254ns、hold +0.022ns、TNS 均为 0。LUT 16902、FF 11435、Slice 9592、BRAM9K 43、BRAM32K 10、DSP 13、PLL 4。构建/DRC/bitgen/测试证据保留在 `seed/startup_read_fix`；原 `seed/hdmi_b` 不变。既有时钟/硬核位置警告保留，无新增时序豁免。
 - 验收：先烧录主板新 bit，断电重启数次，确认五栏、名称和预载正常；再验证自动讲解及字幕、暂停缩放/平移、KEY4、手动→自动和应急。若再次停住，记录数码管是否一直不变、OSD 是否有具体名称，以及 KEY4 能否恢复。副板启动 SW3 自动同步需配合副板 `startup_sync` 新 bit；无需改 TF 素材或播放器。
 
-release 只保留当前已验收 bit；工程入口、源码/IP、约束、构建脚本、回归源码、成功种子、完整素材打包软件及必要媒体均保留。构建数据库、ModelSim 工作库和重复日志移入工程外 rubbish，重编时自动生成。
+release 保留最新已验收 bit、明确标记的本轮修复候选及各自校验/清单、必要媒体；候选验收后再归档旧bit。工程入口、源码/IP、约束、构建脚本、回归源码、成功种子、完整素材打包软件及必要媒体均保留。旧位流、构建数据库、ModelSim 工作库和重复日志移入工程外 rubbish，重编时自动生成构建产物。
 
 | 项目 | 路径 |
 |---|---|
@@ -22,10 +46,10 @@ release 只保留当前已验收 bit；工程入口、源码/IP、约束、构�
 | 系统集成 | `src/top/museum_main_board_top.v` |
 | 管脚约束 | `constraints/museum_main_board_pins.adc` |
 | 时序约束 | `constraints/museum_main_board_timing.sdc` |
-| 唯一当前已验收bit | `release/dual_fpga_museum_terminal_main_board_startup_read_fix.bit` |
-| bit校验值 | `release/dual_fpga_museum_terminal_main_board_startup_read_fix.bit.sha256` |
+| 唯一当前已验收bit | `release/dual_fpga_museum_terminal_main_board_playback_speed.bit` |
+| bit校验值与清单 | `release/dual_fpga_museum_terminal_main_board_playback_speed.bit.sha256`、`release/manifest_playback_speed.json` |
 | 必要素材制作软件 | `tools/MuseumTFPackager/MuseumTFPackager.exe`，须保留整个同级运行目录 |
-| 成功种子及最终报告 | 当前：`seed/startup_read_fix/`，种子4；历史B口：`seed/hdmi_b/`；旧A口：`seed/` |
+| 成功种子及最终报告 | 当前：`seed/playback_speed/`，种子4；历史：`seed/startup_read_fix/`、`seed/hdmi_b/`；旧A口：`seed/` |
 
 此前HDMIB基线 SHA-256 为 `29351E9BCBB3420392381AF14B8D0ECF3EF3EFD50C3BE0EB6EB95EF2B342AACF`，已归档，不再作为当前下载入口。此次整理不改变新 bit 字节或TF卡。此前极低概率80C6仍是待观察项；用户原有未提交的自适应测试修改和行写入文件工作区状态完整保留，不夹带提交。
 
@@ -49,11 +73,13 @@ B口最终资源：LUT16969/19600、FF11448/19600、Slice9605/9800（98.01%）�
 
 ## 按键与拨码
 
+下表对应当前已验收的倍速发布版。
+
 | 主板按键 | 总览 | 自动讲解 | 静音手动看图 |
 |---|---|---|---|
 | KEY1 | 循环高亮文物0～4 | 循环1×/2× | 循环1×/2× |
 | KEY2 | 确认进入当前模式 | 暂停/继续 | 退出总览，不重载图片 |
-| KEY3 | 显示/隐藏OSD | 显示/隐藏波形 | 循环全貌、细节1～3 |
+| KEY3 | 显示/隐藏OSD | 循环1×/2×/3×播放速度 | 循环全貌、细节1～3 |
 | KEY4 | 应用软复位并重载 | 应用软复位并重载 | 应用软复位并重载 |
 
 SW1～3组成预载编号0～4；无效编号不允许误入讲解。KEY1高亮不触发读卡，KEY2要求高亮与就绪素材一致。SW4=1应急，SW4=0退出应急。SW4是拨码开关，不是长按按键。
@@ -91,9 +117,13 @@ MBP1版本1，20字节头、业务payload及2字节CRC，总长 `22+N`，多字�
 
 副板主动握手、每500ms心跳；控制按实际状态发送绝对值，并等待匹配ACK及实际状态。忙/无效请求结束本次事务，不盲目重放旧增量。重连后重新取得新状态并同步SW3；同boot_id断线不能永久丢失已知能力。应急断线保持逃生图，重连新状态确认解除后恢复；当前应急页未显示失联提示，此项不是已完成的显示功能。完整字段定义以当前 `mbp1_codec.v`、两板endpoint和keys源码为准，历史详细协议已归档。
 
+倍速扩展复用保留位，不改变MBP1版本、消息号或长度。主板HEARTBEAT的业务载荷整体位`[18:17]`、DISPLAY_STATUS整体位`[44:43]`均为速度索引：0=1×、1=2×、2=3×，3保留。其余字段位置不动，手动标志仍为DISPLAY_STATUS bit42。副板将速度带入PC串口快照的PHASE `[4:3]`，图片槽在`[2:0]`，总览仍为FF；配套播放器随该值设置视频速度。旧主板保留位为0，配新副板/软件仍按1×运行。要让新主板倍速同步到联动视频，需要两板当前bit和新播放器配套。
+
 ## 构建、时序与验证
 
 手动全流程：
+
+当前工作区包含换轨修复，复现修复候选时将下面两条TD命令替换为`scripts/build_preload_switch_fix.tcl`和`scripts/bitgen_preload_switch_fix.tcl`，检查`_build_preload_switch_fix/museum_main_board_final.ts`与对应`preload_switch_fix.bit`；该脚本完整重建并包含成功种子1及增量hold修复，不依赖rubbish或旧数据库。下面倍速脚本和历史报告继续保留；用修改后的源码运行旧脚本不会自动重现旧bit字节或继承其板测结论。
 
 1. 用 `D:\TD_6.2.1\bin` 中的TD图形界面打开根目录唯一 `.al`，确认器件为 `EG4S20BG256`、顶层为 `dual_fpga_museum_terminal_main_board`。
 2. 在工程文件树审核 `src/top/museum_main_board_top.v`，沿模块实例检查 `src/memory`、`src/video`、`src/audio`、`src/ethernet` 等源码；IP及约束同样必须保留。
@@ -101,18 +131,18 @@ MBP1版本1，20字节头、业务payload及2字节CRC，总长 `22+N`，多字�
 
 ```powershell
 Set-Location -LiteralPath D:\VSCode\CodeFiles\Git_TD\Anlogic
-& D:\TD_6.2.1\bin\td_commands_prompt.exe scripts/build_flash_startup_repair.tcl
-# 确认上一步成功，检查 _build_flash_startup_repair/museum_main_board_final.ts
+& D:\TD_6.2.1\bin\td_commands_prompt.exe scripts/build_playback_speed.tcl
+# 确认上一步成功，检查 _build_playback_speed_v2/museum_main_board_final.ts
 # setup/hold WNS非负，TNS均为0，再执行：
-& D:\TD_6.2.1\bin\td_commands_prompt.exe scripts/bitgen_flash_startup_repair.tcl
-Get-FileHash -LiteralPath ./release/dual_fpga_museum_terminal_main_board_startup_read_fix.bit -Algorithm SHA256
+& D:\TD_6.2.1\bin\td_commands_prompt.exe scripts/bitgen_playback_speed.tcl
+Get-FileHash -LiteralPath ./release/dual_fpga_museum_terminal_main_board_playback_speed.bit -Algorithm SHA256
 ```
 
 4. 检查TD输出无ERROR，完整构建的DRC通过，bitgen明确输出 `Generate bits file`；确认新bit的文件时间和SHA256后再烧录。只看进程退出码或目录里有旧bit不能证明生成成功。自行修改后产生的新bit不自动继承当前发布bit的上板验收。
 
-启动修复构建包装器复用 `build_museum_main_board.tcl` 及bitgen，四个Tcl都必须保留。下次生成bit必须先执行第一条完整构建，再执行bitgen，脚本会重新建立构建目录。当前B口使用成功种子4，参数见`seed/hdmi_b/seed_config.json`；旧A口种子1的参数与报告仍在`seed/seed_config.json`及根级报告中用于回溯。这里只保存原始最终报告，不是可直接bitgen的数据库。种子不保证修改后的源码仍然闭合时序。
+倍速构建包装器复用 `build_museum_main_board.tcl` 及`build_museum_main_board_bitgen.tcl`，这些Tcl均须保留。下次生成bit必须先执行第一条完整构建，再执行bitgen，脚本会重新建立构建目录。当前B口使用成功种子4，参数见`seed/playback_speed/seed_config.json`；历史启动修复、B口迁移和旧A口种子与报告保留用于回溯。这里只保存原始最终报告，不是可直接bitgen的数据库。种子不保证修改后的源码仍然闭合时序。
 
-当前bit的资源/时序见上文B口统计及`seed/hdmi_b`原始报告，setup +0.146ns、hold +0.024ns，TNS=0。根级`seed/`保留旧A口的成功证据（setup +0.107ns、hold +0.023ns），不是当前bit的报告；其中旧bit路径是历史记录，不能作为当前构建依赖。
+当前bit的资源/时序见上文倍速统计及`seed/playback_speed`原始报告，setup +0.095ns、hold +0.024ns，TNS=0。根级`seed/`保留旧A口的成功证据（setup +0.107ns、hold +0.023ns），不是当前bit的报告；其中旧bit路径是历史记录，不能作为当前构建依赖。
 
 `sim` 保留产品回归源码和 `.do`。ModelSim从 `sim` 目录执行，例如：
 

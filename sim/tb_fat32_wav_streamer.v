@@ -4,6 +4,7 @@
 module tb_fat32_wav_streamer #(parameter REUSE_GEOMETRY=1);
 reg clk = 0, rst_n = 0, start = 0, restart=0, sd_init_done = 1;
 reg [2:0] track_index = 0;
+reg fifo_almost_full = 0;
 wire sd_read;
 wire [31:0] sd_addr;
 reg [7:0] sd_data = 0;
@@ -27,7 +28,7 @@ fat32_wav_streamer #(.REUSE_GEOMETRY(REUSE_GEOMETRY)) dut (
     .clk(clk), .rst_n(rst_n), .start(start), .restart(restart),
     .track_index(track_index), .sd_init_done(sd_init_done),
     .sd_sec_read(sd_read), .sd_sec_read_addr(sd_addr), .sd_sec_read_data(sd_data),
-    .sd_sec_read_data_valid(sd_valid), .sd_sec_read_end(sd_end), .fifo_almost_full(1'b0),
+    .sd_sec_read_data_valid(sd_valid), .sd_sec_read_end(sd_end), .fifo_almost_full(fifo_almost_full),
     .fifo_wr_en(fifo_wr), .fifo_wr_data(fifo_data), .audio_ready(ready),
     .track_switch_ack(track_switch_ack), .total_pcm_frames(total_pcm_frames),
     .stream_done(stream_done), .format_error(format_error), .file_error(file_error),
@@ -68,7 +69,7 @@ always @(posedge clk) begin
         if (track_switch_ack) track_switch_seen <= 1'b1;
     end
 end
-integer i;
+integer i, timeout;
 initial begin
     for (i=0; i<512; i=i+1) begin
         sector[0][i] = 0; sector[1][i] = 0; sector[2][i] = 0;
@@ -116,6 +117,31 @@ initial begin
     if(REUSE_GEOMETRY && (geometry_changed || mbr_reads!=saved_mbr_reads))
         $fatal(1,"light rearm invalidated shared FAT geometry or reread MBR");
     check_geometry=0;
+    // Returning from manual browsing leaves an unconsumed WAV in the FIFO.
+    // A new artifact must switch even when backpressure prevents another sector.
+    @(negedge clk); rst_n=0;start=0;track_index=4;sector[4][5]="4";writes=0;
+    repeat(3)@(negedge clk);rst_n=1;start=1;
+    timeout=0;
+    while(!ready && timeout<6000)begin @(negedge clk);timeout=timeout+1;end
+    if(!ready)$fatal(1,"AUDIO4 setup failed");
+    fifo_almost_full=1;
+    timeout=0;
+    while((dut.state!=5'd7 || sd_read) && timeout<2000)begin
+        @(negedge clk);timeout=timeout+1;
+    end
+    if(dut.state!=5'd7 || sd_read)$fatal(1,"did not reach sector-boundary FIFO stall");
+    repeat(10)@(negedge clk);
+    track_index=0;sector[4][5]="0";
+    timeout=0;
+    while(!track_switch_ack && timeout<20)begin @(negedge clk);timeout=timeout+1;end
+    if(!track_switch_ack || ready || total_pcm_frames!=0 || stream_done)
+        $fatal(1,"full FIFO blocked AUDIO4->AUDIO0 switch/retained stale ready");
+    // The production ACK resets the FIFO; model that release without a KEY4.
+    fifo_almost_full=0;writes=0;
+    repeat(6000)@(negedge clk);
+    if(!ready || !stream_done || writes!=128 || format_error || file_error || dut.active_track!=0)
+        $fatal(1,"AUDIO0 did not prepare after full-FIFO switch");
+    $display("PASS full-FIFO artifact switch AUDIO4->AUDIO0 without reset");
     // Root-directory miss is a sticky file error, not a silent audio loop.
     @(negedge clk); rst_n = 0; start = 0; track_index = 0; sector[4][0] = 0;
     repeat (520) @(posedge clk); serving = 0;

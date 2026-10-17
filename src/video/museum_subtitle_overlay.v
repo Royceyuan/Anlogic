@@ -8,12 +8,14 @@ module museum_subtitle_overlay #(
     parameter integer VIDEO_W = 1280,
     parameter integer VIDEO_H = 720,
     parameter integer ENABLE_NAMES = 0,
-    parameter integer PIPE_RAM_OUTPUT = 0
+    parameter integer PIPE_RAM_OUTPUT = 0,
+    parameter integer ENABLE_SPEED = 0
 )(
     input wire clk_50m, input wire rst_n_50m,
     input wire start, input wire restart,
     input wire lecture_active, input wire lecture_paused, input wire lecture_finished,
     input wire [2:0] track_index, input wire [31:0] audio_frame_index,
+    input wire [1:0] speed_index, // Already in the video clock domain.
     input wire sd_init_done,
     input wire fs_geometry_ready, input wire [7:0] fs_sectors_per_cluster,
     input wire [31:0] fs_fat_start, input wire [31:0] fs_data_start,
@@ -40,6 +42,7 @@ localparam integer HEIGHT = 32;
 localparam integer BITMAP_BYTES = 3200;
 localparam [9:0] Y_START = VIDEO_H - 44;
 localparam [4:0] FADE_MAX = 5'd16;
+wire [4:0] fade_step = ENABLE_SPEED ? {3'd0,speed_index}+5'd1 : 5'd1;
 localparam [4:0]
     S_WAIT_CARD = 5'd0,
     S_REQ_ROOT = 5'd5, S_WAIT_ROOT = 5'd6,
@@ -610,12 +613,12 @@ always @(posedge video_clk or negedge video_rst_n) begin
                     current_width<=commit_width;
                     current_center<=(VIDEO_W-commit_width) >> 1;
                     fade_phase<=FADE_IN;
-                end else fade_level<=fade_level-1'b1;
+                end else fade_level<=fade_level>fade_step ? fade_level-fade_step : 5'd0;
             end else if (fade_phase==FADE_IN) begin
                 if (fade_level==FADE_MAX) begin
                     fade_phase<=FADE_IDLE;
                     video_ack_toggle<=~video_ack_toggle;
-                end else fade_level<=fade_level+1'b1;
+                end else fade_level<=fade_level<FADE_MAX-fade_step ? fade_level+fade_step : FADE_MAX;
             end
         end
         hs_o<=out_hs;vs_o<=out_vs;de_o<=out_de;x_o<=out_x;y_o<=out_y;

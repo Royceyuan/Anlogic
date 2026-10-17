@@ -1,0 +1,78 @@
+# do run_video_geometry_optimization.do
+# Model Technology ModelSim SE-64 vlog 10.6e Compiler 2018.06 Jun 23 2018
+# Start time: 21:41:35 on Oct 17,2026
+# vlog "+define+SIM" -work work_video_geometry ../src/storage/al_dp_ram32.v ../src/video/linebuf_scaler_960x540_to_1280x720.v ../src/video/audio_visualizer_overlay.v tb_linebuf_scaler_zoom.v tb_linebuf_scaler_zoom_stream.v tb_audio_visualizer_overlay.v 
+# -- Compiling module al_dp_ram32
+# -- Compiling module linebuf_scaler_960x540_to_1280x720
+# -- Compiling module audio_visualizer_overlay
+# -- Compiling module audio_bar_ram
+# -- Compiling module tb_linebuf_scaler_zoom
+# -- Compiling module tb_linebuf_scaler_zoom_stream
+# -- Compiling module tb_audio_visualizer_overlay
+# 
+# Top level modules:
+# 	tb_linebuf_scaler_zoom
+# 	tb_linebuf_scaler_zoom_stream
+# 	tb_audio_visualizer_overlay
+# End time: 21:41:35 on Oct 17,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# vsim -novopt -onfinish stop -lib work_video_geometry tb_audio_visualizer_overlay 
+# Start time: 21:41:36 on Oct 17,2026
+# ** Warning: (vsim-8891) All optimizations are turned off because the -novopt switch is in effect. This will cause your simulation to run very slowly. If you are using this switch to preserve visibility for Debug or PLI features please see the User's Manual section on Preserving Object Visibility with vopt.
+# //  ModelSim SE-64 10.6e Jun 23 2018
+# //
+# //  Copyright 1991-2018 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  ModelSim SE-64 and its associated documentation contain trade
+# //  secrets and commercial or financial information that are the property of
+# //  Mentor Graphics Corporation and are privileged, confidential,
+# //  and exempt from disclosure under the Freedom of Information Act,
+# //  5 U.S.C. Section 552. Furthermore, this information
+# //  is prohibited from disclosure under the Trade Secrets Act,
+# //  18 U.S.C. Section 1905.
+# //
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_video_geometry.tb_audio_visualizer_overlay
+# Loading work_video_geometry.tb_audio_visualizer_overlay
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_video_geometry.audio_visualizer_overlay
+# Loading work_video_geometry.audio_visualizer_overlay
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_video_geometry.audio_bar_ram
+# Loading work_video_geometry.audio_bar_ram
+# PASS tb_audio_visualizer_overlay
+# ** Note: $finish    : tb_audio_visualizer_overlay.v(87)
+#    Time: 213285 ns  Iteration: 1  Instance: /tb_audio_visualizer_overlay
+# Break in Module tb_audio_visualizer_overlay at tb_audio_visualizer_overlay.v line 87
+# Stopped at tb_audio_visualizer_overlay.v line 87
+# End time: 21:41:37 on Oct 17,2026, Elapsed time: 0:00:01
+# Errors: 0, Warnings: 1
+# vsim -novopt -onfinish stop -lib work_video_geometry tb_linebuf_scaler_zoom 
+# Start time: 21:41:37 on Oct 17,2026
+# ** Warning: (vsim-8891) All optimizations are turned off because the -novopt switch is in effect. This will cause your simulation to run very slowly. If you are using this switch to preserve visibility for Debug or PLI features please see the User's Manual section on Preserving Object Visibility with vopt.
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_video_geometry.tb_linebuf_scaler_zoom
+# Loading work_video_geometry.tb_linebuf_scaler_zoom
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_video_geometry.linebuf_scaler_960x540_to_1280x720
+# Loading work_video_geometry.linebuf_scaler_960x540_to_1280x720
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_video_geometry.al_dp_ram32
+# Loading work_video_geometry.al_dp_ram32
+# PASS linebuf 1x/2x, all legal X pan/columns, 4096 recenter geometries, 2097152 Y mappings
+# ** Note: $finish    : tb_linebuf_scaler_zoom.v(166)
+#    Time: 6337514 ns  Iteration: 0  Instance: /tb_linebuf_scaler_zoom
+# Break in Module tb_linebuf_scaler_zoom at tb_linebuf_scaler_zoom.v line 166
+# Stopped at tb_linebuf_scaler_zoom.v line 166
+# End time: 21:41:42 on Oct 17,2026, Elapsed time: 0:00:05
+# Errors: 0, Warnings: 1
+# vsim -novopt -onfinish stop -lib work_video_geometry tb_linebuf_scaler_zoom_stream 
+# Start time: 21:41:42 on Oct 17,2026
+# ** Warning: (vsim-8891) All optimizations are turned off because the -novopt switch is in effect. This will cause your simulation to run very slowly. If you are using this switch to preserve visibility for Debug or PLI features please see the User's Manual section on Preserving Object Visibility with vopt.
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_video_geometry.tb_linebuf_scaler_zoom_stream
+# Loading work_video_geometry.tb_linebuf_scaler_zoom_stream
+# Loading work_video_geometry.linebuf_scaler_960x540_to_1280x720
+# Loading work_video_geometry.al_dp_ram32
+# PASS zoom stream has no row-cache underflow
+# PASS 1x/2x pan continuous frames, 20/40 pixels and edge
+# ** Note: $finish    : tb_linebuf_scaler_zoom_stream.v(162)
+#    Time: 120111110 ns  Iteration: 1  Instance: /tb_linebuf_scaler_zoom_stream
+# Break in Module tb_linebuf_scaler_zoom_stream at tb_linebuf_scaler_zoom_stream.v line 162
+# Stopped at tb_linebuf_scaler_zoom_stream.v line 162
+# End time: 21:42:05 on Oct 17,2026, Elapsed time: 0:00:23
+# Errors: 0, Warnings: 1

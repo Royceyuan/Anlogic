@@ -1,0 +1,38 @@
+# do run_rgb888_picture_adjust.do
+# Model Technology ModelSim SE-64 vlog 10.6e Compiler 2018.06 Jun 23 2018
+# Start time: 21:41:32 on Oct 17,2026
+# vlog -work work_color_adjust ../src/video/rgb888_picture_adjust.v tb_rgb888_picture_adjust.v 
+# -- Compiling module rgb888_picture_adjust
+# -- Compiling module tb_rgb888_picture_adjust
+# 
+# Top level modules:
+# 	tb_rgb888_picture_adjust
+# End time: 21:41:32 on Oct 17,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# vsim -novopt -onfinish stop -lib work_color_adjust tb_rgb888_picture_adjust 
+# Start time: 21:41:32 on Oct 17,2026
+# ** Warning: (vsim-8891) All optimizations are turned off because the -novopt switch is in effect. This will cause your simulation to run very slowly. If you are using this switch to preserve visibility for Debug or PLI features please see the User's Manual section on Preserving Object Visibility with vopt.
+# //  ModelSim SE-64 10.6e Jun 23 2018
+# //
+# //  Copyright 1991-2018 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  ModelSim SE-64 and its associated documentation contain trade
+# //  secrets and commercial or financial information that are the property of
+# //  Mentor Graphics Corporation and are privileged, confidential,
+# //  and exempt from disclosure under the Freedom of Information Act,
+# //  5 U.S.C. Section 552. Furthermore, this information
+# //  is prohibited from disclosure under the Trade Secrets Act,
+# //  18 U.S.C. Section 1905.
+# //
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_color_adjust.tb_rgb888_picture_adjust
+# Loading work_color_adjust.tb_rgb888_picture_adjust
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_color_adjust.rgb888_picture_adjust
+# Loading work_color_adjust.rgb888_picture_adjust
+# PASS: MAIN5 color, full clip domain and per-cycle pipeline
+# ** Note: $finish    : tb_rgb888_picture_adjust.v(123)
+#    Time: 200266 ns  Iteration: 0  Instance: /tb_rgb888_picture_adjust
+# Break in Module tb_rgb888_picture_adjust at tb_rgb888_picture_adjust.v line 123
+# Stopped at tb_rgb888_picture_adjust.v line 123
+# End time: 21:41:34 on Oct 17,2026, Elapsed time: 0:00:02
+# Errors: 0, Warnings: 1

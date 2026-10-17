@@ -1,0 +1,63 @@
+[
+  {
+    "result": "EXPECTED_PRE_FIX_FAILURE",
+    "log": "expected_failure_before_fix.log",
+    "checks": [
+      "# ** Fatal: full FIFO blocked AUDIO4->AUDIO0 switch/retained stale ready"
+    ]
+  },
+  {
+    "result": "PASS",
+    "log": "lecture_manual_switch.log",
+    "checks": [
+      "# PASS tb_museum_lecture_controller manual: silent entry, four images, cache protection, exit, paused entry, reset"
+    ]
+  },
+  {
+    "result": "PASS",
+    "log": "lecture_preload_switch.log",
+    "checks": [
+      "# PASS tb_museum_lecture_controller"
+    ]
+  },
+  {
+    "result": "PASS",
+    "log": "preload_fix_local_manual.log",
+    "checks": [
+      "# PASS MAIN5 manual mode/command validation/silent state report",
+      "# PASS local manual enter/cycle/wrap/busy/cache/bounce/exit/recovery",
+      "# PASS MAIN5 KEY4 restores 1x centered overview from paused 2x pan",
+      "# PASS MAIN5 remote preset/adjust/viewport/priority"
+    ]
+  },
+  {
+    "result": "PASS",
+    "log": "preload_fix_playback_speed.log",
+    "checks": [
+      "# PASS 1x/2x/3x: fixed48k, exact source counts/PCM, pause speed/resume, underflow/mute, 50MHz CDC"
+    ]
+  },
+  {
+    "result": "PASS",
+    "log": "preload_fix_recovery.log",
+    "checks": [
+      "# PASS MAIN3 KEY4 drain/reset/reinit, timeout retry, repeated-key isolation"
+    ]
+  },
+  {
+    "result": "PASS",
+    "log": "wav_full_fifo_after.log",
+    "checks": [
+      "# PASS full-FIFO artifact switch AUDIO4->AUDIO0 without reset",
+      "# PASS tb_fat32_wav_streamer"
+    ]
+  },
+  {
+    "result": "PASS",
+    "log": "wav_full_fifo_legacy.log",
+    "checks": [
+      "# PASS full-FIFO artifact switch AUDIO4->AUDIO0 without reset",
+      "# PASS tb_fat32_wav_streamer"
+    ]
+  }
+]

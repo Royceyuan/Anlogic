@@ -1,10 +1,12 @@
 `timescale 1ns / 1ps
-module tb_museum_subtitle_overlay #(parameter PIPE_RAM_OUTPUT=0);
+module tb_museum_subtitle_overlay #(parameter PIPE_RAM_OUTPUT=0, parameter SPEED_TEST=0);
 reg test_pass=0;
 reg clk50=0,vclk=0,rst50=0,vrst=0,start=0,restart=0,active=0,finished=0;
 reg frame_tick=0,hs=1,vs=1,de=1,sd_init=1;
 reg [2:0] track=1;
 reg [31:0] audio_frame=0;
+reg paused=0;
+reg [1:0] speed_index=0;
 reg [10:0] x=636;
 reg [9:0] y=676;
 reg [23:0] rgb=24'h345678;
@@ -20,11 +22,11 @@ wire [23:0] rgb_o;
 always #10 clk50=~clk50;
 always #6.666 vclk=~vclk;
 
-museum_subtitle_overlay #(.PIPE_RAM_OUTPUT(PIPE_RAM_OUTPUT)) dut(
+museum_subtitle_overlay #(.PIPE_RAM_OUTPUT(PIPE_RAM_OUTPUT),.ENABLE_SPEED(SPEED_TEST)) dut(
  .clk_50m(clk50),.rst_n_50m(rst50),.start(start),.restart(restart),
- .lecture_active(active),.lecture_paused(1'b0),.lecture_finished(finished),.track_index(track),
+ .lecture_active(active),.lecture_paused(paused),.lecture_finished(finished),.track_index(track),
  .name_wr_en(),.name_wr_addr(),.name_wr_data(),.name_ready(),
- .audio_frame_index(audio_frame),.sd_init_done(sd_init),
+ .audio_frame_index(audio_frame),.speed_index(speed_index),.sd_init_done(sd_init),
  .fs_geometry_ready(1'b1),.fs_sectors_per_cluster(8'd8),
  .fs_fat_start(32'd33),.fs_data_start(32'd35),.fs_root_cluster(32'd2),
  .sd_sec_read(sd_read),.sd_sec_read_addr(sd_addr),.sd_sec_read_data(sd_data),
@@ -96,7 +98,7 @@ always @(posedge clk50) begin
  end
 end
 
-integer i;
+integer i,expected_fade;
 initial begin
  repeat(3)@(negedge clk50);rst50=1;vrst=1;start=1;
  i=0;
@@ -138,6 +140,15 @@ initial begin
  end
  repeat(4)@(negedge vclk);
  if(dut.fade_level==0||dut.fade_level==16)$fatal(1,"outgoing cue did not fade");
+ if(SPEED_TEST) begin
+  paused=1;repeat(4)@(negedge vclk);speed_index=2;
+  expected_fade=dut.fade_level;
+  repeat(4) begin @(negedge vclk);frame_tick=1;@(negedge vclk);frame_tick=0;end
+  if(dut.fade_level!=expected_fade)$fatal(1,"paused speed change advanced subtitle fade");
+  paused=0;repeat(4)@(negedge vclk);
+  @(negedge vclk);frame_tick=1;@(negedge vclk);frame_tick=0;
+  if(dut.fade_level!=expected_fade-3)$fatal(1,"3x subtitle fade did not advance three levels");
+ end
  i=0;
  while(dut.fade_phase!=2 && i<20) begin
   @(negedge vclk);frame_tick=1;@(negedge vclk);frame_tick=0;i=i+1;

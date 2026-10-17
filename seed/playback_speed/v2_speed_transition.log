@@ -1,0 +1,228 @@
+# do run_local_controls.do
+# Model Technology ModelSim SE-64 vmap 10.6e Lib Mapping Utility 2018.06 Jun 23 2018
+# vmap work work_main5_local_controls 
+# Modifying modelsim.ini
+# Model Technology ModelSim SE-64 vlog 10.6e Compiler 2018.06 Jun 23 2018
+# Start time: 21:43:58 on Oct 17,2026
+# vlog "+define+SIM" -work work_main5_local_controls ../src/common/reset_sync.v ../src/storage/al_dp_ram32.v ../src/video/video_timing_programmable_pclk.v ../vendor/official_ref/lab_ex_6_tf_sdram_hdmi/video_delay.v ../src/video/rgb888_adjust.v ../src/video/video_fade.v ../src/video/linebuf_scaler_960x540_to_1280x720.v ../src/video/video_transition_mask.v ../src/video/transition_theme_controller.v ../src/video/product_show_controller.v ../src/video/uart_subtitle_overlay.v ../src/video/museum_overview_controller.v ../src/video/museum_lecture_controller.v ../src/video/museum_overview_overlay.v ../src/video/museum_status_osd.v ../src/video/museum_emergency_overlay.v ../src/memory/museum_media_core.v 
+# -- Compiling module reset_sync
+# -- Compiling module al_dp_ram32
+# -- Compiling module video_timing_programmable_pclk
+# -- Compiling module video_delay
+# -- Compiling module rgb888_adjust
+# -- Compiling module video_fade
+# -- Compiling module linebuf_scaler_960x540_to_1280x720
+# -- Compiling module video_transition_mask
+# -- Compiling module transition_theme_controller
+# -- Compiling module product_show_controller
+# -- Compiling module uart_subtitle_overlay
+# -- Compiling module subtitle_bitmap_ram
+# -- Compiling module uart_subtitle_rx
+# -- Compiling module uart_subtitle_tx
+# -- Compiling module museum_overview_controller
+# -- Compiling module museum_lecture_controller
+# -- Compiling module museum_overview_overlay
+# -- Compiling module museum_status_osd
+# -- Compiling module museum_emergency_overlay
+# -- Compiling module emergency_alarm_48k
+# -- Compiling module museum_media_core
+# 
+# Top level modules:
+# 	museum_media_core
+# End time: 21:43:58 on Oct 17,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# Model Technology ModelSim SE-64 vlog 10.6e Compiler 2018.06 Jun 23 2018
+# Start time: 21:43:58 on Oct 17,2026
+# vlog "+define+SIM" "+define+STUB_STORE" "+define+V66_TOP" -work work_main5_local_controls tb_museum_media_core.v 
+# -- Compiling module tb_museum_media_core
+# -- Compiling module system_clock_pll
+# -- Compiling module hdmi_pixel_clock_pll
+# -- Compiling module sd_card_top
+# -- Compiling module fat32_image_loader
+# -- Compiling module bmp_row_buffer
+# -- Compiling module bmp_sdram_row_writer
+# -- Compiling module anlogic_frame_store
+# -- Compiling module key_debounce
+# -- Compiling module seg_hex_display
+# -- Compiling module osd_status_1280_pipe
+# -- Compiling module osd_status_rgb888
+# -- Compiling module osd_status
+# -- Compiling module hdmi_tx
+# 
+# Top level modules:
+# 	tb_museum_media_core
+# 	system_clock_pll
+# 	hdmi_pixel_clock_pll
+# 	sd_card_top
+# 	fat32_image_loader
+# 	bmp_row_buffer
+# 	bmp_sdram_row_writer
+# 	anlogic_frame_store
+# 	key_debounce
+# 	seg_hex_display
+# 	osd_status_1280_pipe
+# 	osd_status_rgb888
+# 	osd_status
+# 	hdmi_tx
+# End time: 21:43:58 on Oct 17,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# vsim -novopt -c -lib work_main5_local_controls tb_museum_media_core -gMAIN5_CONTROLS_TEST=1 
+# Start time: 21:43:58 on Oct 17,2026
+# ** Warning: (vsim-8891) All optimizations are turned off because the -novopt switch is in effect. This will cause your simulation to run very slowly. If you are using this switch to preserve visibility for Debug or PLI features please see the User's Manual section on Preserving Object Visibility with vopt.
+# //  ModelSim SE-64 10.6e Jun 23 2018
+# //
+# //  Copyright 1991-2018 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  ModelSim SE-64 and its associated documentation contain trade
+# //  secrets and commercial or financial information that are the property of
+# //  Mentor Graphics Corporation and are privileged, confidential,
+# //  and exempt from disclosure under the Freedom of Information Act,
+# //  5 U.S.C. Section 552. Furthermore, this information
+# //  is prohibited from disclosure under the Trade Secrets Act,
+# //  18 U.S.C. Section 1905.
+# //
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_main5_local_controls.tb_museum_media_core
+# Loading work_main5_local_controls.tb_museum_media_core
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_main5_local_controls.museum_media_core
+# Loading work_main5_local_controls.museum_media_core
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_main5_local_controls.transition_theme_controller
+# Loading work_main5_local_controls.transition_theme_controller
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_main5_local_controls.product_show_controller
+# Loading work_main5_local_controls.product_show_controller
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_main5_local_controls.reset_sync
+# Loading work_main5_local_controls.reset_sync
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_main5_local_controls.key_debounce
+# Loading work_main5_local_controls.key_debounce
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_main5_local_controls.system_clock_pll
+# Loading work_main5_local_controls.system_clock_pll
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_main5_local_controls.sd_card_top
+# Loading work_main5_local_controls.sd_card_top
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_main5_local_controls.fat32_image_loader
+# Loading work_main5_local_controls.fat32_image_loader
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_main5_local_controls.anlogic_frame_store
+# Loading work_main5_local_controls.anlogic_frame_store
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_main5_local_controls.video_timing_programmable_pclk
+# Loading work_main5_local_controls.video_timing_programmable_pclk
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_main5_local_controls.video_delay
+# Loading work_main5_local_controls.video_delay
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_main5_local_controls.video_transition_mask
+# Loading work_main5_local_controls.video_transition_mask
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_main5_local_controls.seg_hex_display
+# Loading work_main5_local_controls.seg_hex_display
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_main5_local_controls.museum_overview_controller
+# Loading work_main5_local_controls.museum_overview_controller
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_main5_local_controls.museum_lecture_controller
+# Loading work_main5_local_controls.museum_lecture_controller
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_main5_local_controls.hdmi_pixel_clock_pll
+# Loading work_main5_local_controls.hdmi_pixel_clock_pll
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_main5_local_controls.bmp_row_buffer
+# Loading work_main5_local_controls.bmp_row_buffer
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_main5_local_controls.bmp_sdram_row_writer
+# Loading work_main5_local_controls.bmp_sdram_row_writer
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_main5_local_controls.linebuf_scaler_960x540_to_1280x720
+# Loading work_main5_local_controls.linebuf_scaler_960x540_to_1280x720
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_main5_local_controls.al_dp_ram32
+# Loading work_main5_local_controls.al_dp_ram32
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_main5_local_controls.rgb888_adjust
+# Loading work_main5_local_controls.rgb888_adjust
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_main5_local_controls.video_fade
+# Loading work_main5_local_controls.video_fade
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_main5_local_controls.museum_overview_overlay
+# Loading work_main5_local_controls.museum_overview_overlay
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_main5_local_controls.museum_status_osd
+# Loading work_main5_local_controls.museum_status_osd
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_main5_local_controls.subtitle_bitmap_ram
+# Loading work_main5_local_controls.subtitle_bitmap_ram
+# Refreshing D:/VSCode/CodeFiles/Git_TD/Anlogic/sim/work_main5_local_controls.hdmi_tx
+# Loading work_main5_local_controls.hdmi_tx
+# ** Warning: (vsim-3017) tb_museum_media_core.v(104): [TFMPC] - Too few port connections. Expected 32, found 25.
+#    Time: 0 ps  Iteration: 0  Instance: /tb_museum_media_core/dut File: ../src/memory/museum_media_core.v
+# ** Warning: (vsim-3722) tb_museum_media_core.v(104): [TFMPC] - Missing connection for port 'hdmi1_ddc_scl'.
+# ** Warning: (vsim-3722) tb_museum_media_core.v(104): [TFMPC] - Missing connection for port 'hdmi1_ddc_sda'.
+# ** Warning: (vsim-3722) tb_museum_media_core.v(104): [TFMPC] - Missing connection for port 'main5_mode'.
+# ** Warning: (vsim-3722) tb_museum_media_core.v(104): [TFMPC] - Missing connection for port 'main5_heartbeat'.
+# ** Warning: (vsim-3722) tb_museum_media_core.v(104): [TFMPC] - Missing connection for port 'main5_playback'.
+# ** Warning: (vsim-3722) tb_museum_media_core.v(104): [TFMPC] - Missing connection for port 'main5_display_changed'.
+# ** Warning: (vsim-3722) tb_museum_media_core.v(104): [TFMPC] - Missing connection for port 'main5_diagnostic'.
+# ** Warning: (vsim-3017) ../src/memory/museum_media_core.v(1698): [TFMPC] - Too few port connections. Expected 30, found 28.
+#    Time: 0 ps  Iteration: 0  Instance: /tb_museum_media_core/dut/u_fat32_image_loader File: ../src/memory/museum_media_core.v
+# ** Warning: (vsim-3722) ../src/memory/museum_media_core.v(1698): [TFMPC] - Missing connection for port 'benchmark_file_phase'.
+# ** Warning: (vsim-3722) ../src/memory/museum_media_core.v(1698): [TFMPC] - Missing connection for port 'benchmark_payload_sector'.
+# LBREAD t=365000 reqword=0 slot=0 row=0 rddata=00000000 fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=375000 word=0 slot=0 row=0 data=80008001 fifo_empty=0 fifo_valid=1
+# LBREAD t=385000 reqword=1 slot=0 row=0 rddata=80008001 fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=395000 word=1 slot=0 row=0 data=80028003 fifo_empty=0 fifo_valid=1
+# LBREAD t=405000 reqword=2 slot=0 row=0 rddata=80028003 fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=415000 word=2 slot=0 row=0 data=80048005 fifo_empty=0 fifo_valid=1
+# LBREAD t=425000 reqword=3 slot=0 row=0 rddata=80048005 fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=435000 word=3 slot=0 row=0 data=80068007 fifo_empty=0 fifo_valid=1
+# LBREAD t=445000 reqword=4 slot=0 row=0 rddata=80068007 fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=455000 word=4 slot=0 row=0 data=80088009 fifo_empty=0 fifo_valid=1
+# LBREAD t=465000 reqword=5 slot=0 row=0 rddata=80088009 fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=475000 word=5 slot=0 row=0 data=800a800b fifo_empty=0 fifo_valid=1
+# LBREAD t=485000 reqword=6 slot=0 row=0 rddata=800a800b fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=495000 word=6 slot=0 row=0 data=800c800d fifo_empty=0 fifo_valid=1
+# LBREAD t=505000 reqword=7 slot=0 row=0 rddata=800c800d fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=515000 word=7 slot=0 row=0 data=800e800f fifo_empty=0 fifo_valid=1
+# LBREAD t=525000 reqword=8 slot=0 row=0 rddata=800e800f fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=535000 word=8 slot=0 row=0 data=80108011 fifo_empty=0 fifo_valid=1
+# LBREAD t=545000 reqword=9 slot=0 row=0 rddata=80108011 fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=555000 word=9 slot=0 row=0 data=80128013 fifo_empty=0 fifo_valid=1
+# LBREAD t=565000 reqword=10 slot=0 row=0 rddata=80128013 fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=575000 word=10 slot=0 row=0 data=80148015 fifo_empty=0 fifo_valid=1
+# LBREAD t=585000 reqword=11 slot=0 row=0 rddata=80148015 fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=595000 word=11 slot=0 row=0 data=80168017 fifo_empty=0 fifo_valid=1
+# LBREAD t=615000 reqword=0 slot=1 row=1 rddata=80168017 fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=625000 word=0 slot=1 row=1 data=80188019 fifo_empty=0 fifo_valid=1
+# LBREAD t=635000 reqword=1 slot=1 row=1 rddata=80188019 fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=645000 word=1 slot=1 row=1 data=801a801b fifo_empty=0 fifo_valid=1
+# LBREAD t=655000 reqword=2 slot=1 row=1 rddata=801a801b fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=665000 word=2 slot=1 row=1 data=801c801d fifo_empty=0 fifo_valid=1
+# LBREAD t=675000 reqword=3 slot=1 row=1 rddata=801c801d fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=685000 word=3 slot=1 row=1 data=801e801f fifo_empty=0 fifo_valid=1
+# LBREAD t=695000 reqword=4 slot=1 row=1 rddata=801e801f fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=705000 word=4 slot=1 row=1 data=80208021 fifo_empty=0 fifo_valid=1
+# LBREAD t=715000 reqword=5 slot=1 row=1 rddata=80208021 fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=725000 word=5 slot=1 row=1 data=80228023 fifo_empty=0 fifo_valid=1
+# LBREAD t=735000 reqword=6 slot=1 row=1 rddata=80228023 fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=745000 word=6 slot=1 row=1 data=80248025 fifo_empty=0 fifo_valid=1
+# LBREAD t=755000 reqword=7 slot=1 row=1 rddata=80248025 fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=765000 word=7 slot=1 row=1 data=80268027 fifo_empty=0 fifo_valid=1
+# LBREAD t=775000 reqword=8 slot=1 row=1 rddata=80268027 fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=785000 word=8 slot=1 row=1 data=80288029 fifo_empty=0 fifo_valid=1
+# LBREAD t=795000 reqword=9 slot=1 row=1 rddata=80288029 fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=805000 word=9 slot=1 row=1 data=802a802b fifo_empty=0 fifo_valid=1
+# LBREAD t=815000 reqword=10 slot=1 row=1 rddata=802a802b fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=825000 word=10 slot=1 row=1 data=802c802d fifo_empty=0 fifo_valid=1
+# LBREAD t=835000 reqword=11 slot=1 row=1 rddata=802c802d fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=845000 word=11 slot=1 row=1 data=802e802f fifo_empty=0 fifo_valid=1
+# LBREAD t=865000 reqword=0 slot=2 row=2 rddata=802e802f fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=875000 word=0 slot=2 row=2 data=80308031 fifo_empty=0 fifo_valid=1
+# LBREAD t=885000 reqword=1 slot=2 row=2 rddata=80308031 fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=895000 word=1 slot=2 row=2 data=80328033 fifo_empty=0 fifo_valid=1
+# LBREAD t=905000 reqword=2 slot=2 row=2 rddata=80328033 fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=915000 word=2 slot=2 row=2 data=80348035 fifo_empty=0 fifo_valid=1
+# LBREAD t=925000 reqword=3 slot=2 row=2 rddata=80348035 fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=935000 word=3 slot=2 row=2 data=80368037 fifo_empty=0 fifo_valid=1
+# LBREAD t=945000 reqword=4 slot=2 row=2 rddata=80368037 fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=955000 word=4 slot=2 row=2 data=80388039 fifo_empty=0 fifo_valid=1
+# LBREAD t=965000 reqword=5 slot=2 row=2 rddata=80388039 fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=975000 word=5 slot=2 row=2 data=803a803b fifo_empty=0 fifo_valid=1
+# LBREAD t=985000 reqword=6 slot=2 row=2 rddata=803a803b fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=995000 word=6 slot=2 row=2 data=803c803d fifo_empty=0 fifo_valid=1
+# LBREAD t=1005000 reqword=7 slot=2 row=2 rddata=803c803d fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=1015000 word=7 slot=2 row=2 data=803e803f fifo_empty=0 fifo_valid=1
+# LBREAD t=1025000 reqword=8 slot=2 row=2 rddata=803e803f fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=1035000 word=8 slot=2 row=2 data=80408041 fifo_empty=0 fifo_valid=1
+# LBREAD t=1045000 reqword=9 slot=2 row=2 rddata=80408041 fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=1055000 word=9 slot=2 row=2 data=80428043 fifo_empty=0 fifo_valid=1
+# LBREAD t=1065000 reqword=10 slot=2 row=2 rddata=80428043 fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=1075000 word=10 slot=2 row=2 data=80448045 fifo_empty=0 fifo_valid=1
+# LBREAD t=1085000 reqword=11 slot=2 row=2 rddata=80448045 fifo_empty=0 fifo_valid=1 pending=0
+# LBWRITE t=1095000 word=11 slot=2 row=2 data=80468047 fifo_empty=0 fifo_valid=1
+# PASS MAIN5 KEY3 overview OSD / lecture 1x-2x-3x, paused selection and telemetry
+# ** Note: $finish    : tb_museum_media_core.v(1065)
+#    Time: 16450 ns  Iteration: 1  Instance: /tb_museum_media_core
+# End time: 21:44:03 on Oct 17,2026, Elapsed time: 0:00:05
+# Errors: 0, Warnings: 12

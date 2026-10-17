@@ -257,7 +257,11 @@ always @(posedge clk or negedge rst_n) begin
     end else begin
         fifo_wr_en <= 1'b0;
         track_switch_ack <= 1'b0;
-        if (restart || !start) begin
+        // A full old-track FIFO cannot drain in overview/manual mode. At this
+        // idle sector boundary reuse session restart; ACK clears the old FIFO.
+        if (restart || !start || (state == S_REQ_DATA && track_index != active_track)) begin
+            track_switch_ack <= start && !restart &&
+                                state == S_REQ_DATA && track_index != active_track;
             state            <= S_WAIT_CARD;
             sd_sec_read      <= 1'b0;
             audio_ready      <= 1'b0;

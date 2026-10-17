@@ -7,6 +7,7 @@ reg [15:0] expected_row;
 reg clk=0,rst_n=0,hs=1,vs=1,de=1,name_ready=0,name_we=0,zoom_2x=0;
 reg panel_enable=1;
 reg manual_mode=0;
+reg [1:0] speed_index=0;
 reg [2:0] effect=0;
 reg [10:0] x=0,name_addr=0;
 reg [9:0] y=0;
@@ -23,6 +24,7 @@ museum_status_osd #(.SHOW_PERCENT(1)) dut(
     .width_bcd(16'h1920),.height_bcd(16'h1080),
     .zoom_2x(zoom_2x),
     .manual_mode(manual_mode),
+    .speed_index(speed_index),
     .brightness_index(3'd0),.contrast_index(3'd2),
     .saturation_index(3'd3),.temperature_index(3'd6),
     .name_ready(name_ready),.name_wr_clk(clk),.name_wr_en(name_we),
@@ -90,6 +92,11 @@ initial begin
  check(11'd365,10'd33,24'h404040); // ZOOM1x digit
  zoom_2x=1;
  check(11'd365,10'd33,24'hffffff); // ZOOM2x digit
+ check(11'd440,10'd32,24'h404040); // SPD1x digit left stroke
+ speed_index=1;
+ check(11'd440,10'd32,24'hffffff); // SPD2x
+ speed_index=2;
+ check(11'd440,10'd32,24'hffffff); // SPD3x
  effect=3'd4;
  check(11'd24,10'd32,24'hffffff); // CUSTOM first C
  check(11'd23,10'd32,24'h404040);

@@ -976,6 +976,12 @@ reg osd_panel_enable;
 reg osd_panel_enable_ff1, osd_panel_enable_ff2;
 reg overview_osd_visible;
 reg normal_waveform_visible;
+reg playback_speed_toggle;
+reg playback_speed_req_ff1, playback_speed_req_ff2, playback_speed_seen;
+reg playback_speed_enable_ff1, playback_speed_enable_ff2;
+reg [1:0] playback_speed_video;
+reg [1:0] playback_speed_report;
+wire [2:0] playback_step = {1'b0, playback_speed_video} + 3'd1;
 reg overview_osd_visible_ff1, overview_osd_visible_ff2;
 reg normal_waveform_visible_ff1, normal_waveform_visible_ff2;
 reg [1:0] ui_mode_ff1, ui_mode_ff2;
@@ -987,6 +993,10 @@ wire museum_long_transition = ENABLE_MUSEUM_LECTURE && transition_mode == 3'b101
 wire light_band_transition = transition_mode == 3'd7;
 wire [7:0] transition_end = museum_long_transition ? 8'd128 :
                            light_band_transition ? 8'd64 : 8'd32;
+wire [7:0] transition_limit = fade_out_active ? (transition_end >> 1) : transition_end;
+wire [7:0] transition_advanced = transition_progress + playback_step;
+wire [7:0] transition_next = transition_advanced > transition_limit ?
+                             transition_limit : transition_advanced;
 // Fixed power-of-two thresholds: avoid muxing constants into a carry compare.
 wire transition_before_midpoint = museum_long_transition ?
     !(|transition_progress[7:6]) : light_band_transition ?
@@ -1077,7 +1087,7 @@ wire audio_active;
 wire audio_underflow;
 reg [2:0] audio_track_index;
 reg audio_paused;
-reg [19:0] audio_switch_reset_count;
+reg [15:0] audio_switch_reset_count; // 50,000 cycles, including recovery.
 reg audio_stream_enable_d;
 wire audio_switch_reset = (audio_switch_reset_count != 0);
 // Split the recovery-to-reader path; sector ownership still drains cancellation.
@@ -1519,7 +1529,8 @@ generate
     if (ENABLE_SUBTITLE && ENABLE_MUSEUM_LECTURE) begin : g_museum_subtitle
         museum_subtitle_overlay #(.VIDEO_W(VIDEO_W), .VIDEO_H(VIDEO_H),
                                   .ENABLE_NAMES(ENABLE_MAIN3),
-                                  .PIPE_RAM_OUTPUT(ENABLE_MAIN5_REMOTE))
+                                  .PIPE_RAM_OUTPUT(ENABLE_MAIN5_REMOTE),
+                                  .ENABLE_SPEED(ENABLE_MAIN5_CONTROLS))
         u_museum_subtitle_overlay (
             .clk_50m(clk_50m), .rst_n_50m(client_rst_n),
             .start(media_session_start), .restart(media_session_restart),
@@ -1527,6 +1538,7 @@ generate
             .lecture_finished(lecture_finished),
             .track_index(lecture_artifact_index),
             .audio_frame_index(lecture_audio_frame_index),
+            .speed_index(playback_speed_video),
             .sd_init_done(sd_init_done),
             .fs_geometry_ready(audio_fs_geometry_ready),
             .fs_sectors_per_cluster(audio_fs_sectors_per_cluster),
@@ -1746,7 +1758,8 @@ generate
         );
 
         audio_pcm_player_48k #(
-            .PIXEL_CLK_HZ(75_000_000), .SAMPLE_RATE_HZ(48_000), .START_FRAMES(256)
+            .PIXEL_CLK_HZ(75_000_000), .SAMPLE_RATE_HZ(48_000), .START_FRAMES(256),
+            .ENABLE_SPEED(ENABLE_MAIN5_CONTROLS)
         ) u_audio_player (
             .clk(video_clk), .rst(~video_rst_n),
             .fifo_data(audio_fifo_rd_data),
@@ -1754,6 +1767,7 @@ generate
             .fifo_used(audio_fifo_rd_used), .fifo_rd_en(audio_fifo_rd_en),
             .paused(audio_paused_ff2 || recovery_video_ff2),
             .switch_mute(audio_switch_reset_ff2 || recovery_video_ff2),
+            .speed_index(playback_speed_video),
             .sample_valid(normal_audio_sample_valid),
             .sample_left(normal_audio_sample_left),
             .sample_right(normal_audio_sample_right),
@@ -1842,6 +1856,12 @@ always @(posedge video_clk or negedge video_rst_n) begin
         emergency_video_ff1 <= 1'b0;
         emergency_video_ff2 <= 1'b0;
         emergency_video_active <= 1'b0;
+        playback_speed_req_ff1 <= 1'b0;
+        playback_speed_req_ff2 <= 1'b0;
+        playback_speed_seen <= 1'b0;
+        playback_speed_enable_ff1 <= 1'b0;
+        playback_speed_enable_ff2 <= 1'b0;
+        playback_speed_video <= 2'd0;
     end else begin
         audio_format_error_ff1 <= audio_format_error_50m;
         audio_format_error_ff2 <= audio_format_error_ff1;
@@ -1859,6 +1879,18 @@ always @(posedge video_clk or negedge video_rst_n) begin
         recovery_video_ff2 <= recovery_video_ff1;
         emergency_video_ff1 <= emergency_active_50m;
         emergency_video_ff2 <= emergency_video_ff1;
+        playback_speed_req_ff1 <= playback_speed_toggle;
+        playback_speed_req_ff2 <= playback_speed_req_ff1;
+        playback_speed_seen <= playback_speed_req_ff2;
+        playback_speed_enable_ff1 <= ENABLE_MAIN5_CONTROLS && lecture_active &&
+                                      !manual_mode && !lecture_finished;
+        playback_speed_enable_ff2 <= playback_speed_enable_ff1;
+        if (!playback_speed_enable_ff2 || recovery_video_ff2 || emergency_video_ff2)
+            playback_speed_video <= 2'd0;
+        else if (playback_speed_req_ff2 != playback_speed_seen)
+            // The 50 MHz payload is held until the next debounced KEY3 event;
+            // the synchronized request gives it two video clocks to settle.
+            playback_speed_video <= playback_speed_report;
         if (video_frame_tick)
             emergency_video_active <= emergency_video_ff2;
     end
@@ -2123,7 +2155,9 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         osd_panel_enable <= 1'b1;
         overview_osd_visible <= 1'b1;
         normal_waveform_visible <= 1'b1;
-        audio_switch_reset_count <= 20'd0;
+        playback_speed_toggle <= 1'b0;
+        playback_speed_report <= 2'd0;
+        audio_switch_reset_count <= 16'd0;
         frame_ready_toggle <= 1'b0;
         auto_mode_d       <= 1'b0;
         auto_image_index  <= 4'd0;
@@ -2166,6 +2200,7 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         load_error_event <= 1'b0;
         zoom_2x <= 1'b0;
         audio_paused <= 1'b1;
+        playback_speed_report <= 2'd0;
         audio_switch_reset_count <= AUDIO_SWITCH_RESET_CYCLES;
         if (recovery_reset) begin
             load_active <= 1'b0;
@@ -2187,6 +2222,8 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         load_complete_event <= 1'b0;
         load_error_event <= 1'b0;
         audio_stream_enable_d <= audio_stream_enable;
+        if (!lecture_active || manual_mode || lecture_finished || emergency_active_50m)
+            playback_speed_report <= 2'd0;
         if (frame_valid == 5'b11111)
             overview_cache_ready <= 1'b1;
         if (audio_switch_reset_count != 0)
@@ -2215,8 +2252,10 @@ always @(posedge clk_50m or negedge write_rst_n) begin
             !(manual_mode && lecture_active)) begin
             if (overview_mode)
                 overview_osd_visible <= ~overview_osd_visible;
-            else if (lecture_active)
-                normal_waveform_visible <= ~normal_waveform_visible;
+            else if (lecture_active && !lecture_finished && !emergency_active_50m) begin
+                playback_speed_toggle <= ~playback_speed_toggle;
+                playback_speed_report <= playback_speed_report == 2 ? 0 : playback_speed_report + 1'b1;
+            end
         end
 
         if (!ENABLE_MUSEUM_LECTURE && audio_control_mode) begin
@@ -2785,19 +2824,19 @@ always @(posedge video_clk or negedge video_rst_n) begin
             if (fade_out_active) begin
                 if (transition_mode == 3'b000) begin
                     if (fade_level > 5'd0)
-                        fade_level <= fade_level - 1'b1;
+                        fade_level <= fade_level > playback_step ? fade_level-playback_step : 5'd0;
                 end else if (transition_before_midpoint &&
                              (transition_mode != 3'b110 ||
                               !transition_pace)) begin
-                    transition_progress <= transition_progress + 1'b1;
+                    transition_progress <= transition_next;
                 end
             end else if (transition_mode == 3'b000) begin
                 if (fade_level < 5'd16)
-                    fade_level <= fade_level + 1'b1;
+                    fade_level <= fade_level < 5'd16-playback_step ? fade_level+playback_step : 5'd16;
             end else if (transition_before_end &&
                          (transition_mode != 3'b110 ||
                           !transition_pace)) begin
-                transition_progress <= transition_progress + 1'b1;
+                transition_progress <= transition_next;
             end
         end else if (video_run && video_read_en && !LINEBUF_SCALE) begin
             pair_phase <= ~pair_phase;
@@ -3238,6 +3277,7 @@ generate
             .width_bcd(osd_width_bcd), .height_bcd(osd_height_bcd),
             .name_ready(osd_name_ready),
             .zoom_2x(display_zoom_2x),
+            .speed_index(playback_speed_video),
             .manual_mode(osd_manual),
             .name_wr_clk(clk_50m), .name_wr_en(osd_name_wr_en),
             .name_wr_addr(osd_name_wr_addr), .name_wr_data(osd_name_wr_data),
@@ -3512,7 +3552,8 @@ wire [31:0] main5_audio_frame = lecture_active ? lecture_audio_frame_index : 32'
 assign main5_heartbeat = {main5_mode, main5_artifact, main5_phase,
                           main5_play_state, {7'd0, emergency_active_50m},
                           main5_preset_applied, main5_error, main5_ui[23:16],
-                          main5_audio_frame, 15'd0, emergency_active_50m, main5_ui[15:0]};
+                          main5_audio_frame, 13'd0, playback_speed_report,
+                          emergency_active_50m, main5_ui[15:0]};
 assign main5_playback = {main5_artifact, main5_play_state, main5_phase,
                          main5_preset_applied, main5_audio_frame};
 assign main5_display = {main5_preset_applied,
@@ -3521,7 +3562,7 @@ assign main5_display = {main5_preset_applied,
                         {5'd0, main5_saturation_applied},
                         {5'd0, main5_temperature_applied},
                         main5_zoom_ff2 ? 8'd2 : 8'd1,
-                        {5'd0, manual_mode, overview_osd_visible,
+                        {3'd0, playback_speed_report, manual_mode, overview_osd_visible,
                          normal_waveform_visible && !manual_mode},
                         main5_phase, main5_pan_report_x, main5_pan_report_y};
 wire [7:0] main5_storage = !sd_init_done ? 8'd0 :

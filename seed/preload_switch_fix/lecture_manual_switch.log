@@ -1,0 +1,37 @@
+# vlog -work work_main2_lecture ../src/video/museum_lecture_controller.v tb_museum_lecture_controller.v
+# Model Technology ModelSim SE-64 vlog 10.6e Compiler 2018.06 Jun 23 2018
+# Start time: 22:34:17 on Oct 17,2026
+# vlog -work work_main2_lecture ../src/video/museum_lecture_controller.v tb_museum_lecture_controller.v 
+# -- Compiling module museum_lecture_controller
+# -- Compiling module tb_museum_lecture_controller
+# 
+# Top level modules:
+# 	tb_museum_lecture_controller
+# End time: 22:34:17 on Oct 17,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+#  vsim -c -lib work_main2_lecture tb_museum_lecture_controller -gMANUAL_TEST=1
+# vsim -c -lib work_main2_lecture tb_museum_lecture_controller -gMANUAL_TEST=1 
+# Start time: 22:34:17 on Oct 17,2026
+# ** Note: (vsim-3813) Design is being optimized due to module recompilation...
+# ** Warning: tb_museum_lecture_controller.v(23): (vopt-2685) [TFMPC] - Too few port connections for 'dut'.  Expected 50, found 49.
+# ** Warning: tb_museum_lecture_controller.v(23): (vopt-2718) [TFMPC] - Missing connection for port 'cached_artifact'.
+# //  ModelSim SE-64 10.6e Jun 23 2018
+# //
+# //  Copyright 1991-2018 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  ModelSim SE-64 and its associated documentation contain trade
+# //  secrets and commercial or financial information that are the property of
+# //  Mentor Graphics Corporation and are privileged, confidential,
+# //  and exempt from disclosure under the Freedom of Information Act,
+# //  5 U.S.C. Section 552. Furthermore, this information
+# //  is prohibited from disclosure under the Trade Secrets Act,
+# //  18 U.S.C. Section 1905.
+# //
+# Loading work.tb_museum_lecture_controller(fast)
+#  run -all
+# PASS tb_museum_lecture_controller manual: silent entry, four images, cache protection, exit, paused entry, reset
+# ** Note: $finish    : tb_museum_lecture_controller.v(136)
+#    Time: 1200 ns  Iteration: 1  Instance: /tb_museum_lecture_controller
+# End time: 22:34:19 on Oct 17,2026, Elapsed time: 0:00:02
+# Errors: 0, Warnings: 2

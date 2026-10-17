@@ -32,12 +32,14 @@ module museum_lecture_controller #(
 );
 
 localparam [31:0] END_HOLD_CYCLES = (CLOCK_HZ * 6) / 5;
+localparam integer HOLD_BITS = END_HOLD_CYCLES>1 ? $clog2(END_HOLD_CYCLES) : 1;
 reg waiting_for_load, loading_next, queued_valid, queued_ready, retry_used;
 reg [1:0] next_load_step;
 reg [2:0] queued_artifact, current_full_slot, next_full_slot;
 reg current_cache_intact;
 reg return_full_pending, final_full_hold;
-reg [31:0] audio_frames_played, end_hold_count;
+reg [31:0] audio_frames_played;
+reg [HOLD_BITS-1:0] end_hold_count;
 reg [31:0] audio_fifth;
 wire [31:0] audio_two_fifths = audio_fifth << 1;
 wire [31:0] audio_three_fifths = audio_two_fifths + audio_fifth;

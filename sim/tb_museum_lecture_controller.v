@@ -87,6 +87,16 @@ initial begin
   repeat(5)@(negedge clk);
   if(active||!manual_mode||!manual_cache_ready||preloading||load_request)
    $fatal(1,"manual local exit reloaded unchanged images");
+  // From the fifth artifact's manual overview, 000 must request all four
+  // images of artifact 0 without a KEY4 or a manual-mode toggle.
+  preload_index=0;selected=0;@(negedge clk);
+  for(i=0;i<4;i=i+1)check_load(i,i,0);
+  if(active||preloading||!manual_cache_ready||artifact!=0)
+   $fatal(1,"manual overview switch 4->0 did not rebuild image cache");
+  preload_index=4;selected=4;@(negedge clk);
+  for(i=0;i<4;i=i+1)check_load(i,i,4);
+  if(preloading||!manual_cache_ready||artifact!=4)
+   $fatal(1,"manual overview switch 0->4 failed");
   confirm=1;@(negedge clk);confirm=0;
   if(!active||!manual_mode||display_slot!=0||preloading)
    $fatal(1,"manual local reentry failed without reload");

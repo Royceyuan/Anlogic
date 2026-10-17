@@ -13,6 +13,7 @@ module museum_status_osd #(
     input wire [2:0] effect,
     input wire [15:0] width_bcd, input wire [15:0] height_bcd,
     input wire zoom_2x, input wire manual_mode,
+    input wire [1:0] speed_index,
     input wire [2:0] brightness_index, contrast_index, saturation_index, temperature_index,
     input wire name_ready,
     input wire name_wr_clk, input wire name_wr_en,
@@ -421,6 +422,8 @@ function [34:0] ascii_bitmap;
             26:ascii_bitmap={5'b11110,5'b10001,5'b10001,5'b11110,5'b10001,5'b10001,5'b11110}; // B
             27:ascii_bitmap={5'b11001,5'b11010,5'b00010,5'b00100,5'b01000,5'b01011,5'b10011}; // %
             28:ascii_bitmap={5'b00000,5'b00100,5'b00100,5'b11111,5'b00100,5'b00100,5'b00000}; // +
+            29:ascii_bitmap={5'b11110,5'b10001,5'b10001,5'b11110,5'b10000,5'b10000,5'b10000}; // P
+            30:ascii_bitmap={5'b11110,5'b10001,5'b10001,5'b10001,5'b10001,5'b10001,5'b11110}; // D
             default:ascii_bitmap=35'd0;
         endcase
     end
@@ -608,6 +611,15 @@ always @(*) begin
             3:chosen_ascii=5'd19; // M
             4:chosen_ascii=zoom_2x ? 5'd2 : 5'd1;
             5:chosen_ascii=5'd16; // x
+        endcase
+    end else if (SHOW_PERCENT && x_s0>=412 && x_s0<452 && y_s0>=32 && y_s0<40) begin
+        local_x=x_s0-412;
+        case(local_x[5:3])
+            0:chosen_ascii=5'd24; // S
+            1:chosen_ascii=5'd29; // P
+            2:chosen_ascii=5'd30; // D
+            3:chosen_ascii={3'd0,speed_index}+5'd1;
+            4:chosen_ascii=5'd16; // x
         endcase
     end
 end
