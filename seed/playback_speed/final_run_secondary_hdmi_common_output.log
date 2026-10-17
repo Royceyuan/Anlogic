@@ -1,0 +1,737 @@
+# do run_secondary_hdmi_common_output.do
+# Model Technology ModelSim SE-64 vcom 10.6e Compiler 2018.06 Jun 23 2018
+# Start time: 21:52:36 on Oct 17,2026
+# vcom -2008 -work work_hdmi_common ../vendor/official_ref/lab_ex_6_tf_sdram_hdmi/hdmi/enc_file/TMDSEncoder.enc.vhd 
+# -- Loading package STANDARD
+# End time: 21:52:36 on Oct 17,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# Model Technology ModelSim SE-64 vlog 10.6e Compiler 2018.06 Jun 23 2018
+# ** Warning: (vlog-13288) Multiple macros defined in +define+ command line switch.
+# Start time: 21:52:37 on Oct 17,2026
+# vlog "+define+SIM+COMMON_HDMI_TEST" "+incdir+.." -work work_hdmi_common ../src/common/reset_sync.v ../src/common/seg_hex_display.v ../src/input/key_debounce.v ../src/video/video_timing_640x480_pclk.v ../vendor/official_ref/lab_ex_6_tf_sdram_hdmi/video_delay.v ../src/storage/fat32_image_loader.v ../src/storage/adaptive_row_ram.v ../src/storage/al_dp_ram16.v ../src/storage/bmp_row_buffer.v ../src/storage/bmp_sdram_row_writer.v ../src/storage/rgb565_stream_packer_ready.v ../src/video/rgb888_adjust.v ../src/video/video_fade.v ../src/video/video_transition_mask.v ../src/video/transition_theme_controller.v ../src/video/product_show_controller.v ../src/secondary/secondary_carousel_controller.v ../src/secondary/secondary_page_overlay.v ../src/secondary/secondary_help_overlay.v ../src/memory/sdram_bmp_row_top_v66.v secondary_help_physical_stubs.v ../src/video/secondary_hdmi_pc_raster.v ../src/video/secondary_hdmi_common_symbols.v ../src/video/secondary_hdmi_frame_handoff.v 
+# -- Compiling module reset_sync
+# -- Compiling module seg_hex_display
+# -- Compiling module key_debounce
+# -- Compiling module video_timing_640x480_pclk
+# -- Compiling module video_delay
+# -- Compiling module fat32_image_loader
+# -- Compiling module EG_LOGIC_BRAM
+# -- Compiling module adaptive_row_ram
+# -- Compiling module al_dp_ram16
+# -- Compiling module bmp_row_buffer
+# -- Compiling module bmp_sdram_row_writer
+# -- Compiling module rgb565_stream_packer_ready
+# -- Compiling module rgb888_adjust
+# -- Compiling module video_fade
+# -- Compiling module video_transition_mask
+# -- Compiling module transition_theme_controller
+# -- Compiling module product_show_controller
+# -- Compiling module secondary_carousel_controller
+# -- Compiling module secondary_page_overlay
+# -- Compiling module secondary_help_overlay
+# -- Compiling module top_v66
+# -- Compiling module anlogic_frame_store
+# -- Compiling module sys_pll
+# -- Compiling module video_pll_75m
+# -- Compiling module hdmi_tx
+# -- Compiling module sd_card_top
+# -- Compiling module secondary_hdmi_pc_raster
+# -- Compiling module secondary_hdmi_common_symbols
+# -- Compiling module secondary_hdmi_frame_handoff
+# 
+# Top level modules:
+# 	top_v66
+# 	secondary_hdmi_pc_raster
+# 	secondary_hdmi_common_symbols
+# End time: 21:52:37 on Oct 17,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 1
+# Model Technology ModelSim SE-64 vlog 10.6e Compiler 2018.06 Jun 23 2018
+# Start time: 21:52:37 on Oct 17,2026
+# vlog -sv -work work_hdmi_common tb_secondary_hdmi_common_output.v 
+# -- Compiling module tb_secondary_hdmi_common_output
+# 
+# Top level modules:
+# 	tb_secondary_hdmi_common_output
+# End time: 21:52:37 on Oct 17,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0
+# vsim -c -voptargs="+acc" -onfinish stop -lib work_hdmi_common tb_secondary_hdmi_common_output 
+# Start time: 21:52:37 on Oct 17,2026
+# ** Note: (vsim-3812) Design is being optimized...
+# ** Note: (vopt-143) Recognized 2 FSMs in module "fat32_image_loader(fast)".
+# ** Warning: tb_secondary_hdmi_common_output.v(86): (vopt-2685) [TFMPC] - Too few port connections for 'u_display'.  Expected 62, found 33.
+# ** Warning: tb_secondary_hdmi_common_output.v(86): (vopt-2718) [TFMPC] - Missing connection for port 'secondary_cmd_result'.
+# ** Warning: tb_secondary_hdmi_common_output.v(86): (vopt-2718) [TFMPC] - Missing connection for port 'secondary_cmd_route_id'.
+# ** Warning: tb_secondary_hdmi_common_output.v(86): (vopt-2718) [TFMPC] - Missing connection for port 'secondary_cmd_emergency_id'.
+# ** Warning: tb_secondary_hdmi_common_output.v(86): (vopt-2718) [TFMPC] - Missing connection for port 'secondary_cmd_lecture_reason'.
+# ** Warning: tb_secondary_hdmi_common_output.v(86): (vopt-2718) [TFMPC] - Missing connection for port 'secondary_cmd_confirmed'.
+# ** Warning: tb_secondary_hdmi_common_output.v(86): (vopt-2718) [TFMPC] - Missing connection for port 'uart_txd'.
+# ** Warning: tb_secondary_hdmi_common_output.v(86): (vopt-2718) [TFMPC] - Missing connection for port 'local_serial_clk'.
+# ** Warning: tb_secondary_hdmi_common_output.v(86): (vopt-2718) [TFMPC] - Missing connection for port 'local_video_clk'.
+# ** Warning: tb_secondary_hdmi_common_output.v(86): (vopt-2718) [TFMPC] - Missing connection for port 'hdmi1_ddc_sda'.
+# ** Warning: tb_secondary_hdmi_common_output.v(86): (vopt-2718) [TFMPC] - Missing connection for port 'hdmi1_ddc_scl'.
+# ** Warning: tb_secondary_hdmi_common_output.v(86): (vopt-2718) [TFMPC] - Missing connection for port 'hdmi1_d0_p'.
+# ** Warning: tb_secondary_hdmi_common_output.v(86): (vopt-2718) [TFMPC] - Missing connection for port 'hdmi1_d1_p'.
+# ** Warning: tb_secondary_hdmi_common_output.v(86): (vopt-2718) [TFMPC] - Missing connection for port 'hdmi1_d2_p'.
+# ** Warning: tb_secondary_hdmi_common_output.v(86): (vopt-2718) [TFMPC] - Missing connection for port 'hdmi1_clk_p'.
+# ** Warning: tb_secondary_hdmi_common_output.v(86): (vopt-2718) [TFMPC] - Missing connection for port 'vga_d'.
+# ** Warning: tb_secondary_hdmi_common_output.v(86): (vopt-2718) [TFMPC] - Missing connection for port 'vga_vs'.
+# ** Warning: tb_secondary_hdmi_common_output.v(86): (vopt-2718) [TFMPC] - Missing connection for port 'vga_hs'.
+# ** Warning: tb_secondary_hdmi_common_output.v(86): (vopt-2718) [TFMPC] - Missing connection for port 'sd_cs_n'.
+# ** Warning: tb_secondary_hdmi_common_output.v(86): (vopt-2718) [TFMPC] - Missing connection for port 'sd_miso'.
+# ** Warning: tb_secondary_hdmi_common_output.v(86): (vopt-2718) [TFMPC] - Missing connection for port 'sd_mosi'.
+# ** Warning: tb_secondary_hdmi_common_output.v(86): (vopt-2718) [TFMPC] - Missing connection for port 'sd_clk'.
+# ** Warning: tb_secondary_hdmi_common_output.v(86): (vopt-2718) [TFMPC] - Missing connection for port 'seg_sel'.
+# ** Warning: tb_secondary_hdmi_common_output.v(86): (vopt-2718) [TFMPC] - Missing connection for port 'seg_data'.
+# ** Warning: tb_secondary_hdmi_common_output.v(86): (vopt-2718) [TFMPC] - Missing connection for port 'led'.
+# ** Warning: tb_secondary_hdmi_common_output.v(86): (vopt-2718) [TFMPC] - Missing connection for port 'native_clock_ready'.
+# ** Warning: tb_secondary_hdmi_common_output.v(86): (vopt-2718) [TFMPC] - Missing connection for port 'native_serial_clk'.
+# ** Warning: tb_secondary_hdmi_common_output.v(86): (vopt-2718) [TFMPC] - Missing connection for port 'native_video_clk'.
+# ** Warning: tb_secondary_hdmi_common_output.v(86): (vopt-2718) [TFMPC] - Missing connection for port 'shared_mem_clk_sft'.
+# ** Warning: tb_secondary_hdmi_common_output.v(86): (vopt-2718) [TFMPC] - Missing connection for port 'shared_mem_clk'.
+# ** Note: (vopt-143) Recognized 1 FSM in module "bmp_sdram_row_writer(fast)".
+# ** Note: (vopt-143) Recognized 1 FSM in module "product_show_controller(fast)".
+# //  ModelSim SE-64 10.6e Jun 23 2018
+# //
+# //  Copyright 1991-2018 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  ModelSim SE-64 and its associated documentation contain trade
+# //  secrets and commercial or financial information that are the property of
+# //  Mentor Graphics Corporation and are privileged, confidential,
+# //  and exempt from disclosure under the Freedom of Information Act,
+# //  5 U.S.C. Section 552. Furthermore, this information
+# //  is prohibited from disclosure under the Trade Secrets Act,
+# //  18 U.S.C. Section 1905.
+# //
+# Loading sv_std.std
+# Loading work.tb_secondary_hdmi_common_output(fast)
+# Loading work.secondary_hdmi_pc_raster(fast)
+# Loading work.top_v66(fast)
+# Loading work.secondary_carousel_controller(fast)
+# Loading work.transition_theme_controller(fast)
+# Loading work.product_show_controller(fast)
+# Loading work.reset_sync(fast)
+# Loading work.key_debounce(fast)
+# Loading work.sys_pll(fast)
+# Loading work.video_pll_75m(fast)
+# Loading work.sd_card_top(fast)
+# Loading work.fat32_image_loader(fast)
+# Loading work.bmp_row_buffer(fast)
+# Loading work.adaptive_row_ram(fast)
+# Loading work.EG_LOGIC_BRAM(fast)
+# Loading work.bmp_sdram_row_writer(fast)
+# Loading work.rgb565_stream_packer_ready(fast)
+# Loading work.anlogic_frame_store(fast)
+# Loading work.video_timing_640x480_pclk(fast)
+# Loading work.video_delay(fast)
+# Loading work.rgb888_adjust(fast)
+# Loading work.video_fade(fast)
+# Loading work.video_transition_mask(fast)
+# Loading work.seg_hex_display(fast)
+# Loading work.secondary_page_overlay(fast)
+# Loading work.secondary_help_overlay(fast)
+# Loading work.secondary_hdmi_common_symbols(fast)
+# Loading work.secondary_hdmi_frame_handoff(fast)
+# Loading std.standard
+# Loading std.textio(body)
+# Loading ieee.std_logic_1164(body)
+# Loading ieee.std_logic_arith(body)
+# Loading ieee.std_logic_signed(body)
+# ** Warning: (vsim-3015) tb_secondary_hdmi_common_output.v(86): [PCDPC] - Port size (4) does not match connection size (32) for port 'sw'. The port definition is at: ../src/memory/sdram_bmp_row_top_v66.v(113).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_display File: ../src/memory/sdram_bmp_row_top_v66.v
+# ** Warning: (vsim-3015) tb_secondary_hdmi_common_output.v(86): [PCDPC] - Port size (1) does not match connection size (32) for port 'uart_rxd'. The port definition is at: ../src/memory/sdram_bmp_row_top_v66.v(133).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_display File: ../src/memory/sdram_bmp_row_top_v66.v
+# ** Warning: (vsim-3015) tb_secondary_hdmi_common_output.v(86): [PCDPC] - Port size (1) does not match connection size (32) for port 'secondary_cmd_valid'. The port definition is at: ../src/memory/sdram_bmp_row_top_v66.v(135).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_display File: ../src/memory/sdram_bmp_row_top_v66.v
+# ** Warning: (vsim-3015) tb_secondary_hdmi_common_output.v(86): [PCDPC] - Port size (8) does not match connection size (32) for port 'secondary_cmd_type'. The port definition is at: ../src/memory/sdram_bmp_row_top_v66.v(136).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_display File: ../src/memory/sdram_bmp_row_top_v66.v
+# ** Warning: (vsim-3015) tb_secondary_hdmi_common_output.v(86): [PCDPC] - Port size (8) does not match connection size (32) for port 'secondary_cmd_artifact_id'. The port definition is at: ../src/memory/sdram_bmp_row_top_v66.v(137).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_display File: ../src/memory/sdram_bmp_row_top_v66.v
+# ** Warning: (vsim-3015) tb_secondary_hdmi_common_output.v(86): [PCDPC] - Port size (8) does not match connection size (32) for port 'secondary_cmd_mode'. The port definition is at: ../src/memory/sdram_bmp_row_top_v66.v(139).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_display File: ../src/memory/sdram_bmp_row_top_v66.v
+# ** Warning: (vsim-3015) tb_secondary_hdmi_common_output.v(86): [PCDPC] - Port size (8) does not match connection size (32) for port 'secondary_cmd_lecture_phase'. The port definition is at: ../src/memory/sdram_bmp_row_top_v66.v(140).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_display File: ../src/memory/sdram_bmp_row_top_v66.v
+# ** Warning: (vsim-3015) tb_secondary_hdmi_common_output.v(86): [PCDPC] - Port size (1) does not match connection size (32) for port 'secondary_cmd_emergency_active'. The port definition is at: ../src/memory/sdram_bmp_row_top_v66.v(144).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_display File: ../src/memory/sdram_bmp_row_top_v66.v
+# ** Warning: (vsim-3015) tb_secondary_hdmi_common_output.v(86): [PCDPC] - Port size (1) does not match connection size (32) for port 'secondary_manual_mode'. The port definition is at: ../src/memory/sdram_bmp_row_top_v66.v(146).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_display File: ../src/memory/sdram_bmp_row_top_v66.v
+# ** Warning: (vsim-3015) tb_secondary_hdmi_common_output.v(86): [PCDPC] - Port size (1) does not match connection size (32) for port 'secondary_manual_next'. The port definition is at: ../src/memory/sdram_bmp_row_top_v66.v(147).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_display File: ../src/memory/sdram_bmp_row_top_v66.v
+# ** Warning: (vsim-3015) tb_secondary_hdmi_common_output.v(86): [PCDPC] - Port size (4) does not match connection size (32) for port 'secondary_help_switches'. The port definition is at: ../src/memory/sdram_bmp_row_top_v66.v(148).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_display File: ../src/memory/sdram_bmp_row_top_v66.v
+# ** Warning: (vsim-3015) tb_secondary_hdmi_common_output.v(86): [PCDPC] - Port size (1) does not match connection size (32) for port 'secondary_eng_enable'. The port definition is at: ../src/memory/sdram_bmp_row_top_v66.v(149).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_display File: ../src/memory/sdram_bmp_row_top_v66.v
+# ** Warning: (vsim-3015) tb_secondary_hdmi_common_output.v(86): [PCDPC] - Port size (1) does not match connection size (32) for port 'secondary_eng_link'. The port definition is at: ../src/memory/sdram_bmp_row_top_v66.v(150).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_display File: ../src/memory/sdram_bmp_row_top_v66.v
+# ** Warning: (vsim-3015) tb_secondary_hdmi_common_output.v(86): [PCDPC] - Port size (128) does not match connection size (32) for port 'secondary_eng_heartbeat'. The port definition is at: ../src/memory/sdram_bmp_row_top_v66.v(151).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_display File: ../src/memory/sdram_bmp_row_top_v66.v
+# ** Warning: (vsim-3015) tb_secondary_hdmi_common_output.v(86): [PCDPC] - Port size (96) does not match connection size (32) for port 'secondary_eng_display'. The port definition is at: ../src/memory/sdram_bmp_row_top_v66.v(152).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_display File: ../src/memory/sdram_bmp_row_top_v66.v
+# ** Warning: (vsim-3015) tb_secondary_hdmi_common_output.v(86): [PCDPC] - Port size (128) does not match connection size (32) for port 'secondary_eng_diagnostic'. The port definition is at: ../src/memory/sdram_bmp_row_top_v66.v(153).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_display File: ../src/memory/sdram_bmp_row_top_v66.v
+# ** Warning: (vsim-3015) tb_secondary_hdmi_common_output.v(86): [PCDPC] - Port size (8) does not match connection size (32) for port 'secondary_eng_result'. The port definition is at: ../src/memory/sdram_bmp_row_top_v66.v(154).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_display File: ../src/memory/sdram_bmp_row_top_v66.v
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 0  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 1  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 0 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 1  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 1  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 1  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 4  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 5  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 6  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 7  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 8  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 8  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 8  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 8  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 8  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 8  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 8  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 8  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 8  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 8  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 8  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 8  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 8  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 8  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 8  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 9  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 9  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 9  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 9  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 9  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 9  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 9  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 9  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 9  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 10  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 10  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 6667 ps  Iteration: 10  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 20001 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 20001 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 20001 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_b
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 20001 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 20001 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 20001 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_g
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 20001 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 20001 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_r
+# ** Warning: There is an 'U'|'X'|'W'|'Z'|'-' in an arithmetic operand, the result will be 'X'(es).
+#    Time: 20001 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output/u_r
+# TRACE packet header=e40d0282 keep=1 pcm=0 raster_header=02
+# TRACE packet header=d0000f02 keep=0 pcm=1 raster_header=02
+# TRACE packet header=e40d0282 keep=1 pcm=0 raster_header=02
+# TRACE packet header=d0000f02 keep=0 pcm=1 raster_header=02
+# TRACE packet header=e40d0282 keep=1 pcm=0 raster_header=02
+# TRACE packet header=d0000f02 keep=0 pcm=1 raster_header=02
+# PASS PC raster matches complete 1650x750 source and actual native 25+3-stage pipeline
+# PASS native image replaces unauthorized PC pixels while AVI and silent LPCM/BCH remain valid
+# PASS authorized video/audio/header/BCH bit-exact with common clock, no output reset
+# PASS STOP restores native without changing raster/carrier or publication tags
+# PASS clock-epoch recovery drains old read ACK and resumes cached toggle ZERO without TF reload
+# PASS shared raster changes preserve media publication and do not reset SDRAM/TF
+# ** Note: $finish    : tb_secondary_hdmi_common_output.v(210)
+#    Time: 115617200571 ps  Iteration: 2  Instance: /tb_secondary_hdmi_common_output
+# Break in Module tb_secondary_hdmi_common_output at tb_secondary_hdmi_common_output.v line 210
+# Stopped at tb_secondary_hdmi_common_output.v line 210
+# End time: 21:54:15 on Oct 17,2026, Elapsed time: 0:01:38
+# Errors: 0, Warnings: 320

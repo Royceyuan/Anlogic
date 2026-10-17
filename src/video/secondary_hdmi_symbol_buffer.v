@@ -41,16 +41,22 @@ wire [1:0] write_fault_ff={write_fault_second,write_fault_first};
 // edge. Keep the two-flop containment without a 0.665ns nominal setup edge.
 always @(negedge read_clk or negedge rst_n)
     if(!rst_n) write_fault_first<=0;else write_fault_first<=write_fault;
-reg input_valid_q,input_control_q,input_same_q;
+reg input_valid_q,input_control_q;
+// Keep the 30-bit comparison in two parallel halves at the capture clock.
+// The final AND joins registered results, with the same symbol latency.
+(* syn_preserve = 1 *) reg [1:0] input_same_parts;
+wire input_same_q = &input_same_parts;
 reg [29:0] input_word_q,last_input_word;
 always @(posedge write_clk or negedge rst_n) begin
     if(!rst_n) begin
-        input_valid_q<=0;input_control_q<=0;input_same_q<=0;input_word_q<=0;last_input_word<=0;
+        input_valid_q<=0;input_control_q<=0;input_same_parts<=0;input_word_q<=0;last_input_word<=0;
     end else begin
         input_valid_q<=input_valid && !write_reset[1];
         if(input_valid) begin
             input_word_q<=input_symbols;input_control_q<=ordinary_control(input_symbols);
-            input_same_q<=input_symbols==last_input_word;last_input_word<=input_symbols;
+            input_same_parts<={input_symbols[29:15]==last_input_word[29:15],
+                               input_symbols[14:0]==last_input_word[14:0]};
+            last_input_word<=input_symbols;
         end
     end
 end

@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-17",
+  "status": "board_pass",
+  "board_acceptance": "2026-10-17: user confirmed passing; cleanup, commit and push requested",
+  "bit": "dual_fpga_museum_terminal_secondary_board_playback_speed.bit",
+  "sha256": "086A1C2242E5A7958066E342676A93FAFB6FAF95AF097337BE6F569D499F0F74",
+  "base_commit": "3aa73ab603ac6f54759895a9b06fd6074c09c882",
+  "seed": 8,
+  "setup_wns_ns": 0.151,
+  "hold_wns_ns": 0.021,
+  "setup_tns_ns": 0,
+  "hold_tns_ns": 0,
+  "resources": {
+    "lut": 12494,
+    "ff": 8216,
+    "bram9k": 28,
+    "bram32k": 13,
+    "dsp": 5,
+    "pll": 4,
+    "slice": 7070
+  },
+  "accepted_baseline": {
+    "ff": 8207,
+    "slice": 7101,
+    "lut": 12402
+  },
+  "evidence": "seed/playback_speed",
+  "limits": "User board acceptance recorded. No exhaustive or long-duration hardware pass claimed."
+}

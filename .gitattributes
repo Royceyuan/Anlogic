@@ -44,3 +44,5 @@ seed/frame_handoff_experiment/* -text -whitespace
 seed/frame_handoff_experiment/*.json text whitespace
 seed/continuous_carrier/* -text -whitespace
 seed/continuous_carrier/*.json text whitespace
+seed/playback_speed/* -text -whitespace
+seed/playback_speed/*.json text whitespace

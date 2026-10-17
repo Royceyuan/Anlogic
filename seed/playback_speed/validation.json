@@ -1,0 +1,88 @@
+[
+  {
+    "log": "speed_symbol_buffer.log",
+    "result": "PASS",
+    "checks": [
+      "# PASS rate=400 per 1000 capture ticks: 57880 exact protected words, drop=0 repeat=0",
+      "# PASS rate=401 per 1000 capture ticks: 57926 exact protected words, drop=121 repeat=0",
+      "# PASS rate=399 per 1000 capture ticks: 57782 exact protected words, drop=0 repeat=129",
+      "# PASS underflow is latched; corrupted stream is not marked ready",
+      "# PASS late source data cannot revive a faulted stream without reset",
+      "# PASS source stopped high/low: asynchronous invalidation and clean reconnect",
+      "# PASS uncorrectable overflow is latched without discarding AV payload"
+    ]
+  },
+  {
+    "log": "speed_run_secondary_help_primitives.log",
+    "result": "PASS",
+    "checks": [
+      "# PASS help overlay: 3686400 pixels, native split glyphs, two columns, four groups, bottom status, emergency, frame switch"
+    ]
+  },
+  {
+    "log": "speed_run_mbp1_reconnect.log",
+    "result": "PASS",
+    "checks": [
+      "# PASS same-boot reconnect, switch reconciliation, timeout, no HELLO loop: commands=11"
+    ]
+  },
+  {
+    "log": "speed_run_secondary_main5e_keys.log",
+    "result": "PASS",
+    "checks": [
+      "# PASS tb_secondary_main5e_keys"
+    ]
+  },
+  {
+    "log": "final_run_secondary_video_uart_control.log",
+    "result": "PASS",
+    "checks": [
+      "# PASS UART boot/query keep HDMI local while input is valid",
+      "# PASS UART malformed CRC and truncated frame rejected/resynchronized",
+      "# PASS UART START requires valid HDMI and duplicate START is idempotent",
+      "# PASS UART keepalive/reject/STOP/duplicate STOP and status ACK",
+      "# PASS UART input loss cancels lease and reconnect remains local",
+      "# PASS UART PC loss expires lease; QUERY cannot authorize or keep it alive",
+      "# PASS UART framing error rejected and next valid command recovers",
+      "# PASS UART stopped reply channel cannot block STOP or retain stale authorization",
+      "# PASS UART context CRC, actual artifact, pause, loss, emergency priority, no old resume and recovery",
+      "# PASS UART warm hint never authorizes AV; release, timeout and emergency restore local policy",
+      "# PASS emergency-only START: fresh state/source required; ordinary START blocked; clear revokes",
+      "# PASS emergency video loss/recovery returns local; fresh START required after reconnect",
+      "# PASS emergency lease watchdog, STOP and release preserve static fallback",
+      "# PASS actual heartbeat busy -> normalized state -> emergency UART grant; real error/exit blocked",
+      "# PASS cached emergency START supersedes pending STOP without waiting for its ACK",
+      "# PASS UART boot/query keep HDMI local while input is valid",
+      "# PASS UART malformed CRC and truncated frame rejected/resynchronized",
+      "# PASS UART START requires valid HDMI and duplicate START is idempotent",
+      "# PASS UART keepalive/reject/STOP/duplicate STOP and status ACK",
+      "# PASS UART input loss cancels lease and reconnect remains local",
+      "# PASS UART PC loss expires lease; QUERY cannot authorize or keep it alive",
+      "# PASS UART framing error rejected and next valid command recovers",
+      "# PASS UART stopped reply channel cannot block STOP or retain stale authorization"
+    ]
+  },
+  {
+    "log": "final_run_secondary_hdmi_frame_handoff.log",
+    "result": "PASS",
+    "checks": [
+      "# PASS misaligned frame starts refuse PC; common clock alone is insufficient",
+      "# PASS aligned vertical-blank handoff waits out a packet/preamble interval",
+      "# PASS immediate payload inhibit and later vertical-blank bookkeeping",
+      "# PASS input loss invalidates phase and cannot reuse revoked lease",
+      "# PASS reset immediately clears handoff and payload permission"
+    ]
+  },
+  {
+    "log": "final_run_secondary_hdmi_common_output.log",
+    "result": "PASS",
+    "checks": [
+      "# PASS PC raster matches complete 1650x750 source and actual native 25+3-stage pipeline",
+      "# PASS native image replaces unauthorized PC pixels while AVI and silent LPCM/BCH remain valid",
+      "# PASS authorized video/audio/header/BCH bit-exact with common clock, no output reset",
+      "# PASS STOP restores native without changing raster/carrier or publication tags",
+      "# PASS clock-epoch recovery drains old read ACK and resumes cached toggle ZERO without TF reload",
+      "# PASS shared raster changes preserve media publication and do not reset SDRAM/TF"
+    ]
+  }
+]

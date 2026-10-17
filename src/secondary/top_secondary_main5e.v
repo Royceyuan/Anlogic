@@ -82,7 +82,11 @@ always @(posedge clk_50m or posedge network_reset) begin
         pc_transition_q<=0;pc_recovery_q<=0;pc_finished_q<=0;
     end else begin
         if(heartbeat_pulse) begin
-            pc_seen<=1;pc_id_q<=heartbeat_data[119:112];pc_phase_q<=heartbeat_data[111:104];
+            pc_seen<=1;pc_id_q<=heartbeat_data[119:112];
+            // UART context keeps the scene in bits 2:0; 4:3 carry 1x/2x/3x.
+            // The overview sentinel remains FF; old main boards report 1x.
+            pc_phase_q<=heartbeat_data[111:104]==8'hff ? 8'hff :
+                        {3'd0,heartbeat_data[18:17],heartbeat_data[106:104]};
             pc_active_q<=heartbeat_data[127:120]==2&&heartbeat_data[111:104]<=4;
             pc_paused_q<=heartbeat_data[68];
             pc_emergency_q<=heartbeat_data[95:88]!=0;

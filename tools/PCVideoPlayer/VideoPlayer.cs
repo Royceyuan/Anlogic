@@ -75,6 +75,8 @@ static class Protocol
         foreach (byte b in context) if (decoder.Feed(b,out seq,out flags)) throw new Exception("Context CRC rejection");
         foreach (byte b in ack) decoder.Feed(b,out seq,out flags);
         if (decoder.HasContext) throw new Exception("Legacy ACK compatibility");
+        if(PlaybackSpeed(0)!=1||PlaybackSpeed(8)!=2||PlaybackSpeed(16)!=3||
+           PlaybackSpeed(24)!=1||PlaybackSpeed(255)!=1) throw new Exception("Playback speed context");
         VideoSettings.SelfTest();
         if(!OutputReady(11,false)||OutputReady(11,true)||!OutputReady(43,true)||
            OutputReady(47,true)||OutputReady(139,false)) throw new Exception("Output readiness / emergency lease");
@@ -86,6 +88,8 @@ static class Protocol
     { return (state&0x49)==9 ? 5 : (state & 0x4b) == 3 && artifact < 5 ? artifact : -1; }
     internal static bool OutputReady(byte flags,bool emergency)
     { return (flags&0x8f)==11&&(!emergency||(flags&32)!=0); }
+    internal static int PlaybackSpeed(byte scene)
+    { int index=(scene>>3)&3;return scene==255||index==3 ? 1 : index+1; }
 }
 
 sealed class VideoSettings
@@ -225,6 +229,7 @@ sealed class ControllerWindow : Window
     VideoSettings settings = new VideoSettings();
     bool contextKnown,contextAvailable,nextContext=true,autoSession,autoHold,configuring,settingsValid=true;
     byte museumArtifact=255,museumState,museumScene=255;
+    int museumSpeed=1;
     int activeArtifact=-1,failedArtifact=-1;
     DateTime contextAt;
     DateTime fileCheckedAt;
@@ -290,6 +295,11 @@ sealed class ControllerWindow : Window
                 if(!ReferenceEquals(surface,taken)||!ReferenceEquals(prepared,taken.Media)||taken.Media.Source.LocalPath!=warmed||
                    !ReferenceEquals(taken.Content,prepared)||window.emergencyCacheWindow!=null||window.EmergencyPrepared)
                     throw new Exception("Emergency handoff recreated its surface or media");
+                window.video=taken;window.autoSession=true;window.activeArtifact=4;window.phase=Phase.Paused;
+                window.museumState=7;window.museumArtifact=4;window.museumSpeed=3;window.fileCheckedAt=DateTime.UtcNow;
+                window.UpdateAutomatic();
+                if(taken.Media.SpeedRatio!=3||window.phase!=Phase.Paused) throw new Exception("Paused linked video speed");
+                window.video=null;window.autoSession=false;window.phase=Phase.Idle;
                 taken.Media.Close();taken.Close();
             } finally { if(File.Exists(warmed)) File.Delete(warmed); }
         } finally { window.Close();app.Shutdown(); }
@@ -516,9 +526,10 @@ sealed class ControllerWindow : Window
         if (acknowledgedCommand==5) {
             contextKnown=true;contextAvailable=context;
             if(!context) { flags=(byte)(flags&127);mainStatus.Text="旧版副板bit：可手动播放，不能联动。";if(AutoEnabled) automatic.IsChecked=false;return; }
-            museumArtifact=artifact;museumState=state;museumScene=scene;contextAt=DateTime.UtcNow;
+            museumArtifact=artifact;museumState=state;museumScene=scene==255 ? (byte)255 : (byte)(scene&7);
+            museumSpeed=Protocol.PlaybackSpeed(scene);contextAt=DateTime.UtcNow;
             mainStatus.Text="主板："+((state&8)!=0 ? "应急" : (state&1)==0 ? "失联/未就绪" : (state&64)!=0 ? "启动/故障/恢复" : (state&2)==0 ? "总览" : (state&4)!=0 ? "暂停" : "展示")+
-                "  |  文物 "+(artifact<5 ? artifact.ToString() : "--")+"  |  "+((state&16)!=0 ? "手动浏览" : "自动讲解")+
+                "  |  文物 "+(artifact<5 ? artifact.ToString() : "--")+"  |  "+((state&16)!=0 ? "手动浏览" : "自动讲解 "+museumSpeed+"×")+
                 (AutoEnabled ? "  |  应急首帧："+(EmergencyPrepared ? "已缓存" : activeArtifact==5 ? "使用中" : emergencyCache!=null ? "准备中" : emergencyFailedPath!=null&&emergencyFailedPath==settings.Videos[5] ? "准备失败" : "未缓存") : "");
         }
         if ((flags & 128) != 0) { if(autoSession) { autoHold=true;failedArtifact=activeArtifact; } StopVideo("副板拒绝授权：请检查信源和主板状态，重新开启联动可重试。"); return; }
@@ -713,6 +724,7 @@ sealed class ControllerWindow : Window
         }
         if(autoSession&&desired!=activeArtifact) { StopVideo("实际展示文物变化，先撤销上一视频。");return; }
         if(video!=null && (phase==Phase.Playing||phase==Phase.Paused) && autoSession) {
+            video.Media.SpeedRatio=activeArtifact==5 ? 1 : museumSpeed;
             bool paused=activeArtifact!=5&&(museumState&4)!=0;
             if(paused && phase==Phase.Playing) { video.Media.Pause();phase=Phase.Paused;SetStatus("联动视频随主板暂停。"); }
             if(!paused && phase==Phase.Paused) { video.Media.Play();phase=Phase.Playing;SetStatus("联动视频随主板继续，静音循环。"); }
@@ -755,6 +767,7 @@ sealed class ControllerWindow : Window
                 if (releaseAt == DateTime.MaxValue) releaseAt = now.AddMilliseconds(autoSession ? activeArtifact==5 ? 0 : 100 : 700);
                 if (now >= releaseAt) {
                     video.Media.IsMuted=autoSession;
+                    video.Media.SpeedRatio=autoSession&&activeArtifact!=5 ? museumSpeed : 1;
                     if(autoSession&&activeArtifact!=5&&(museumState&4)!=0) { video.Media.Pause();phase=Phase.Paused; }
                     else { video.Media.Play();phase=Phase.Playing; }
                     SetStatus(autoSession ? activeArtifact==5 ? "应急疏散指引：静音循环，解除应急立即返回本地。" : "联动展示：文物"+activeArtifact+"，静音循环，暂停随主板。" : "正在播放；视频和声音均走HDMI，停止后回到本地内容。");

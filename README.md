@@ -2,11 +2,19 @@
 
 适用安路HX4S20C（EG4S20BG256）。包含本地轮播/简介、应急图、两栏说明页、双板以太网控制、自动/手动同步，以及USB串口授权的PC HDMI音视频联动。
 
-2026-10-13，共用载波基线获用户确认换源黑屏缩短至可接受范围。2026-10-17，用户确认启动同步新版“ok没问题”，现作为正式发布；不宣称零黑屏、量化光学延迟或未经执行的长测通过。
+### 当前发布：跟随主板倍速（2026-10-17 上板通过）
 
-### 当前发布：启动时同步 SW3（2026-10-17 上板通过）
+主板自动讲解KEY3新增1×/2×/3×循环，副板从主板实际心跳的保留位取得速度，并通过既有串口快照传给播放器；原四组副板画面控制、SW3自动/手动、SW4说明页不变。说明页中的主板KEY3文字已同步更新，字库可用`scripts/generate_help_font.py`重建，仍为5块字库BRAM32K。HDMI捕获端30位重复符号比较拆为两个并行15位比较，符号和控制字延迟保持不变；RGB、音频岛、前导及保护带逐字回归已通过。
 
-- 当前 bit：`release/dual_fpga_museum_terminal_secondary_board_startup_sync.bit`，SHA256 `777248242971AE2621A97E2C65A42345A28F4C3776B2E7CE044A1858700A47E4`。旧共用载波 bit 已移入工程外 rubbish；历史清单及成功种子保留。
+当前bit：`release/dual_fpga_museum_terminal_secondary_board_playback_speed.bit`，SHA-256 `086A1C2242E5A7958066E342676A93FAFB6FAF95AF097337BE6F569D499F0F74`。seed=8，setup +0.151ns、hold +0.021ns、TNS均0，DRC/bitgen通过；LUT12494、FF8216、Slice7070/9800、BRAM9K28、BRAM32K13、DSP5、PLL4。相较已验收基线，Slice少31，LUT多92、FF多9，BRAM/DSP/PLL不变。证据在`seed/playback_speed`；用户确认“通过，整理，commit并push”，本轮记录为**上板通过**。旧`startup_sync`位流及清单归档到工程外`rubbish/playback_speed_board_pass_20261017/secondary`，成功种子仍保留。重编时以`SECONDARY_BUILD=./_build_playback_speed_v2`调用原`scripts/synthesize_and_route.tcl`，再设置`SECONDARY_BIT=./release/dual_fpga_museum_terminal_secondary_board_playback_speed.bit`调用原`scripts/generate_bitstream.tcl`；后者仍校验时序和源码时效。
+
+新播放器的文物联动视频跟随主板1×/2×/3×以及暂停/继续，切速不重开视频；应急片和独立手动播放仍为1×。当前EXE为`tools/PCVideoPlayer/MuseumPCVideoPlayer.exe`，SHA-256 `15AE7EE447EA4A254C935C054AED0895CAB837F1F5CC9FF0B97DFFCB06AB1490`，已重新构建并通过报文及联动自检。视频状态联动存在网络、串口和Windows调度延迟，不等同于逐采样锁相同步。要演示完整倍速，请配套两板倍速发布bit与新播放器。
+
+2026-10-13，共用载波基线获用户确认换源黑屏缩短至可接受范围。2026-10-17，启动同步及随后的倍速版本均获用户认可，当前发布为倍速版；不宣称零黑屏、量化光学延迟或未经执行的长测通过。
+
+### 历史基线：启动时同步 SW3（2026-10-17 上板通过，位流已归档）
+
+- 当时发布 bit：`dual_fpga_museum_terminal_secondary_board_startup_sync.bit`，SHA256 `777248242971AE2621A97E2C65A42345A28F4C3776B2E7CE044A1858700A47E4`。该历史 bit 已移入工程外 rubbish；历史清单及成功种子保留。
 - 原因：主板 SD 初始化完成后就会上报总览状态，但五栏缓存未完成时仍会对模式切换返回 BUSY。原副板累计尝试十次后停止，后续主板就绪也不再自动同步；这与“启动前 SW3 已为 1，必须再拨动才生效”相符。
 - 修复：复用既有 HELLO、状态查询及 SW3 实际状态核对，不新增报文。取消整个会话的十次同步上限；不匹配时仅随新心跳再试，匹配即停止。单条报文的有界重传、能力校验、失联/应急/恢复保护不变。
 - 验证：旧代码在超过十次暂不接受的测试中失败，修复后通过；覆盖真实拨码消抖（上电前 SW3=1）、等待新状态、匹配后停止、无新心跳不连续发送，以及原四组按键/手动/恢复测试。`sim/run_secondary_main5e_keys.do` 与 `sim/run_secondary_main5e_endpoint.do` 通过。
@@ -17,11 +25,11 @@
 
 - TD入口：`dual_fpga_museum_terminal_secondary_board.al`。
 - RTL顶层：`src/secondary/top_secondary_hdmi_museum.v`，模块名`top_secondary_hdmi_museum`。
-- 当前已验收bit：`release/dual_fpga_museum_terminal_secondary_board_startup_sync.bit`，654090字节。
-- SHA256：`777248242971AE2621A97E2C65A42345A28F4C3776B2E7CE044A1858700A47E4`；校验文件为bit路径加`.sha256`。
-- 发布清单：`release/manifest_secondary_startup_sync.json`；成功种子8及最终证据在`seed/startup_sync`。历史种子7保留在`seed/continuous_carrier`。
+- 当前已验收bit：`release/dual_fpga_museum_terminal_secondary_board_playback_speed.bit`，654090字节。
+- SHA256：`086A1C2242E5A7958066E342676A93FAFB6FAF95AF097337BE6F569D499F0F74`；校验文件为bit路径加`.sha256`。
+- 发布清单：`release/manifest_playback_speed.json`；成功种子8及最终证据在`seed/playback_speed`。历史种子7保留在`seed/continuous_carrier`。
 - 必要播放器：`tools/PCVideoPlayer/MuseumPCVideoPlayer.exe`，源码、重编脚本、图标、壁纸及校验值同目录，无需Python或第三方播放器。
-- release只保留当前已验收bit；旧bit、构建数据库和仿真工作库移入工程外rubbish，可恢复。完整播放器、正式视频、复现输入、源码/IP、构建脚本及回归源码均保留。历史成功种子及原始报告不删除，历史清单集中在`seed/release_history`，其中旧路径只表示当时产物，不是当前编译依赖。
+- release只保留最新已验收bit及校验/清单；旧bit、构建数据库和仿真工作库移入工程外rubbish，可恢复。完整播放器、正式视频、复现输入、源码/IP、构建脚本及回归源码均保留。历史成功种子及原始报告不删除，历史清单集中在`seed/release_history`，其中旧路径只表示当时产物，不是当前编译依赖。
 
 ## 2. 接线、视频和优先级
 
@@ -77,7 +85,7 @@ CMD：01 START（输入有效且没有已知应急）、02 STOP、03 QUERY、04 
 | 6 | 启动、媒体故障或非应急的应用恢复；主板mode=3、应急有效且无媒体错误时，bit70的持续忙标志属于应急保持，不置此位 |
 | 7 | 最终全貌结束停留状态 |
 
-ARTIFACT为主板心跳中的文物0～4，启动未收到心跳时FF；失联保留最近已知编号但STATE bit0清0，软件不可据此启动。总览时该编号是当前高亮，STATE bit1为0；进入后才是实际展示文物。PHASE为实际图片槽0～4或总览FF。快照三个字段在应答开头锁存，避免串行发送期间被新心跳污染。
+ARTIFACT为主板心跳中的文物0～4，启动未收到心跳时FF；失联保留最近已知编号但STATE bit0清0，软件不可据此启动。总览时该编号是当前高亮，STATE bit1为0；进入后才是实际展示文物。PHASE=FF仍表示总览；否则`PHASE[2:0]`为实际图片槽0～4、`PHASE[4:3]`为速度索引0/1/2对应1×/2×/3×，其余位为0，速度索引3按保留值回退1×。速度来自主板HEARTBEAT整体位`[18:17]`，旧主板该位为0；主板DISPLAY_STATUS整体位`[44:43]`也报告同一索引。快照三个字段在应答开头锁存，避免串行发送期间被新心跳污染。
 
 新增CMD **10～14（十六进制）**分别请求文物0～4的联动授权，继续返回原5字节ACK。硬件要求信源就绪、主板新鲜且实际展示该文物、无应急/恢复；把文物编号编码进命令，避免查询之后文物改变却授权旧文件。联动租约在实际文物改变、展示退出、心跳失效或恢复时撤销；旧01手动播放不要求双板在线，但仍受应急覆盖。
 
@@ -102,7 +110,7 @@ LED/数码管保留原媒体加载意义，不是独立诊断的A/B/C页，LED4�
 | IMAGEA.BMP | assets/secondary_emergency_720p_v2 | 应急图，同上 |
 | IMAGEB.BMP | assets/secondary_help | 说明背景，160×90，24-bit未压缩BMP |
 
-说明文字由FPGA叠加，中文ROM已在`src/secondary/secondary_help_font.vh`中，可直接综合。背景源PNG及辅助生成工具移入rubbish；仅在重新设计字库/背景时需恢复，不影响当前编译。不要混入旧尺寸或压缩BMP；上下方向、行填充和跨簇读取已有回归。
+说明文字由FPGA叠加，中文ROM已在`src/secondary/secondary_help_font.vh`中，可直接综合。修改文字后在工程根目录运行`py -3 scripts/generate_help_font.py`重建字库；需Pillow及Windows微软雅黑/Consolas字体，正常FPGA编译无此依赖。背景仍使用现成IMAGEB.BMP，重建字库不写TF。不要混入旧尺寸或压缩BMP；上下方向、行填充和跨簇读取已有回归。
 
 ## 4. 副板控制与通信
 
@@ -166,24 +174,24 @@ SW3=0请求自动讲解，=1请求手动浏览；以主板实际回报为准，�
 4. 当前种子**8**；ADC固定共享PLL x000y000、接收PLL x000y071。当前共用出口已移除旧DDR发送pair bank，构建Tcl只在旧bank实际存在时应用局部布局。GUI默认流程不包含全部门禁，完整复现以脚本为准。
 5. bitgen拒绝setup/hold违例、TNS非0、多驱动/异常路径、陈旧数据库或缺失依赖。新bit板测后再发布，不把编译成功等同于上板通过。
 
-发布STA：setup +0.051ns、hold +0.022ns，TNS均0；共用载波两种实际时钟模式均检查。相关50MHz域未作为假CDC屏蔽。功能上板通过不等于完成量化动态眼图/电气裕量验证。原厂SDRAM位置提示PHY-7002及一个局部时钟段PHY-5079保留并披露，重定位后实际路径纳入STA；无多驱动/异常路径，PLL分频/相位未为闭合时序更改。
+发布STA：setup +0.151ns、hold +0.021ns，TNS均0；共用载波两种实际时钟模式均检查。相关50MHz域未作为假CDC屏蔽。功能上板通过不等于完成量化动态眼图/电气裕量验证。原厂SDRAM位置提示PHY-7002及一个局部时钟段PHY-5079保留并披露，重定位后实际路径纳入STA；无多驱动/异常路径，PLL分频/相位未为闭合时序更改。
 
 ## 7. 资源、回归与成功种子
 
 | 资源 | 当前已验收版本 |
 |---|---:|
-| LUT | 12402/19600，63.28% |
-| FF | 8207/19600，41.87% |
-| Slice | 7101/9800，72.46% |
+| LUT | 12494/19600，63.74% |
+| FF | 8216/19600，41.92% |
+| Slice | 7070/9800，72.14% |
 | BRAM9K | 28/64 |
 | BRAM32K | 13/16 |
 | DSP | 5/29 |
 | PLL | 4/4 |
 | GCLK | 11/16 |
 
-setup +0.051ns、hold +0.022ns，TNS均0；现有PHY7002位置提示和PHY5079局部时钟布线提示保留披露。当前报告及启动同步回归在`seed/startup_sync`，历史共用载波报告及96项输入校验仍在`seed/continuous_carrier`。本轮未修改播放器或HDMI链路。
+setup +0.151ns、hold +0.021ns，TNS均0；现有PHY7002位置提示和PHY5079局部时钟布线提示保留披露。当前报告、源码校验及本轮回归在`seed/playback_speed`，历史启动同步和共用载波种子/报告保留。本轮修改了播放器速度联动及接收符号比较，未改变HDMI时钟或授权协议。
 
-共用载波基线硬件回归共79条PASS，覆盖缓冲、公共输出、实际I/O和PLL模型、页面字形、UART及按键；具体命令和仿真边界见第10节。本轮启动同步另行完成按键与协议端点回归，未重复声称运行全部基线测试。其他已有回归源码保留在sim，ModelSim工作库和日志可重新生成；`run_secondary_frame_store_alignment.do`从工程根目录运行，其余以do脚本内相对路径为准，通常从sim运行。历史成功seed不删除，报告旧路径不是重编依赖。
+共用载波基线硬件回归共79条PASS，覆盖缓冲、公共输出、实际I/O和PLL模型、页面字形、UART及按键；具体命令和仿真边界见第10节。本轮倍速完成7组回归，覆盖符号缓冲、说明页、协议/按键/重连、UART和帧交接；日志清单在`seed/playback_speed/validation.json`，不声称重新运行全部历史测试。其他已有回归源码保留在sim，ModelSim工作库和日志可重新生成；`run_secondary_frame_store_alignment.do`从工程根目录运行，其余以do脚本内相对路径为准，通常从sim运行。历史成功seed不删除，报告旧路径不是重编依赖。
 
 ## 8. 验收与整理边界
 
@@ -227,7 +235,7 @@ Start-Process .\tools\PCVideoPlayer\MuseumPCVideoPlayer.exe -ArgumentList '--med
 
 ### 编译与复现
 
-使用唯一 `.al` 入口，或在副板根目录运行 `powershell -ExecutionPolicy Bypass -File .\scripts\build.ps1`。脚本完整执行综合、布局布线、STA及bitgen；时序和依赖门禁拒绝不合格或过期数据库。当前成功布局种子为7，证据保存在 `seed/continuous_carrier`，`source_hashes.json`记录96项源码/依赖/构建脚本校验值。
+使用唯一 `.al` 入口，或在副板根目录运行 `powershell -ExecutionPolicy Bypass -File .\scripts\build.ps1`。脚本完整执行综合、布局布线、STA及bitgen；时序和依赖门禁拒绝不合格或过期数据库。当前成功布局种子为8，证据保存在 `seed/playback_speed`，`source_sha256.json`记录本轮源码/依赖/构建脚本校验值；历史种子7与96项输入校验另存 `seed/continuous_carrier`。
 
 历史共用载波基线布局布线：setup +0.023ns、hold +0.022ns，TNS均0。LUT12421/19600（63.37%），FF8207/19600（41.87%），Slice7073/9800（72.17%），BRAM9K28/64，BRAM32K13/16，DSP5/29，PLL4/4，GCLK11/16。此处仅说明该阶段结果，当前发布资源和时序以第7节为准。无多驱动/异常时序路径；保留原PHY7002位置提示和SDRAM时钟本地布线PHY5079提示。
 
