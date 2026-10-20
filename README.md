@@ -1,5 +1,11 @@
 # 双FPGA双屏博物馆展陈与应急信息终端——副板工程
 
+## 队友交付入口：640×480、30fps离线播放
+
+已上板通过的独立版本在`secondary_tf_video_480p.al`，bit为`experiments/tf_video/secondary_tf_video_640x480_30fps_guard8.bit`。匹配TF素材压缩包、原始MP4、完整转换工具及FFmpeg运行库均已随仓库交付，不需要其他工程目录。先运行`tools/OfflineVideo/prepare_480p_demo.ps1`解压并校验，再将VIDEO0.BIN放入TF根目录。
+
+详见[队友快速开始](experiments/tf_video/队友快速开始_640x480_30fps.md)。远程副板分支名为`secondary-main5e`；本交付不含960×540试验或Anlogic3开发中的集成内容。下文保留博物馆主入口和历史开发记录，使用独立视频时请优先按快速开始文档操作。
+
 适用安路HX4S20C（EG4S20BG256）。包含本地轮播/简介、应急图、两栏说明页、双板以太网控制、自动/手动同步，以及USB串口授权的PC HDMI音视频联动。
 
 ### 开发中：TF离线视频独立验证（2026-10-20）

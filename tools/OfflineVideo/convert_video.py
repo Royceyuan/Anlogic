@@ -15,6 +15,7 @@ import zlib
 
 WIDTH, HEIGHT = 640, 360
 FRAME_BYTES = WIDTH * HEIGHT * 2
+BUNDLED_FFMPEG = Path(__file__).resolve().parent / 'ffmpeg' / 'ffmpeg.exe'
 
 
 def make_header(frames, fps=30, height=360):
@@ -156,7 +157,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--input', type=Path)
     parser.add_argument('--output', type=Path)
-    parser.add_argument('--ffmpeg', default=shutil.which('ffmpeg'))
+    parser.add_argument('--ffmpeg', default=str(BUNDLED_FFMPEG) if BUNDLED_FFMPEG.is_file() else shutil.which('ffmpeg'))
     parser.add_argument('--fps', type=int, choices=(30, 40), default=30,
                         help='Must match FPGA build; default: 30')
     parser.add_argument('--height', type=int, choices=(360, 480), default=360,

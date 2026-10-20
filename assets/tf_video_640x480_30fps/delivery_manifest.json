@@ -1,0 +1,17 @@
+{
+  "baseline_commit": "3c7f9fab4a44b34d0794c90914991b4a19bcb8ba",
+  "width": 640,
+  "height": 480,
+  "fps": 30,
+  "frames": 2471,
+  "format": "MVID v1 RGB565-BE silent",
+  "video_bytes": 1518182912,
+  "video_sha256": "f438803d459b7f0eb9b9a9859f5fb194d25825a7f64ea8ad29381699276f89dc",
+  "archive_bytes": 171176006,
+  "archive_sha256": "c7afbf3997062a4f6802b872dce948699e73682bacf281ac72dd067bebd17d61",
+  "bit_sha256": "5bd282f37b470f62cf5eeeeb20ad599014115c31803edee413f19e94b8f3707c",
+  "source_sha256": "3c3703814ac45d6b9e54e394753dd758c280b6af34cd549bddbc0671cf204670",
+  "archive_readback_verified": true,
+  "board_playback_verified": true,
+  "hardware_retested_this_delivery": false
+}

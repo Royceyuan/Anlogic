@@ -48,3 +48,7 @@ seed/playback_speed/* -text -whitespace
 seed/playback_speed/*.json text whitespace
 seed/tf_read_probe/** -text -whitespace
 seed/tf_video/** -text -whitespace
+assets/tf_video_640x480_30fps/*.zip filter=lfs diff=lfs merge=lfs -text
+tools/OfflineVideo/ffmpeg/*.exe filter=lfs diff=lfs merge=lfs -text
+tools/OfflineVideo/ffmpeg/*.dll filter=lfs diff=lfs merge=lfs -text
+tools/OfflineVideo/ffmpeg_license/** -text -whitespace
