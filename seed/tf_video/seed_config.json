@@ -1,0 +1,22 @@
+{
+  "project": "secondary_tf_video.al",
+  "top": "top_secondary_tf_video",
+  "tool": "Tang Dynasty 6.2.168116",
+  "device": "EG4S20BG256",
+  "seed": 8,
+  "bit": "experiments/tf_video/secondary_tf_video.bit",
+  "bit_sha256": "83c61e691c8c7c1e5c03ccb3ccbf30b15010c7dfce88067be4e8f5ee89974999",
+  "setup_ns": 0.104,
+  "hold_ns": 0.037,
+  "tns_ns": 0,
+  "lut": 4933,
+  "registers": 3285,
+  "bram9k": 8,
+  "dsp": 0,
+  "pll": 2,
+  "board_playback_verified": false,
+  "inherited_warnings": [
+    "PHY-7002: existing SDRAM hard macro relocation",
+    "PHY-5079: only PLL C2 to existing SDRAM forwarded clock sink"
+  ]
+}

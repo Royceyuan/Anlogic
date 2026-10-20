@@ -46,3 +46,5 @@ seed/continuous_carrier/* -text -whitespace
 seed/continuous_carrier/*.json text whitespace
 seed/playback_speed/* -text -whitespace
 seed/playback_speed/*.json text whitespace
+seed/tf_read_probe/** -text -whitespace
+seed/tf_video/** -text -whitespace

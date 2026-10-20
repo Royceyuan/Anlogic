@@ -1,0 +1,7 @@
+PASS MBR mount, fragmented root and video chains, all frame bytes, EOF loop
+PASS bad MVID header/CRC rejected
+PASS isolated header CRC32 corruption rejected
+PASS mismatched file length rejected
+PASS premature FAT EOC rejected without publication
+PASS transport failure after payload prevents frame publication
+PASS fat32_mvid_reader all checks

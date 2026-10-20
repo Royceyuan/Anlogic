@@ -11,7 +11,8 @@ module frame_read_write
 	parameter WRITE_BURST_SIZE       = BURST_SIZE,
 	parameter READ_BURST_SIZE        = BURST_SIZE,
 	parameter READ_FIFO_OUTREG       = "NOREG",
-	parameter READ_LOOP              = 1'b0
+	parameter READ_LOOP              = 1'b0,
+	parameter TURNAROUND_CYCLES      = 0
 ) 
 (
 	input                            rst,                  
@@ -102,8 +103,24 @@ wire                                 write_fifo_aclr;            // FIFO asynchr
 wire O_wr_busy;
 wire O_rd_busy;
 
-assign App_wr_busy = O_wr_busy;//下个时钟写指令拉高
-assign App_rd_busy = O_rd_busy;//读指令还没有过去十个时钟;因为写指令优先，不需要在意下个时钟是否是读指令
+generate if (TURNAROUND_CYCLES == 0) begin : original_arbitration
+    assign App_wr_busy = O_wr_busy;
+    assign App_rd_busy = O_rd_busy;
+end else begin : guarded_arbitration
+    // Reserve the bus after the final command AND final returned read word.
+    // Only burst entry is delayed; never interrupt an active SDRAM burst.
+    reg [TURNAROUND_CYCLES-1:0] write_tail, read_tail;
+    always @(posedge mem_clk or posedge rst)
+        if (rst) begin
+            write_tail <= 0;
+            read_tail <= 0;
+        end else begin
+            write_tail <= (write_tail << 1) | App_wr_en;
+            read_tail <= (read_tail << 1) | (App_rd_en | Sdr_rd_en);
+        end
+    assign App_wr_busy = O_wr_busy | (|write_tail) | Sdr_busy;
+    assign App_rd_busy = O_rd_busy | (|read_tail) | Sdr_busy;
+end endgenerate
 assign App_wr_dm = 4'b0000;
 // Reset both asynchronous FIFOs with the transaction controllers.  Previously
 // rst cleared only the controllers; FIFO pointers could survive a board reset.

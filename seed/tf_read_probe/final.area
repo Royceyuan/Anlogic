@@ -1,0 +1,97 @@
+standard
+***Report Model: top_secondary_tf_read_probe Device: EG4S20BG256***
+
+IO Statistics
+#IO                        28   out of    188   14.89%
+  #input                    2
+  #output                  21
+  #inout                    5
+
+Utilization Statistics
+#lut                     1213   out of  19600    6.19%
+#reg                      663   out of  19600    3.38%
+#le                      1267
+  #lut only               604   out of   1267   47.67%
+  #reg only                54   out of   1267    4.26%
+  #lut&reg                609   out of   1267   48.07%
+#bram                       0   out of     64    0.00%
+  #bram9k                   0
+  #fifo9k                   0
+#bram32k                    0   out of     16    0.00%
+#dsp                        0   out of     29    0.00%
+#pad                       28   out of    188   14.89%
+  #ireg                     5
+  #oreg                     4
+  #treg                     0
+#pll                        1   out of      4   25.00%
+#gclk                       2   out of     16   12.50%
+
+
+Detailed IO Report
+
+     Name        Direction    Location    IOStandard    IOType    DriveStrength    PullType    PackReg  
+    clk_50m        INPUT         R7        LVCMOS25      PAD           N/A           NONE       NONE    
+  key_reset_n      INPUT         A2        LVCMOS33      PAD           N/A           NONE       NONE    
+    led[3]        OUTPUT        B12        LVCMOS33      PAD            8            NONE       NONE    
+    led[2]        OUTPUT        C10        LVCMOS33      PAD            8            NONE       OREG    
+    led[1]        OUTPUT         A3        LVCMOS33      PAD            8            NONE       OREG    
+    led[0]        OUTPUT         A4        LVCMOS33      PAD            8            NONE       OREG    
+    sd_clk        OUTPUT        A14        LVCMOS33      PAD            8            NONE       OREG    
+  seg_data[7]     OUTPUT         A6        LVCMOS33      PAD            8            NONE       NONE    
+  seg_data[6]     OUTPUT         A7        LVCMOS33      PAD            8            NONE       NONE    
+  seg_data[5]     OUTPUT         A8        LVCMOS33      PAD            8            NONE       NONE    
+  seg_data[4]     OUTPUT         B5        LVCMOS33      PAD            8            NONE       NONE    
+  seg_data[3]     OUTPUT         A5        LVCMOS33      PAD            8            NONE       NONE    
+  seg_data[2]     OUTPUT         B6        LVCMOS33      PAD            8            NONE       NONE    
+  seg_data[1]     OUTPUT        C16        LVCMOS33      PAD            8            NONE       NONE    
+  seg_data[0]     OUTPUT        C15        LVCMOS33      PAD            8            NONE       NONE    
+  seg_sel[7]      OUTPUT        F16        LVCMOS33      PAD            8            NONE       NONE    
+  seg_sel[6]      OUTPUT        E16        LVCMOS33      PAD            8            NONE       NONE    
+  seg_sel[5]      OUTPUT        E12        LVCMOS33      PAD            8            NONE       NONE    
+  seg_sel[4]      OUTPUT        E10        LVCMOS33      PAD            8            NONE       NONE    
+  seg_sel[3]      OUTPUT        C13        LVCMOS33      PAD            8            NONE       NONE    
+  seg_sel[2]      OUTPUT        F10        LVCMOS33      PAD            8            NONE       NONE    
+  seg_sel[1]      OUTPUT        E11        LVCMOS33      PAD            8            NONE       NONE    
+  seg_sel[0]      OUTPUT        D11        LVCMOS33      PAD            8            NONE       NONE    
+    sd_cmd         INOUT        A13        LVCMOS33      PAD            8           PULLUP      IREG    
+   sd_dat[3]       INOUT        A12        LVCMOS33      PAD            8           PULLUP      IREG    
+   sd_dat[2]       INOUT        A11        LVCMOS33      PAD            8           PULLUP      IREG    
+   sd_dat[1]       INOUT        B15        LVCMOS33      PAD            8           PULLUP      IREG    
+   sd_dat[0]       INOUT        B14        LVCMOS33      PAD            8           PULLUP      IREG    
+
+Report Clock Domain Luts:
+
+--------------------------------------------------------------------------------------------------------------------
+  Index   |  Name           |  Frequency   |  LUT As Logic   |  LUT As Shifter   |  LUT As Dram   |  BRAM   |  DSP
+--------------------------------------------------------------------------------------------------------------------
+  #1      |  u_pll.clkc[0]  |  100MHz      |  534            |  0                |  0             |  0      |  0
+--------------------------------------------------------------------------------------------------------------------
+
+Clock Resource Statistics
+Index     ClockNet         Type               DriverType         Driver              Fanout
+#1        clock_raw        Global             pll                u_pll.clkc0         438
+#2        clk_50m_dup_1    GeneralRouting     io                 clk_50m_syn_2.di    1
+#3        feedback_raw     Global             pll                u_pll.clkc1         0
+
+Report Hierarchy Area:
++-------------------------------------------------------------------------------------------------+
+|Instance      |Module                      |le      |lut     |ripple  |seq     |bram    |dsp     |
++-------------------------------------------------------------------------------------------------+
+|top           |top_secondary_tf_read_probe |1267    |1082    |131     |672     |0       |0       |
+|  u_reader    |sd_native_read              |1025    |910     |100     |547     |0       |0       |
+|    u_command |sd_native_command           |242     |218     |24      |136     |0       |0       |
+|    u_data    |sd_native_data_rx           |316     |297     |19      |194     |0       |0       |
++-------------------------------------------------------------------------------------------------+
+
+
+DataNet Average Fanout:
+
+   Index     Fanout    Nets  
+    #1         1       727   
+    #2         2       461   
+    #3         3        99   
+    #4         4        52   
+    #5        5-10      84   
+    #6       11-50      51   
+    #7       51-100     7    
+  Average     2.93           

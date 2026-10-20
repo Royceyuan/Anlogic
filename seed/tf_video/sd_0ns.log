@@ -1,0 +1,7 @@
+PASS native SDHC initialization, HS switch, CMD18/CMD12, four CRC-verified blocks
+PASS independent DAT2 CRC rejection; invalid block not verified
+PASS response CRC rejection
+PASS unsupported HS safely remains at default 25 MHz
+PASS bad data end bit rejection
+PASS missing response timeout
+PASS sd_native_read all checks

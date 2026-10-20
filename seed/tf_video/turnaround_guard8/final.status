@@ -1,0 +1,26 @@
+Location         : D:\VSCode\CodeFiles\Git_TD\Anlogic2
+Running with     : Tang Dynasty v6.2.168116
+                   Copyright (c) 2012-2025 Anlogic Inc.
+Top Model        : top_secondary_tf_video
+Device           : EG4S20BG256
+Speed            : NA
+
+Timing Mode      : final
+Setup            : WNS   105ps  TNS        0ps  NUM_FEPS     0
+Hold             : WNS    30ps  TNS        0ps  NUM_FEPS     0
+
+Flow Statistics  :
+--------------------------------------------------------------------------------------------------
+     command     |  #calls  |  wall time  |  cpu time(s)  |  used memory(mb)  |  peak memory(mb)  
+--------------------------------------------------------------------------------------------------
+      route      |    1     |  32s(47%)   |    40(43%)    |        708        |        708        
+      place      |    1     |  14s(20%)   |    30(32%)    |        359        |        359        
+  optimize_gate  |    1     |  10s(14%)   |    10(10%)    |        298        |        298        
+  optimize_rtl   |    1     |  10s(14%)   |    10(10%)    |        244        |        272        
+    fix_hold     |    1     |   2s(2%)    |     2(2%)     |        709        |        709        
+  import_device  |    1     |   0s(0%)    |     0(0%)     |        83         |        83         
+    read_adc     |    1     |   0s(0%)    |     0(0%)     |        177        |        177        
+    read_sdc     |    1     |   0s(0%)    |     0(0%)     |        177        |        177        
+--------------------------------------------------------------------------------------------------
+      total      |    8     |    1m8s     |      92       |        709        |        709        
+--------------------------------------------------------------------------------------------------

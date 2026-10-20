@@ -33,3 +33,11 @@ Thumbs.db
 assets/emergency_video/_work/
 assets/exhibit_videos/final/*.partial.mp4
 !assets/exhibit_videos/orbit_validation/player_validation.log
+!seed/tf_video/*.log
+!seed/tf_video/*.area
+!seed/tf_video/**/*.log
+!seed/tf_video/**/*.area
+!seed/tf_read_probe/**/*.log
+!seed/tf_read_probe/**/*.area
+!seed/tf_read_probe/*.log
+!seed/tf_read_probe/*.area

@@ -12,7 +12,8 @@ module anlogic_frame_store #(
     parameter integer WRITE_BURST_SIZE = BURST_SIZE,
     parameter integer READ_BURST_SIZE  = BURST_SIZE,
     parameter READ_FIFO_OUTREG         = "NOREG",
-    parameter integer READ_LOOP     = 1
+    parameter integer READ_LOOP     = 1,
+    parameter integer TURNAROUND_CYCLES = 0
 )(
     input  wire                       mem_clk,
     input  wire                       mem_clk_sft,
@@ -71,7 +72,8 @@ frame_read_write #(
     .BURST_SIZE      (BURST_SIZE),
     .WRITE_BURST_SIZE(WRITE_BURST_SIZE),
     .READ_BURST_SIZE (READ_BURST_SIZE),
-    .READ_LOOP       (READ_LOOP)
+    .READ_LOOP       (READ_LOOP),
+    .TURNAROUND_CYCLES(TURNAROUND_CYCLES)
 ) u_frame_read_write (
     .rst             (~rst_n),
     .mem_clk         (mem_clk),
