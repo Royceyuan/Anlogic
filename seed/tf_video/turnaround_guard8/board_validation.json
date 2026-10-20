@@ -1,0 +1,15 @@
+{
+  "date": "2026-10-20",
+  "source_commit": "cec53ed",
+  "bit": "experiments/tf_video/secondary_tf_video_turnaround_guard8.bit",
+  "bit_sha256": "3078dbe550d90fbd6a8d36fb81b82c1d879463773922a748371f7316119d7854",
+  "width": 640,
+  "height": 360,
+  "nominal_fps": 30,
+  "board_playback_verified": true,
+  "left_edge_artifacts_observed": false,
+  "evidence": "User confirmed playback recovered after card reinitialization and then reported no noise",
+  "measured_average_fps": null,
+  "long_duration_stress_test": null,
+  "formal_museum_integration": false
+}
