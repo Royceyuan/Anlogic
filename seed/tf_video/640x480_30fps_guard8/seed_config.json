@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-20",
+  "project": "secondary_tf_video_480p.al",
+  "top": "top_secondary_tf_video",
+  "tool": "Tang Dynasty 6.2.168116",
+  "device": "EG4S20BG256",
+  "seed": 8,
+  "bit": "experiments/tf_video/secondary_tf_video_640x480_30fps_guard8.bit",
+  "bit_sha256": "5bd282f37b470f62cf5eeeeb20ad599014115c31803edee413f19e94b8f3707c",
+  "source_height": 480,
+  "source_width": 640,
+  "nominal_fps": 30,
+  "setup_ns": 0.109,
+  "hold_ns": 0.023,
+  "tns_ns": 0,
+  "lut": 5054,
+  "registers": 3354,
+  "bram9k": 8,
+  "dsp": 0,
+  "pll": 2,
+  "turnaround_cycles": 8,
+  "slot_word_addresses": [0, 153600, 307200],
+  "video_buffer_bytes": 1843200,
+  "source_hash_manifest": "source_hashes.json",
+  "board_playback_verified": false,
+  "measured_average_fps": null,
+  "status": "candidate: simulation, route timing and bitgen passed; board check pending",
+  "inherited_warnings": [
+    "PHY-7002: existing SDRAM hard macro relocation",
+    "PHY-5079: only PLL C2 to existing SDRAM forwarded clock sink"
+  ]
+}

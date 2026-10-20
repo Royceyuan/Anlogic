@@ -1,7 +1,7 @@
 `timescale 1ns/1ps
 `default_nettype none
-// Two source lines, not a 720p frame expansion. Each RGB565 pixel appears
-// exactly twice horizontally and vertically. Start during vertical blank.
+// Two source lines. 360 rows use 2x vertical repetition; 480 rows use 3:2.
+// Both 640-wide formats fill 1280x720; no full-size expanded frame is stored.
 module mvid_scale2x #(
     parameter integer WIDTH=640,HEIGHT=360
 )(
@@ -29,8 +29,12 @@ reg [8:0] word_index;
 reg [20:0] base;
 reg inflight;
 reg [1:0] ack_sync;
-wire bank=y[1];
-wire correct_line=line_ready[bank]&&((bank?line_tag1:line_tag0)==(y>>1));
+reg [8:0] source_row;
+reg [1:0] repeat_phase;
+wire [8:0] scan_row=HEIGHT==480?source_row:(y>>1);
+wire bank=scan_row[0];
+wire last_repeat=HEIGHT==480?(repeat_phase!=0):y[0];
+wire correct_line=line_ready[bank]&&((bank?line_tag1:line_tag0)==scan_row);
 assign read_len=WIDTH/2;
 assign read_en=state==DRAIN&&!fifo_empty&&!inflight;
 // Synchronous RAM read; control and odd/even pixel selection follow it.
@@ -51,13 +55,21 @@ always @(posedge clk or negedge rst_n) begin
     if(!rst_n) begin
         state<=IDLE;line_ready<=0;line_tag0<=0;line_tag1<=0;load_row<=0;
         word_index<=0;base<=0;inflight<=0;read_req<=0;read_base<=0;underflow<=0;ack_sync<=0;
+        source_row<=0;repeat_phase<=0;
     end else begin
         ack_sync<={ack_sync[0],read_ack};
         if(de&&!correct_line) underflow<=1;
-        if(de&&x==WIDTH*2-1&&y[0]) line_ready[bank]<=0;
+        if(de&&x==WIDTH*2-1) begin
+            if(last_repeat)line_ready[bank]<=0;
+            if(HEIGHT==480)begin
+                repeat_phase<=repeat_phase==2?0:repeat_phase+1'b1;
+                if(last_repeat)source_row<=source_row+1'b1;
+            end
+        end
         if(frame_begin) begin
             if(state!=IDLE&&state!=FREE) underflow<=1;
             line_ready<=0;base<=frame_base;load_row<=0;read_req<=0;inflight<=0;state<=FREE;
+            source_row<=0;repeat_phase<=0;
         end else case(state)
             FREE:if(load_row<HEIGHT&&!line_ready[load_row[0]]) begin
                 read_base<=base+(WIDTH==640?(({12'd0,load_row}<<8)+({12'd0,load_row}<<6)):

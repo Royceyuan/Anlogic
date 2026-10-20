@@ -1,8 +1,18 @@
 import_device eagle_s20.db -package EG4S20BG256
 set folder _build_tf_video
+set fps 30
+if {[info exists ::env(TF_VIDEO_FPS)]} {set fps $::env(TF_VIDEO_FPS)}
+if {$fps!=30} {error "Only 30fps is active; the 40fps experiment is archived in workspace rubbish"}
+set project secondary_tf_video.al
+set height 360
+if {[info exists ::env(TF_VIDEO_HEIGHT)]} {set height $::env(TF_VIDEO_HEIGHT)}
+if {$height ni {360 480}} {error "Unsupported TF_VIDEO_HEIGHT"}
+if {$height==480} {set folder _build_tf_video_480p;set project secondary_tf_video_480p.al}
 file mkdir $folder
-open_project secondary_tf_video.al -single_run
+open_project $project -single_run
 load_run_param -run syn_1
+puts "TF_VIDEO_FPS=$fps"
+puts "TF_VIDEO_HEIGHT=$height"
 elaborate -top top_secondary_tf_video
 read_adc constraints/secondary_tf_video.adc
 clear_sdc -user

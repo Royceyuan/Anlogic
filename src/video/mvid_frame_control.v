@@ -1,10 +1,10 @@
 `timescale 1ns/1ps
 `default_nettype none
-// Atomic two-slot ownership: writing -> SDRAM drained + SD CRC done ->
-// 30 Hz due -> vertical blank handover -> old display slot can be reused.
+// Owned slots: writing -> SDRAM drained + SD CRC done -> queued ->
+// FPS due -> vertical blank handover -> old display slot can be reused.
 module mvid_frame_control #(
-    parameter integer CLOCK_HZ=100_000_000,FRAME_BYTES=460800,
-    parameter integer VIDEO_BASE=1843200
+    parameter integer CLOCK_HZ=100_000_000,FRAME_BYTES=460800,FPS=30,
+    parameter integer VIDEO_BASE=1843200,SLOTS=2,THIRD_BASE=0
 )(
     input wire clk,rst_n,pause,
     input wire file_ready,movie_done,byte_valid,
@@ -20,36 +20,62 @@ module mvid_frame_control #(
     output reg [31:0] displayed_frames,
     output reg [7:0] error
 );
-localparam WAIT_FILE=0,ACK=1,ACK_LOW=2,LOAD=3,FLUSH=4,DUE=5,HANDOVER=6,FAILED=7;
+localparam WAIT_FILE=0,ACK=1,ACK_LOW=2,LOAD=3,FLUSH=4,FAILED=7;
 reg [2:0] state;
-reg slot,published_slot,publish_toggle,finished_seen,movie_seen;
+reg [1:0] slot,published_slot;
+reg publish_toggle,finished_seen,movie_seen;
 reg [1:0] ack_sync,finish_sync,display_ack_sync;
-reg display_ack,display_slot;
-reg [1:0] toggle_sync,slot_sync,pause_sync;
+reg display_ack;
+reg [1:0] display_slot,front_slot,next_publish;
+reg [2:0] occupied,ready_slots;
+reg front_valid,pending;
+reg [1:0] toggle_sync,slot_meta,slot_sync,pause_sync;
 reg [26:0] rate_phase;
 reg due;
 reg [23:0] bytes_received;
 reg [23:0] pack;
 assign write_len=FRAME_BYTES/4;
-assign write_base=VIDEO_BASE+(slot?FRAME_BYTES/4:0);
-assign display_base=VIDEO_BASE+(display_slot?FRAME_BYTES/4:0);
+function [20:0] slot_base;
+    input [1:0] index;
+    begin slot_base=index==2?THIRD_BASE:VIDEO_BASE+(index==1?FRAME_BYTES/4:0);end
+endfunction
+function [1:0] next_slot;
+    input [1:0] index;
+    begin next_slot=index==SLOTS-1?0:index+1'b1;end
+endfunction
+assign write_base=slot_base(slot);
+assign display_base=slot_base(display_slot);
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)begin
         state<=WAIT_FILE;slot<=0;published_slot<=0;publish_toggle<=0;
         ack_sync<=0;finish_sync<=0;display_ack_sync<=0;movie_start<=0;write_req<=0;
         write_en<=0;write_data<=0;error<=0;rate_phase<=0;due<=1;
         bytes_received<=0;pack<=0;finished_seen<=0;movie_seen<=0;
+        occupied<=0;ready_slots<=0;front_slot<=0;next_publish<=0;front_valid<=0;pending<=0;
     end else begin
         ack_sync<={ack_sync[0],write_ack};finish_sync<={finish_sync[0],write_finish};
         display_ack_sync<={display_ack_sync[0],display_ack};movie_start<=0;write_en<=0;
         if(!pause)begin
-            if(rate_phase>=CLOCK_HZ-30)begin rate_phase<=rate_phase-(CLOCK_HZ-30);due<=1;end
-            else rate_phase<=rate_phase+30;
+            if(rate_phase>=CLOCK_HZ-FPS)begin rate_phase<=rate_phase-(CLOCK_HZ-FPS);due<=1;end
+            else rate_phase<=rate_phase+FPS;
+        end
+        // A published slot stays owned until the pixel domain confirms it.
+        if(pending&&display_ack_sync[1]==publish_toggle)begin
+            if(front_valid)occupied[front_slot]<=0;
+            front_slot<=published_slot;front_valid<=1;pending<=0;
+        end
+        if(!pending&&due&&!pause&&ready_slots[next_publish]&&
+                error==0&&input_error==0&&!(write_en&&write_full))begin
+            published_slot<=next_publish;publish_toggle<=!publish_toggle;
+            ready_slots[next_publish]<=0;next_publish<=next_slot(next_publish);
+            pending<=1;due<=0;
         end
         if(write_en&&write_full)begin error<=1;state<=FAILED;end
         else if(input_error!=0)begin error<=2;state<=FAILED;end
         else case(state)
-            WAIT_FILE:if(file_ready&&!pause)begin write_req<=1;finished_seen<=0;movie_seen<=0;state<=ACK;end
+            WAIT_FILE:if(file_ready&&!pause&&!occupied[slot])begin
+                occupied[slot]<=1;write_req<=1;finished_seen<=0;movie_seen<=0;state<=ACK;
+            end
             ACK:if(ack_sync[1])begin write_req<=0;state<=ACK_LOW;end
             ACK_LOW:if(!ack_sync[1])begin
                 bytes_received<=0;movie_start<=1;state<=LOAD;
@@ -67,26 +93,24 @@ always @(posedge clk or negedge rst_n) begin
                     if(bytes_received!=FRAME_BYTES)begin error<=4;state<=FAILED;end
                     else begin movie_seen<=1;state<=FLUSH;end
                 end
-                if(finished_seen&&movie_seen)state<=DUE;
+                if(finished_seen&&movie_seen)begin
+                    ready_slots[slot]<=1;slot<=next_slot(slot);state<=WAIT_FILE;
+                end
             end
-            DUE:if(due&&!pause)begin
-                published_slot<=slot;publish_toggle<=!publish_toggle;due<=0;state<=HANDOVER;
-            end
-            HANDOVER:if(display_ack_sync[1]==publish_toggle)begin slot<=!slot;state<=WAIT_FILE;end
             FAILED:begin write_req<=0;write_en<=0;end
         endcase
     end
 end
 always @(posedge pixel_clk or negedge pixel_rst_n)begin
     if(!pixel_rst_n)begin
-        toggle_sync<=0;slot_sync<=0;pause_sync<=0;display_ack<=0;display_slot<=0;
+        toggle_sync<=0;slot_meta<=0;slot_sync<=0;pause_sync<=0;display_ack<=0;display_slot<=0;
         display_valid<=0;frame_begin<=0;displayed_frames<=0;
     end else begin
-        toggle_sync<={toggle_sync[0],publish_toggle};slot_sync<={slot_sync[0],published_slot};
+        toggle_sync<={toggle_sync[0],publish_toggle};slot_meta<=published_slot;slot_sync<=slot_meta;
         pause_sync<={pause_sync[0],pause};frame_begin<=0;
         if(vblank)begin
             if(!pause_sync[1]&&toggle_sync[1]!=display_ack)begin
-                display_slot<=slot_sync[1];display_ack<=toggle_sync[1];display_valid<=1;
+                display_slot<=slot_sync;display_ack<=toggle_sync[1];display_valid<=1;
                 displayed_frames<=displayed_frames+1'b1;frame_begin<=1;
             end else if(display_valid)frame_begin<=1;
         end

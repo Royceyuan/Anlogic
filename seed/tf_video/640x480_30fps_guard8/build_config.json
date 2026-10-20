@@ -1,0 +1,6 @@
+{
+  "height": 480,
+  "fps": 30,
+  "project": "secondary_tf_video_480p.al",
+  "define": "TF_VIDEO_HEIGHT=480"
+}

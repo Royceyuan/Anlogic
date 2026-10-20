@@ -1,0 +1,2 @@
+PASS real 640x480x30 header, 614400-byte frames, 128-sector clusters, fragmented file and EOF loop (60 requests)
+PASS 480-line build rejects valid-CRC 360-line media

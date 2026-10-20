@@ -1,0 +1,19 @@
+{
+  "date": "2026-10-20",
+  "drive": "E:",
+  "volume_label": "Lenovo",
+  "filesystem": "FAT32",
+  "installed_file": "E:/VIDEO0.BIN",
+  "width": 640,
+  "height": 480,
+  "fps": 30,
+  "file_bytes": 1518182912,
+  "sha256": "f438803d459b7f0eb9b9a9859f5fb194d25825a7f64ea8ad29381699276f89dc",
+  "readback_sha256_verified": true,
+  "old_file_backup": "D:/VSCode/CodeFiles/Git_TD/rubbish/secondary_tf_card_360p30_before_480p_20261020/VIDEO0.BIN",
+  "old_file_sha256": "0a32f84a054bdc0db0c80ed5df2778170d62b3ca6530905227a128d85ab531a6",
+  "existing_bmp_files_modified": false,
+  "formatted": false,
+  "staging_file_renamed": true,
+  "board_playback_verified": false
+}

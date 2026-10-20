@@ -1,0 +1,1 @@
+PASS SDRAM arbitration guard=8, 512 read/write words, real CDC FIFO payload verified

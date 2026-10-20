@@ -1,5 +1,6 @@
 `timescale 1ns/1ps
 module tb_mvid_scale2x #(parameter integer WIDTH=16,HEIGHT=4);
+localparam OUTPUT_HEIGHT=HEIGHT==480?720:HEIGHT*2;
 reg clk=0;always #5 clk=~clk;
 reg rst_n=0,frame_begin=0,de=0,hs=1,vs=1;
 reg [20:0] frame_base=21'd1843200;
@@ -18,7 +19,7 @@ endfunction
 always @(posedge clk) if(rst_n)begin
     if(de_o)begin if(pixel!==expected1)$fatal(1,"Scale mismatch got %h expected %h",pixel,expected1);checked=checked+1;end
     expected1<=expected0;
-    expected0<=sample((y/2)*WIDTH+x/2);
+    expected0<=sample((HEIGHT==480?(y*2/3):(y/2))*WIDTH+x/2);
 end
 always @(negedge clk)begin
     fifo_valid=0;
@@ -32,17 +33,19 @@ always @(negedge clk)begin
 end
 initial begin
     repeat(5)@(negedge clk);rst_n=1;
-    for(repeat_frame=0;repeat_frame<2;repeat_frame=repeat_frame+1)begin
+    for(repeat_frame=0;repeat_frame<3;repeat_frame=repeat_frame+1)begin
+        // Both tail slots and the standalone 40fps borrowed slot at address zero.
+        frame_base=repeat_frame==2?0:1843200+repeat_frame*115200;
         frame_begin=1;@(negedge clk);frame_begin=0;
         repeat(WIDTH*4+200)@(negedge clk);
-        for(sy=0;sy<HEIGHT*2;sy=sy+1)begin
+        for(sy=0;sy<OUTPUT_HEIGHT;sy=sy+1)begin
             for(sx=0;sx<WIDTH*2;sx=sx+1)begin de=1;x=sx;y=sy;@(negedge clk);end
             de=0;repeat(100)@(negedge clk);
         end
         repeat(5)@(negedge clk);
     end
-    if(underflow||checked!=WIDTH*HEIGHT*8)$fatal(1,"Underflow=%b checked=%d",underflow,checked);
-    $display("PASS 2x pixel/line duplication, two-line reuse, frame restart and high SDRAM base");$finish;
+    if(underflow||checked!=WIDTH*2*OUTPUT_HEIGHT*3)$fatal(1,"Underflow=%b checked=%d",underflow,checked);
+    $display("PASS %0dx%0d to %0dx%0d exact pixels, two-line reuse, three frame restarts and all slot bases",WIDTH,HEIGHT,WIDTH*2,OUTPUT_HEIGHT);$finish;
 end
 initial begin #50_000_000;$fatal(1,"Timeout");end
 endmodule

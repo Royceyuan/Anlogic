@@ -1,0 +1,12 @@
+{
+  "date": "2026-10-20",
+  "bit_sha256": "5bd282f37b470f62cf5eeeeb20ad599014115c31803edee413f19e94b8f3707c",
+  "width": 640,
+  "height": 480,
+  "nominal_fps": 30,
+  "board_playback_verified": true,
+  "user_feedback": "我看了，还行吧，但我还是想提升一下画质，尝试一下960×540、20fps",
+  "measured_average_fps": null,
+  "long_duration_stress_test": null,
+  "formal_museum_integration": false
+}

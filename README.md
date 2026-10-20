@@ -4,7 +4,9 @@
 
 ### 开发中：TF离线视频独立验证（2026-10-20）
 
-原生4位SD实板读取16MiB耗时693ms，32768块CRC通过，约24.21MB/s。新增独立工程 `secondary_tf_video.al` 验证根目录VIDEO0.BIN读取、640×360 RGB565双缓冲、30Hz发布及720p放大显示，不依赖电脑播放。用户已确认能够播放，但存在播放时左侧白点、暂停后消失的问题，正在验证SDRAM换向保护候选。它不是下面的正式博物馆发布版，未接回双板状态/原页面/应急/PC切换，画面质量仍待验收。接线、按键、错误页、画质/帧率边界和复现步骤见 [离线播放验证说明](experiments/tf_video/PLAYBACK.md)；原测速说明见 [测速说明](experiments/tf_video/README.md)。正式入口、release位流和已有视频素材均保留。
+原生4位SD实板读取16MiB耗时693ms，32768块CRC通过，约24.21MB/s。独立工程 `secondary_tf_video.al` 验证根目录VIDEO0.BIN读取、640×360 RGB565双缓冲、30Hz发布及720p放大显示，不依赖电脑播放。2026-10-20用户确认换向保护版播放正常、无噪点，已提交[30fps上板基线](experiments/tf_video/BOARD_PASS_30FPS.md)。它不是下面的正式博物馆发布版，未接回双板状态/原页面/应急/PC切换。新增[640×480、30fps候选](experiments/tf_video/480P.md)，独立入口 `secondary_tf_video_480p.al`，三帧缓存、480行实采样、720p输出；新候选须另行上板验收。接线、按键、错误页及复现步骤见 [离线播放验证说明](experiments/tf_video/PLAYBACK.md)；原测速说明见 [测速说明](experiments/tf_video/README.md)。正式入口、release位流和原30fps素材均保留。
+
+40fps试验已停止，专用工程、bit、素材、成功种子和构建目录已移至工程外 `../rubbish/secondary_tf_video_40fps_20261020`，可恢复；当前仅推进30fps。若由正式博物馆SPI读卡工程切换到本原生4位测试工程，烧录后拔插TF卡，再按KEY1，避免卡残留SPI模式导致F0910009；只复位FPGA不会给TF卡断电。用户已反馈本次恢复正常，未为该初始化故障修改RTL或生成新bit。
 
 ### 当前发布：跟随主板倍速（2026-10-17 上板通过）
 

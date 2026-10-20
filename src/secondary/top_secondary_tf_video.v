@@ -1,5 +1,11 @@
 `timescale 1ns/1ps
 `default_nettype none
+`ifndef TF_VIDEO_FPS
+`define TF_VIDEO_FPS 30
+`endif
+`ifndef TF_VIDEO_HEIGHT
+`define TF_VIDEO_HEIGHT 360
+`endif
 // Standalone offline-video acceptance top. Does not replace the museum top.
 module top_secondary_tf_video(
     input wire clk_50m,key_reset_n,key_pause_n,
@@ -10,6 +16,10 @@ module top_secondary_tf_video(
     output reg [7:0] seg_data,seg_sel,
     output wire hdmi_b_clk_p,hdmi_b_d0_p,hdmi_b_d1_p,hdmi_b_d2_p
 );
+localparam integer VIDEO_FPS=`TF_VIDEO_FPS;
+localparam integer VIDEO_HEIGHT=`TF_VIDEO_HEIGHT;
+localparam integer FRAME_BYTES=640*VIDEO_HEIGHT*2;
+localparam integer VIDEO_BASE=VIDEO_HEIGHT==480?0:1843200;
 wire clk,mem_clk,mem_sft,core_raw,mem_raw,locked,video_locked;
 wire open_c3,open_c4;
 EG_LOGIC_BUFG u_core_clock(.i(core_raw),.o(clk));
@@ -64,7 +74,7 @@ sd_native_read u_sd(.clk(clk),.rst_n(rst_n),.read_start(card_start),.read_lba(ca
 wire file_ready,movie_busy,movie_done,movie_start,byte_valid;
 wire [7:0] byte_data,file_error,file_stage,frame_error;
 wire [31:0] movie_index,movie_frames;
-fat32_mvid_reader u_movie(.clk(clk),.rst_n(rst_n),.card_ready(card_ready),.next_frame(movie_start),
+fat32_mvid_reader #(.HEIGHT(VIDEO_HEIGHT),.FPS(VIDEO_FPS)) u_movie(.clk(clk),.rst_n(rst_n),.card_ready(card_ready),.next_frame(movie_start),
     .sd_start(card_start),.sd_lba(card_lba),.sd_blocks(card_blocks),.sd_done(card_done),
     .sd_valid(card_valid),.sd_data(card_data),.sd_error(card_error),.byte_valid(byte_valid),.byte_data(byte_data),
     .ready(file_ready),.frame_busy(movie_busy),.frame_done(movie_done),.frame_index(movie_index),
@@ -77,7 +87,8 @@ wire hs,vs,de,frame_tick;
 wire [10:0] x;
 wire [9:0] y;
 wire vblank=x==0&&y==720;
-mvid_frame_control u_frames(.clk(clk),.rst_n(rst_n),.pause(pause),.file_ready(file_ready),
+mvid_frame_control #(.FPS(VIDEO_FPS),.FRAME_BYTES(FRAME_BYTES),.VIDEO_BASE(VIDEO_BASE),
+    .SLOTS(VIDEO_HEIGHT==480?3:2),.THIRD_BASE(FRAME_BYTES/2)) u_frames(.clk(clk),.rst_n(rst_n),.pause(pause),.file_ready(file_ready),
     .movie_done(movie_done),.byte_valid(byte_valid),.byte_data(byte_data),.input_error(file_error|card_error),
     .movie_start(movie_start),.write_req(write_req),.write_en(write_en),.write_base(write_base),.write_len(write_len),
     .write_data(write_data),.write_ack(write_ack),.write_finish(write_finish),.write_full(write_full),
@@ -99,7 +110,7 @@ video_timing_640x480_pclk #(.H_VISIBLE(1280),.H_FRONT(110),.H_SYNC(40),.H_BACK(2
     .clk(pixel_clk),.rst_n(pixel_rst_n),.hs(hs),.vs(vs),.de(de),.x(x),.y(y),.frame_tick(frame_tick));
 wire hs_scaled,vs_scaled,de_scaled,underflow;
 wire [15:0] pixel;
-mvid_scale2x u_scale(.clk(pixel_clk),.rst_n(pixel_rst_n),.frame_begin(frame_begin),.frame_base(display_base),
+mvid_scale2x #(.HEIGHT(VIDEO_HEIGHT)) u_scale(.clk(pixel_clk),.rst_n(pixel_rst_n),.frame_begin(frame_begin),.frame_base(display_base),
     .de(de&&display_valid),.hs(hs),.vs(vs),.x(x),.y(y),.read_req(read_req),.read_base(read_base),.read_len(read_len),
     .read_ack(read_ack),.fifo_empty(fifo_empty),.fifo_valid(fifo_valid),.fifo_data(read_data),.read_en(read_en),
     .hs_o(hs_scaled),.vs_o(vs_scaled),.de_o(de_scaled),.pixel(pixel),.underflow(underflow));

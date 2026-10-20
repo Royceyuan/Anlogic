@@ -1,0 +1,1 @@
+PASS 640x480 concurrent write + 1280x720 scan, 921600 exact pixels, real CDC FIFOs, guard=8 and refresh holds

@@ -3,7 +3,7 @@
 // Read-only FAT32 root VIDEO0.BIN, MVID v1 RGB565-BE. Each frame is
 // provisional until frame_done: a transport CRC error must never publish it.
 module fat32_mvid_reader #(
-    parameter integer WIDTH=640,HEIGHT=360
+    parameter integer WIDTH=640,HEIGHT=360,FPS=30
 )(
     input wire clk,rst_n,card_ready,next_frame,
     output reg sd_start,
@@ -47,11 +47,14 @@ reg [31:0] header_crc,computed_crc;
 reg reserved_bad;
 reg [63:0] checked_payload;
 reg header_ok,length_ok;
+reg active_fat_valid;
 reg [31:0] checked_fat_span;
 reg [32:0] volume_end,layout_end;
 wire [63:0] extended_frames={32'd0,header_frames};
 wire [63:0] payload_size=FRAME_BYTES==460800?
-    (extended_frames<<19)-(extended_frames<<16)+(extended_frames<<11):extended_frames*FRAME_BYTES;
+    (extended_frames<<19)-(extended_frames<<16)+(extended_frames<<11):
+    FRAME_BYTES==614400?((extended_frames<<19)+(extended_frames<<16))+
+        ((extended_frames<<14)+(extended_frames<<13)):extended_frames*FRAME_BYTES;
 wire [31:0] fat_span=num_fats==2?sectors_per_fat<<1:sectors_per_fat;
 wire [31:0] cluster_available=sectors_per_cluster-cluster_sector;
 wire [31:0] run_blocks=sectors_left<cluster_available?sectors_left:cluster_available;
@@ -101,11 +104,14 @@ always @(posedge clk or negedge rst_n) begin
         header_width<=0;header_height<=0;header_fps_n<=0;header_fps_d<=0;header_payload<=0;
         header_crc<=0;computed_crc<=32'hffffffff;reserved_bad<=0;
         checked_payload<=0;header_ok<=0;length_ok<=0;checked_fat_span<=0;volume_end<=0;layout_end<=0;
+        active_fat_valid<=0;
     end else begin
         sd_start<=0;frame_done<=0;
+        // Fields arrive at offsets 16/40, long before sector completion.
+        // Register their comparison before the wide BOOT_CHECK enable path.
+        active_fat_valid<=!ext_flags[7]||ext_flags[3:0]<num_fats;
         if(state!=REQUEST)address_step<=0;
-        if(sd_error!=0) begin error<=8'he0;state<=FAILED;ready<=0;frame_busy<=0;end
-        else case(state)
+        case(state)
             WAIT_CARD: if(card_ready) begin operation<=BOOT;sd_lba<=0;state<=REQUEST;end
             REQUEST: begin
                 // Cluster subtraction, variable shift and LBA additions each
@@ -207,7 +213,7 @@ always @(posedge clk or negedge rst_n) begin
                 else if((jump==8'heb||jump==8'he9)&&bytes_per_sector==512&&root_entries==0&&fat16==0&&
                     log_cluster(sectors_per_cluster)!=15&&reserved!=0&&(num_fats==1||num_fats==2)&&
                     sectors_per_fat!=0&&root_cluster>=2&&root_cluster<32'h0ffffff0&&total_sectors!=0&&
-                    (ext_flags[7]==0||ext_flags[3:0]<num_fats)) begin
+                    active_fat_valid) begin
                     cluster_shift<=log_cluster(sectors_per_cluster);
                     fat_start<=volume+reserved;checked_fat_span<=fat_span;
                     volume_end<={1'b0,volume}+{1'b0,total_sectors};
@@ -243,7 +249,7 @@ always @(posedge clk or negedge rst_n) begin
             HEADER_CALC:begin
                 checked_payload<=payload_size;
                 header_ok<=!(header_magic!=32'h4449564d||header_version!=1||header_size!=512||header_width!=WIDTH||
-                    header_height!=HEIGHT||header_fps_n!=30||header_fps_d!=1||header_frames==0||
+                    header_height!=HEIGHT||header_fps_n!=FPS||header_fps_d!=1||header_frames==0||
                     header_frame_bytes!=FRAME_BYTES||header_format!=1||header_flags!=0||reserved_bad||
                     header_crc!=~computed_crc);
                 state<=HEADER_CHECK;
@@ -287,6 +293,12 @@ always @(posedge clk or negedge rst_n) begin
             sd_blocks<=1;
             if(frame_index==last_frame_index) begin frame_index<=0;current_cluster<=first_cluster;cluster_sector<=1;end
             else frame_index<=frame_index+1'b1;
+        end
+        // Error has final priority over publication/request controls, not
+        // over every metadata register's enable. Invalid metadata is never
+        // consumed after FAILED. byte_valid still rejects sd_error immediately.
+        if(sd_error!=0)begin
+            error<=8'he0;state<=FAILED;ready<=0;frame_busy<=0;frame_done<=0;sd_start<=0;
         end
     end
 end

@@ -1,0 +1,21 @@
+{
+  "format": "MVID v1",
+  "width": 640,
+  "height": 480,
+  "fps": 30,
+  "frames": 2471,
+  "frame_bytes": 614400,
+  "payload_bytes": 1518182400,
+  "duration_seconds": 82.36666666666666,
+  "pixel_format": "RGB565 big-endian",
+  "audio": false,
+  "sha256": "f438803d459b7f0eb9b9a9859f5fb194d25825a7f64ea8ad29381699276f89dc",
+  "file_bytes": 1518182912,
+  "input": "D:\\VSCode\\CodeFiles\\Git_TD\\素材\\01_越王勾践剑_平放环绕正式版.mp4",
+  "input_sha256": "3c3703814ac45d6b9e54e394753dd758c280b6af34cd549bddbc0671cf204670",
+  "output": "D:\\VSCode\\CodeFiles\\Git_TD\\素材\\离线视频_640x480_30fps\\VIDEO0.BIN",
+  "board_playback_verified": false,
+  "display_aspect_ratio": "16:9",
+  "sample_aspect_ratio": "4:3",
+  "ffmpeg_filter": "fps=30,scale=1280:720:force_original_aspect_ratio=decrease:flags=lanczos,pad=1280:720:(ow-iw)/2:(oh-ih)/2,scale=640:480:flags=lanczos,setsar=4/3"
+}
