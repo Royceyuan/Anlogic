@@ -33,3 +33,6 @@ tools/OfflineVideo/packages/
 
 # Source videos are supplied locally, not published to the repository.
 assets/视频/*.mp4
+
+# EXE rebuild entry only; Python helpers are required by FPGA/media regression.
+/tools/OfflineVideo/build.ps1

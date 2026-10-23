@@ -27,3 +27,7 @@ sim/transcript
 .DS_Store
 Thumbs.db
 .vscode/*.user
+
+# Local-only software rebuild sources; keep the shipped runtime intact.
+/tools/MuseumTFPackager/*.py
+/tools/MuseumTFPackager/build.ps1

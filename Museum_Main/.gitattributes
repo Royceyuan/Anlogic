@@ -17,3 +17,7 @@ tools/MuseumTFPackager/**/*.pt filter=lfs diff=lfs merge=lfs -text
 tools/MuseumTFPackager/**/*.zip filter=lfs diff=lfs merge=lfs -text
 tools/MuseumTFPackager/**/*.npz filter=lfs diff=lfs merge=lfs -text
 tools/MuseumTFPackager/**/*.tiktoken filter=lfs diff=lfs merge=lfs -text
+
+# Bundled third-party runtime is not project-authored Python code.
+tools/MuseumTFPackager/AlignmentWorker/** linguist-vendored
+tools/MuseumTFPackager/offline_licenses/** linguist-vendored

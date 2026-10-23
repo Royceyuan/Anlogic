@@ -16,3 +16,7 @@ tools/OfflineVideo/ffmpeg/*.dll filter=lfs diff=lfs merge=lfs -text
 vendor/official_ref/lab_ex5_i2s_audio_hdmi/hdmi_1_4b_transmitter_core_wrapper.enc.v -text -whitespace
 tools/OfflineVideo/ffmpeg_license/** -text -whitespace
 tools/OfflineVideo/licenses/** -text -whitespace
+
+# Preserve third-party notices without counting them as project source.
+tools/OfflineVideo/ffmpeg_license/** linguist-vendored
+tools/OfflineVideo/licenses/** linguist-vendored
