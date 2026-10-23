@@ -1,0 +1,75 @@
+# This file created by conda-build 3.22.0
+# meta.yaml template originally from:
+# D:\a\1\s\recipe, last modified Fri Aug 12 16:47:57 2022
+# ------------------------------------------------
+
+package:
+  name: x264
+  version: 1!164.3095
+source:
+  - sha256: 436a2be54d8bc0cb05dd33ecbbcb7df9c3b57362714fcdaa3a5991189a33319b
+    url: https://code.videolan.org/videolan/x264/-/archive/baee400fa9ced6f5481a728138fed6e867b0ff7f/x264-baee400fa9ced6f5481a728138fed6e867b0ff7f.tar.gz
+  - path: version.sh
+build:
+  number: '2'
+  run_exports:
+    - x264 >=1!164.3095,<1!165
+  script_env:
+    - X264_POINTVER=0.164.3095 baee400
+    - X264_REV=3095
+    - X264_VERSION=r3095 baee400
+  string: h8ffe710_2
+requirements:
+  build:
+    - m2-bash 4.3.042 5
+    - m2-coreutils 8.25 102
+    - m2-gcc-libs 5.3.0 4
+    - m2-gmp 6.1.0 3
+    - m2-grep 2.22 4
+    - m2-libiconv 1.14 3
+    - m2-libintl 0.19.7 4
+    - m2-libpcre 8.38 2
+    - m2-msys2-runtime 2.5.0.17080.65c939c 3
+    - m2-sed 4.2.2 3
+    - m2w64-gcc-libgfortran 5.3.0 6
+    - m2w64-gcc-libs 5.3.0 7
+    - m2w64-gcc-libs-core 5.3.0 7
+    - m2w64-gmp 6.1.0 2
+    - m2w64-libwinpthread-git 5.0.0.4634.697f757 2
+    - make 4.3 h3d2af85_1
+    - msys2-conda-epoch 20160418 1
+    - nasm 2.14.02 h8ffe710_1
+    - perl 5.32.1.1 2_h57928b3_strawberry
+    - ucrt 10.0.20348.0 h57928b3_0
+    - vc 14.2 hb210afc_6
+    - vs2015_runtime 14.29.30037 h902a5da_6
+    - vs2017_win-64 19.16.27033 hb90652a_6
+    - vswhere 3.0.3 h57928b3_0
+  host:
+    - ucrt 10.0.20348.0 h57928b3_0
+    - vc 14.2 hb210afc_6
+    - vs2015_runtime 14.29.30037 h902a5da_6
+  run:
+    - vc >=14.1,<15
+    - vs2015_runtime >=14.16.27033
+test:
+  commands:
+    - if not exist %LIBRARY_INC%\\x264.h exit 1
+    - if not exist %LIBRARY_BIN%\\libx264-164.dll exit 1
+    - if not exist %LIBRARY_LIB%\\libx264.lib exit 1
+    - x264 --help
+about:
+  dev_url: https://code.videolan.org/videolan/x264
+  home: http://www.videolan.org/developers/x264.html
+  license: GPL-2.0-or-later
+  license_file: COPYING
+  summary: A free software library for encoding video streams into the H.264/MPEG-4
+    AVC format.
+extra:
+  copy_test_source_files: true
+  final: true
+  recipe-maintainers:
+    - 183amir
+    - carlodri
+    - jakirkham
+    - sdvillal

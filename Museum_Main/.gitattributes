@@ -1,0 +1,19 @@
+*.bit filter=lfs diff=lfs merge=lfs -text
+*.bmp filter=lfs diff=lfs merge=lfs -text
+*.BMP filter=lfs diff=lfs merge=lfs -text
+seed/**/*.db filter=lfs diff=lfs merge=lfs -text
+
+# Preserve FPGA source and constraint bytes across Windows checkouts.
+src/** -text
+vendor/** -text
+constraints/** -text
+
+# Preserve the complete offline packager runtime and license bytes.
+tools/MuseumTFPackager/** -text -whitespace
+tools/MuseumTFPackager/**/*.exe filter=lfs diff=lfs merge=lfs -text
+tools/MuseumTFPackager/**/*.dll filter=lfs diff=lfs merge=lfs -text
+tools/MuseumTFPackager/**/*.pyd filter=lfs diff=lfs merge=lfs -text
+tools/MuseumTFPackager/**/*.pt filter=lfs diff=lfs merge=lfs -text
+tools/MuseumTFPackager/**/*.zip filter=lfs diff=lfs merge=lfs -text
+tools/MuseumTFPackager/**/*.npz filter=lfs diff=lfs merge=lfs -text
+tools/MuseumTFPackager/**/*.tiktoken filter=lfs diff=lfs merge=lfs -text

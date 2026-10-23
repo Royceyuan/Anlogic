@@ -1,0 +1,128 @@
+# This file created by conda-build 24.7.1
+# ------------------------------------------------
+
+package:
+  name: libintl
+  version: 0.22.5
+source:
+  patches:
+    - 0001-Mark-v-snprintf-as-available.patch
+    - 0002-Prevent-libtool-from-worrying-about-dependent-librar.patch
+    - 0003-Fix-some-DLL-export-markings-in-libintl.patch
+    - 0004-Fix-quoting-when-invoking-windres.patch
+    - 0005-CXXLD-is-not-a-thing.patch
+    - 0006-Work-around-Unixisms-in-libgettextpo.patch
+    - 0007-Add-missing-extern-C-protectors.patch
+    - 0008-Avoid-close-inconsistencies.patch
+  sha256: fe10c37353213d78a5b83d48af231e005c4da84db5ce88037d88355938259640
+  url: https://ftp.gnu.org/pub/gnu/gettext/gettext-0.22.5.tar.xz
+build:
+  ignore_run_exports_from: null
+  number: 3
+  run_exports:
+    - libintl >=0.22.5,<1.0a0
+  string: h5728263_3
+requirements:
+  build:
+    - m2-autoconf 2.69 4
+    - m2-automake1.15 1.15 3
+    - m2-base 1.0.0 2
+    - m2-bash 4.3.042 5
+    - m2-bash-completion 2.3 2
+    - m2-catgets 1.1 3
+    - m2-coreutils 8.25 102
+    - m2-dash 0.5.8 2
+    - m2-db 5.3.28 3
+    - m2-diffutils 3.3 4
+    - m2-file 5.25 2
+    - m2-filesystem 2016.04 4
+    - m2-findutils 4.6.0 2
+    - m2-gawk 4.1.3 2
+    - m2-gcc-libs 5.3.0 4
+    - m2-gdbm 1.11 4
+    - m2-gettext 0.19.7 4
+    - m2-gmp 6.1.0 3
+    - m2-grep 2.22 4
+    - m2-gzip 1.7 2
+    - m2-inetutils 1.9.2 2
+    - m2-info 6.0 2
+    - m2-less 481 2
+    - m2-libasprintf 0.19.7 4
+    - m2-libbz2 1.0.6 3
+    - m2-libcatgets 1.1 3
+    - m2-libcrypt 1.3 2
+    - m2-libdb 5.3.28 3
+    - m2-libgdbm 1.11 4
+    - m2-libgettextpo 0.19.7 4
+    - m2-libiconv 1.14 3
+    - m2-libintl 0.19.7 4
+    - m2-libltdl 2.4.6 3
+    - m2-liblzma 5.2.2 2
+    - m2-libpcre 8.38 2
+    - m2-libreadline 6.3.008 8
+    - m2-libtool 2.4.6 3
+    - m2-libutil-linux 2.26.2 2
+    - m2-libxml2 2.9.2 3
+    - m2-m4 1.4.17 5
+    - m2-make 4.1 5
+    - m2-mintty 1!2.2.3 2
+    - m2-mpfr 3.1.4 2
+    - m2-msys2-launcher-git 0.3.28.860c495 2
+    - m2-msys2-runtime 2.5.0.17080.65c939c 3
+    - m2-ncurses 6.0.20160220 2
+    - m2-patch 2.7.5 2
+    - m2-perl 5.22.1 2
+    - m2-sed 4.2.2 3
+    - m2-tar 1.28 4
+    - m2-tftp-hpa 5.2 2
+    - m2-time 1.7 2
+    - m2-ttyrec 1.0.8 2
+    - m2-tzcode 2015.e 2
+    - m2-unzip 6.0 3
+    - m2-util-linux 2.26.2 2
+    - m2-which 2.21 3
+    - m2-zip 3.0 2
+    - m2-zlib 1.2.8 4
+    - m2w64-binutils 2.25.1 5
+    - m2w64-bzip2 1.0.6 6
+    - m2w64-crt-git 5.0.0.4636.2595836 2
+    - m2w64-gcc-libgfortran 5.3.0 6
+    - m2w64-gcc-libs 5.3.0 7
+    - m2w64-gcc-libs-core 5.3.0 7
+    - m2w64-gmp 6.1.0 2
+    - m2w64-headers-git 5.0.0.4636.c0ad18a 2
+    - m2w64-libiconv 1.14 6
+    - m2w64-libwinpthread-git 5.0.0.4634.697f757 2
+    - m2w64-zlib 1.2.8 10
+    - msys2-conda-epoch 20160418 1
+    - posix 1.0.0 2
+  host:
+    - libiconv 1.17 hcfcfb64_2
+    - ucrt 10.0.22621.0 h57928b3_0
+    - vc 14.3 h8a93ad2_20
+    - vc14_runtime 14.40.33810 ha82c5b3_20
+  run:
+    - libiconv >=1.17,<2.0a0
+test:
+  commands:
+    - if not exist %PREFIX%\Library\bin\intl-*.dll exit /b 1
+    - if exist %PREFIX%\Library\lib\intl.dll.lib exit /b 1
+    - if exist %PREFIX%\Library\lib\intl.lib exit /b 1
+    - if exist %PREFIX%\Library\include\libintl.h exit /b1
+about:
+  home: https://www.gnu.org/software/gettext/
+  license: LGPL-2.1-or-later
+  license_file: COPYING
+  summary: library that provides native language support to programs
+extra:
+  copy_test_source_files: true
+  feedstock-name: gettext
+  final: true
+  flow_run_id: azure_20240814.2.1
+  recipe-maintainers:
+    - ocefpaf
+    - pkgw
+    - scopatz
+    - xhochy
+  remote_url: https://github.com/conda-forge/gettext-feedstock
+  sha: 1487679bc84082e2dcb723afd61fe7da3a3a6e2d

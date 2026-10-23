@@ -1,0 +1,276 @@
+# This file created by conda-build 24.9.0
+# meta.yaml template originally from:
+# D:\a\1\s\recipe, last modified Sun Nov  3 21:59:53 2024
+# ------------------------------------------------
+
+package:
+  name: ffmpeg
+  version: 6.1.2
+source:
+  patches:
+    - patches/0001-Revert-compat-Use-instead-of-for-rc.exe-options.patch
+    - patches/add-av_stream_get_first_dts-for-chromium.patch
+    - patches/pkgconfig_generate_windows_llvm.patch
+  sha256: def310d21e40c39e6971a6bcd07fba78ca3ce39cc01ffda4dca382599dc06312
+  url: https://ffmpeg.org/releases/ffmpeg-6.1.2.tar.gz
+build:
+  ignore_run_exports_from:
+    - glib
+  number: '706'
+  run_exports:
+    - ffmpeg >=6.1.2,<7.0a0
+  string: gpl_h63b3451_706
+requirements:
+  build:
+    - autotools_clang_conda 0.0.11 h64bf75a_0
+    - bzip2 1.0.8 h2466b09_7
+    - ca-certificates 2024.8.30 h56e8100_0
+    - clang 19.1.3 default_hec7ea82_0
+    - clang-19 19.1.3 default_hec7ea82_0
+    - clangxx 19.1.3 default_hec7ea82_0
+    - cmake 3.30.5 h400e5d1_0
+    - krb5 1.21.3 hdf4eb48_0
+    - libcurl 8.10.1 h1ee3ff0_0
+    - libexpat 2.6.3 he0c23c2_0
+    - libffi 3.4.2 h8ffe710_5
+    - libglib 2.82.2 h7025463_0
+    - libiconv 1.17 hcfcfb64_2
+    - libintl 0.22.5 h5728263_3
+    - libllvm19 19.1.3 h3089188_0
+    - libssh2 1.11.0 h7dfc565_0
+    - libuv 1.49.2 h2466b09_0
+    - libxml2 2.13.4 h442d1da_2
+    - libzlib 1.3.1 h2466b09_2
+    - lld 19.1.3 hd91d51b_0
+    - llvm-tools 19.1.3 h2a44499_0
+    - m2-autoconf 2.69 4
+    - m2-automake-wrapper 10 2
+    - m2-automake1.10 1.10.3 4
+    - m2-automake1.11 1.11.6 4
+    - m2-automake1.12 1.12.6 4
+    - m2-automake1.13 1.13.4 5
+    - m2-automake1.14 1.14.1 4
+    - m2-automake1.15 1.15 3
+    - m2-automake1.6 1.6.3 3
+    - m2-automake1.7 1.7.9 3
+    - m2-automake1.8 1.8.5 4
+    - m2-automake1.9 1.9.6 3
+    - m2-base 1.0.0 2
+    - m2-bash 4.3.042 5
+    - m2-bash-completion 2.3 2
+    - m2-catgets 1.1 3
+    - m2-coreutils 8.25 102
+    - m2-dash 0.5.8 2
+    - m2-db 5.3.28 3
+    - m2-diffutils 3.3 4
+    - m2-file 5.25 2
+    - m2-filesystem 2016.04 4
+    - m2-findutils 4.6.0 2
+    - m2-gawk 4.1.3 2
+    - m2-gcc-libs 5.3.0 4
+    - m2-gdbm 1.11 4
+    - m2-gettext 0.19.7 4
+    - m2-gmp 6.1.0 3
+    - m2-grep 2.22 4
+    - m2-gzip 1.7 2
+    - m2-inetutils 1.9.2 2
+    - m2-info 6.0 2
+    - m2-less 481 2
+    - m2-libasprintf 0.19.7 4
+    - m2-libbz2 1.0.6 3
+    - m2-libcatgets 1.1 3
+    - m2-libcrypt 1.3 2
+    - m2-libdb 5.3.28 3
+    - m2-libgdbm 1.11 4
+    - m2-libgettextpo 0.19.7 4
+    - m2-libiconv 1.14 3
+    - m2-libintl 0.19.7 4
+    - m2-libltdl 2.4.6 3
+    - m2-liblzma 5.2.2 2
+    - m2-libpcre 8.38 2
+    - m2-libreadline 6.3.008 8
+    - m2-libtool 2.4.6 3
+    - m2-libutil-linux 2.26.2 2
+    - m2-libxml2 2.9.2 3
+    - m2-m4 1.4.17 5
+    - m2-make 4.1 5
+    - m2-mintty 1!2.2.3 2
+    - m2-mpfr 3.1.4 2
+    - m2-msys2-launcher-git 0.3.28.860c495 2
+    - m2-msys2-runtime 2.5.0.17080.65c939c 3
+    - m2-ncurses 6.0.20160220 2
+    - m2-perl 5.22.1 2
+    - m2-sed 4.2.2 3
+    - m2-tar 1.28 4
+    - m2-tftp-hpa 5.2 2
+    - m2-time 1.7 2
+    - m2-ttyrec 1.0.8 2
+    - m2-tzcode 2015.e 2
+    - m2-unzip 6.0 3
+    - m2-util-linux 2.26.2 2
+    - m2-which 2.21 3
+    - m2-zip 3.0 2
+    - m2-zlib 1.2.8 4
+    - msys2-conda-epoch 20160418 1
+    - nasm 2.16.03 hfd05255_1
+    - openssl 3.3.2 h2466b09_0
+    - pcre2 10.44 h3d7b363_2
+    - pkg-config 0.29.2 h88c491f_1009
+    - posix 1.0.0 2
+    - ucrt 10.0.22621.0 h57928b3_1
+    - vc 14.3 h8a93ad2_22
+    - vc14_runtime 14.40.33810 hcc2c482_22
+    - vs2015_runtime 14.40.33810 h3bf8584_22
+    - vs2019_win-64 19.29.30139 he1865b1_22
+    - vs_win-64 2019.11 he1865b1_22
+    - vswhere 3.1.7 h57928b3_0
+    - xz 5.2.6 h8d14728_0
+    - zstd 1.5.6 h0ea2cb4_0
+  host:
+    - aom 3.9.1 he0c23c2_0
+    - bzip2 1.0.8 h2466b09_7
+    - ca-certificates 2024.8.30 h56e8100_0
+    - cairo 1.18.0 h32b962e_3
+    - dav1d 1.2.1 hcfcfb64_0
+    - expat 2.6.3 he0c23c2_0
+    - ffnvcodec-headers 12.2.72.0 h57928b3_0
+    - font-ttf-dejavu-sans-mono 2.37 hab24e00_0
+    - font-ttf-inconsolata 3.000 h77eed37_0
+    - font-ttf-source-code-pro 2.038 h77eed37_0
+    - font-ttf-ubuntu 0.83 h77eed37_3
+    - fontconfig 2.15.0 h765892d_1
+    - fonts-conda-ecosystem 1 0
+    - fonts-conda-forge 1 0
+    - freetype 2.12.1 hdaf720e_2
+    - glib 2.82.2 h7025463_0
+    - glib-tools 2.82.2 h4394cf3_0
+    - graphite2 1.3.13 h63175ca_1003
+    - harfbuzz 9.0.0 h2bedf89_1
+    - icu 75.1 he0c23c2_0
+    - libexpat 2.6.3 he0c23c2_0
+    - libffi 3.4.2 h8ffe710_5
+    - libglib 2.82.2 h7025463_0
+    - libiconv 1.17 hcfcfb64_2
+    - libintl 0.22.5 h5728263_3
+    - libintl-devel 0.22.5 h5728263_3
+    - libmpdec 4.0.0 h2466b09_0
+    - libopus 1.3.1 h8ffe710_1
+    - libpng 1.6.44 h3ca93ac_0
+    - libsqlite 3.47.0 h2466b09_1
+    - libxml2 2.13.4 h442d1da_2
+    - libzlib 1.3.1 h2466b09_2
+    - openh264 2.4.1 h63175ca_0
+    - openssl 3.3.2 h2466b09_0
+    - packaging 24.1 pyhd8ed1ab_0
+    - pcre2 10.44 h3d7b363_2
+    - pixman 0.43.4 h63175ca_0
+    - python 3.13.0 hf5aa216_100_cp313
+    - python_abi 3.13 5_cp313
+    - svt-av1 2.3.0 he0c23c2_0
+    - tk 8.6.13 h5226925_1
+    - tzdata 2024b hc8b5060_0
+    - ucrt 10.0.22621.0 h57928b3_1
+    - vc 14.3 h8a93ad2_22
+    - vc14_runtime 14.40.33810 hcc2c482_22
+    - vs2015_runtime 14.40.33810 h3bf8584_22
+    - x264 1!164.3095 h8ffe710_2
+    - x265 3.5 h2d74725_3
+    - xz 5.2.6 h8d14728_0
+    - zlib 1.3.1 h2466b09_2
+  run:
+    - aom >=3.9.1,<3.10.0a0
+    - bzip2 >=1.0.8,<2.0a0
+    - dav1d >=1.2.1,<1.2.2.0a0
+    - fontconfig >=2.15.0,<3.0a0
+    - fonts-conda-ecosystem
+    - freetype >=2.12.1,<3.0a0
+    - harfbuzz >=9.0.0,<10.0a0
+    - libexpat >=2.6.3,<3.0a0
+    - libiconv >=1.17,<2.0a0
+    - libopus >=1.3.1,<2.0a0
+    - libxml2 >=2.13.4,<3.0a0
+    - libzlib >=1.3.1,<2.0a0
+    - openh264 >=2.4.1,<2.4.2.0a0
+    - openssl >=3.3.2,<4.0a0
+    - svt-av1 >=2.3.0,<2.3.1.0a0
+    - ucrt >=10.0.20348.0
+    - vc >=14.2,<15
+    - vc14_runtime >=14.29.30139
+    - x264 >=1!164.3095,<1!165
+    - x265 >=3.5,<3.6.0a0
+    - xz >=5.2.6,<6.0a0
+  run_constrained:
+    - __cuda  >=12.4
+test:
+  commands:
+    - ffmpeg --help
+    - ffmpeg -hide_banner -codecs
+    - ffmpeg -hide_banner -protocols
+    - ffmpeg -hide_banner -protocols | findstr "https"
+    - ffmpeg -hide_banner -codecs | findstr "DEVI.S\ zlib"
+    - ffmpeg -hide_banner -codecs | findstr "DEV.LS h264"
+    - ffmpeg -hide_banner -codecs | findstr "libopenh264"
+    - ffmpeg -hide_banner -codecs | findstr "libaom"
+    - ffmpeg -hide_banner -codecs | findstr "libsvtav1"
+    - if not exist %PREFIX%\\Library\\lib\\avdevice.lib exit 1
+    - if not exist %PREFIX%\\Library\\lib\\swresample.lib exit 1
+    - if not exist %PREFIX%\\Library\\lib\\avfilter.lib exit 1
+    - if not exist %PREFIX%\\Library\\lib\\avcodec.lib exit 1
+    - if not exist %PREFIX%\\Library\\lib\\avformat.lib exit 1
+    - if not exist %PREFIX%\\Library\\lib\\swscale.lib exit 1
+    - if not exist %PREFIX%\\Library\\lib\\avutil.lib exit 1
+    - if not exist %PREFIX%\\Library\\bin\\avdevice-60.dll exit 1
+    - if not exist %PREFIX%\\Library\\bin\\swresample-4.dll exit 1
+    - if not exist %PREFIX%\\Library\\bin\\avfilter-9.dll exit 1
+    - if not exist %PREFIX%\\Library\\bin\\avcodec-60.dll exit 1
+    - if not exist %PREFIX%\\Library\\bin\\avformat-60.dll exit 1
+    - if not exist %PREFIX%\\Library\\bin\\swscale-7.dll exit 1
+    - if not exist %PREFIX%\\Library\\bin\\avutil-58.dll exit 1
+    - ffmpeg -hide_banner -buildconf | findstr "enable-gpl"
+    - ffmpeg -hide_banner -codecs | findstr "libx264"
+    - ffmpeg -hide_banner -codecs | findstr "libx265"
+    - if not exist %PREFIX%\\Library\\lib\\postproc.lib exit 1
+    - if not exist %PREFIX%\\Library\\bin\\postproc-57.dll exit 1
+    - ffmpeg -hide_banner -f lavfi -i nullsrc=s=256x256:d=8 -vcodec libx264 -f null
+      -
+    - ffmpeg -hide_banner -f lavfi -i nullsrc=s=256x256:d=8 -vcodec libx265 -f null
+      -
+    - ffmpeg -hide_banner -codecs | findstr "h264_nvenc"
+    - ffmpeg -hide_banner -codecs | findstr "hevc_nvenc"
+    - ffmpeg -hide_banner -codecs | findstr "mjpeg_cuvid"
+    - ffmpeg -hide_banner -codecs | findstr "mpeg1_cuvid"
+    - ffmpeg -hide_banner -codecs | findstr "mpeg2_cuvid"
+    - ffmpeg -hide_banner -codecs | findstr "mpeg4_cuvid"
+    - ffmpeg -hide_banner -codecs | findstr "vc1_cuvid"
+    - ffmpeg -hide_banner -codecs | findstr "vp8_cuvid"
+    - ffmpeg -hide_banner -codecs | findstr "vp9_cuvid"
+    - ffmpeg -hide_banner -f lavfi -i nullsrc=s=256x256:d=8 -vcodec libopenh264 -f
+      null -
+about:
+  dev_url: https://git.ffmpeg.org/ffmpeg.git
+  doc_url: https://ffmpeg.org/documentation.html
+  home: https://www.ffmpeg.org/
+  license: GPL-2.0-or-later
+  license_family: GPL
+  license_file:
+    - COPYING.GPLv2
+    - COPYING.GPLv3
+  summary: Cross-platform solution to record, convert and stream audio and video.
+extra:
+  copy_test_source_files: true
+  final: true
+  flow_run_id: azure_20241103.8.1
+  recipe-maintainers:
+    - 183amir
+    - benjaminrwilson
+    - carlodri
+    - danielballan
+    - h-vetinari
+    - hmaarrfk
+    - jakirkham
+    - matthiasdiener
+    - ocefpaf
+    - patricksnape
+    - sdvillal
+  remote_url: https://github.com/conda-forge/ffmpeg-feedstock
+  sha: a95a640f76b003a61182749b523e4b79350d4fd1

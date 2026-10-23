@@ -1,0 +1,35 @@
+# TD build outputs
+/_build*/
+/_media_*/
+/Runs/
+/tmp/
+*.area
+*.qdb
+*.qpg
+*.qtl
+*.prj
+*.log
+*.logw
+*.err
+*.dmp
+*.bid
+*.qor
+/final_timing.rpt
+*.wlf
+transcript
+
+# ModelSim, Python and editor outputs
+sim/work*/
+sim/modelsim.ini
+sim/transcript
+**/__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+.vscode/*.user
+
+# Generated TF media packages
+tools/OfflineVideo/packages/
+
+# Source videos are supplied locally, not published to the repository.
+assets/视频/*.mp4

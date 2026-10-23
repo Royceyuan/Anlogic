@@ -1,71 +1,83 @@
-# HX4S20 图片显示工程
+# 双FPGA博物馆双屏展陈与应急信息终端
 
-唯一安路 TD 工程入口：
+基于安路 HX4S20C（EG4S20BG256）开发板的全离线双板系统。主板负责图片浏览和语音讲解，副板负责本地视频、字幕与导览音频；两板通过以太网交换状态和控制信息，HDMI 均输出 1280×720。
 
-`hx4s20_800x600_multimedia.al`
-
-双击该文件即可在 Anlogic TD 中打开统一工程。当前顶层模块为
-`top_1280x720_feature_v72_resource_optimized`，目标器件为 `EG4S20BG256`。
-
-## 当前交付
-
-- 下载文件：`release/hx4s20_1280x720_v72_resource_optimized.bit`
-- 图片：TF 卡根目录放 `IMAGE0.BMP` 至 `IMAGE4.BMP`（支持自适应 24 位 BMP）
-- 手动切图：`SW4=0`，按 `KEY2` 在五张图片间切换
-- 自动切图：`SW4=1`
-- 亮度/对比度：`KEY3` / `KEY4`
-- 复位：`KEY1`
-- 中文字幕：使用 `tools/字幕发送器.vbs` 打开字幕控制台，通过 COM8 发送
-
-## 可复现构建
-
-在工程根目录执行：
+## 目录与工程入口
 
 ```text
-td_commands_prompt.exe scripts/run_media_1280x720_v72_resource_optimized_syn.tcl
-td_commands_prompt.exe scripts/run_media_1280x720_v72_resource_optimized_pr.tcl
-td_commands_prompt.exe scripts/run_media_1280x720_v72_resource_optimized_bitgen.tcl
+Museum_Dual_FPGA/
+├─ Museum_Main/                  主板工程
+│  ├─ museum_main_final.al       TD 正式入口
+│  ├─ src/ constraints/ vendor/  RTL、约束和官方依赖
+│  ├─ scripts/ sim/ seed/        构建、仿真和匹配种子
+│  ├─ tools/MuseumTFPackager/    主板 TF 素材打包工具
+│  └─ release/museum_main_final/ 当前选用 bit 与 SHA-256
+├─ Museum_Secondary/             副板工程
+│  ├─ museum_secondary_final.al  TD 正式入口
+│  ├─ src/ constraints/ vendor/  RTL、约束和官方依赖
+│  ├─ scripts/ sim/ seed/        构建、仿真和匹配种子
+│  ├─ tools/OfflineVideo/        副板离线媒体打包工具
+│  ├─ assets/视频/              本地自备视频目录，不上传
+│  ├─ assets/音频/              六份配套音频
+│  ├─ assets/字幕/              六份独立字幕
+│  └─ release/museum_secondary_final/
+├─ docs/技术报告.pdf
+└─ LICENSE
 ```
 
-当前 v72 的构建证据若需追溯，见工程外的
-`D:/Anlogic_information/_hx4s20_multimedia_main_cleanup_20260904/build_dirs`；本目录不再携带 TD 生成的构建目录。硬件状态仍需以实际板测为准。
+两个工程需保持同级目录。主板构建入口复用副板目录中的发布和验证脚本；各工程只有一个 `.al` 入口和一份选用 bit。
 
-## 1280×720 独立候选 v70c
+## 获取完整文件
 
-v70 的完整 1280×720 SDRAM 帧在 25 MHz SDRAM 用户时钟下需要约
-27.93 Mword/s，板测出现花屏、`8008` 且 LED4 灭，证实持续读欠载。v70b 保持
-官方 `31_hdmi_tx_display_B` HDMI TX 和真实 1280×720 输出，将 SDRAM 工作帧
-改为 960×540，再用已验证的线缓冲放大到 1280×720，平均读需求降为约
-15.71 Mword/s。v70b 板测又暴露了物理 BRAM 多一拍和 KEY2 epoch 自锁；v70c
-改用硬件匹配的 NOREG 单拍路径并修复重启。统一 v69 工程不变；v70c 首轮仍关闭
-OSD、字幕和转场。
+工程包含 Git LFS 文件。克隆后需拉取 LFS 内容，否则 bit、音频、数据库和打包工具的大文件可能只是指针文件。七支源视频仅在本地保留，不进入仓库。
 
-构建顺序：
-
-```text
-td_commands_prompt.exe scripts/run_media_1280x720_v70c_bram_restart_fix_syn.tcl
-td_commands_prompt.exe scripts/run_media_1280x720_v70c_bram_restart_fix_pr.tcl
-td_commands_prompt.exe scripts/run_media_1280x720_v70c_bram_restart_fix_bitgen.tcl
+```powershell
+git lfs install
+git clone https://github.com/Royceyuan/Anlogic.git
+cd Anlogic
+git lfs pull
 ```
 
-v70c 路由后 setup WNS `+0.761 ns`、hold WNS `+0.032 ns`，TNS 均为 0；bit 为
-`release/hx4s20_1280x720_v70c_bram_restart_fix.bit`。这些是实现报告，不代表硬件
-已验证。当前只预加载 IMAGE0/IMAGE1 两帧，便于先验收 720P 基础链路。
+## 运行与素材
 
-## 1280×720 当前版本 v72
+主板支持 TF 卡 24 位 BMP 读取、多尺寸图片适配、0.5×／1×／2×缩放、1×／2×／3×讲解、字幕、波形与转场。副板以 640×480、30fps 播放本地 RGB565 视频，放大输出至 720p；讲解时视频保持正常速度，字幕跟随主板进度。总览和手动浏览时播放宣传片，进入讲解时副板静音，进入应急时切换疏散画面。
 
-v72 在 v70c 链路上恢复五图缓存、快速切图、七种转场、自动轮播、亮度/对比度、
-顶部 OSD、原图 DIM 和 UART 中文字幕，并将 DSP 占用保持为 5/29。当前推荐 bit：
+- [主板 bit](Museum_Main/release/museum_main_final/museum_main_final.bit)
+- [副板 bit](Museum_Secondary/release/museum_secondary_final/museum_secondary_final.bit)
+- [主板素材工具](Museum_Main/tools/MuseumTFPackager/MuseumTFPackager.exe)
+- [副板素材工具](Museum_Secondary/tools/OfflineVideo/MuseumOfflinePackager.exe)
+- [技术报告](docs/技术报告.pdf)
 
-- `hx4s20_1280x720_v72_resource_optimized.bit`
+主板卡使用 20 张 BMP、5 份 WAV、5 份字幕数据及 OSD 名称数据，由主板工具生成。副板卡使用 `ART0.BIN`～`ART4.BIN`、`GUIDE.BIN`、`EVAC.BIN` 和 `SUB0.BIN`～`SUB5.BIN`，由副板工具生成；FPGA 不直接解码 MP4。视频包为 MVID v2，字幕为独立 MSUB v3；宣传片包包含 PCM 音频，其余文物视频不重复保存讲解音轨。
 
-详细 SHA256、资源、时序和操作说明见
-`docs/media_1280x720_v71_v72_full_features_20260902.md`。当前修正版尚未上板验证。
+七支源视频需自行准备：五件文物、总览宣传片和应急疏散视频，在副板工具中分别选择即可。推荐输入 MP4／H.264，画面不烧录字幕；总览宣传片保留声音，文物与应急视频使用静音版本。工具统一转换为 FPGA 所需的 640×480、30fps 数据，无需自行修改编号映射。
 
-## 自适应 BMP
+副板工具的写卡脚本会校验目标卡身份并备份旧文件，当前默认匹配本项目原副板卡。更换为其他卡时须先核实并调整目标卡识别信息，不应直接跳过校验。此仓库不包含已经写入 TF 卡的大型 BIN 包。
 
-加载期间按比例缩放并居中到 800×600，超出部分用黑色填充；不需要提前把图片改成
-800×600。输入格式为 24 位、未压缩 Windows BMP（BI_RGB）。
+## 构建与验证
 
-工程目录只保留统一 TD 入口、活动/回退源码、约束、构建脚本、源级仿真、工具、必要测试数据、官方 vendor 源和少量发布 bit。历史构建、日志和仿真 work 目录没有丢失，而是移至工程外的
-`D:/Anlogic_information/_hx4s20_multimedia_main_cleanup_20260904`，清单见其中的 `MANIFEST.csv`。当前统一工程的版本索引见 `PROJECT_INDEX.md`。
+现有脚本默认使用 TD 6.2.168116、ModelSim、Icarus Verilog 与 Python；具体工具路径可在 `scripts/build.ps1` 参数中设置。媒体转换使用随附 FFmpeg，Python 工具需要 Pillow。主板打包工具的离线语音对齐运行库随工具保留。
+
+从仓库根目录先检查工程依赖：
+
+```powershell
+.\Museum_Main\scripts\build.ps1 -CheckOnly
+.\Museum_Secondary\scripts\build.ps1 -CheckOnly
+```
+
+去掉 `-CheckOnly` 执行综合、布局布线及发布门禁。新构建输出到独立候选目录，不覆盖当前选用 bit。TD 脚本入口均为各工程的 `scripts/build_project.tcl`；临时构建目录为 `_build_main` 和 `_build_secondary`。
+
+匹配当前交付版本的布局种子：主板 **5**、副板 **9**，默认配置位于 `seed/formal/build_config.tcl`，对应重布线脚本位于 `seed/matched_release/route.tcl`。重布线脚本需先有匹配的综合数据库，不能替代从源码构建。
+
+专项回归入口：
+
+```powershell
+.\Museum_Main\scripts\verify_zoom.ps1
+.\Museum_Secondary\scripts\verify_offline_media.ps1
+```
+
+验证区分仿真、布局布线和实板结果。主板与副板 RTL、约束、工具运行库及交付 bit 在本次目录合并中不作功能修改。
+
+## 许可
+
+项目保留原有 Apache-2.0 许可。官方 IP、随附运行库与 FFmpeg 的许可证、版权声明分别保留于 `vendor` 和工具目录内。

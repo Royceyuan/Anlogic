@@ -1,0 +1,18 @@
+*.bit filter=lfs diff=lfs merge=lfs -text
+*.bmp filter=lfs diff=lfs merge=lfs -text
+*.BMP filter=lfs diff=lfs merge=lfs -text
+seed/**/*.db filter=lfs diff=lfs merge=lfs -text
+
+# Preserve FPGA source and constraint bytes across Windows checkouts.
+src/** -text
+vendor/** -text
+constraints/** -text
+*.mp4 filter=lfs diff=lfs merge=lfs -text
+assets/**/*.wav filter=lfs diff=lfs merge=lfs -text
+assets/**/*.srt -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+tools/OfflineVideo/*.exe filter=lfs diff=lfs merge=lfs -text
+tools/OfflineVideo/ffmpeg/*.exe filter=lfs diff=lfs merge=lfs -text
+tools/OfflineVideo/ffmpeg/*.dll filter=lfs diff=lfs merge=lfs -text
+vendor/official_ref/lab_ex5_i2s_audio_hdmi/hdmi_1_4b_transmitter_core_wrapper.enc.v -text -whitespace
+tools/OfflineVideo/ffmpeg_license/** -text -whitespace
+tools/OfflineVideo/licenses/** -text -whitespace
