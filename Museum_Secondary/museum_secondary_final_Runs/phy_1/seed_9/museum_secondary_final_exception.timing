@@ -1,0 +1,895 @@
+Created by          : Tang Dynasty v6.2.168116
+                    : Copyright (c) 2012-2025 Anlogic Inc.
+Generated           : Mon Nov  2 20:24:33 2026
+
+Top Model           : top_secondary_offline_av
+Device              : EG4S20BG256
+Speed               : NA
+STA coverage        : 99.75%
+Constraint File     : D:/VSCode/CodeFiles/Git_TD/Museum_Dual_FPGA/Museum_Secondary/constraints/secondary_offline_av.sdc;
+Confidence          : Routed
+Check Corner        : Both (Slow and Fast)
+CRPR Enabled        : Yes
+Report Scheme       : 10 end point(s) per path group, 1 path(s) per end point
+
+
+Check Status
+-------------
+
+Corner   | Max      Min     
+------------------------------------
+Slow     | yes      yes     
+Fast     | yes      yes     
+
+MCP/SMD Summary
+--------------------
+
+		Max Check
+		--------------------
+		     Total    Dominated     Shadowed      Ignored   Constraint
+		         5            5            0            0   set_multicycle_path 3 -setup -from [get_ports {sd_cmd sd_dat[*]}]
+
+		Min Check
+		--------------------
+		     Total    Dominated     Shadowed      Ignored   Constraint
+		         5            5            0            0   set_multicycle_path 2 -hold -from [get_ports {sd_cmd sd_dat[*]}]
+		         2            2            0            0   set_multicycle_path 1 -hold -start -to [get_ports sd_cmd]
+
+Status of timing exceptions
+--------------------------------------------------
+
+MCP/SMD Details
+--------------------
+
+
+Constraint     :   set_multicycle_path 3 -setup -from [get_ports {sd_cmd sd_dat[*]}]
+Check Type     :   Max
+--------------------------------------------------------------------------------
+Total Paths    :            5
+Dominated      :            5,        100.0%
+
+
+Constraint     :   set_multicycle_path 2 -hold -from [get_ports {sd_cmd sd_dat[*]}]
+Check Type     :   Min
+--------------------------------------------------------------------------------
+Total Paths    :            5
+Dominated      :            5,        100.0%
+
+
+Details on timing exceptions
+--------------------------------------------------
+
+Timing details for constraint:
+	set_multicycle_path 3 -setup -from [get_ports {sd_cmd sd_dat[*]}]
+	set_multicycle_path 2 -hold -from [get_ports {sd_cmd sd_dat[*]}]
+--------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+Path Group     :     
+set_multicycle_path 3 -setup -from [get_ports {sd_cmd sd_dat[*]}]
+set_multicycle_path 2 -hold -from [get_ports {sd_cmd sd_dat[*]}]
+
+Type           :     MCP
+
+Statistics:
+Max            : SWNS      4.871ns, STNS      0.000ns,         0 Viol Endpoints,         5 Total Endpoints,         5 Paths Analyzed
+Min            : HWNS     38.723ns, HTNS      0.000ns,         0 Viol Endpoints,         5 Total Endpoints,         5 Paths Analyzed
+----------------------------------------------------------------------------------------------------
+
+Max Paths
+----------------------------------------------------------------------------------------------------
+Slack               : 4.871ns
+Begin Point         : sd_cmd (rising edge triggered by clock sd_fast  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : sd_cmd_syn_6.bpad (falling edge triggered by clock u_video/u_pll.clkc[0]  { rise@0.000000ns  fall@5.000000ns  period=10.000000 })
+Check Type          : setup
+Process             : slow
+Budget              : 25.000ns { u_video/u_pll.clkc[0] falling@25.000ns - sd_fast rising@0.000ns }
+Data Path Delay     : 15.724ns (cell 15.724ns (100%), net 0.000ns (0%))
+Clock Skew          : 4.565ns
+Logic Level         : 0
+Max Fanout          : 0
+Clock Uncertainty   : 0.000ns (sdc uncertainty: 0.000ns, default uncertainty: 0.000ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.890          1.890          pin: clk_50m_syn_2.di
+net (fo=1)                              0.000          1.890          net: clk_50m_dup_1,  ../../src/secondary/top_secondary_offline_av.v(9)
+                                                                      pin: u_clock.clki
+GCLK                x020y070z2          0.000          1.890          pin: u_clock.clko
+net (fo=1534)       x040y000            1.853          3.743          net: u_network/g_secondary_client$u_client/clk,  ../../src/ethernet/mbp1_secondary_endpoint.v(10)
+                                                                      pin: u_video/u_pll.refclk
+PLL                 x040y000           -2.201          1.542          pin: u_video/u_pll.clkc[0]
+net (fo=1)                              0.000          1.542          net: u_video/core_raw,  ../../src/secondary/top_secondary_tf_video.v(27)
+                                                                      pin: u_video/u_core_clock.clki
+GCLK                x039y001z2          0.000          1.542          pin: u_video/u_core_clock.clko
+net (fo=2536)                           2.201          3.743          net: u_video/g_av$u_subtitles/clk_50m,  ../../src/video/museum_subtitle_overlay.v(16)
+                                                                      pin: sd_clk_syn_4.osclk
+PAD (clk2q)         x022y000            4.545          8.288          pin: sd_clk_syn_4.opad
+hierarchy                               0.000          8.288          pin: sd_clk
+launch edge                             0.000    r     8.288               
+--------------------------------------------------------------------  ---------------
+input               A13                14.500         22.788          pin: sd_cmd
+net (fo=0)                              0.000         22.788          net: sd_cmd,  ../../src/secondary/top_secondary_offline_av.v(14)
+                                                                      pin: sd_cmd_syn_6.bpad
+PAD (reg)           x025y000            1.224    f    24.012          net: u_video/u_sd/cmd_sample,  ../../src/storage/sd_native_read.v(38)
+--------------------------------------------------------------------  ---------------
+Arrival                                               24.012               
+
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.853          1.853          pin: clk_50m_syn_2.di
+net (fo=1)                              0.000          1.853          net: clk_50m_dup_1,  ../../src/secondary/top_secondary_offline_av.v(9)
+                                                                      pin: u_clock.clki
+GCLK                x020y070z2          0.000          1.853          pin: u_clock.clko
+net (fo=1534)       x040y000            1.684          3.537          net: u_network/g_secondary_client$u_client/clk,  ../../src/ethernet/mbp1_secondary_endpoint.v(10)
+                                                                      pin: u_video/u_pll.refclk
+PLL                 x040y000           -2.006          1.531          pin: u_video/u_pll.clkc[0]
+net (fo=1)                              0.000          1.531          net: u_video/core_raw,  ../../src/secondary/top_secondary_tf_video.v(27)
+                                                                      pin: u_video/u_core_clock.clki
+GCLK                x039y001z2          0.000          1.531          pin: u_video/u_core_clock.clko
+net (fo=2536)                           2.006          3.537          net: u_video/g_av$u_subtitles/clk_50m,  ../../src/video/museum_subtitle_overlay.v(16)
+                                                                      pin: sd_cmd_syn_6.ipclk
+capture edge                           25.000    f    28.537               
+--------------------------------------------------------------------  ---------------
+setup                                   0.160         28.697               
+clock uncertainty                       0.000         28.697               
+clock pessimism                         0.186         28.883               
+--------------------------------------------------------------------  ---------------
+Required                                              28.883               
+--------------------------------------------------------------------  ---------------
+Slack                                                  4.871               
+
+Slack               : 4.871ns
+Begin Point         : sd_dat[3] (rising edge triggered by clock sd_fast  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : sd_dat[3]_syn_6.bpad (falling edge triggered by clock u_video/u_pll.clkc[0]  { rise@0.000000ns  fall@5.000000ns  period=10.000000 })
+Check Type          : setup
+Process             : slow
+Budget              : 25.000ns { u_video/u_pll.clkc[0] falling@25.000ns - sd_fast rising@0.000ns }
+Data Path Delay     : 15.724ns (cell 15.724ns (100%), net 0.000ns (0%))
+Clock Skew          : 4.565ns
+Logic Level         : 0
+Max Fanout          : 0
+Clock Uncertainty   : 0.000ns (sdc uncertainty: 0.000ns, default uncertainty: 0.000ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.890          1.890          pin: clk_50m_syn_2.di
+net (fo=1)                              0.000          1.890          net: clk_50m_dup_1,  ../../src/secondary/top_secondary_offline_av.v(9)
+                                                                      pin: u_clock.clki
+GCLK                x020y070z2          0.000          1.890          pin: u_clock.clko
+net (fo=1534)       x040y000            1.853          3.743          net: u_network/g_secondary_client$u_client/clk,  ../../src/ethernet/mbp1_secondary_endpoint.v(10)
+                                                                      pin: u_video/u_pll.refclk
+PLL                 x040y000           -2.201          1.542          pin: u_video/u_pll.clkc[0]
+net (fo=1)                              0.000          1.542          net: u_video/core_raw,  ../../src/secondary/top_secondary_tf_video.v(27)
+                                                                      pin: u_video/u_core_clock.clki
+GCLK                x039y001z2          0.000          1.542          pin: u_video/u_core_clock.clko
+net (fo=2536)                           2.201          3.743          net: u_video/g_av$u_subtitles/clk_50m,  ../../src/video/museum_subtitle_overlay.v(16)
+                                                                      pin: sd_clk_syn_4.osclk
+PAD (clk2q)         x022y000            4.545          8.288          pin: sd_clk_syn_4.opad
+hierarchy                               0.000          8.288          pin: sd_clk
+launch edge                             0.000    r     8.288               
+--------------------------------------------------------------------  ---------------
+input               A12                14.500         22.788          pin: sd_dat[3]
+net (fo=0)                              0.000         22.788          net: sd_dat[3],  ../../src/secondary/top_secondary_offline_av.v(15)
+                                                                      pin: sd_dat[3]_syn_6.bpad
+PAD (reg)           x025y000            1.224    f    24.012          net: u_video/u_sd/dat_sample[3],  ../../src/storage/sd_native_read.v(39)
+--------------------------------------------------------------------  ---------------
+Arrival                                               24.012               
+
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.853          1.853          pin: clk_50m_syn_2.di
+net (fo=1)                              0.000          1.853          net: clk_50m_dup_1,  ../../src/secondary/top_secondary_offline_av.v(9)
+                                                                      pin: u_clock.clki
+GCLK                x020y070z2          0.000          1.853          pin: u_clock.clko
+net (fo=1534)       x040y000            1.684          3.537          net: u_network/g_secondary_client$u_client/clk,  ../../src/ethernet/mbp1_secondary_endpoint.v(10)
+                                                                      pin: u_video/u_pll.refclk
+PLL                 x040y000           -2.006          1.531          pin: u_video/u_pll.clkc[0]
+net (fo=1)                              0.000          1.531          net: u_video/core_raw,  ../../src/secondary/top_secondary_tf_video.v(27)
+                                                                      pin: u_video/u_core_clock.clki
+GCLK                x039y001z2          0.000          1.531          pin: u_video/u_core_clock.clko
+net (fo=2536)                           2.006          3.537          net: u_video/g_av$u_subtitles/clk_50m,  ../../src/video/museum_subtitle_overlay.v(16)
+                                                                      pin: sd_dat[3]_syn_6.ipclk
+capture edge                           25.000    f    28.537               
+--------------------------------------------------------------------  ---------------
+setup                                   0.160         28.697               
+clock uncertainty                       0.000         28.697               
+clock pessimism                         0.186         28.883               
+--------------------------------------------------------------------  ---------------
+Required                                              28.883               
+--------------------------------------------------------------------  ---------------
+Slack                                                  4.871               
+
+Slack               : 4.871ns
+Begin Point         : sd_dat[2] (rising edge triggered by clock sd_fast  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : sd_dat[2]_syn_6.bpad (falling edge triggered by clock u_video/u_pll.clkc[0]  { rise@0.000000ns  fall@5.000000ns  period=10.000000 })
+Check Type          : setup
+Process             : slow
+Budget              : 25.000ns { u_video/u_pll.clkc[0] falling@25.000ns - sd_fast rising@0.000ns }
+Data Path Delay     : 15.724ns (cell 15.724ns (100%), net 0.000ns (0%))
+Clock Skew          : 4.565ns
+Logic Level         : 0
+Max Fanout          : 0
+Clock Uncertainty   : 0.000ns (sdc uncertainty: 0.000ns, default uncertainty: 0.000ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.890          1.890          pin: clk_50m_syn_2.di
+net (fo=1)                              0.000          1.890          net: clk_50m_dup_1,  ../../src/secondary/top_secondary_offline_av.v(9)
+                                                                      pin: u_clock.clki
+GCLK                x020y070z2          0.000          1.890          pin: u_clock.clko
+net (fo=1534)       x040y000            1.853          3.743          net: u_network/g_secondary_client$u_client/clk,  ../../src/ethernet/mbp1_secondary_endpoint.v(10)
+                                                                      pin: u_video/u_pll.refclk
+PLL                 x040y000           -2.201          1.542          pin: u_video/u_pll.clkc[0]
+net (fo=1)                              0.000          1.542          net: u_video/core_raw,  ../../src/secondary/top_secondary_tf_video.v(27)
+                                                                      pin: u_video/u_core_clock.clki
+GCLK                x039y001z2          0.000          1.542          pin: u_video/u_core_clock.clko
+net (fo=2536)                           2.201          3.743          net: u_video/g_av$u_subtitles/clk_50m,  ../../src/video/museum_subtitle_overlay.v(16)
+                                                                      pin: sd_clk_syn_4.osclk
+PAD (clk2q)         x022y000            4.545          8.288          pin: sd_clk_syn_4.opad
+hierarchy                               0.000          8.288          pin: sd_clk
+launch edge                             0.000    r     8.288               
+--------------------------------------------------------------------  ---------------
+input               A11                14.500         22.788          pin: sd_dat[2]
+net (fo=0)                              0.000         22.788          net: sd_dat[2],  ../../src/secondary/top_secondary_offline_av.v(15)
+                                                                      pin: sd_dat[2]_syn_6.bpad
+PAD (reg)           x012y000            1.224    f    24.012          net: u_video/u_sd/dat_sample[2],  ../../src/storage/sd_native_read.v(39)
+--------------------------------------------------------------------  ---------------
+Arrival                                               24.012               
+
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.853          1.853          pin: clk_50m_syn_2.di
+net (fo=1)                              0.000          1.853          net: clk_50m_dup_1,  ../../src/secondary/top_secondary_offline_av.v(9)
+                                                                      pin: u_clock.clki
+GCLK                x020y070z2          0.000          1.853          pin: u_clock.clko
+net (fo=1534)       x040y000            1.684          3.537          net: u_network/g_secondary_client$u_client/clk,  ../../src/ethernet/mbp1_secondary_endpoint.v(10)
+                                                                      pin: u_video/u_pll.refclk
+PLL                 x040y000           -2.006          1.531          pin: u_video/u_pll.clkc[0]
+net (fo=1)                              0.000          1.531          net: u_video/core_raw,  ../../src/secondary/top_secondary_tf_video.v(27)
+                                                                      pin: u_video/u_core_clock.clki
+GCLK                x039y001z2          0.000          1.531          pin: u_video/u_core_clock.clko
+net (fo=2536)                           2.006          3.537          net: u_video/g_av$u_subtitles/clk_50m,  ../../src/video/museum_subtitle_overlay.v(16)
+                                                                      pin: sd_dat[2]_syn_6.ipclk
+capture edge                           25.000    f    28.537               
+--------------------------------------------------------------------  ---------------
+setup                                   0.160         28.697               
+clock uncertainty                       0.000         28.697               
+clock pessimism                         0.186         28.883               
+--------------------------------------------------------------------  ---------------
+Required                                              28.883               
+--------------------------------------------------------------------  ---------------
+Slack                                                  4.871               
+
+Slack               : 4.871ns
+Begin Point         : sd_dat[1] (rising edge triggered by clock sd_fast  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : sd_dat[1]_syn_6.bpad (falling edge triggered by clock u_video/u_pll.clkc[0]  { rise@0.000000ns  fall@5.000000ns  period=10.000000 })
+Check Type          : setup
+Process             : slow
+Budget              : 25.000ns { u_video/u_pll.clkc[0] falling@25.000ns - sd_fast rising@0.000ns }
+Data Path Delay     : 15.724ns (cell 15.724ns (100%), net 0.000ns (0%))
+Clock Skew          : 4.565ns
+Logic Level         : 0
+Max Fanout          : 0
+Clock Uncertainty   : 0.000ns (sdc uncertainty: 0.000ns, default uncertainty: 0.000ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.890          1.890          pin: clk_50m_syn_2.di
+net (fo=1)                              0.000          1.890          net: clk_50m_dup_1,  ../../src/secondary/top_secondary_offline_av.v(9)
+                                                                      pin: u_clock.clki
+GCLK                x020y070z2          0.000          1.890          pin: u_clock.clko
+net (fo=1534)       x040y000            1.853          3.743          net: u_network/g_secondary_client$u_client/clk,  ../../src/ethernet/mbp1_secondary_endpoint.v(10)
+                                                                      pin: u_video/u_pll.refclk
+PLL                 x040y000           -2.201          1.542          pin: u_video/u_pll.clkc[0]
+net (fo=1)                              0.000          1.542          net: u_video/core_raw,  ../../src/secondary/top_secondary_tf_video.v(27)
+                                                                      pin: u_video/u_core_clock.clki
+GCLK                x039y001z2          0.000          1.542          pin: u_video/u_core_clock.clko
+net (fo=2536)                           2.201          3.743          net: u_video/g_av$u_subtitles/clk_50m,  ../../src/video/museum_subtitle_overlay.v(16)
+                                                                      pin: sd_clk_syn_4.osclk
+PAD (clk2q)         x022y000            4.545          8.288          pin: sd_clk_syn_4.opad
+hierarchy                               0.000          8.288          pin: sd_clk
+launch edge                             0.000    r     8.288               
+--------------------------------------------------------------------  ---------------
+input               B15                14.500         22.788          pin: sd_dat[1]
+net (fo=0)                              0.000         22.788          net: sd_dat[1],  ../../src/secondary/top_secondary_offline_av.v(15)
+                                                                      pin: sd_dat[1]_syn_6.bpad
+PAD (reg)           x022y000            1.224    f    24.012          net: u_video/u_sd/dat_sample[1],  ../../src/storage/sd_native_read.v(39)
+--------------------------------------------------------------------  ---------------
+Arrival                                               24.012               
+
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.853          1.853          pin: clk_50m_syn_2.di
+net (fo=1)                              0.000          1.853          net: clk_50m_dup_1,  ../../src/secondary/top_secondary_offline_av.v(9)
+                                                                      pin: u_clock.clki
+GCLK                x020y070z2          0.000          1.853          pin: u_clock.clko
+net (fo=1534)       x040y000            1.684          3.537          net: u_network/g_secondary_client$u_client/clk,  ../../src/ethernet/mbp1_secondary_endpoint.v(10)
+                                                                      pin: u_video/u_pll.refclk
+PLL                 x040y000           -2.006          1.531          pin: u_video/u_pll.clkc[0]
+net (fo=1)                              0.000          1.531          net: u_video/core_raw,  ../../src/secondary/top_secondary_tf_video.v(27)
+                                                                      pin: u_video/u_core_clock.clki
+GCLK                x039y001z2          0.000          1.531          pin: u_video/u_core_clock.clko
+net (fo=2536)                           2.006          3.537          net: u_video/g_av$u_subtitles/clk_50m,  ../../src/video/museum_subtitle_overlay.v(16)
+                                                                      pin: sd_dat[1]_syn_6.ipclk
+capture edge                           25.000    f    28.537               
+--------------------------------------------------------------------  ---------------
+setup                                   0.160         28.697               
+clock uncertainty                       0.000         28.697               
+clock pessimism                         0.186         28.883               
+--------------------------------------------------------------------  ---------------
+Required                                              28.883               
+--------------------------------------------------------------------  ---------------
+Slack                                                  4.871               
+
+Slack               : 4.891ns
+Begin Point         : sd_dat[0] (rising edge triggered by clock sd_fast  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : sd_dat[0]_syn_6.bpad (falling edge triggered by clock u_video/u_pll.clkc[0]  { rise@0.000000ns  fall@5.000000ns  period=10.000000 })
+Check Type          : setup
+Process             : slow
+Budget              : 25.000ns { u_video/u_pll.clkc[0] falling@25.000ns - sd_fast rising@0.000ns }
+Data Path Delay     : 15.724ns (cell 15.724ns (100%), net 0.000ns (0%))
+Clock Skew          : 4.545ns
+Logic Level         : 0
+Max Fanout          : 0
+Clock Uncertainty   : 0.000ns (sdc uncertainty: 0.000ns, default uncertainty: 0.000ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.890          1.890          pin: clk_50m_syn_2.di
+net (fo=1)                              0.000          1.890          net: clk_50m_dup_1,  ../../src/secondary/top_secondary_offline_av.v(9)
+                                                                      pin: u_clock.clki
+GCLK                x020y070z2          0.000          1.890          pin: u_clock.clko
+net (fo=1534)       x040y000            1.853          3.743          net: u_network/g_secondary_client$u_client/clk,  ../../src/ethernet/mbp1_secondary_endpoint.v(10)
+                                                                      pin: u_video/u_pll.refclk
+PLL                 x040y000           -2.201          1.542          pin: u_video/u_pll.clkc[0]
+net (fo=1)                              0.000          1.542          net: u_video/core_raw,  ../../src/secondary/top_secondary_tf_video.v(27)
+                                                                      pin: u_video/u_core_clock.clki
+GCLK                x039y001z2          0.000          1.542          pin: u_video/u_core_clock.clko
+net (fo=2536)                           2.201          3.743          net: u_video/g_av$u_subtitles/clk_50m,  ../../src/video/museum_subtitle_overlay.v(16)
+                                                                      pin: sd_clk_syn_4.osclk
+PAD (clk2q)         x022y000            4.545          8.288          pin: sd_clk_syn_4.opad
+hierarchy                               0.000          8.288          pin: sd_clk
+launch edge                             0.000    r     8.288               
+--------------------------------------------------------------------  ---------------
+input               B14                14.500         22.788          pin: sd_dat[0]
+net (fo=0)                              0.000         22.788          net: sd_dat[0],  ../../src/secondary/top_secondary_offline_av.v(15)
+                                                                      pin: sd_dat[0]_syn_6.bpad
+PAD (reg)           x022y000            1.224    f    24.012          net: u_video/u_sd/dat_sample[0],  ../../src/storage/sd_native_read.v(39)
+--------------------------------------------------------------------  ---------------
+Arrival                                               24.012               
+
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.853          1.853          pin: clk_50m_syn_2.di
+net (fo=1)                              0.000          1.853          net: clk_50m_dup_1,  ../../src/secondary/top_secondary_offline_av.v(9)
+                                                                      pin: u_clock.clki
+GCLK                x020y070z2          0.000          1.853          pin: u_clock.clko
+net (fo=1534)       x040y000            1.684          3.537          net: u_network/g_secondary_client$u_client/clk,  ../../src/ethernet/mbp1_secondary_endpoint.v(10)
+                                                                      pin: u_video/u_pll.refclk
+PLL                 x040y000           -2.006          1.531          pin: u_video/u_pll.clkc[0]
+net (fo=1)                              0.000          1.531          net: u_video/core_raw,  ../../src/secondary/top_secondary_tf_video.v(27)
+                                                                      pin: u_video/u_core_clock.clki
+GCLK                x039y001z2          0.000          1.531          pin: u_video/u_core_clock.clko
+net (fo=2536)                           2.006          3.537          net: u_video/g_av$u_subtitles/clk_50m,  ../../src/video/museum_subtitle_overlay.v(16)
+                                                                      pin: sd_dat[0]_syn_6.ipclk
+capture edge                           25.000    f    28.537               
+--------------------------------------------------------------------  ---------------
+setup                                   0.160         28.697               
+clock uncertainty                       0.000         28.697               
+clock pessimism                         0.206         28.903               
+--------------------------------------------------------------------  ---------------
+Required                                              28.903               
+--------------------------------------------------------------------  ---------------
+Slack                                                  4.891               
+
+
+
+Min Paths
+----------------------------------------------------------------------------------------------------
+Slack               : 28.723ns
+Begin Point         : sd_cmd (rising edge triggered by clock sd_fast  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : sd_cmd_syn_6.bpad (falling edge triggered by clock u_video/u_pll.clkc[0]  { rise@0.000000ns  fall@5.000000ns  period=10.000000 })
+Check Type          : hold
+Process             : fast
+Budget              : 25.000ns { sd_fast rising@40.000ns - u_video/u_pll.clkc[0] falling@15.000ns }
+Data Path Delay     : 0.852ns (cell 0.852ns (100%), net 0.000ns (0%))
+Clock Skew          : 3.032ns
+Logic Level         : 0
+Max Fanout          : 0
+Clock Uncertainty   : 0.000ns (sdc uncertainty: 0.000ns, default uncertainty: 0.000ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.310          1.310          pin: clk_50m_syn_2.di
+net (fo=1)                              0.000          1.310          net: clk_50m_dup_1,  ../../src/secondary/top_secondary_offline_av.v(9)
+                                                                      pin: u_clock.clki
+GCLK                x020y070z2          0.000          1.310          pin: u_clock.clko
+net (fo=1534)       x040y000            1.606          2.916          net: u_network/g_secondary_client$u_client/clk,  ../../src/ethernet/mbp1_secondary_endpoint.v(10)
+                                                                      pin: u_video/u_pll.refclk
+PLL                 x040y000           -1.879          1.037          pin: u_video/u_pll.clkc[0]
+net (fo=1)                              0.000          1.037          net: u_video/core_raw,  ../../src/secondary/top_secondary_tf_video.v(27)
+                                                                      pin: u_video/u_core_clock.clki
+GCLK                x039y001z2          0.000          1.037          pin: u_video/u_core_clock.clko
+net (fo=2536)                           1.879          2.916          net: u_video/g_av$u_subtitles/clk_50m,  ../../src/video/museum_subtitle_overlay.v(16)
+                                                                      pin: sd_clk_syn_4.osclk
+PAD (clk2q)         x022y000            3.091          6.007          pin: sd_clk_syn_4.opad
+hierarchy                               0.000          6.007          pin: sd_clk
+launch edge                            40.000    r    46.007               
+--------------------------------------------------------------------  ---------------
+input               A13                 0.000         46.007          pin: sd_cmd
+net (fo=0)                              0.000         46.007          net: sd_cmd,  ../../src/secondary/top_secondary_offline_av.v(14)
+                                                                      pin: sd_cmd_syn_6.bpad
+PAD (reg)           x025y000            0.852    r    46.859          net: u_video/u_sd/cmd_sample,  ../../src/storage/sd_native_read.v(38)
+--------------------------------------------------------------------  ---------------
+Arrival                                               46.859               
+
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.577          1.577          pin: clk_50m_syn_2.di
+net (fo=1)                              0.000          1.577          net: clk_50m_dup_1,  ../../src/secondary/top_secondary_offline_av.v(9)
+                                                                      pin: u_clock.clki
+GCLK                x020y070z2          0.000          1.577          pin: u_clock.clko
+net (fo=1534)       x040y000            1.790          3.367          net: u_network/g_secondary_client$u_client/clk,  ../../src/ethernet/mbp1_secondary_endpoint.v(10)
+                                                                      pin: u_video/u_pll.refclk
+PLL                 x040y000           -2.037          1.330          pin: u_video/u_pll.clkc[0]
+net (fo=1)                              0.000          1.330          net: u_video/core_raw,  ../../src/secondary/top_secondary_tf_video.v(27)
+                                                                      pin: u_video/u_core_clock.clki
+GCLK                x039y001z2          0.000          1.330          pin: u_video/u_core_clock.clko
+net (fo=2536)                           2.037          3.367          net: u_video/g_av$u_subtitles/clk_50m,  ../../src/video/museum_subtitle_overlay.v(16)
+                                                                      pin: sd_cmd_syn_6.ipclk
+capture edge                           15.000    f    18.367               
+--------------------------------------------------------------------  ---------------
+hold                                    0.161         18.528               
+clock uncertainty                       0.000         18.528               
+clock pessimism                        -0.392         18.136               
+--------------------------------------------------------------------  ---------------
+Required                                              18.136               
+--------------------------------------------------------------------  ---------------
+Slack                                                 28.723               
+
+Slack               : 28.723ns
+Begin Point         : sd_dat[3] (rising edge triggered by clock sd_fast  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : sd_dat[3]_syn_6.bpad (falling edge triggered by clock u_video/u_pll.clkc[0]  { rise@0.000000ns  fall@5.000000ns  period=10.000000 })
+Check Type          : hold
+Process             : fast
+Budget              : 25.000ns { sd_fast rising@40.000ns - u_video/u_pll.clkc[0] falling@15.000ns }
+Data Path Delay     : 0.852ns (cell 0.852ns (100%), net 0.000ns (0%))
+Clock Skew          : 3.032ns
+Logic Level         : 0
+Max Fanout          : 0
+Clock Uncertainty   : 0.000ns (sdc uncertainty: 0.000ns, default uncertainty: 0.000ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.310          1.310          pin: clk_50m_syn_2.di
+net (fo=1)                              0.000          1.310          net: clk_50m_dup_1,  ../../src/secondary/top_secondary_offline_av.v(9)
+                                                                      pin: u_clock.clki
+GCLK                x020y070z2          0.000          1.310          pin: u_clock.clko
+net (fo=1534)       x040y000            1.606          2.916          net: u_network/g_secondary_client$u_client/clk,  ../../src/ethernet/mbp1_secondary_endpoint.v(10)
+                                                                      pin: u_video/u_pll.refclk
+PLL                 x040y000           -1.879          1.037          pin: u_video/u_pll.clkc[0]
+net (fo=1)                              0.000          1.037          net: u_video/core_raw,  ../../src/secondary/top_secondary_tf_video.v(27)
+                                                                      pin: u_video/u_core_clock.clki
+GCLK                x039y001z2          0.000          1.037          pin: u_video/u_core_clock.clko
+net (fo=2536)                           1.879          2.916          net: u_video/g_av$u_subtitles/clk_50m,  ../../src/video/museum_subtitle_overlay.v(16)
+                                                                      pin: sd_clk_syn_4.osclk
+PAD (clk2q)         x022y000            3.091          6.007          pin: sd_clk_syn_4.opad
+hierarchy                               0.000          6.007          pin: sd_clk
+launch edge                            40.000    r    46.007               
+--------------------------------------------------------------------  ---------------
+input               A12                 0.000         46.007          pin: sd_dat[3]
+net (fo=0)                              0.000         46.007          net: sd_dat[3],  ../../src/secondary/top_secondary_offline_av.v(15)
+                                                                      pin: sd_dat[3]_syn_6.bpad
+PAD (reg)           x025y000            0.852    r    46.859          net: u_video/u_sd/dat_sample[3],  ../../src/storage/sd_native_read.v(39)
+--------------------------------------------------------------------  ---------------
+Arrival                                               46.859               
+
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.577          1.577          pin: clk_50m_syn_2.di
+net (fo=1)                              0.000          1.577          net: clk_50m_dup_1,  ../../src/secondary/top_secondary_offline_av.v(9)
+                                                                      pin: u_clock.clki
+GCLK                x020y070z2          0.000          1.577          pin: u_clock.clko
+net (fo=1534)       x040y000            1.790          3.367          net: u_network/g_secondary_client$u_client/clk,  ../../src/ethernet/mbp1_secondary_endpoint.v(10)
+                                                                      pin: u_video/u_pll.refclk
+PLL                 x040y000           -2.037          1.330          pin: u_video/u_pll.clkc[0]
+net (fo=1)                              0.000          1.330          net: u_video/core_raw,  ../../src/secondary/top_secondary_tf_video.v(27)
+                                                                      pin: u_video/u_core_clock.clki
+GCLK                x039y001z2          0.000          1.330          pin: u_video/u_core_clock.clko
+net (fo=2536)                           2.037          3.367          net: u_video/g_av$u_subtitles/clk_50m,  ../../src/video/museum_subtitle_overlay.v(16)
+                                                                      pin: sd_dat[3]_syn_6.ipclk
+capture edge                           15.000    f    18.367               
+--------------------------------------------------------------------  ---------------
+hold                                    0.161         18.528               
+clock uncertainty                       0.000         18.528               
+clock pessimism                        -0.392         18.136               
+--------------------------------------------------------------------  ---------------
+Required                                              18.136               
+--------------------------------------------------------------------  ---------------
+Slack                                                 28.723               
+
+Slack               : 28.723ns
+Begin Point         : sd_dat[2] (rising edge triggered by clock sd_fast  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : sd_dat[2]_syn_6.bpad (falling edge triggered by clock u_video/u_pll.clkc[0]  { rise@0.000000ns  fall@5.000000ns  period=10.000000 })
+Check Type          : hold
+Process             : fast
+Budget              : 25.000ns { sd_fast rising@40.000ns - u_video/u_pll.clkc[0] falling@15.000ns }
+Data Path Delay     : 0.852ns (cell 0.852ns (100%), net 0.000ns (0%))
+Clock Skew          : 3.032ns
+Logic Level         : 0
+Max Fanout          : 0
+Clock Uncertainty   : 0.000ns (sdc uncertainty: 0.000ns, default uncertainty: 0.000ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.310          1.310          pin: clk_50m_syn_2.di
+net (fo=1)                              0.000          1.310          net: clk_50m_dup_1,  ../../src/secondary/top_secondary_offline_av.v(9)
+                                                                      pin: u_clock.clki
+GCLK                x020y070z2          0.000          1.310          pin: u_clock.clko
+net (fo=1534)       x040y000            1.606          2.916          net: u_network/g_secondary_client$u_client/clk,  ../../src/ethernet/mbp1_secondary_endpoint.v(10)
+                                                                      pin: u_video/u_pll.refclk
+PLL                 x040y000           -1.879          1.037          pin: u_video/u_pll.clkc[0]
+net (fo=1)                              0.000          1.037          net: u_video/core_raw,  ../../src/secondary/top_secondary_tf_video.v(27)
+                                                                      pin: u_video/u_core_clock.clki
+GCLK                x039y001z2          0.000          1.037          pin: u_video/u_core_clock.clko
+net (fo=2536)                           1.879          2.916          net: u_video/g_av$u_subtitles/clk_50m,  ../../src/video/museum_subtitle_overlay.v(16)
+                                                                      pin: sd_clk_syn_4.osclk
+PAD (clk2q)         x022y000            3.091          6.007          pin: sd_clk_syn_4.opad
+hierarchy                               0.000          6.007          pin: sd_clk
+launch edge                            40.000    r    46.007               
+--------------------------------------------------------------------  ---------------
+input               A11                 0.000         46.007          pin: sd_dat[2]
+net (fo=0)                              0.000         46.007          net: sd_dat[2],  ../../src/secondary/top_secondary_offline_av.v(15)
+                                                                      pin: sd_dat[2]_syn_6.bpad
+PAD (reg)           x012y000            0.852    r    46.859          net: u_video/u_sd/dat_sample[2],  ../../src/storage/sd_native_read.v(39)
+--------------------------------------------------------------------  ---------------
+Arrival                                               46.859               
+
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.577          1.577          pin: clk_50m_syn_2.di
+net (fo=1)                              0.000          1.577          net: clk_50m_dup_1,  ../../src/secondary/top_secondary_offline_av.v(9)
+                                                                      pin: u_clock.clki
+GCLK                x020y070z2          0.000          1.577          pin: u_clock.clko
+net (fo=1534)       x040y000            1.790          3.367          net: u_network/g_secondary_client$u_client/clk,  ../../src/ethernet/mbp1_secondary_endpoint.v(10)
+                                                                      pin: u_video/u_pll.refclk
+PLL                 x040y000           -2.037          1.330          pin: u_video/u_pll.clkc[0]
+net (fo=1)                              0.000          1.330          net: u_video/core_raw,  ../../src/secondary/top_secondary_tf_video.v(27)
+                                                                      pin: u_video/u_core_clock.clki
+GCLK                x039y001z2          0.000          1.330          pin: u_video/u_core_clock.clko
+net (fo=2536)                           2.037          3.367          net: u_video/g_av$u_subtitles/clk_50m,  ../../src/video/museum_subtitle_overlay.v(16)
+                                                                      pin: sd_dat[2]_syn_6.ipclk
+capture edge                           15.000    f    18.367               
+--------------------------------------------------------------------  ---------------
+hold                                    0.161         18.528               
+clock uncertainty                       0.000         18.528               
+clock pessimism                        -0.392         18.136               
+--------------------------------------------------------------------  ---------------
+Required                                              18.136               
+--------------------------------------------------------------------  ---------------
+Slack                                                 28.723               
+
+Slack               : 28.723ns
+Begin Point         : sd_dat[1] (rising edge triggered by clock sd_fast  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : sd_dat[1]_syn_6.bpad (falling edge triggered by clock u_video/u_pll.clkc[0]  { rise@0.000000ns  fall@5.000000ns  period=10.000000 })
+Check Type          : hold
+Process             : fast
+Budget              : 25.000ns { sd_fast rising@40.000ns - u_video/u_pll.clkc[0] falling@15.000ns }
+Data Path Delay     : 0.852ns (cell 0.852ns (100%), net 0.000ns (0%))
+Clock Skew          : 3.032ns
+Logic Level         : 0
+Max Fanout          : 0
+Clock Uncertainty   : 0.000ns (sdc uncertainty: 0.000ns, default uncertainty: 0.000ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.310          1.310          pin: clk_50m_syn_2.di
+net (fo=1)                              0.000          1.310          net: clk_50m_dup_1,  ../../src/secondary/top_secondary_offline_av.v(9)
+                                                                      pin: u_clock.clki
+GCLK                x020y070z2          0.000          1.310          pin: u_clock.clko
+net (fo=1534)       x040y000            1.606          2.916          net: u_network/g_secondary_client$u_client/clk,  ../../src/ethernet/mbp1_secondary_endpoint.v(10)
+                                                                      pin: u_video/u_pll.refclk
+PLL                 x040y000           -1.879          1.037          pin: u_video/u_pll.clkc[0]
+net (fo=1)                              0.000          1.037          net: u_video/core_raw,  ../../src/secondary/top_secondary_tf_video.v(27)
+                                                                      pin: u_video/u_core_clock.clki
+GCLK                x039y001z2          0.000          1.037          pin: u_video/u_core_clock.clko
+net (fo=2536)                           1.879          2.916          net: u_video/g_av$u_subtitles/clk_50m,  ../../src/video/museum_subtitle_overlay.v(16)
+                                                                      pin: sd_clk_syn_4.osclk
+PAD (clk2q)         x022y000            3.091          6.007          pin: sd_clk_syn_4.opad
+hierarchy                               0.000          6.007          pin: sd_clk
+launch edge                            40.000    r    46.007               
+--------------------------------------------------------------------  ---------------
+input               B15                 0.000         46.007          pin: sd_dat[1]
+net (fo=0)                              0.000         46.007          net: sd_dat[1],  ../../src/secondary/top_secondary_offline_av.v(15)
+                                                                      pin: sd_dat[1]_syn_6.bpad
+PAD (reg)           x022y000            0.852    r    46.859          net: u_video/u_sd/dat_sample[1],  ../../src/storage/sd_native_read.v(39)
+--------------------------------------------------------------------  ---------------
+Arrival                                               46.859               
+
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.577          1.577          pin: clk_50m_syn_2.di
+net (fo=1)                              0.000          1.577          net: clk_50m_dup_1,  ../../src/secondary/top_secondary_offline_av.v(9)
+                                                                      pin: u_clock.clki
+GCLK                x020y070z2          0.000          1.577          pin: u_clock.clko
+net (fo=1534)       x040y000            1.790          3.367          net: u_network/g_secondary_client$u_client/clk,  ../../src/ethernet/mbp1_secondary_endpoint.v(10)
+                                                                      pin: u_video/u_pll.refclk
+PLL                 x040y000           -2.037          1.330          pin: u_video/u_pll.clkc[0]
+net (fo=1)                              0.000          1.330          net: u_video/core_raw,  ../../src/secondary/top_secondary_tf_video.v(27)
+                                                                      pin: u_video/u_core_clock.clki
+GCLK                x039y001z2          0.000          1.330          pin: u_video/u_core_clock.clko
+net (fo=2536)                           2.037          3.367          net: u_video/g_av$u_subtitles/clk_50m,  ../../src/video/museum_subtitle_overlay.v(16)
+                                                                      pin: sd_dat[1]_syn_6.ipclk
+capture edge                           15.000    f    18.367               
+--------------------------------------------------------------------  ---------------
+hold                                    0.161         18.528               
+clock uncertainty                       0.000         18.528               
+clock pessimism                        -0.392         18.136               
+--------------------------------------------------------------------  ---------------
+Required                                              18.136               
+--------------------------------------------------------------------  ---------------
+Slack                                                 28.723               
+
+Slack               : 28.782ns
+Begin Point         : sd_dat[0] (rising edge triggered by clock sd_fast  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+End Point           : sd_dat[0]_syn_6.bpad (falling edge triggered by clock u_video/u_pll.clkc[0]  { rise@0.000000ns  fall@5.000000ns  period=10.000000 })
+Check Type          : hold
+Process             : fast
+Budget              : 25.000ns { sd_fast rising@40.000ns - u_video/u_pll.clkc[0] falling@15.000ns }
+Data Path Delay     : 0.852ns (cell 0.852ns (100%), net 0.000ns (0%))
+Clock Skew          : 3.091ns
+Logic Level         : 0
+Max Fanout          : 0
+Clock Uncertainty   : 0.000ns (sdc uncertainty: 0.000ns, default uncertainty: 0.000ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.310          1.310          pin: clk_50m_syn_2.di
+net (fo=1)                              0.000          1.310          net: clk_50m_dup_1,  ../../src/secondary/top_secondary_offline_av.v(9)
+                                                                      pin: u_clock.clki
+GCLK                x020y070z2          0.000          1.310          pin: u_clock.clko
+net (fo=1534)       x040y000            1.606          2.916          net: u_network/g_secondary_client$u_client/clk,  ../../src/ethernet/mbp1_secondary_endpoint.v(10)
+                                                                      pin: u_video/u_pll.refclk
+PLL                 x040y000           -1.879          1.037          pin: u_video/u_pll.clkc[0]
+net (fo=1)                              0.000          1.037          net: u_video/core_raw,  ../../src/secondary/top_secondary_tf_video.v(27)
+                                                                      pin: u_video/u_core_clock.clki
+GCLK                x039y001z2          0.000          1.037          pin: u_video/u_core_clock.clko
+net (fo=2536)                           1.879          2.916          net: u_video/g_av$u_subtitles/clk_50m,  ../../src/video/museum_subtitle_overlay.v(16)
+                                                                      pin: sd_clk_syn_4.osclk
+PAD (clk2q)         x022y000            3.091          6.007          pin: sd_clk_syn_4.opad
+hierarchy                               0.000          6.007          pin: sd_clk
+launch edge                            40.000    r    46.007               
+--------------------------------------------------------------------  ---------------
+input               B14                 0.000         46.007          pin: sd_dat[0]
+net (fo=0)                              0.000         46.007          net: sd_dat[0],  ../../src/secondary/top_secondary_offline_av.v(15)
+                                                                      pin: sd_dat[0]_syn_6.bpad
+PAD (reg)           x022y000            0.852    r    46.859          net: u_video/u_sd/dat_sample[0],  ../../src/storage/sd_native_read.v(39)
+--------------------------------------------------------------------  ---------------
+Arrival                                               46.859               
+
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.577          1.577          pin: clk_50m_syn_2.di
+net (fo=1)                              0.000          1.577          net: clk_50m_dup_1,  ../../src/secondary/top_secondary_offline_av.v(9)
+                                                                      pin: u_clock.clki
+GCLK                x020y070z2          0.000          1.577          pin: u_clock.clko
+net (fo=1534)       x040y000            1.790          3.367          net: u_network/g_secondary_client$u_client/clk,  ../../src/ethernet/mbp1_secondary_endpoint.v(10)
+                                                                      pin: u_video/u_pll.refclk
+PLL                 x040y000           -2.037          1.330          pin: u_video/u_pll.clkc[0]
+net (fo=1)                              0.000          1.330          net: u_video/core_raw,  ../../src/secondary/top_secondary_tf_video.v(27)
+                                                                      pin: u_video/u_core_clock.clki
+GCLK                x039y001z2          0.000          1.330          pin: u_video/u_core_clock.clko
+net (fo=2536)                           2.037          3.367          net: u_video/g_av$u_subtitles/clk_50m,  ../../src/video/museum_subtitle_overlay.v(16)
+                                                                      pin: sd_dat[0]_syn_6.ipclk
+capture edge                           15.000    f    18.367               
+--------------------------------------------------------------------  ---------------
+hold                                    0.161         18.528               
+clock uncertainty                       0.000         18.528               
+clock pessimism                        -0.451         18.077               
+--------------------------------------------------------------------  ---------------
+Required                                              18.077               
+--------------------------------------------------------------------  ---------------
+Slack                                                 28.782               
+
+
+
+Timing details for constraint:
+	set_multicycle_path 1 -hold -start -to [get_ports sd_cmd]
+--------------------------------------------------
+
+----------------------------------------------------------------------------------------------------
+Path Group     :     
+set_multicycle_path 1 -hold -start -to [get_ports sd_cmd]
+
+Type           :     MCP
+
+Statistics:
+Max            : SWNS      1.792ns, STNS      0.000ns,         0 Viol Endpoints,         1 Total Endpoints,         2 Paths Analyzed
+Min            : HWNS     10.315ns, HTNS      0.000ns,         0 Viol Endpoints,         1 Total Endpoints,         2 Paths Analyzed
+----------------------------------------------------------------------------------------------------
+
+Max Paths
+----------------------------------------------------------------------------------------------------
+Slack               : 1.792ns
+Begin Point         : u_video/u_sd/u_command/cmd_oe_reg_syn_8.clk (rising edge triggered by clock u_video/u_pll.clkc[0]  { rise@0.000000ns  fall@5.000000ns  period=10.000000 })
+End Point           : sd_cmd (rising edge triggered by clock sd_fast  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : setup
+Process             : slow
+Budget              : 10.000ns { sd_fast rising@20.000ns - u_video/u_pll.clkc[0] rising@10.000ns }
+Data Path Delay     : 11.945ns (cell 10.870ns (91%), net 1.075ns (9%))
+Clock Skew          : 3.837ns
+Logic Level         : 1 ( PAD=1 )
+Max Fanout          : 2
+Clock Uncertainty   : 0.100ns (sdc uncertainty: 0.000ns, default uncertainty: 0.100ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.890          1.890          pin: clk_50m_syn_2.di
+net (fo=1)                              0.000          1.890          net: clk_50m_dup_1,  ../../src/secondary/top_secondary_offline_av.v(9)
+                                                                      pin: u_clock.clki
+GCLK                x020y070z2          0.000          1.890          pin: u_clock.clko
+net (fo=1534)       x040y000            1.853          3.743          net: u_network/g_secondary_client$u_client/clk,  ../../src/ethernet/mbp1_secondary_endpoint.v(10)
+                                                                      pin: u_video/u_pll.refclk
+PLL                 x040y000           -2.201          1.542          pin: u_video/u_pll.clkc[0]
+net (fo=1)                              0.000          1.542          net: u_video/core_raw,  ../../src/secondary/top_secondary_tf_video.v(27)
+                                                                      pin: u_video/u_core_clock.clki
+GCLK                x039y001z2          0.000          1.542          pin: u_video/u_core_clock.clko
+net (fo=2536)                           2.410          3.952          net: u_video/g_av$u_subtitles/clk_50m,  ../../src/video/museum_subtitle_overlay.v(16)
+                                                                      pin: u_video/u_sd/u_command/cmd_oe_reg_syn_8.clk
+launch edge                            10.000    r    13.952               
+--------------------------------------------------------------------  ---------------
+clk2q               x031y013z0          0.146    r    14.098          pin: u_video/u_sd/u_command/cmd_oe_reg_syn_8.q[0]
+net (fo=2)                              1.075         15.173          net: u_video/u_sd/u_command/cmd_o,  ../../src/storage/sd_native_command.v(12)
+                                                                      pin: sd_cmd_syn_6.do[0]
+PAD                 x025y000            4.724    f    19.897       1  pin: sd_cmd_syn_6.bpad
+net (fo=0)          A13                 0.000         19.897          net: sd_cmd,  ../../src/secondary/top_secondary_offline_av.v(14)
+                                                                      pin: sd_cmd
+--------------------------------------------------------------------  ---------------
+Arrival                                               19.897               
+
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.700          1.700          pin: clk_50m_syn_2.di
+net (fo=1)                              0.000          1.700          net: clk_50m_dup_1,  ../../src/secondary/top_secondary_offline_av.v(9)
+                                                                      pin: u_clock.clki
+GCLK                x020y070z2          0.000          1.700          pin: u_clock.clko
+net (fo=1534)       x040y000            1.665          3.365          net: u_network/g_secondary_client$u_client/clk,  ../../src/ethernet/mbp1_secondary_endpoint.v(10)
+                                                                      pin: u_video/u_pll.refclk
+PLL                 x040y000           -1.978          1.387          pin: u_video/u_pll.clkc[0]
+net (fo=1)                              0.000          1.387          net: u_video/core_raw,  ../../src/secondary/top_secondary_tf_video.v(27)
+                                                                      pin: u_video/u_core_clock.clki
+GCLK                x039y001z2          0.000          1.387          pin: u_video/u_core_clock.clko
+net (fo=2536)                           1.978          3.365          net: u_video/g_av$u_subtitles/clk_50m,  ../../src/video/museum_subtitle_overlay.v(16)
+                                                                      pin: sd_clk_syn_4.osclk
+PAD (clk2q)         x022y000            4.089          7.454          pin: sd_clk_syn_4.opad
+hierarchy                               0.000          7.454          pin: sd_clk
+capture edge                           20.000    r    27.454               
+--------------------------------------------------------------------  ---------------
+output              A13                -6.000         21.454               
+clock uncertainty                      -0.100         21.354               
+clock pessimism                         0.335         21.689               
+--------------------------------------------------------------------  ---------------
+Required                                              21.689               
+--------------------------------------------------------------------  ---------------
+Slack                                                  1.792               
+
+
+
+Min Paths
+----------------------------------------------------------------------------------------------------
+Slack               : 10.315ns
+Begin Point         : u_video/u_sd/u_command/cmd_oe_reg_syn_8.clk (rising edge triggered by clock u_video/u_pll.clkc[0]  { rise@0.000000ns  fall@5.000000ns  period=10.000000 })
+End Point           : sd_cmd (rising edge triggered by clock sd_fast  { rise@0.000000ns  fall@10.000000ns  period=20.000000 })
+Check Type          : hold
+Process             : fast
+Budget              : 10.000ns { u_video/u_pll.clkc[0] rising@10.000ns - sd_fast rising@0.000ns }
+Data Path Delay     : 3.695ns (cell 2.930ns (79%), net 0.765ns (21%))
+Clock Skew          : 3.280ns
+Logic Level         : 1 ( PAD=1 )
+Max Fanout          : 2
+Clock Uncertainty   : 0.100ns (sdc uncertainty: 0.000ns, default uncertainty: 0.100ns)
+
+Delay Type          Location             Incr           Path   Level  Netlist Info
+--------------------------------------------------------------------  ---------------
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.310          1.310          pin: clk_50m_syn_2.di
+net (fo=1)                              0.000          1.310          net: clk_50m_dup_1,  ../../src/secondary/top_secondary_offline_av.v(9)
+                                                                      pin: u_clock.clki
+GCLK                x020y070z2          0.000          1.310          pin: u_clock.clko
+net (fo=1534)       x040y000            1.606          2.916          net: u_network/g_secondary_client$u_client/clk,  ../../src/ethernet/mbp1_secondary_endpoint.v(10)
+                                                                      pin: u_video/u_pll.refclk
+PLL                 x040y000           -1.879          1.037          pin: u_video/u_pll.clkc[0]
+net (fo=1)                              0.000          1.037          net: u_video/core_raw,  ../../src/secondary/top_secondary_tf_video.v(27)
+                                                                      pin: u_video/u_core_clock.clki
+GCLK                x039y001z2          0.000          1.037          pin: u_video/u_core_clock.clko
+net (fo=2536)                           2.029          3.066          net: u_video/g_av$u_subtitles/clk_50m,  ../../src/video/museum_subtitle_overlay.v(16)
+                                                                      pin: u_video/u_sd/u_command/cmd_oe_reg_syn_8.clk
+launch edge                            10.000    r    13.066               
+--------------------------------------------------------------------  ---------------
+clk2q               x031y013z0          0.109    f    13.175          pin: u_video/u_sd/u_command/cmd_oe_reg_syn_8.q[1]
+net (fo=2)                              0.765         13.940          net: u_video/u_sd/u_command/cmd_oe,  ../../src/storage/sd_native_command.v(12)
+                                                                      pin: sd_cmd_syn_6.ts
+PAD                 x025y000            2.821    r    16.761       1  pin: sd_cmd_syn_6.bpad
+net (fo=0)          A13                 0.000         16.761          net: sd_cmd,  ../../src/secondary/top_secondary_offline_av.v(14)
+                                                                      pin: sd_cmd
+--------------------------------------------------------------------  ---------------
+Arrival                                               16.761               
+
+source latency                          0.000          0.000               
+port                R7                  0.000          0.000          pin: clk_50m
+hierarchy                               0.000          0.000          pin: clk_50m_syn_2.ipad
+PAD                 x020y071            1.440          1.440          pin: clk_50m_syn_2.di
+net (fo=1)                              0.000          1.440          net: clk_50m_dup_1,  ../../src/secondary/top_secondary_offline_av.v(9)
+                                                                      pin: u_clock.clki
+GCLK                x020y070z2          0.000          1.440          pin: u_clock.clko
+net (fo=1534)       x040y000            1.765          3.205          net: u_network/g_secondary_client$u_client/clk,  ../../src/ethernet/mbp1_secondary_endpoint.v(10)
+                                                                      pin: u_video/u_pll.refclk
+PLL                 x040y000           -2.065          1.140          pin: u_video/u_pll.clkc[0]
+net (fo=1)                              0.000          1.140          net: u_video/core_raw,  ../../src/secondary/top_secondary_tf_video.v(27)
+                                                                      pin: u_video/u_core_clock.clki
+GCLK                x039y001z2          0.000          1.140          pin: u_video/u_core_clock.clko
+net (fo=2536)                           2.065          3.205          net: u_video/g_av$u_subtitles/clk_50m,  ../../src/video/museum_subtitle_overlay.v(16)
+                                                                      pin: sd_clk_syn_4.osclk
+PAD (clk2q)         x022y000            3.400          6.605          pin: sd_clk_syn_4.opad
+hierarchy                               0.000          6.605          pin: sd_clk
+capture edge                            0.000    r     6.605               
+--------------------------------------------------------------------  ---------------
+output              A13                 0.000          6.605               
+clock uncertainty                       0.100          6.705               
+clock pessimism                        -0.259          6.446               
+--------------------------------------------------------------------  ---------------
+Required                                               6.446               
+--------------------------------------------------------------------  ---------------
+Slack                                                 10.315               
+
+
+
+
+

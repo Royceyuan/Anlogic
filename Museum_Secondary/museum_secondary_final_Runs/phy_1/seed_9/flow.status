@@ -1,0 +1,24 @@
+Location         : D:\VSCode\CodeFiles\Git_TD\Museum_Dual_FPGA\Museum_Secondary\museum_secondary_final_Runs\phy_1\seed_9
+Running with     : Tang Dynasty v6.2.168116
+                   Copyright (c) 2012-2025 Anlogic Inc.
+Top Model        : top_secondary_offline_av
+Device           : EG4S20BG256
+Speed            : NA
+
+Timing Mode      : final
+Setup            : WNS   115ps  TNS        0ps  NUM_FEPS     0
+Hold             : WNS    21ps  TNS        0ps  NUM_FEPS     0
+
+Flow Statistics  :
+---------------------------------------------------------------------------------------------------
+     command     |  #calls  |  wall time   |  cpu time(s)  |  used memory(mb)  |  peak memory(mb)  
+---------------------------------------------------------------------------------------------------
+      route      |    1     |  2m19s(53%)  |   185(37%)    |       1318        |       1346        
+      place      |    1     |  1m44s(40%)  |   165(33%)    |        825        |        830        
+    fix_hold     |    1     |   10s(3%)    |    11(2%)     |       1340        |       1347        
+     bitgen      |    1     |    7s(2%)    |   138(27%)    |       1334        |       1353        
+    import_db    |    1     |    0s(0%)    |     0(0%)     |        283        |        318        
+  import_device  |    1     |    0s(0%)    |     0(0%)     |        103        |        117        
+---------------------------------------------------------------------------------------------------
+      total      |    6     |    4m20s     |      499      |       1340        |       1353        
+---------------------------------------------------------------------------------------------------

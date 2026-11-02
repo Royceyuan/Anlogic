@@ -1,83 +1,145 @@
 # 双FPGA博物馆双屏展陈与应急信息终端
 
-基于安路 HX4S20C（EG4S20BG256）开发板的全离线双板系统。主板负责图片浏览和语音讲解，副板负责本地视频、字幕与导览音频；两板通过以太网交换状态和控制信息，HDMI 均输出 1280×720。
+基于安路HX4S20C（EG4S20BG256）开发板的全离线双板系统。主板负责文物图片浏览、语音讲解与字幕显示，副板负责本地视频、导览音频和应急疏散画面。两板通过以太网交换操作指令、运行状态和讲解进度，双屏均输出1280×720画面。
 
 ## 目录与工程入口
 
 ```text
 Museum_Dual_FPGA/
-├─ Museum_Main/                  主板工程
-│  ├─ museum_main_final.al       TD 正式入口
-│  ├─ src/ constraints/ vendor/  RTL、约束和官方依赖
-│  ├─ scripts/ sim/ seed/        构建、仿真和匹配种子
-│  ├─ tools/MuseumTFPackager/    主板 TF 素材打包工具
-│  └─ release/museum_main_final/ 当前选用 bit 与 SHA-256
-├─ Museum_Secondary/             副板工程
-│  ├─ museum_secondary_final.al  TD 正式入口
-│  ├─ src/ constraints/ vendor/  RTL、约束和官方依赖
-│  ├─ scripts/ sim/ seed/        构建、仿真和匹配种子
-│  ├─ tools/OfflineVideo/        副板离线媒体打包工具
-│  ├─ assets/视频/              本地自备视频目录，不上传
-│  ├─ assets/音频/              六份配套音频
-│  ├─ assets/字幕/              六份独立字幕
+├─ Museum_Main/
+│  ├─ museum_main_final.al        主板工程入口
+│  ├─ src/                        RTL源码
+│  ├─ constraints/                引脚与时序约束
+│  ├─ vendor/                     官方IP和参考模块
+│  ├─ scripts/ sim/ seed/         构建、仿真和匹配种子资料
+│  ├─ assets/TF_CARD/             主板TF卡配套文件，共31个
+│  ├─ assets/字幕/                与现用BIN匹配的5份SRT
+│  ├─ reports/                   最终报告、对应bit与历史构建记录
+│  └─ release/museum_main_final/  已选用的主板bit
+├─ Museum_Secondary/
+│  ├─ museum_secondary_final.al   副板工程入口
+│  ├─ src/ constraints/ vendor/   RTL、约束和IP依赖
+│  ├─ scripts/ sim/ seed/         构建、仿真和匹配种子资料
+│  ├─ assets/视频/                七支配套源视频
+│  ├─ assets/音频/                六份配套音频
+│  ├─ assets/字幕/                六份配套字幕
+│  ├─ reports/                   最终报告、对应bit与历史构建记录
 │  └─ release/museum_secondary_final/
-├─ docs/技术报告.pdf
+├─ docs/main.pdf                 技术报告
 └─ LICENSE
 ```
 
-两个工程需保持同级目录。主板构建入口复用副板目录中的发布和验证脚本；各工程只有一个 `.al` 入口和一份选用 bit。
+两板工程保持同级目录，工程内部文件沿用现有名称和相对位置。主板和副板媒体制作工具单独提供，位于工程目录外。
 
-## 获取完整文件
+## 软件复建
 
-工程包含 Git LFS 文件。克隆后需拉取 LFS 内容，否则 bit、音频、数据库和打包工具的大文件可能只是指针文件。七支源视频仅在本地保留，不进入仓库。
+使用 **Anlogic TD 6.2.1（6.2.168116）**。图形界面复建所需的综合、布局和布线参数已保存到两个工程入口。
 
-```powershell
-git lfs install
-git clone https://github.com/Royceyuan/Anlogic.git
-cd Anlogic
-git lfs pull
+1. 打开 `Museum_Main/museum_main_final.al` 或 `Museum_Secondary/museum_secondary_final.al`。
+2. 若出现“private parameters are not default”提示，选择 **Cancel**，保留工程中的种子和逻辑优化参数。**Revert**会将这些参数恢复默认值。
+3. 若出现 **Flow Step Recovery** 提示，选择 **OK**，恢复已有构建步骤和结果。
+4. 点击顶部绿色 **Run** 箭头，执行综合、布局、布线及bit生成。软件弹出任务数量或重置运行数据提示时，确认后继续。
+5. 完成后查看 **Multi-Seed Result** 中的最终时序和bit。Setup、Hold的最差裕量均应不小于0，总负裕量应为0。
+
+需要从源码重新运行全部步骤时，在 **Flow Runs** 中右键 `syn_1`，选择 **Reset Runs**，连同关联的 `phy_1` 一并重置，再点击Run。无需在Tcl Console中输入构建命令。
+
+工程采用固定单种子模式，每块板只运行一个种子：
+
+| 参数 | 主板 | 副板 |
+|---|---|---|
+| 综合 `pack_effort` | high | medium |
+| 布局种子 | 5 | 9 |
+| 布局 `effort` | high | high |
+| 布局 `opt_timing` | high | high |
+| 布局 `logic_level_opt` | on | on |
+| 布线 `effort` | routability | routability |
+
+物理实现按照“布局 → 布线 → 独立hold修复 → 最终时序分析 → bit生成”的顺序执行。
+
+2026年11月2日，两板均已完成重新综合、布局布线和bit生成，并完成复建确认。最终时序结果如下：
+
+| 工程 | Setup WNS | Setup TNS | Hold WNS | Hold TNS |
+|---|---:|---:|---:|---:|
+| 主板 | +0.129 ns | 0.000 ns | +0.022 ns | 0.000 ns |
+| 副板 | +0.115 ns | 0.000 ns | +0.021 ns | 0.000 ns |
+
+图形界面生成的结果位于：
+
+```text
+Museum_Main/museum_main_final_Runs/phy_1/seed_5/
+  museum_main_final.bit
+  museum_main_final_phy.ts
+  museum_main_final_pr.timing
+
+Museum_Secondary/museum_secondary_final_Runs/phy_1/seed_9/
+  museum_secondary_final.bit
+  museum_secondary_final_phy.ts
+  museum_secondary_final_pr.timing
 ```
 
-## 运行与素材
+`best_result/`保存TD筛选出的实现结果。`release/`保留已选用的bit，新构建结果输出到运行目录。布局阶段的中间时序报告与最终布线报告分别保存，验收采用最终布线及hold修复后的结果。
 
-主板支持 TF 卡 24 位 BMP 读取、多尺寸图片适配、0.5×／1×／2×缩放、1×／2×／3×讲解、字幕、波形与转场。副板以 640×480、30fps 播放本地 RGB565 视频，放大输出至 720p；讲解时视频保持正常速度，字幕跟随主板进度。总览和手动浏览时播放宣传片，进入讲解时副板静音，进入应急时切换疏散画面。
+两板工程内均保留一份固定归档：
 
-- [主板 bit](Museum_Main/release/museum_main_final/museum_main_final.bit)
-- [副板 bit](Museum_Secondary/release/museum_secondary_final/museum_secondary_final.bit)
-- [主板素材工具](Museum_Main/tools/MuseumTFPackager/MuseumTFPackager.exe)
-- [副板素材工具](Museum_Secondary/tools/OfflineVideo/MuseumOfflinePackager.exe)
-- [技术报告](docs/技术报告.pdf)
-
-主板卡使用 20 张 BMP、5 份 WAV、5 份字幕数据及 OSD 名称数据，由主板工具生成。副板卡使用 `ART0.BIN`～`ART4.BIN`、`GUIDE.BIN`、`EVAC.BIN` 和 `SUB0.BIN`～`SUB5.BIN`，由副板工具生成；FPGA 不直接解码 MP4。视频包为 MVID v2，字幕为独立 MSUB v3；宣传片包包含 PCM 音频，其余文物视频不重复保存讲解音轨。
-
-七支源视频需自行准备：五件文物、总览宣传片和应急疏散视频，在副板工具中分别选择即可。推荐输入 MP4／H.264，画面不烧录字幕；总览宣传片保留声音，文物与应急视频使用静音版本。工具统一转换为 FPGA 所需的 640×480、30fps 数据，无需自行修改编号映射。
-
-副板工具的写卡脚本会校验目标卡身份并备份旧文件，当前默认匹配本项目原副板卡。更换为其他卡时须先核实并调整目标卡识别信息，不应直接跳过校验。此仓库不包含已经写入 TF 卡的大型 BIN 包。
-
-## 构建与验证
-
-现有脚本默认使用 TD 6.2.168116、ModelSim、Icarus Verilog 与 Python；具体工具路径可在 `scripts/build.ps1` 参数中设置。媒体转换使用随附 FFmpeg，Python 工具需要 Pillow。主板打包工具的离线语音对齐运行库随工具保留。
-
-从仓库根目录先检查工程依赖：
-
-```powershell
-.\Museum_Main\scripts\build.ps1 -CheckOnly
-.\Museum_Secondary\scripts\build.ps1 -CheckOnly
+```text
+reports/
+├─ final_20261102/       最终通过的报告与对应bit
+│  ├─ final_timing.rpt   最终详细时序报告
+│  ├─ final_timing.ts    Setup/Hold汇总
+│  ├─ resources.area    最终资源报告
+│  ├─ *.bit             与报告对应的位流
+│  └─ …                 QoR、回标ADC、运行日志和设置
+└─ previous_20261102/    整理前根目录的报告、QoR及out回标文件
 ```
 
-去掉 `-CheckOnly` 执行综合、布局布线及发布门禁。新构建输出到独立候选目录，不覆盖当前选用 bit。TD 脚本入口均为各工程的 `scripts/build_project.tcl`；临时构建目录为 `_build_main` 和 `_build_secondary`。
+`final_20261102/`中的文件与已通过的固定种子运行结果逐文件校验一致，作为最终报告和对应bit的备份。`previous_20261102/`保留历史记录，其中原根目录的`final_timing.rpt`为Hold尚未通过的旧报告。TD运行目录继续保留，后续构建仍按原路径生成文件。
 
-匹配当前交付版本的布局种子：主板 **5**、副板 **9**，默认配置位于 `seed/formal/build_config.tcl`，对应重布线脚本位于 `seed/matched_release/route.tcl`。重布线脚本需先有匹配的综合数据库，不能替代从源码构建。
+## 上板与配套素材
 
-专项回归入口：
+- [已选用的主板bit](Museum_Main/release/museum_main_final/museum_main_final.bit)
+- [已选用的副板bit](Museum_Secondary/release/museum_secondary_final/museum_secondary_final.bit)
+- [技术报告](docs/main.pdf)
 
-```powershell
-.\Museum_Main\scripts\verify_zoom.ps1
-.\Museum_Secondary\scripts\verify_offline_media.ps1
-```
+主板支持24位BMP读取、多尺寸图片适配、0.5×／1×／2×缩放、1×／2×／3×讲解、字幕、波形和转场。副板以640×480、30fps播放本地RGB565视频，放大输出至720p；文物视频保持1×播放，讲解字幕跟随主板进度。总览和手动浏览时播放宣传片，进入讲解后副板静音，应急状态下优先显示疏散指引。
 
-验证区分仿真、布局布线和实板结果。主板与副板 RTL、约束、工具运行库及交付 bit 在本次目录合并中不作功能修改。
+### 主板TF卡
+
+将 `Museum_Main/assets/TF_CARD/` 内全部31个文件复制到FAT32主板TF卡根目录：
+
+| 文件 | 数量 | 用途 |
+|---|---:|---|
+| `IMAGE0.BMP`～`IMAGE4.BMP` | 5 | 文物全貌图 |
+| `ART0D1.BMP`～`ART4D3.BMP` | 15 | 每件文物三张细节图 |
+| `AUDIO0.WAV`～`AUDIO4.WAV` | 5 | PCM16、48kHz、双声道讲解音频 |
+| `SUB0.BIN`～`SUB4.BIN` | 5 | 字幕位图、时间轴与切图时刻 |
+| `OSDNAME.BIN` | 1 | 文物名称数据 |
+
+编号0～4依次对应越王勾践剑、四羊方尊、金缕玉衣、马踏飞燕（铜奔马）、长信宫灯。
+
+`Museum_Main/assets/字幕/`中的5份SRT采用与现用字幕BIN一致的文字和时间轴；回编后与原BIN逐字节一致。这些SRT供素材编辑使用，主板运行时读取BIN。复制到TF卡的是上述31个文件，不包含外层文件夹和SRT。
+
+### 副板TF卡
+
+副板使用 `ART0.BIN`～`ART4.BIN`、`GUIDE.BIN`、`EVAC.BIN` 和 `SUB0.BIN`～`SUB5.BIN`，共13个文件。使用外置副板工具转换配套视频、音频和字幕，生成后复制到FAT32副板TF卡根目录。
+
+视频包采用MVID v2，字幕采用MSUB v3。`GUIDE.BIN`包含宣传片画面和PCM旁白，文物视频不重复保存主板讲解音轨，应急视频为静音疏散画面。FPGA运行时直接读取离线媒体包，MP4由电脑工具预先转换。源视频不烧录字幕，字幕由板端独立叠加。
+
+## 文件保留与整理
+
+| 内容 | 处理方式 |
+|---|---|
+| `.al`、`src/`、`constraints/`、`vendor/` | 保留原有相对位置，供TD读取工程、源码、约束和IP依赖 |
+| `scripts/`、`sim/`、`seed/` | 保留构建配置、专项验证和匹配数据库资料 |
+| `assets/`、`release/` | 保留配套运行素材和已选用的bit |
+| `reports/final_20261102/` | 保留最终通过的报告及其对应bit，用于交付和结果核对 |
+| `reports/previous_20261102/` | 保留历史构建记录，不参与综合和布局布线 |
+| `*_Runs/`、`_build_main/`、`_build_secondary/`、`log/`及生成的时序报告、`.qor` | 编译产物，可重新生成；整理前保存需要使用的bit和最终报告 |
+| `scripts/verify_gui_config.tcl` | 配置检查辅助脚本，不参与RTL综合 |
+
+搬移工程时，关闭TD后整体复制 `Museum_Dual_FPGA`，保持两板同级及内部目录结构。使用Git获取含LFS对象的版本时，执行 `git lfs pull`，确认大文件已下载为实际内容。
+
+图形界面综合编译使用TD本身。`scripts/`中的自动发布、媒体工具回归和`sim/`中的专项仿真还需各脚本指定的Python、ModelSim、Icarus Verilog及外置媒体工具开发依赖。
 
 ## 许可
 
-项目保留原有 Apache-2.0 许可。官方 IP、随附运行库与 FFmpeg 的许可证、版权声明分别保留于 `vendor` 和工具目录内。
+项目保留原有Apache-2.0许可。官方IP及参考模块的版权和许可信息保留于 `vendor/`。外置媒体工具的第三方运行库与FFmpeg许可随各工具提供。
