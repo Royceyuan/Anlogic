@@ -77,18 +77,25 @@ reg [BURST_BITS - 1:0] read_data_cnt;
 wire [ADDR_BITS - 1:0] read_remaining;
 wire [BURST_BITS - 1:0] active_burst_len;
 wire [BURST_BITS - 1:0] frame_burst_len;
+// The 0.5x raster consumes one source row per visible line. Fetch its
+// 480 words in two bursts to leave time for return latency and refresh.
+localparam integer HALF_BURST_SIZE =
+    (SKIP_ROW_WORDS == 480 && BURST_SIZE == 128) ? 240 : BURST_SIZE;
 localparam ROW_BITS = SKIP_ROW_WORDS > 1 ? $clog2(SKIP_ROW_WORDS+1) : 1;
 reg skip_ff1, skip_ff2, skip_rows;
 reg second_row;
 reg [ROW_BITS-1:0] row_remaining;
+wire [BURST_BITS - 1:0] burst_limit = skip_rows ? HALF_BURST_SIZE : BURST_SIZE;
+wire fifo_has_space = skip_rows ? (wrusedw < FIFO_DEPTH - HALF_BURST_SIZE) :
+                                  (wrusedw < FIFO_DEPTH - BURST_SIZE);
 wire skip_completed_row = skip_rows && rd_burst_finish &&
                           row_remaining == active_burst_len && second_row;
 
 assign App_rd_addr = {App_rd_addr_r[ADDR_BITS - 1:0]};
 assign read_remaining = read_len_latch - read_cnt;
-assign frame_burst_len = (read_remaining < BURST_SIZE) ?
+assign frame_burst_len = (read_remaining < burst_limit) ?
                           read_remaining[BURST_BITS - 1:0] :
-                          BURST_SIZE[BURST_BITS - 1:0];
+                          burst_limit;
 assign active_burst_len = skip_rows && row_remaining < frame_burst_len ?
                           row_remaining : frame_burst_len;
 
@@ -124,7 +131,9 @@ assign O_rd_busy = (state == S_READ_BURST);//读指令期间
 assign rd_burst_finish = (rd_vld && Sdr_rd_en &&
                           (read_data_cnt == (active_burst_len - 1'b1)));
 assign read_finish = (state == S_END) ? 1'b1 : 1'b0;             //read finish at state 'S_END'
-assign App_rd_en = App_rd_en_d0;
+// The controller can become busy between burst grant and the first command.
+// Hold the address and command count until that first beat can be issued.
+assign App_rd_en = App_rd_en_d0 && (burst_cnt != 0 || !Sdr_busy);
 always@(posedge mem_clk or posedge rst)
 begin
 	if(rst == 1'b1)
@@ -277,7 +286,7 @@ begin
 					state <= S_ACK;
 				end
 				//if the FIFO space is a burst read request, goto burst read state
-				else if(wrusedw < (FIFO_DEPTH - BURST_SIZE) && ~App_wr_busy)
+				else if(fifo_has_space && ~App_wr_busy)
 				begin
 					state <= S_READ_BURST;
 					//rd_burst_len <= BURST_SIZE[BURST_BITS - 1:0];

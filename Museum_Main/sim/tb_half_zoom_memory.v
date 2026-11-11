@@ -1,22 +1,28 @@
 `timescale 1ns/1ps
-// Production burst reader and generated asynchronous FIFO at 25:75 MHz.
+// Production SDRAM scheduler and asynchronous FIFOs at 25/50/75 MHz.
 // SDRAM return latency/refresh are modeled; this is not an electrical model.
 module tb_half_zoom_memory;
-reg pclk=0,mclk=0,rst=1,start=0,half_zoom=1,double_zoom=0,de=0;
+localparam READ_LATENCY = 22;
+reg pclk=0,mclk=0,wclk=0,rst=1,start=0,half_zoom=1,double_zoom=0,de=0;
 reg [10:0] x=0;
 reg [9:0] y=0;
-wire req,ack,pop,empty,valid,ready,underflow,aclr,command;
-wire [20:0] base,len,address;
-wire [31:0] data;
+wire req,ack,pop,empty,valid,ready,underflow,command;
+wire write_ack,write_finish,write_full,write_command;
+wire [20:0] base,len,address,write_address;
+wire [31:0] data,write_payload;
 wire [15:0] pixel;
-wire [8:0] used;
-reg [3:0] returns=0;
-reg [31:0] d0=0,d1=0,d2=0,d3=0;
+reg [READ_LATENCY-1:0] returns=0;
+reg [31:0] read_pipeline [0:READ_LATENCY-1];
+integer delay_slot;
+reg write_req=0,write_en=0;
+reg [31:0] write_data=0;
 integer refresh_phase=0,issued=0,source_word,sy,sx,errors=0;
+integer write_word=0,written=0,half_writes=0;
 reg passed=0;
 reg [15:0] expected;
 always #6.666667 pclk=~pclk;
 always #20 mclk=~mclk;
+always #10 wclk=~wclk;
 
 function [31:0] pattern;
     input integer word_index;
@@ -39,29 +45,59 @@ linebuf_scaler_960x540_to_1280x720 #(.LINEBUF_NOREG_SYNC_READ(1)) dut (
     .video_de(de),.video_x(x),.video_y(y),.pixel565(pixel),.frame_ready(ready),
     .source_frame_done(),.underflow(underflow)
 );
-frame_fifo_read #(.BURST_SIZE(128),.LOOP_ENABLE(1),.SKIP_ROW_WORDS(480)) reader (
-    .rst(rst),.mem_clk(mclk),.read_skip_third_row(half_zoom),
-    .Sdr_init_done(1'b1),.Sdr_init_ref_vld(1'b0),.Sdr_busy(1'b0),
-    .Sdr_rd_en(returns[3]),.App_wr_busy(refresh_phase<6),.O_rd_busy(),
-    .App_rd_en(command),.App_rd_addr(address),.read_req(req),.read_req_ack(ack),
-    .read_finish(),.read_addr_0(base),.read_addr_1(21'd0),.read_addr_2(21'd0),
-    .read_addr_3(21'd0),.read_addr_index(2'd0),.read_len(len),
-    .fifo_aclr(aclr),.wrusedw({1'b0,used})
+frame_read_write #(.WRITE_BURST_SIZE(16),.READ_BURST_SIZE(128),
+    .READ_LOOP(1),.READ_SKIP_ROW_WORDS(480)) store (
+    .rst(rst),.mem_clk(mclk),.Sdr_init_done(1'b1),.Sdr_init_ref_vld(1'b0),
+    .Sdr_busy(refresh_phase<6),
+    .App_rd_en(command),.App_rd_addr(address),
+    .Sdr_rd_en(returns[READ_LATENCY-1]),.Sdr_rd_dout(read_pipeline[READ_LATENCY-1]),
+    .read_clk(pclk),.read_req(req),.read_skip_third_row(half_zoom),.read_req_ack(ack),
+    .read_finish(),.read_fifo_valid(valid),.read_fifo_empty(empty),
+    .read_addr_0(base),.read_addr_1(21'd0),.read_addr_2(21'd0),.read_addr_3(21'd0),
+    .read_addr_index(2'd0),.read_len(len),.read_en(pop),.read_data(data),
+    .App_wr_en(write_command),.App_wr_addr(write_address),.App_wr_din(write_payload),
+    .App_wr_dm(),.write_clk(wclk),.write_req(write_req),.write_req_ack(write_ack),
+    .write_finish(write_finish),.write_fifo_full(write_full),
+    .write_addr_0(21'd1048576),.write_addr_1(21'd0),.write_addr_2(21'd0),
+    .write_addr_3(21'd0),.write_addr_index(2'd0),.write_len(21'd16),
+    .write_en(write_en),.write_data(write_data)
 );
-rfifo_32_32_512 fifo (
-    .rst(rst|aclr),.clkw(mclk),.clkr(pclk),.we(returns[3]),.di(d3),.re(pop),
-    .dout(data),.valid(valid),.empty_flag(empty),.full_flag(),.wrusedw(used),
-    .rdusedw(),.afull(),.aempty()
-);
+// Approximate the background TF writer with the production burst length
+// and its request-to-FIFO delay. Writes target a separate SDRAM frame.
+initial begin
+    wait(de);
+    forever begin
+        @(negedge wclk); write_req=1;
+        wait(write_ack);
+        @(negedge wclk); write_req=0;
+        repeat(64) @(negedge wclk);
+        for(write_word=0;write_word<16;write_word=write_word+1) begin
+            while(write_full) @(negedge wclk);
+            write_data=32'h12340000+write_word; write_en=1;
+            @(negedge wclk); write_en=0;
+        end
+        wait(write_finish);
+        #32000;
+    end
+end
 always @(posedge mclk) begin
     refresh_phase <= refresh_phase==194 ? 0 : refresh_phase+1;
-    returns <= {returns[2:0],command};
-    d0<=pattern(address); d1<=d0; d2<=d1; d3<=d2;
-    if(rst || aclr) begin issued<=0; returns<=0; end
+    returns <= {returns[READ_LATENCY-2:0],command};
+    read_pipeline[0] <= pattern(address);
+    for(delay_slot=1;delay_slot<READ_LATENCY;delay_slot=delay_slot+1)
+        read_pipeline[delay_slot] <= read_pipeline[delay_slot-1];
+    if(rst || ack) begin issued<=0; returns<=0; end
     else if(command)begin
         source_word=base+(half_zoom ? (issued/960)*1440+issued%960 : issued);
         if(address!==source_word) $fatal(1,"SDRAM address %d expected %d",address,source_word);
         issued<=issued==len-1 ? 0 : issued+1;
+    end
+    if(write_command) begin
+        if(command || write_address!=1048576+written%16 ||
+           write_payload!==(32'h12340000+written%16))
+            $fatal(1,"invalid concurrent write at word %0d",written);
+        written=written+1;
+        if(half_zoom && de) half_writes=half_writes+1;
     end
 end
 always @(posedge pclk)begin
@@ -101,8 +137,9 @@ initial begin
     half_zoom=0;prepare;raster;
     double_zoom=1;prepare;raster;
     double_zoom=0;half_zoom=1;prepare;raster;
+    if(half_writes==0) $fatal(1,"half zoom did not exercise concurrent writes");
     passed=1;
-    $display("PASS 25/75 MHz production reader/FIFO, refresh gaps, half/normal/double/half, exact pixels and row-skip addresses");
+    $display("PASS production SDRAM arbitration, concurrent writes and exact half/normal/double/half pixels");
     $finish;
 end
 initial begin #120000000; $fatal(1,"memory test timeout"); end

@@ -162,13 +162,16 @@ reg [26:0] recovery_wait_count;
 reg recovery_select_pulse;
 reg emergency_50m_ff1, emergency_50m_ff2;
 wire emergency_active_50m = ENABLE_MAIN4 && emergency_50m_ff2;
+wire key4_animating = recovery_state == 3'd5 || recovery_state == 3'd6;
 wire recovery_busy = (ENABLE_MAIN3 || ENABLE_MAIN4) &&
-                     (recovery_state != 0 || emergency_active_50m);
+                     ((recovery_state != 0 && !key4_animating) || emergency_active_50m);
 wire recovery_reset = (ENABLE_MAIN3 || ENABLE_MAIN4) &&
                       recovery_state == 3'd2;
 wire client_rst_n = write_rst_n && !recovery_reset;
 wire writer_abort_done;
 reg recovery_video_ff1, recovery_video_ff2;
+reg key4_video_ff1, key4_video_ff2;
+reg key4_centered_ff1, key4_centered_ff2;
 reg emergency_video_ff1, emergency_video_ff2, emergency_video_active;
 
 wire sd_init_done;
@@ -651,7 +654,7 @@ wire [2:0] museum_preload_index = sw[2:0];
 wire signed [15:0] requested_pan_x = remote_command_payload[31:16];
 wire signed [15:0] requested_pan_y = remote_command_payload[15:0];
 reg manual_reload_pending;
-wire main5_remote_busy = emergency_active_50m || recovery_busy || manual_reload_pending ||
+wire main5_remote_busy = emergency_active_50m || recovery_busy || key4_animating || manual_reload_pending ||
                          transition_active_ff2_50m || main5_request_busy;
 reg main5_command_seen;
 reg manual_set_pulse, manual_image_pulse;
@@ -882,6 +885,7 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         emergency_50m_ff2 <= emergency_50m_ff1;
     end
 end
+wire key4_return_pulse = recovery_state == 3'd5 && !emergency_active_50m;
 always @(posedge clk_50m or negedge write_rst_n) begin
     if (!write_rst_n) begin
         recovery_state <= 3'd0;
@@ -906,7 +910,8 @@ always @(posedge clk_50m or negedge write_rst_n) begin
             3'd0: if (emergency_active_50m ||
                        (ENABLE_MAIN3 && key_press_pulse[3])) begin
                 manual_reload_pending <= 1'b0;
-                recovery_state <= 3'd1;
+                recovery_state <= (ENABLE_MUSEUM_LECTURE && !emergency_active_50m &&
+                                   lecture_active && overview_cache_ready) ? 3'd5 : 3'd1;
             end
             3'd1: if (writer_abort_done) begin
                 recovery_reset_count <= 5'd0;
@@ -927,6 +932,15 @@ always @(posedge clk_50m or negedge write_rst_n) begin
                 recovery_state <= 3'd4;
             else recovery_wait_count <= recovery_wait_count + 1'b1;
             3'd4: if (!emergency_active_50m && key_press_pulse[3])
+                recovery_state <= 3'd1;
+            // Leave the lecture through its normal full-view and overview
+            // transitions. Reset the media clients only after the opening
+            // half has finished and the cached overview is visible.
+            3'd5: if (emergency_active_50m)
+                recovery_state <= 3'd1;
+            else if (key4_return_pulse)
+                recovery_state <= 3'd6;
+            3'd6: if (emergency_active_50m || (!lecture_active && manual_overview_ff2))
                 recovery_state <= 3'd1;
             default: recovery_state <= 3'd0;
         endcase
@@ -1141,7 +1155,8 @@ generate
                          lecture_cache_ready &&
                          (manual_mode || (audio_prepared && subtitle_entry_ready)) &&
                          (lecture_artifact_index == overview_selected_ctrl)),
-            .key_confirm(key_press_pulse[1] && !recovery_busy && !manual_reload_pending && !voice_handoff_pending),
+            .key_confirm(key_press_pulse[1] && !recovery_busy && !key4_animating &&
+                         !manual_reload_pending && !voice_handoff_pending),
             .key_previous(!voice_handoff_pending&&(ENABLE_MAIN3 ? 1'b0 : key_press_pulse[3])),
             .key_next(!voice_handoff_pending&&(ENABLE_MAIN3 ? key_press_pulse[0] : key_press_pulse[2])),
             .recover_select(recovery_select_pulse),
@@ -1171,6 +1186,8 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         displayed_frame_slot_ff2 <= 3'd5;
         transition_active_ff1_50m <= 1'b0;
         transition_active_ff2_50m <= 1'b0;
+        key4_centered_ff1 <= 1'b0;
+        key4_centered_ff2 <= 1'b0;
     end else begin
         audio_fifo_empty_ff1 <= audio_fifo_empty;
         audio_fifo_empty_ff2 <= audio_fifo_empty_ff1;
@@ -1178,6 +1195,9 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         displayed_frame_slot_ff2 <= displayed_frame_slot_ff1;
         transition_active_ff1_50m <= transition_active;
         transition_active_ff2_50m <= transition_active_ff1_50m;
+        key4_centered_ff1 <= key4_video_ff2 && video_run && !switch_pending &&
+                             display_zoom_2x == 0 && display_pan_x == 0 && display_pan_y == 0;
+        key4_centered_ff2 <= key4_centered_ff1;
     end
 end
 
@@ -1205,7 +1225,7 @@ generate
             .confirm_pulse(lecture_confirm_pulse),
             .key_pause(key_press_pulse[1] && !recovery_busy),
             .key_return(!recovery_busy &&
-                ((key_press_pulse[2] && !ENABLE_MAIN3) ||
+                (key4_return_pulse || (key_press_pulse[2] && !ENABLE_MAIN3) ||
                  (ENABLE_MAIN5_REMOTE && manual_mode && key_press_pulse[1] &&
                   !lecture_finished))),
             .manual_set(manual_set_pulse), .manual_value(manual_value),
@@ -1228,7 +1248,8 @@ generate
             .scene_cut1(scene_cut1), .scene_cut2(scene_cut2),
             .scene_cut3(scene_cut3), .scene_cut4(scene_cut4),
             .displayed_frame_slot(displayed_frame_slot_ff2),
-            .display_transition_busy(transition_active_ff2_50m),
+            .display_transition_busy(transition_active_ff2_50m ||
+                                     (key4_animating && !key4_centered_ff2)),
             .load_request(lecture_load_request),
             .load_accept(lecture_load_accept),
             .load_complete(load_complete_event), .load_error(load_error_event),
@@ -1874,6 +1895,8 @@ always @(posedge video_clk or negedge video_rst_n) begin
         lecture_paused_ff2 <= 1'b0;
         recovery_video_ff1 <= 1'b0;
         recovery_video_ff2 <= 1'b0;
+        key4_video_ff1 <= 1'b0;
+        key4_video_ff2 <= 1'b0;
         emergency_video_ff1 <= 1'b0;
         emergency_video_ff2 <= 1'b0;
         emergency_video_active <= 1'b0;
@@ -1898,6 +1921,8 @@ always @(posedge video_clk or negedge video_rst_n) begin
         lecture_paused_ff2 <= lecture_paused_ff1;
         recovery_video_ff1 <= recovery_busy;
         recovery_video_ff2 <= recovery_video_ff1;
+        key4_video_ff1 <= key4_animating;
+        key4_video_ff2 <= key4_video_ff1;
         emergency_video_ff1 <= emergency_active_50m;
         emergency_video_ff2 <= emergency_video_ff1;
         playback_speed_req_ff1 <= playback_speed_toggle;
@@ -2973,6 +2998,7 @@ always @(posedge video_clk or negedge video_rst_n) begin
         end
         if ((detail_zoom_2x_ff2 != display_zoom_2x) ||
             overview_enable_video || emergency_video_ff2 || recovery_video_ff2 ||
+            key4_video_ff2 ||
             main5_phase_ff2 != main5_phase_seen) begin
             main5_pan_x_video <= 16'sd0;
             main5_pan_y_video <= 16'sd0;

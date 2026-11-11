@@ -104,8 +104,34 @@ wire                                 write_fifo_aclr;            // FIFO asynchr
 wire O_wr_busy;
 wire O_rd_busy;
 
-assign App_wr_busy = O_wr_busy;//下个时钟写指令拉高
-assign App_rd_busy = O_rd_busy;//读指令还没有过去十个时钟;因为写指令优先，不需要在意下个时钟是否是读指令
+wire write_ack_mem, write_finish_mem;
+reg [1:0] write_ack_sync, write_finish_sync;
+// Both signals originate in the 25 MHz SDRAM domain. The finish pulse
+// spans a memory clock, so the faster writer can safely sample it.
+always @(posedge write_clk or posedge rst)
+    if (rst) begin
+        write_ack_sync <= 2'b00;
+        write_finish_sync <= 2'b00;
+    end else begin
+        write_ack_sync <= {write_ack_sync[0], write_ack_mem};
+        write_finish_sync <= {write_finish_sync[0], write_finish_mem};
+    end
+assign write_req_ack = write_ack_sync[1];
+assign write_finish = write_finish_sync[1];
+
+// Same SDRAM turnaround as the secondary board. Hold off the opposite
+// direction after the last command/return, and start neither while busy.
+reg [7:0] write_tail, read_tail;
+always @(posedge mem_clk or posedge rst)
+    if (rst) begin
+        write_tail <= 8'd0;
+        read_tail <= 8'd0;
+    end else begin
+        write_tail <= {write_tail[6:0], App_wr_en};
+        read_tail <= {read_tail[6:0], App_rd_en | Sdr_rd_en};
+    end
+assign App_wr_busy = O_wr_busy | (|write_tail) | Sdr_busy;
+assign App_rd_busy = O_rd_busy | (|read_tail) | Sdr_busy;
 assign App_wr_dm = 4'b0000;
 // Reset both asynchronous FIFOs with the transaction controllers.  Previously
 // rst cleared only the controllers; FIFO pointers could survive a board reset.
@@ -149,8 +175,8 @@ frame_fifo_write_m0
 	.App_wr_en					(App_wr_en),
     .App_wr_addr				(App_wr_addr),
 	.write_req                  (write_req                ),
-	.write_req_ack              (write_req_ack            ),
-	.write_finish               (write_finish             ),
+	.write_req_ack              (write_ack_mem            ),
+	.write_finish               (write_finish_mem         ),
 	.write_addr_0               (write_addr_0             ),
 	.write_addr_1               (write_addr_1             ),
 	.write_addr_2               (write_addr_2             ),

@@ -27,7 +27,7 @@ module frame_fifo_write
 	*/
 	input                            write_req,                  // data write module write request,keep '1' until read_req_ack = '1'
 	output reg                       write_req_ack,              // data write module write request response
-	output                           write_finish,               // data write module write request finish
+	output reg                       write_finish,               // data write module write request finish
 	input[ADDR_BITS - 1:0]           write_addr_0,               // data write module write request base address 0, used when write_addr_index = 0
 	input[ADDR_BITS - 1:0]           write_addr_1,               // data write module write request base address 1, used when write_addr_index = 1
 	input[ADDR_BITS - 1:0]           write_addr_2,               // data write module write request base address 1, used when write_addr_index = 2
@@ -77,8 +77,7 @@ assign O_wr_busy = (state == S_WRITE_BURST || (state == S_CHECK_FIFO && into_bur
 // 128-word bursts, overwriting the first 32 words of the next row.
 assign wr_burst_finish = (burst_cnt >= BURST_SIZE) ||
                          (write_cnt + burst_cnt >= write_len_latch);
-assign write_finish = (state == S_END) ? 1'b1 : 1'b0;            //write finish at state 'S_END'
-assign App_wr_en = App_wr_en_d0;
+assign App_wr_en = App_wr_en_d0 && (burst_cnt != 0 || !Sdr_busy);
 
 
 always@(posedge mem_clk or posedge rst)
@@ -159,11 +158,13 @@ begin
 		write_cnt <= ZERO[ADDR_BITS - 1:0];
 		fifo_aclr <= 1'b0;
 		write_req_ack <= 1'b0;
+		write_finish <= 1'b0;
 		//wr_burst_len <= ZERO[BURST_BITS - 1:0];
 		
 		
 	end
-	else 
+	else begin
+        write_finish <= 1'b0;
 		case(state)
 			//idle state,waiting for write write_req_d2 == '1' goto the 'S_ACK'
 			S_IDLE:
@@ -253,6 +254,7 @@ begin
 				else
 				begin
 					state <= S_END;
+                    write_finish <= 1'b1;
 				end
 			end
 			S_END:
@@ -262,5 +264,6 @@ begin
 			default:
 				state <= S_IDLE;
 		endcase
+	end
 end
 endmodule

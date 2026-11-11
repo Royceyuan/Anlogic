@@ -25,6 +25,7 @@ module tb_museum_media_core #(
     parameter integer MAIN4_EMERGENCY_TEST = 0,
     parameter integer MAIN5_CONTROLS_TEST = 0,
     parameter integer MAIN5_REMOTE_TEST = 0,
+    parameter integer KEY4_TRANSITION_TEST = 0,
     parameter integer PLL_STARTUP_TEST = 0,
     parameter integer LOCAL_MANUAL_TEST = 0,
     parameter integer LIGHT_BAND_TEST = 0
@@ -38,6 +39,9 @@ module tb_museum_media_core #(
     reg [7:0] saved_progress;
     reg light_band_pass=0;
     reg pll_startup_pass=0;
+    reg key4_transition_pass=0;
+    reg key4_test_enter_detail=0;
+    reg key4_test_pause=0;
     reg pll_system_lock=0, pll_video_lock=0;
     reg remote_command_valid = 1'b0;
     reg [7:0] remote_command_type = 8'd0;
@@ -50,6 +54,14 @@ module tb_museum_media_core #(
         assign manual_key_return = dut.g_museum_lecture_controller.u_museum_lecture_controller.key_return;
     end else begin : g_no_manual_return_check
         assign manual_key_return = 1'b0;
+    end endgenerate
+    generate if (KEY4_TRANSITION_TEST) begin : g_key4_detail_fixture
+        always @(posedge key4_test_enter_detail) begin
+            dut.g_museum_lecture_controller.u_museum_lecture_controller.lecture_active=1'b1;
+            dut.g_museum_lecture_controller.u_museum_lecture_controller.display_slot=2'd1;
+        end
+        always @(posedge key4_test_pause)
+            dut.g_museum_lecture_controller.u_museum_lecture_controller.lecture_paused=1'b1;
     end endgenerate
 
     wire [3:0] led;
@@ -72,7 +84,8 @@ module tb_museum_media_core #(
         .VIDEO_W(TB_VIDEO_W), .VIDEO_H(TB_VIDEO_H), .VIDEO_BURST_WORDS(4),
         .VIDEO_MODE_1280(1),
         .ENABLE_OSD(PHASE1_TEST || PHASE2_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST),
-        .ENABLE_FADE(PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || LIGHT_BAND_TEST || MAIN5_CONTROLS_TEST),
+        .ENABLE_FADE(PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || LIGHT_BAND_TEST ||
+                     MAIN5_CONTROLS_TEST || KEY4_TRANSITION_TEST),
         .VIDEO_SEQUENCE(0), .VIDEO_BIN(0), .ADAPTIVE_BMP(1),
         .PRELOAD_BOTH_IMAGES(PRELOAD_TEST || MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || MAIN3_ZOOM_TEST || MAIN5_CONTROLS_TEST || MAIN5_REMOTE_TEST),
         .MULTI_IMAGE_BMP(MULTI5_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || MAIN3_ZOOM_TEST || MAIN5_CONTROLS_TEST || MAIN5_REMOTE_TEST),
@@ -448,6 +461,49 @@ module tb_museum_media_core #(
             $display("FAIL top-chain video_run timeout status=%h frame_done=%b",
                      {dut.status_code, 4'h0, dut.row_index[3:0],
                       dut.image_load_status}, dut.frame_done);
+            $finish;
+        end
+
+        if (KEY4_TRANSITION_TEST) begin : check_key4_transition
+            reg saw_full, saw_closing;
+            timeout=0;
+            while ((dut.display_media_index!==4'd5 || dut.transition_active!==1'b0 ||
+                    dut.overview_cache_ready!==1'b1) && timeout<500000) begin
+                @(negedge clk_50m); timeout=timeout+1;
+            end
+            if (timeout==500000) $fatal(1,"KEY4 fixture did not reach overview");
+            force dut.audio_frame_pulse_50m=1'b0;
+            key4_test_enter_detail=1'b1;
+            timeout=0;
+            while ((dut.display_media_index!==4'd1 || dut.video_run!==1'b1 ||
+                    dut.transition_active!==1'b1) &&
+                   timeout<500000) begin
+                @(negedge clk_50m); timeout=timeout+1;
+            end
+            if (timeout==500000) $fatal(1,"KEY4 fixture did not reach detail 1");
+            key4_test_pause=1'b1;
+            repeat(8) @(negedge clk_50m);
+            force dut.key_press_pulse=4'b1000;
+            @(negedge clk_50m); release dut.key_press_pulse;
+            saw_full=0; saw_closing=0; timeout=0;
+            while (dut.recovery_busy!==1'b1 && timeout<500000) begin
+                if (dut.display_media_index==0 && dut.video_run &&
+                    dut.lecture_final_full_active && !dut.transition_active &&
+                    dut.display_zoom_2x==0 && dut.display_pan_x==0 && dut.display_pan_y==0)
+                    saw_full=1;
+                if (dut.transition_mode==3'd5 && dut.fade_out_active &&
+                    dut.transition_progress>0 && dut.transition_progress<64) begin
+                    if (!saw_full) $fatal(1,"KEY4 started closing before the final full view");
+                    saw_closing=1;
+                end
+                @(negedge clk_50m); timeout=timeout+1;
+            end
+            if (!saw_full || !saw_closing || dut.display_media_index!=5 ||
+                dut.transition_active || timeout==500000)
+                $fatal(1,"KEY4 skipped the closing sequence: full=%b closing=%b frame=%d progress=%d state=%d",
+                       saw_full,saw_closing,dut.display_media_index,dut.transition_progress,dut.recovery_state);
+            key4_transition_pass=1;
+            $display("PASS KEY4 detail to full, smooth closing and overview before media reset");
             $finish;
         end
 
