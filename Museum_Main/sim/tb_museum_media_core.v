@@ -40,6 +40,7 @@ module tb_museum_media_core #(
     reg light_band_pass=0;
     reg pll_startup_pass=0;
     reg key4_transition_pass=0;
+    reg key4_check_overview_hold=0;
     reg key4_test_enter_detail=0;
     reg key4_test_pause=0;
     reg pll_system_lock=0, pll_video_lock=0;
@@ -62,6 +63,12 @@ module tb_museum_media_core #(
         end
         always @(posedge key4_test_pause)
             dut.g_museum_lecture_controller.u_museum_lecture_controller.lecture_paused=1'b1;
+        always @(negedge dut.video_clk)
+            if (key4_check_overview_hold &&
+                (dut.transition_active !== 1'b0 || dut.display_media_index !== 4'd5 ||
+                 dut.overview_enable_video !== 1'b1 || dut.switch_pending !== 1'b0 ||
+                 dut.u_sd_card_top.rst !== 1'b0))
+                $fatal(1,"KEY4 warm rearm reset the card or replayed the overview");
     end endgenerate
 
     wire [3:0] led;
@@ -485,8 +492,10 @@ module tb_museum_media_core #(
             repeat(8) @(negedge clk_50m);
             force dut.key_press_pulse=4'b1000;
             @(negedge clk_50m); release dut.key_press_pulse;
+            force dut.sd_read_active=1'b1;
             saw_full=0; saw_closing=0; timeout=0;
-            while (dut.recovery_busy!==1'b1 && timeout<500000) begin
+            while (dut.recovery_busy!==1'b1 && dut.recovery_state!==3'd7 &&
+                   timeout<500000) begin
                 if (dut.display_media_index==0 && dut.video_run &&
                     dut.lecture_final_full_active && !dut.transition_active &&
                     dut.display_zoom_2x==0 && dut.display_pan_x==0 && dut.display_pan_y==0)
@@ -502,8 +511,27 @@ module tb_museum_media_core #(
                 dut.transition_active || timeout==500000)
                 $fatal(1,"KEY4 skipped the closing sequence: full=%b closing=%b frame=%d progress=%d state=%d",
                        saw_full,saw_closing,dut.display_media_index,dut.transition_progress,dut.recovery_state);
+            if (dut.recovery_state!==3'd7 || dut.u_sd_card_top.rst!==1'b0)
+                $fatal(1,"KEY4 reset an already initialized card");
+            key4_check_overview_hold=1'b1;
+            repeat(3) @(posedge dut.video_frame_tick);
+            if (dut.recovery_state!==3'd7 || dut.manual_media_restart)
+                $fatal(1,"KEY4 rearmed media before the active sector finished");
+            @(negedge clk_50m); force dut.sd_read_active=1'b0;
+            @(negedge clk_50m);
+            if (dut.recovery_state!==3'd0 || !dut.manual_media_restart)
+                $fatal(1,"KEY4 did not rearm media after the active sector finished");
+            repeat(4) @(posedge dut.video_frame_tick);
+            @(negedge clk_50m); force dut.key_press_pulse=4'b1000;
+            @(negedge clk_50m); release dut.key_press_pulse;
+            if (dut.recovery_state!==3'd7)
+                $fatal(1,"KEY4 on the overview did not enter warm rearm");
+            @(negedge clk_50m);
+            if (dut.recovery_state!==3'd0 || !dut.manual_media_restart)
+                $fatal(1,"second KEY4 did not rearm cached media");
+            release dut.sd_read_active;
             key4_transition_pass=1;
-            $display("PASS KEY4 detail to full, smooth closing and overview before media reset");
+            $display("PASS KEY4 single animation, sector drain and repeat media rearm with no SD reset");
             $finish;
         end
 

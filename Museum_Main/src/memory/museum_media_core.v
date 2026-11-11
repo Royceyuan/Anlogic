@@ -163,8 +163,10 @@ reg recovery_select_pulse;
 reg emergency_50m_ff1, emergency_50m_ff2;
 wire emergency_active_50m = ENABLE_MAIN4 && emergency_50m_ff2;
 wire key4_animating = recovery_state == 3'd5 || recovery_state == 3'd6;
+wire key4_rearming = recovery_state == 3'd7;
+wire key4_pending = key4_animating || key4_rearming;
 wire recovery_busy = (ENABLE_MAIN3 || ENABLE_MAIN4) &&
-                     ((recovery_state != 0 && !key4_animating) || emergency_active_50m);
+                     ((recovery_state != 0 && !key4_pending) || emergency_active_50m);
 wire recovery_reset = (ENABLE_MAIN3 || ENABLE_MAIN4) &&
                       recovery_state == 3'd2;
 wire client_rst_n = write_rst_n && !recovery_reset;
@@ -654,7 +656,7 @@ wire [2:0] museum_preload_index = sw[2:0];
 wire signed [15:0] requested_pan_x = remote_command_payload[31:16];
 wire signed [15:0] requested_pan_y = remote_command_payload[15:0];
 reg manual_reload_pending;
-wire main5_remote_busy = emergency_active_50m || recovery_busy || key4_animating || manual_reload_pending ||
+wire main5_remote_busy = emergency_active_50m || recovery_busy || key4_pending || manual_reload_pending ||
                          transition_active_ff2_50m || main5_request_busy;
 reg main5_command_seen;
 reg manual_set_pulse, manual_image_pulse;
@@ -910,8 +912,13 @@ always @(posedge clk_50m or negedge write_rst_n) begin
             3'd0: if (emergency_active_50m ||
                        (ENABLE_MAIN3 && key_press_pulse[3])) begin
                 manual_reload_pending <= 1'b0;
-                recovery_state <= (ENABLE_MUSEUM_LECTURE && !emergency_active_50m &&
-                                   lecture_active && overview_cache_ready) ? 3'd5 : 3'd1;
+                recovery_wait_count <= 27'd0;
+                if (ENABLE_MUSEUM_LECTURE && !emergency_active_50m && overview_cache_ready) begin
+                    if (lecture_active)
+                        recovery_state <= 3'd5;
+                    else
+                        recovery_state <= sd_init_done ? 3'd7 : 3'd1;
+                end else recovery_state <= 3'd1;
             end
             3'd1: if (writer_abort_done) begin
                 recovery_reset_count <= 5'd0;
@@ -933,15 +940,26 @@ always @(posedge clk_50m or negedge write_rst_n) begin
             else recovery_wait_count <= recovery_wait_count + 1'b1;
             3'd4: if (!emergency_active_50m && key_press_pulse[3])
                 recovery_state <= 3'd1;
-            // Leave the lecture through its normal full-view and overview
-            // transitions. Reset the media clients only after the opening
-            // half has finished and the cached overview is visible.
+            // Finish the return animation before rearming the media session.
             3'd5: if (emergency_active_50m)
                 recovery_state <= 3'd1;
             else if (key4_return_pulse)
                 recovery_state <= 3'd6;
-            3'd6: if (emergency_active_50m || (!lecture_active && manual_overview_ff2))
+            3'd6: if (emergency_active_50m)
                 recovery_state <= 3'd1;
+            else if (!lecture_active && manual_overview_ff2)
+                recovery_state <= sd_init_done ? 3'd7 : 3'd1;
+            // Wait for the shared SD interface to drain before restarting readers.
+            3'd7: if (emergency_active_50m || !sd_init_done)
+                recovery_state <= 3'd1;
+            else if (manual_overview_ff2 && !sd_read_active && !image_sd_sec_read &&
+                     !audio_sd_sec_read && !subtitle_sd_sec_read) begin
+                manual_media_restart <= 1'b1;
+                recovery_select_pulse <= 1'b1;
+                recovery_state <= 3'd0;
+            end else if (recovery_wait_count == 27'd100_000_000)
+                recovery_state <= 3'd1;
+            else recovery_wait_count <= recovery_wait_count + 1'b1;
             default: recovery_state <= 3'd0;
         endcase
     end
@@ -1045,7 +1063,8 @@ always @(posedge clk_50m or negedge write_rst_n) begin
 end
 localparam integer AUDIO_SWITCH_RESET_CYCLES = 50_000;
 
-wire audio_stream_enable = ENABLE_AUDIO_VISUALIZER && !recovery_busy && !manual_reload_pending &&
+wire audio_stream_enable = ENABLE_AUDIO_VISUALIZER && !recovery_busy && !key4_rearming &&
+                           !manual_reload_pending &&
                            (ENABLE_MUSEUM_LECTURE ?
                             (((lecture_cache_ready || lecture_preloading) &&
                               overview_mode) ||
@@ -1150,15 +1169,18 @@ generate
     if (ENABLE_MUSEUM_OVERVIEW) begin : g_museum_overview_controller
         museum_overview_controller u_museum_overview_controller (
             .ctrl_clk(clk_50m), .ctrl_rst_n(client_rst_n),
-            .enable(overview_mode && !recovery_busy),
+            // Keep the finished overview visible during the KEY4 media reset.
+            .enable(overview_mode && (!recovery_busy ||
+                    (ENABLE_MAIN3 && manual_overview_ff2 && !emergency_active_50m))),
             .media_ready(overview_cache_ready && museum_preload_valid &&
                          lecture_cache_ready &&
                          (manual_mode || (audio_prepared && subtitle_entry_ready)) &&
                          (lecture_artifact_index == overview_selected_ctrl)),
-            .key_confirm(key_press_pulse[1] && !recovery_busy && !key4_animating &&
+            .key_confirm(key_press_pulse[1] && !recovery_busy && !key4_pending &&
                          !manual_reload_pending && !voice_handoff_pending),
             .key_previous(!voice_handoff_pending&&(ENABLE_MAIN3 ? 1'b0 : key_press_pulse[3])),
-            .key_next(!voice_handoff_pending&&(ENABLE_MAIN3 ? key_press_pulse[0] : key_press_pulse[2])),
+            .key_next(!recovery_busy && !key4_rearming && !voice_handoff_pending &&
+                      (ENABLE_MAIN3 ? key_press_pulse[0] : key_press_pulse[2])),
             .recover_select(recovery_select_pulse),
             .recover_index(museum_preload_valid ? museum_preload_index : 3'd0),
             .selected_index_ctrl(overview_selected_ctrl),
@@ -1202,7 +1224,7 @@ always @(posedge clk_50m or negedge write_rst_n) begin
 end
 
 assign lecture_load_accept = lecture_load_request && load_reported && !load_active;
-assign guide_audio_allowed=ENABLE_GUIDE_AUDIO&&!emergency_active_50m&&!recovery_busy&&
+assign guide_audio_allowed=ENABLE_GUIDE_AUDIO&&!emergency_active_50m&&!recovery_busy&&!key4_rearming&&
     (!lecture_active||manual_mode)&&!voice_handoff_pending&&
     !(lecture_confirm_pulse&&!manual_mode);
 generate if(ENABLE_GUIDE_AUDIO)begin:g_voice_handoff
@@ -2889,7 +2911,8 @@ always @(posedge video_clk or negedge video_rst_n) begin
         direct_switch_pending <= 1'b0;
         fade_out_active <= 1'b0;
         fade_level <= 5'd16;
-        transition_progress <= light_band_transition ? 8'd64 : 8'd32;
+        transition_mode <= 3'd0;
+        transition_progress <= 8'd32;
         transition_pace <= 1'b0;
         if (video_vblank_start && display_media_index != VIDEO_FRAME_COUNT &&
             overview_cache_ready_ff2) begin
@@ -3542,13 +3565,14 @@ assign main5_mode = emergency_active_50m ? 8'd3 :
                     main5_error != 0 ? 8'd4 :
                     !sd_init_done ? 8'd0 : lecture_active ? 8'd2 : 8'd1;
 reg [23:0] main5_ui_previous;
-assign main5_entry_ready = !lecture_active && !recovery_busy && !manual_reload_pending && !emergency_active_50m &&
+assign main5_entry_ready = !lecture_active && !recovery_busy && !key4_rearming &&
+                        !manual_reload_pending && !emergency_active_50m &&
                         overview_cache_ready && museum_preload_valid &&
                         lecture_cache_ready &&
                         (manual_mode || (audio_prepared && subtitle_entry_ready)) &&
                         lecture_artifact_index == museum_preload_index &&
                         main5_sw_ff2[2:0] == museum_preload_index;
-wire [23:0] main5_ui = {{1'b1, (recovery_busy || manual_reload_pending), lecture_preloading,
+wire [23:0] main5_ui = {{1'b1, (recovery_busy || key4_rearming || manual_reload_pending), lecture_preloading,
                          lecture_paused, main5_sw_ff2},
                         1'b0, overview_selected_ctrl,
                         (main5_sw_ff2[2:0] < 5 ? {1'b0, main5_sw_ff2[2:0]} : 4'hf),
