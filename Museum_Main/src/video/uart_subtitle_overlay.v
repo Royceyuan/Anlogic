@@ -488,7 +488,8 @@ endmodule
 module subtitle_bitmap_ram #(
     parameter integer ADDR_WIDTH = 12,
     parameter integer DEPTH = 4096,
-    parameter integer REGISTER_READ = 0
+    parameter integer REGISTER_READ = 0,
+    parameter IMPLEMENT = "32K"
 ) (
     input wire wr_clk, input wire wr_en, input wire [ADDR_WIDTH-1:0] wr_addr,
     input wire [7:0] wr_data, input wire rd_clk, input wire [ADDR_WIDTH-1:0] rd_addr,
@@ -520,7 +521,7 @@ module subtitle_bitmap_ram #(
         .FORCE_KEEP("OFF"), .INIT_FILE("NONE"), .FILL_ALL("NONE"),
         // One 4Kx8 subtitle bank fits a single 32K block, preserving the
         // scarce 9K blocks for later streaming/audio FIFOs.
-        .IMPLEMENT("32K")
+        .IMPLEMENT(IMPLEMENT)
     ) u_ram (
         .doa(unused_a), .dob(rd_data), .dia(wr_data), .dib(8'd0),
         .cea(wr_en), .ocea(1'b0), .clka(wr_clk), .wea(wr_en), .rsta(1'b0),

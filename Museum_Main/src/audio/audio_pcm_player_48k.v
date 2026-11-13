@@ -7,13 +7,15 @@ module audio_pcm_player_48k #(
     parameter integer SAMPLE_RATE_HZ = 48_000,
     parameter integer START_FRAMES = 256,
     parameter integer UNDERFLOW_TICKS = 64,
-    parameter integer ENABLE_SPEED = 0
+    parameter integer ENABLE_SPEED = 0,
+    parameter integer REBUFFER_ON_EMPTY = 0
 ) (
     input  wire                clk,
     input  wire                rst,
     input  wire [31:0]         fifo_data,
     input  wire                fifo_valid,
     input  wire                fifo_empty,
+    input  wire                stream_done,
     input  wire [8:0]          fifo_used,
     input  wire                paused,
     input  wire                switch_mute,
@@ -72,7 +74,8 @@ always @(posedge clk or posedge rst) begin
     end else begin
         fifo_rd_en   <= 1'b0;
         sample_valid <= 1'b0;
-        if (!paused && !active && fifo_used >= START_FRAMES)
+        if (!paused && !active && (fifo_used >= START_FRAMES ||
+            (REBUFFER_ON_EMPTY && stream_done && !fifo_empty)))
             active <= 1'b1;
 
         if (phase_tick)
@@ -110,6 +113,10 @@ always @(posedge clk or posedge rst) begin
             end else begin
                 sample_left  <= 16'sd0;
                 sample_right <= 16'sd0;
+                if (REBUFFER_ON_EMPTY && !stream_done) begin
+                    active <= 1'b0;
+                    underflow <= 1'b1;
+                end
                 if (sample_tick && underflow_ticks >= UNDERFLOW_TICKS - 1)
                     underflow <= 1'b1;
                 else if (sample_tick)

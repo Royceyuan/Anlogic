@@ -1,15 +1,19 @@
 `timescale 1ns/1ps
 module tb_audio_playback_speed;
+parameter REBUFFER_TEST=0;
 reg clk=0, clk50=0, rst=1, paused=0, mute=0, empty=0;
 reg [1:0] speed=0;
+reg stream_done=0;
+reg [8:0] fifo_used=300;
 always #6.666667 clk=~clk;
 always #10 clk50=~clk50;
 reg [31:0] data=32'h00010000;
 wire rd, valid, toggle, active, underflow;
 wire [15:0] left_sample,right_sample;
-audio_pcm_player_48k #(.ENABLE_SPEED(1)) dut(
+audio_pcm_player_48k #(.ENABLE_SPEED(1),.REBUFFER_ON_EMPTY(REBUFFER_TEST)) dut(
  .clk(clk),.rst(rst),.fifo_data(data),.fifo_valid(!empty),.fifo_empty(empty),
- .fifo_used(9'd300),.paused(paused),.switch_mute(mute),.speed_index(speed),
+ .fifo_used(fifo_used),.stream_done(stream_done),
+ .paused(paused),.switch_mute(mute),.speed_index(speed),
  .fifo_rd_en(rd),.sample_valid(valid),.sample_left(left_sample),
  .sample_right(right_sample),.frame_consumed_toggle(toggle),.active(active),.underflow(underflow));
 integer reads=0,outputs=0,cdc_reads=0;
@@ -56,11 +60,20 @@ initial begin
  speed=2;paused=0;
  repeat(31250) @(negedge clk);
  if(reads-saved_reads!=60) $fatal(1,"resume lost speed selection");
- empty=1;repeat(110000) @(negedge clk);
+ empty=1;fifo_used=0;repeat(110000) @(negedge clk);
  if(!underflow) $fatal(1,"starvation not reported");
+ if(REBUFFER_TEST) begin
+  empty=0;fifo_used=1;saved_reads=reads;
+  repeat(6000) @(negedge clk);
+  if(active || reads!=saved_reads) $fatal(1,"rebuffer played an isolated sample");
+  stream_done=1;
+  repeat(6000) @(negedge clk);
+  if(reads==saved_reads) $fatal(1,"rebuffer dropped the final short tail");
+  stream_done=0;
+ end
  mute=1;saved_reads=reads;repeat(31250) @(negedge clk);
  if(reads!=saved_reads||underflow) $fatal(1,"mute consumed frames/kept error");
- mute=0;empty=0;speed=0;repeat(31250) @(negedge clk);
+ mute=0;empty=0;fifo_used=300;speed=0;repeat(31250) @(negedge clk);
  repeat(6) @(negedge clk50);
  if(cdc_reads!=reads) $fatal(1,"50MHz source-frame CDC lost pulses %d/%d",cdc_reads,reads);
  test_pass=1;

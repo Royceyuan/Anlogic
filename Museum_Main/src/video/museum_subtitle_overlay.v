@@ -21,6 +21,7 @@ module museum_subtitle_overlay #(
     input wire [31:0] fs_fat_start, input wire [31:0] fs_data_start,
     input wire [31:0] fs_root_cluster,
     output reg sd_sec_read, output reg [31:0] sd_sec_read_addr,
+    output wire [3:0] prefix_sector,
     input wire [7:0] sd_sec_read_data,
     input wire sd_sec_read_data_valid, input wire sd_sec_read_end,
     output reg subtitle_ready, output reg [31:0] subtitle_total_frames,
@@ -65,6 +66,8 @@ reg [8:0] fat_byte_offset;
 reg fat_for_root;
 reg [2:0] active_track;
 reg name_mode;
+assign prefix_sector = !name_mode && state==S_WAIT_DATA && file_bytes_seen<32'd7168 ?
+                       file_bytes_seen[12:9] : 4'hf;
 reg [26:0] name_wait_count;
 reg [6:0] name_root_sectors;
 

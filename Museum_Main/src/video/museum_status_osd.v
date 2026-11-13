@@ -374,6 +374,79 @@ function [15:0] chinese_row;
             9'h16b: chinese_row=16'h0100;
             9'h16c: chinese_row=16'h0500;
             9'h16d: chinese_row=16'h0200;
+            9'h170: chinese_row=16'h6108;
+            9'h171: chinese_row=16'h3108;
+            9'h172: chinese_row=16'h1108;
+            9'h173: chinese_row=16'h07fe;
+            9'h174: chinese_row=16'h0188;
+            9'h175: chinese_row=16'he108;
+            9'h176: chinese_row=16'h2108;
+            9'h177: chinese_row=16'h2108;
+            9'h178: chinese_row=16'h2fff;
+            9'h179: chinese_row=16'h2108;
+            9'h17a: chinese_row=16'h2108;
+            9'h17b: chinese_row=16'h2b08;
+            9'h17c: chinese_row=16'h3a08;
+            9'h17d: chinese_row=16'h2608;
+            9'h17e: chinese_row=16'h0408;
+            9'h180: chinese_row=16'h1000;
+            9'h181: chinese_row=16'h30fe;
+            9'h182: chinese_row=16'h7c62;
+            9'h183: chinese_row=16'h4c66;
+            9'h184: chinese_row=16'hfe46;
+            9'h185: chinese_row=16'h6adc;
+            9'h186: chinese_row=16'h6b80;
+            9'h187: chinese_row=16'h7e58;
+            9'h188: chinese_row=16'h6a7e;
+            9'h189: chinese_row=16'h6a98;
+            9'h18a: chinese_row=16'h7e98;
+            9'h18b: chinese_row=16'h4bff;
+            9'h18c: chinese_row=16'h4a18;
+            9'h18d: chinese_row=16'hc218;
+            9'h18e: chinese_row=16'hce18;
+            9'h191: chinese_row=16'h0180;
+            9'h192: chinese_row=16'h0180;
+            9'h193: chinese_row=16'h7ffe;
+            9'h194: chinese_row=16'h6186;
+            9'h195: chinese_row=16'h6186;
+            9'h196: chinese_row=16'h6186;
+            9'h197: chinese_row=16'h6186;
+            9'h198: chinese_row=16'h7ffe;
+            9'h199: chinese_row=16'h6186;
+            9'h19a: chinese_row=16'h0180;
+            9'h19b: chinese_row=16'h0180;
+            9'h19c: chinese_row=16'h0180;
+            9'h19d: chinese_row=16'h0180;
+            9'h19e: chinese_row=16'h0180;
+            9'h1a0: chinese_row=16'h3000;
+            9'h1a1: chinese_row=16'h33fe;
+            9'h1a2: chinese_row=16'h30c6;
+            9'h1a3: chinese_row=16'h3046;
+            9'h1a4: chinese_row=16'h3ec6;
+            9'h1a5: chinese_row=16'hf8c6;
+            9'h1a6: chinese_row=16'h30c6;
+            9'h1a7: chinese_row=16'h30c6;
+            9'h1a8: chinese_row=16'h30c6;
+            9'h1a9: chinese_row=16'h3286;
+            9'h1aa: chinese_row=16'h3e86;
+            9'h1ab: chinese_row=16'h3986;
+            9'h1ac: chinese_row=16'h2304;
+            9'h1ad: chinese_row=16'h067c;
+            9'h1ae: chinese_row=16'h0400;
+            9'h1b1: chinese_row=16'h7ffe;
+            9'h1b2: chinese_row=16'h4206;
+            9'h1b3: chinese_row=16'h47f2;
+            9'h1b4: chinese_row=16'h4c32;
+            9'h1b5: chinese_row=16'h5262;
+            9'h1b6: chinese_row=16'h41c2;
+            9'h1b7: chinese_row=16'h47fa;
+            9'h1b8: chinese_row=16'h781e;
+            9'h1b9: chinese_row=16'h43c2;
+            9'h1ba: chinese_row=16'h4042;
+            9'h1bb: chinese_row=16'h4e02;
+            9'h1bc: chinese_row=16'h47e2;
+            9'h1bd: chinese_row=16'h7ffe;
+            9'h1be: chinese_row=16'h4006;
             default: chinese_row=16'd0;
         endcase
     end
@@ -484,7 +557,9 @@ generate if (SHOW_PERCENT) begin : g_font_rom
         .INIT_10(font_init(16)), .INIT_11(font_init(17)),
         .INIT_12(font_init(18)), .INIT_13(font_init(19)),
         .INIT_14(font_init(20)), .INIT_15(font_init(21)),
-        .INIT_16(font_init(22)),
+        .INIT_16(font_init(22)), .INIT_17(font_init(23)),
+        .INIT_18(font_init(24)), .INIT_19(font_init(25)),
+        .INIT_1A(font_init(26)), .INIT_1B(font_init(27)),
         .INIT_20(font_init(32)), .INIT_21(font_init(33)),
         .INIT_22(font_init(34)), .INIT_23(font_init(35)),
         .INIT_24(font_init(36)), .INIT_25(font_init(37)),
@@ -642,8 +717,15 @@ always @(*) begin
         early_glyph=stage_glyph(stage,(x_i-202)>>4);
         early_row=y_i-12;
         early_col=x_i-202;
-    end else if (SHOW_PERCENT && x_i>=332 && x_i<364 && y_i>=12 && y_i<28) begin
-        early_glyph=x_i<348 ? (manual_mode ? 5'd22 : 5'd20) : 5'd21;
+    end else if (SHOW_PERCENT && x_i>=332 && x_i<412 && y_i>=12 && y_i<28) begin
+        // Mode prefix on the overview, with a three-character suffix in a lecture.
+        if (x_i<348) early_glyph=manual_mode ? 5'd22 : 5'd20;
+        else if (x_i<364) early_glyph=5'd21;
+        else if (stage!=0) begin
+            if (x_i<380) early_glyph=manual_mode ? 5'd26 : 5'd23;
+            else if (x_i<396) early_glyph=manual_mode ? 5'd27 : 5'd24;
+            else early_glyph=5'd25;
+        end
         early_row=y_i-12;
         early_col=x_i-332;
     end else if (x_i>=22 && x_i<70 && y_i>=32 && y_i<48) begin

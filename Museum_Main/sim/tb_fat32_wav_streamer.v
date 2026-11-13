@@ -1,7 +1,7 @@
 `timescale 1ns/1ps
 `default_nettype none
 
-module tb_fat32_wav_streamer #(parameter REUSE_GEOMETRY=1);
+module tb_fat32_wav_streamer #(parameter REUSE_GEOMETRY=1, ENTRY_CACHE_TEST=0);
 reg clk = 0, rst_n = 0, start = 0, restart=0, sd_init_done = 1;
 reg [2:0] track_index = 0;
 wire sd_read;
@@ -16,18 +16,43 @@ wire stream_done;
 wire fs_geometry_ready;
 wire [7:0] fs_sectors_per_cluster;
 wire [31:0] fs_fat_start, fs_data_start, fs_root_cluster;
-reg [7:0] sector [0:6][0:511];
+reg [7:0] sector [0:8][0:511];
+localparam integer PCM_FRAMES = ENTRY_CACHE_TEST ? 500 : 128;
+localparam integer PCM_BYTES = PCM_FRAMES*4;
+localparam integer WAV_BYTES = 44+PCM_BYTES;
 reg serving = 0;
 integer byte_no = 0, lba = 0, writes = 0, seen_lba6 = 0;
 reg ready_seen = 0, ready_dropped = 0, track_switch_seen = 0;
 integer mbr_reads=0, saved_mbr_reads;
 reg check_geometry=0, geometry_changed=0;
+wire [3:0] prefix_sector;
+wire cache_hit, reader_valid, reader_end;
+wire [7:0] reader_data;
+integer wav_card_sectors=0;
+
+generate if (ENTRY_CACHE_TEST) begin:g_cache
+    museum_entry_sector_cache #(.WITH_SUBTITLE(0)) u_cache(
+        .clk(clk),.rst_n(rst_n),.track(track_index),
+        .audio_sector(prefix_sector),.subtitle_sector(4'hf),
+        .audio_req(sd_read),.subtitle_req(1'b0),.card_data(sd_data),
+        .audio_card_valid(sd_valid),.subtitle_card_valid(1'b0),
+        .audio_card_end(sd_end),.subtitle_card_end(1'b0),.allow_replay(!serving),
+        .audio_replay(cache_hit),.audio_data(reader_data),
+        .audio_valid(reader_valid),.audio_end(reader_end)
+    );
+end else begin:g_direct
+    assign cache_hit=0;
+    assign reader_data=sd_data;
+    assign reader_valid=sd_valid;
+    assign reader_end=sd_end;
+end endgenerate
 
 fat32_wav_streamer #(.REUSE_GEOMETRY(REUSE_GEOMETRY)) dut (
     .clk(clk), .rst_n(rst_n), .start(start), .restart(restart),
     .track_index(track_index), .sd_init_done(sd_init_done),
-    .sd_sec_read(sd_read), .sd_sec_read_addr(sd_addr), .sd_sec_read_data(sd_data),
-    .sd_sec_read_data_valid(sd_valid), .sd_sec_read_end(sd_end), .fifo_almost_full(1'b0),
+    .sd_sec_read(sd_read), .sd_sec_read_addr(sd_addr), .prefix_sector(prefix_sector),
+    .sd_sec_read_data(reader_data), .sd_sec_read_data_valid(reader_valid),
+    .sd_sec_read_end(reader_end), .fifo_almost_full(1'b0),
     .fifo_wr_en(fifo_wr), .fifo_wr_data(fifo_data), .audio_ready(ready),
     .track_switch_ack(track_switch_ack), .total_pcm_frames(total_pcm_frames),
     .stream_done(stream_done), .format_error(format_error), .file_error(file_error),
@@ -38,10 +63,11 @@ fat32_wav_streamer #(.REUSE_GEOMETRY(REUSE_GEOMETRY)) dut (
 always #5 clk = ~clk;
 always @(negedge clk) begin
     sd_valid = 0; sd_end = 0;
-    if (!serving && sd_read) begin
+    if (!serving && sd_read && !cache_hit && !reader_end) begin
         serving = 1; byte_no = 0; lba = sd_addr;
         if(sd_addr==0) mbr_reads=mbr_reads+1;
         if (sd_addr == 6) seen_lba6 = 1;
+        if (sd_addr>=5) wav_card_sectors=wav_card_sectors+1;
     end
     if (serving) begin
         sd_valid = 1; sd_data = sector[lba][byte_no];
@@ -50,8 +76,10 @@ always @(negedge clk) begin
     end
 end
 always @(posedge clk) if (fifo_wr) begin
-    if (writes%128 == 0 && fifo_data != 32'h4433_2211) $fatal(1, "first WAV PCM frame order");
-    if (writes%128 == 1 && fifo_data != 32'h8877_6655) $fatal(1, "second WAV PCM frame order");
+    if (writes%PCM_FRAMES == 0 && fifo_data != 32'h4433_2211) $fatal(1, "first WAV PCM frame order");
+    if (writes%PCM_FRAMES == 1 && fifo_data != 32'h8877_6655) $fatal(1, "second WAV PCM frame order");
+    if (ENTRY_CACHE_TEST && writes%PCM_FRAMES == 373 && fifo_data != 32'h1234_abcd)
+        $fatal(1,"first uncached WAV frame was lost or repeated");
     writes = writes + 1;
 end
 always @(posedge clk) begin
@@ -73,6 +101,7 @@ initial begin
     for (i=0; i<512; i=i+1) begin
         sector[0][i] = 0; sector[1][i] = 0; sector[2][i] = 0;
         sector[3][i] = 0; sector[4][i] = 0; sector[5][i] = 0; sector[6][i] = 0;
+        sector[7][i] = 0; sector[8][i] = 0;
     end
     // MBR: first partition begins at sector 1.
     sector[0][454]=1;
@@ -82,26 +111,31 @@ initial begin
     // Root cluster 2 points at cluster 3; AUDIO0.WAV deliberately lives in
     // that second root cluster.  Its data occupies linked clusters 4 and 5.
     sector[2][8]=3; sector[2][16]=5;
+    if (ENTRY_CACHE_TEST) begin
+        sector[2][20]=6; sector[2][24]=7;
+    end
     sector[4][0]="A"; sector[4][1]="U"; sector[4][2]="D"; sector[4][3]="I"; sector[4][4]="O";
     sector[4][5]="0"; sector[4][6]=" "; sector[4][7]=" "; sector[4][8]="W"; sector[4][9]="A"; sector[4][10]="V";
-    sector[4][26]=4; sector[4][28]=44; sector[4][29]=2;
+    sector[4][26]=4; sector[4][28]=WAV_BYTES[7:0]; sector[4][29]=WAV_BYTES[15:8];
     sector[5][0]="R"; sector[5][1]="I"; sector[5][2]="F"; sector[5][3]="F";
     sector[5][8]="W"; sector[5][9]="A"; sector[5][10]="V"; sector[5][11]="E";
     sector[5][12]="f"; sector[5][13]="m"; sector[5][14]="t"; sector[5][15]=" "; sector[5][16]=16;
     sector[5][20]=1; sector[5][22]=2; sector[5][24]=8'h80; sector[5][25]=8'hbb;
     sector[5][28]=0; sector[5][29]=8'hee; sector[5][30]=2; sector[5][32]=4; sector[5][34]=16;
-    sector[5][36]="d"; sector[5][37]="a"; sector[5][38]="t"; sector[5][39]="a"; sector[5][40]=0; sector[5][41]=2;
+    sector[5][36]="d"; sector[5][37]="a"; sector[5][38]="t"; sector[5][39]="a";
+    sector[5][40]=PCM_BYTES[7:0]; sector[5][41]=PCM_BYTES[15:8];
     sector[5][44]=8'h11; sector[5][45]=8'h22; sector[5][46]=8'h33; sector[5][47]=8'h44;
     sector[5][48]=8'h55; sector[5][49]=8'h66; sector[5][50]=8'h77; sector[5][51]=8'h88;
     sector[6][0]=8'h99; sector[6][1]=8'haa; sector[6][2]=8'hbb; sector[6][3]=8'hcc;
+    sector[8][0]=8'hcd; sector[8][1]=8'hab; sector[8][2]=8'h34; sector[8][3]=8'h12;
     repeat (3) @(posedge clk); rst_n = 1; start = 1;
-    repeat (6000) @(posedge clk);
-    if (!ready || ready_dropped || format_error || file_error || writes != 128 ||
-        !seen_lba6 || !stream_done || total_pcm_frames != 128)
+    repeat (ENTRY_CACHE_TEST ? 15000 : 6000) @(posedge clk);
+    if (!ready || ready_dropped || format_error || file_error || writes != PCM_FRAMES ||
+        !seen_lba6 || !stream_done || total_pcm_frames != PCM_FRAMES)
         $fatal(1, "fragmented WAV parse or completion failed");
     // The active sector completes before the selector restarts at AUDIO1.WAV.
     @(negedge clk); track_index = 1; sector[4][5] = "1";
-    repeat (6000) @(posedge clk);
+    repeat (ENTRY_CACHE_TEST ? 15000 : 6000) @(posedge clk);
     if (!track_switch_seen || !ready || format_error || file_error) begin
         $fatal(1, "AUDIO1.WAV selection failed");
     end
@@ -110,11 +144,13 @@ initial begin
     @(negedge clk); start=0;restart=1;check_geometry=1;saved_mbr_reads=mbr_reads;
     repeat(10)@(posedge clk);
     @(negedge clk);restart=0;start=1;
-    repeat(6000)@(posedge clk);
-    if(!ready || !stream_done || writes!=384 || format_error || file_error)
+    repeat(ENTRY_CACHE_TEST ? 15000 : 6000)@(posedge clk);
+    if(!ready || !stream_done || writes!=3*PCM_FRAMES || format_error || file_error)
         $fatal(1,"light WAV rearm failed");
     if(REUSE_GEOMETRY && (geometry_changed || mbr_reads!=saved_mbr_reads))
         $fatal(1,"light rearm invalidated shared FAT geometry or reread MBR");
+    if (ENTRY_CACHE_TEST && wav_card_sectors!=9)
+        $fatal(1,"cached rearm did not bypass exactly three card sectors: %0d",wav_card_sectors);
     check_geometry=0;
     // Root-directory miss is a sticky file error, not a silent audio loop.
     @(negedge clk); rst_n = 0; start = 0; track_index = 0; sector[4][0] = 0;

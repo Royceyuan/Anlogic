@@ -1,6 +1,7 @@
 `timescale 1ns / 1ps
 
 module tb_museum_overview_controller;
+parameter DEFER_CONFIRM=0;
 reg ctrl_clk = 1'b0;
 reg video_clk = 1'b0;
 reg ctrl_rst_n = 1'b0;
@@ -14,17 +15,18 @@ reg recover_select = 1'b0;
 reg [2:0] recover_index = 3'd0;
 reg video_frame_tick = 1'b0;
 wire [2:0] selected_index_ctrl;
-wire confirm_pulse;
+wire confirm_pulse, confirm_waiting;
 wire enable_video;
 wire [2:0] selected_index_video;
 wire confirm_active_video;
 
 museum_overview_controller #(
-    .ITEM_COUNT(5), .CONFIRM_FLASH_FRAMES(3)
+    .ITEM_COUNT(5), .CONFIRM_FLASH_FRAMES(3), .DEFER_CONFIRM(DEFER_CONFIRM)
 ) dut (
     .ctrl_clk(ctrl_clk), .ctrl_rst_n(ctrl_rst_n),
     .enable(enable), .media_ready(media_ready),
     .key_confirm(key_confirm), .key_previous(key_previous), .key_next(key_next),
+    .cancel_confirm(1'b0), .confirm_waiting(confirm_waiting),
     .recover_select(recover_select), .recover_index(recover_index),
     .selected_index_ctrl(selected_index_ctrl), .confirm_pulse(confirm_pulse),
     .video_clk(video_clk), .video_rst_n(video_rst_n),
@@ -82,6 +84,19 @@ initial begin
     ctrl_pulse(0);
     if (confirm_pulse || confirm_active_video)
         $fatal(1, "confirmation was accepted before media ready");
+    if (DEFER_CONFIRM) begin
+        if (!confirm_waiting) $fatal(1,"early KEY2 was not retained");
+        ctrl_pulse(2);
+        if (confirm_waiting || selected_index_ctrl!=1) $fatal(1,"KEY1 did not cancel old KEY2");
+        ctrl_pulse(0);
+        media_ready=1;
+        @(posedge ctrl_clk); #1;
+        if (!confirm_pulse || confirm_waiting || selected_index_ctrl!=1)
+            $fatal(1,"deferred KEY2 did not enter the newly confirmed artifact");
+        repeat (4) @(posedge video_clk);
+        frame_tick;
+        @(negedge ctrl_clk);
+    end
 
     media_ready = 1'b1;
     @(negedge ctrl_clk); key_confirm = 1'b1;

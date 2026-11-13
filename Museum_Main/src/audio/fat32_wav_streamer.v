@@ -15,6 +15,7 @@ module fat32_wav_streamer #(
     input  wire        sd_init_done,
     output reg         sd_sec_read,
     output reg [31:0]  sd_sec_read_addr,
+    output wire [3:0]  prefix_sector,
     input  wire [7:0]  sd_sec_read_data,
     input  wire        sd_sec_read_data_valid,
     input  wire        sd_sec_read_end,
@@ -98,6 +99,8 @@ reg [2:0] active_track;
 assign fs_geometry_ready       = (fat_start != 0) && (data_start != 0) &&
                                  (root_cluster >= 2);
 assign fs_sectors_per_cluster  = sectors_per_cluster;
+assign prefix_sector = state==S_WAIT_DATA && file_bytes_seen<32'd1536 ?
+                       file_bytes_seen[12:9] : 4'hf;
 assign fs_fat_start            = fat_start;
 assign fs_data_start           = data_start;
 assign fs_root_cluster         = root_cluster;

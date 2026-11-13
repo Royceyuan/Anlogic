@@ -3,7 +3,8 @@
 
 module museum_overview_controller #(
     parameter integer ITEM_COUNT = 5,
-    parameter integer CONFIRM_FLASH_FRAMES = 8
+    parameter integer CONFIRM_FLASH_FRAMES = 8,
+    parameter integer DEFER_CONFIRM = 0
 ) (
     input  wire       ctrl_clk,
     input  wire       ctrl_rst_n,
@@ -12,10 +13,12 @@ module museum_overview_controller #(
     input  wire       key_confirm,
     input  wire       key_previous,
     input  wire       key_next,
+    input  wire       cancel_confirm,
     input  wire       recover_select,
     input  wire [2:0] recover_index,
     output reg  [2:0] selected_index_ctrl,
     output reg        confirm_pulse,
+    output reg        confirm_waiting,
 
     input  wire       video_clk,
     input  wire       video_rst_n,
@@ -35,23 +38,31 @@ always @(posedge ctrl_clk or negedge ctrl_rst_n) begin
     if (!ctrl_rst_n) begin
         selected_index_ctrl <= 3'd0;
         confirm_pulse       <= 1'b0;
+        confirm_waiting     <= 1'b0;
         confirm_toggle_ctrl <= 1'b0;
     end else begin
         confirm_pulse <= 1'b0;
         if (recover_select) begin
+            confirm_waiting <= 1'b0;
             selected_index_ctrl <= (recover_index < ITEM_COUNT) ? recover_index : 3'd0;
         end else if (enable) begin
             if (key_previous) begin
+                confirm_waiting <= 1'b0;
                 selected_index_ctrl <= (selected_index_ctrl == 0) ?
                                        ITEM_COUNT - 1 : selected_index_ctrl - 1'b1;
             end else if (key_next) begin
+                confirm_waiting <= 1'b0;
                 selected_index_ctrl <= (selected_index_ctrl == ITEM_COUNT - 1) ?
                                        3'd0 : selected_index_ctrl + 1'b1;
-            end else if (key_confirm && media_ready) begin
+            end else if (DEFER_CONFIRM && cancel_confirm) begin
+                confirm_waiting <= 1'b0;
+            end else if ((key_confirm || (DEFER_CONFIRM && confirm_waiting)) && media_ready) begin
+                confirm_waiting     <= 1'b0;
                 confirm_pulse       <= 1'b1;
                 confirm_toggle_ctrl <= ~confirm_toggle_ctrl;
-            end
-        end
+            end else if (DEFER_CONFIRM && key_confirm)
+                confirm_waiting <= 1'b1;
+        end else confirm_waiting <= 1'b0;
     end
 end
 

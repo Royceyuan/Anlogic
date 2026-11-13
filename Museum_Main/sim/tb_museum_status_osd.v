@@ -10,6 +10,7 @@ reg clk=0,rst_n=0,hs=1,vs=1,de=1,name_ready=0,name_we=0;
 reg [1:0] zoom_2x=0;
 reg panel_enable=1;
 reg manual_mode=0;
+reg [2:0] stage=0;
 reg [1:0] speed_index=0;
 reg [2:0] effect=0;
 reg [10:0] x=0,name_addr=0;
@@ -38,7 +39,7 @@ end
 museum_status_osd #(.SHOW_PERCENT(1)) dut(
     .clk(clk),.rst_n(rst_n),.panel_enable(panel_enable),.hs_i(hs),.vs_i(vs),.de_i(de),
     .x_i(x),.y_i(y),.rgb_i(24'h808080),
-    .artifact(3'd0),.stage(3'd0),.effect(effect),
+    .artifact(3'd0),.stage(stage),.effect(effect),
     .width_bcd(16'h1920),.height_bcd(16'h1080),
     .zoom_2x(zoom_2x),
     .manual_mode(manual_mode),
@@ -87,6 +88,21 @@ initial begin
     check(348+col,12+row,expected_row[15-col] ? 24'hffffff : 24'h404040);
   end
  end
+ for (font_addr=0;font_addr<2;font_addr=font_addr+1) begin
+  manual_mode=font_addr;
+  stage=0;
+  check(370,20,24'h404040);
+  stage=1;
+  for (control_char=0;control_char<3;control_char=control_char+1) begin
+   expected_glyph=control_char==2 ? 25 : (manual_mode ? 26 : 23)+control_char;
+   for(row=0;row<16;row=row+1) begin
+    expected_row=dut.chinese_row(expected_glyph,row);
+    for(col=0;col<16;col=col+1)
+     check(364+16*control_char+col,12+row,expected_row[15-col] ? 24'hffffff : 24'h404040);
+   end
+  end
+ end
+ stage=0;
  manual_mode=0;
  for(font_addr=0;font_addr<320;font_addr=font_addr+1) begin
   @(negedge clk);name_addr=font_addr;name_data=8'ha5 ^ font_addr;name_we=1;

@@ -26,6 +26,8 @@ module tb_museum_media_core #(
     parameter integer MAIN5_CONTROLS_TEST = 0,
     parameter integer MAIN5_REMOTE_TEST = 0,
     parameter integer KEY4_TRANSITION_TEST = 0,
+    parameter integer SLOT_REUSE_TEST = 0,
+    parameter integer KEY4_OPENING_TEST = 0,
     parameter integer PLL_STARTUP_TEST = 0,
     parameter integer LOCAL_MANUAL_TEST = 0,
     parameter integer LIGHT_BAND_TEST = 0
@@ -59,7 +61,12 @@ module tb_museum_media_core #(
     generate if (KEY4_TRANSITION_TEST) begin : g_key4_detail_fixture
         always @(posedge key4_test_enter_detail) begin
             dut.g_museum_lecture_controller.u_museum_lecture_controller.lecture_active=1'b1;
-            dut.g_museum_lecture_controller.u_museum_lecture_controller.display_slot=2'd1;
+            dut.g_museum_lecture_controller.u_museum_lecture_controller.display_slot=
+                KEY4_OPENING_TEST ? 2'd0 : 2'd1;
+            if (SLOT_REUSE_TEST) begin
+                dut.g_museum_lecture_controller.u_museum_lecture_controller.current_full_slot=3'd4;
+                dut.g_museum_lecture_controller.u_museum_lecture_controller.ready_details=3'b111;
+            end
         end
         always @(posedge key4_test_pause)
             dut.g_museum_lecture_controller.u_museum_lecture_controller.lecture_paused=1'b1;
@@ -90,6 +97,7 @@ module tb_museum_media_core #(
 `endif
         .VIDEO_W(TB_VIDEO_W), .VIDEO_H(TB_VIDEO_H), .VIDEO_BURST_WORDS(4),
         .VIDEO_MODE_1280(1),
+        .RIGHT_EDGE_REPLICATE_COLUMNS(SLOT_REUSE_TEST ? 2 : 0),
         .ENABLE_OSD(PHASE1_TEST || PHASE2_TEST || PHASE3_TEST || PHASE4_TEST || PHASE5_TEST),
         .ENABLE_FADE(PHASE3_TEST || PHASE4_TEST || PHASE5_TEST || LIGHT_BAND_TEST ||
                      MAIN5_CONTROLS_TEST || KEY4_TRANSITION_TEST),
@@ -108,6 +116,7 @@ module tb_museum_media_core #(
         .ENABLE_MAIN5_CONTROLS(MAIN5_CONTROLS_TEST || MAIN5_REMOTE_TEST),
         .ENABLE_MAIN5_REMOTE(MAIN5_REMOTE_TEST),
         .ENABLE_LOCAL_MANUAL_TEST(LOCAL_MANUAL_TEST),
+        .REUSE_OVERVIEW_SLOTS(SLOT_REUSE_TEST),
         .KEY_DEBOUNCE_BITS(LOCAL_MANUAL_TEST ? 2 : 19),
         .ENABLE_MUSEUM_OVERVIEW(MAIN3_ZOOM_TEST || MAIN5_CONTROLS_TEST || MAIN5_REMOTE_TEST),
         .ENABLE_MUSEUM_LECTURE(MAIN3_ZOOM_TEST || MAIN5_CONTROLS_TEST || MAIN5_REMOTE_TEST),
@@ -482,21 +491,35 @@ module tb_museum_media_core #(
             force dut.audio_frame_pulse_50m=1'b0;
             key4_test_enter_detail=1'b1;
             timeout=0;
-            while ((dut.display_media_index!==4'd1 || dut.video_run!==1'b1 ||
-                    dut.transition_active!==1'b1) &&
+            while ((dut.display_media_index!==(KEY4_OPENING_TEST ? 4'd4 :
+                     SLOT_REUSE_TEST ? 4'd0 : 4'd1) || dut.video_run!==1'b1 ||
+                    (!KEY4_OPENING_TEST && dut.transition_active!==1'b1)) &&
                    timeout<500000) begin
                 @(negedge clk_50m); timeout=timeout+1;
             end
-            if (timeout==500000) $fatal(1,"KEY4 fixture did not reach detail 1");
-            key4_test_pause=1'b1;
+            if (timeout==500000) $fatal(1,"KEY4 fixture did not reach requested image");
+            if (!KEY4_OPENING_TEST) key4_test_pause=1'b1;
             repeat(8) @(negedge clk_50m);
+            if (KEY4_OPENING_TEST) begin
+                force dut.audio_needs_sector=1'b0;
+                force dut.image_sd_sec_read=1'b1;
+                force dut.image_sd_sec_read_addr=32'd37;
+            end
             force dut.key_press_pulse=4'b1000;
             @(negedge clk_50m); release dut.key_press_pulse;
-            force dut.sd_read_active=1'b1;
+            if (KEY4_OPENING_TEST) begin
+                if (!dut.sd_read_active) $fatal(1,"fixture did not grant image sector on KEY4");
+                release dut.image_sd_sec_read;
+                release dut.image_sd_sec_read_addr;
+                @(negedge clk_50m);
+                if (!dut.sd_read_abandoned || !dut.sd_sec_read || dut.sd_sec_read_addr!=37)
+                    $fatal(1,"KEY4 withdrew an already granted opening-image read");
+                release dut.audio_needs_sector;
+            end else force dut.sd_read_active=1'b1;
             saw_full=0; saw_closing=0; timeout=0;
             while (dut.recovery_busy!==1'b1 && dut.recovery_state!==3'd7 &&
                    timeout<500000) begin
-                if (dut.display_media_index==0 && dut.video_run &&
+                if (dut.display_media_index==(SLOT_REUSE_TEST ? 4 : 0) && dut.video_run &&
                     dut.lecture_final_full_active && !dut.transition_active &&
                     dut.display_zoom_2x==0 && dut.display_pan_x==0 && dut.display_pan_y==0)
                     saw_full=1;
@@ -517,7 +540,11 @@ module tb_museum_media_core #(
             repeat(3) @(posedge dut.video_frame_tick);
             if (dut.recovery_state!==3'd7 || dut.manual_media_restart)
                 $fatal(1,"KEY4 rearmed media before the active sector finished");
-            @(negedge clk_50m); force dut.sd_read_active=1'b0;
+            @(negedge clk_50m);
+            if (KEY4_OPENING_TEST) begin
+                force dut.sd_sec_read_end=1'b1;
+                @(negedge clk_50m); release dut.sd_sec_read_end;
+            end else force dut.sd_read_active=1'b0;
             @(negedge clk_50m);
             if (dut.recovery_state!==3'd0 || !dut.manual_media_restart)
                 $fatal(1,"KEY4 did not rearm media after the active sector finished");
@@ -529,7 +556,54 @@ module tb_museum_media_core #(
             @(negedge clk_50m);
             if (dut.recovery_state!==3'd0 || !dut.manual_media_restart)
                 $fatal(1,"second KEY4 did not rearm cached media");
-            release dut.sd_read_active;
+            if (!KEY4_OPENING_TEST) release dut.sd_read_active;
+            if (SLOT_REUSE_TEST) begin
+                key4_check_overview_hold=0;
+                // A switch request is rejected while either mode owns the
+                // exhibit. The secondary retries its switch on the overview.
+                force dut.lecture_active=1'b1;
+                force dut.lecture_finished=1'b0;
+                force dut.transition_active_ff2_50m=1'b0;
+                remote_command_type=8'h17;
+                remote_command_payload=64'h0100000000000000;
+                remote_command_valid=1'b1;
+                @(negedge clk_50m); remote_command_valid=1'b0;
+                if (dut.manual_mode || remote_command_result!=4)
+                    $fatal(1,"SW3 changed mode during automatic narration");
+                @(negedge clk_50m);
+                release dut.lecture_active;
+                release dut.lecture_finished;
+                release dut.transition_active_ff2_50m;
+                remote_command_valid=1'b1;
+                @(negedge clk_50m); remote_command_valid=1'b0;
+                repeat(2) @(negedge clk_50m);
+                if (!dut.manual_mode || dut.main5_display[42]!==1'b1)
+                    $fatal(1,"SW3 applied status missing on overview");
+                force dut.lecture_active=1'b1;
+                remote_command_payload=64'd0;
+                remote_command_valid=1'b1;
+                @(negedge clk_50m); remote_command_valid=1'b0;
+                if (!dut.manual_mode || remote_command_result!=4)
+                    $fatal(1,"SW3 changed mode during manual browsing");
+                release dut.lecture_active;
+                // Keep the active line length, replacing only its final pixels.
+                @(negedge dut.video_clk);
+                force dut.video_post_osd_de=1'b1;
+                force dut.video_post_osd_x=11'd29;
+                force dut.video_osd_rgb=24'h818283;
+                @(negedge dut.video_clk);
+                force dut.video_post_osd_x=11'd30;
+                force dut.video_osd_rgb=24'h00ff00;
+                #1;
+                if (dut.video_output_rgb!==24'h818283) $fatal(1,"first edge pixel leaked");
+                force dut.video_post_osd_x=11'd31;
+                #1;
+                if (dut.video_output_rgb!==24'h818283) $fatal(1,"last edge pixel leaked");
+                release dut.video_osd_rgb;
+                release dut.video_post_osd_x;
+                release dut.video_post_osd_de;
+                $display("PASS two-column edge fill and overview-only SW3 in both modes");
+            end
             key4_transition_pass=1;
             $display("PASS KEY4 single animation, sector drain and repeat media rearm with no SD reset");
             $finish;
@@ -1265,15 +1339,19 @@ module tb_museum_media_core #(
             force dut.image_sd_sec_read = 1'b0;
             force dut.subtitle_sd_sec_read = 1'b0;
             force dut.audio_sd_sec_read = 1'b1;
+            force dut.audio_sd_sec_read_addr = 32'd17;
             force dut.sd_sec_read_data_valid = 1'b0;
             force dut.sd_sec_read_end = 1'b0;
             repeat (2) @(negedge clk_50m);
             if (!dut.sd_read_active || !dut.sd_read_audio_owner)
                 $fatal(1, "SD arbiter did not grant audio read");
             force dut.audio_sd_sec_read = 1'b0;
+            force dut.audio_sd_sec_read_addr = 32'd99;
             @(negedge clk_50m);
             if (!dut.sd_read_abandoned)
                 $fatal(1, "aborted sector was not marked stale");
+            if (!dut.sd_sec_read || dut.sd_sec_read_addr!=17)
+                $fatal(1,"cancelled physical sector lost its request or address");
             force dut.audio_sd_sec_read = 1'b1;
             force dut.sd_sec_read_data_valid = 1'b1;
             #1;
@@ -1320,7 +1398,7 @@ module tb_museum_media_core #(
             if (!dut.sd_read_active || !dut.sd_read_audio_owner ||
                 dut.sd_read_abandoned)
                 $fatal(1, "audio request did not follow aborted subtitle sector");
-            $display("PASS aborted audio/subtitle sectors isolated; next requests accepted");
+            $display("PASS granted SD command survives cancellation, stale data isolated, next request accepted");
             $finish;
         end
 
@@ -1941,7 +2019,8 @@ assign benchmark_payload_sector = sd_sec_read;
             end else begin
                 count <= count + 1'b1;
             end
-        end
+        end else if (!load_done && sd_init_done)
+            status_code <= 4'd2;
     end
 endmodule
 `endif

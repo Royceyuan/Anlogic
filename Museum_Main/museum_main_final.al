@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Project Version="3" Minor="2" Path="D:/VSCode/CodeFiles/Git_TD/Museum_Dual_FPGA/Museum_Main">
+<Project Version="3" Minor="2" Path="D:/VSCode/CodeFiles/Git_TD/Museum_Dual_FPGA_backup2/Museum_Main">
     <Project_Created_Time></Project_Created_Time>
     <TD_Version>6.2.168116</TD_Version>
     <Name>museum_main_final</Name>
@@ -450,6 +450,14 @@
                     <Attr Name="CompileOrder" Val="59"/>
                 </FileInfo>
             </File>
+            <File Path="src/storage/museum_entry_sector_cache.v">
+                <FileInfo>
+                    <Attr Name="UsedInSyn" Val="true"/>
+                    <Attr Name="UsedInP&R" Val="true"/>
+                    <Attr Name="BelongTo" Val="design_1"/>
+                    <Attr Name="CompileOrder" Val="98"/>
+                </FileInfo>
+            </File>
             <File Path="src/video/museum_subtitle_overlay.v">
                 <FileInfo>
                     <Attr Name="UsedInSyn" Val="true"/>
@@ -801,14 +809,14 @@
                     <effort>high</effort>
                     <logic_level_opt>on</logic_level_opt>
                     <opt_timing>high</opt_timing>
-                    <seed>5</seed>
+                    <seed>18</seed>
                 </PlaceProperty>
                 <RouteProperty>
                     <effort>routability</effort>
                 </RouteProperty>
             </Strategy>
             <UserParams>
-                <param>set_param place seed 5</param>
+                <param>set_param place seed 18</param>
                 <param>set_param place effort high</param>
                 <param>set_param place opt_timing high</param>
                 <param>set_param place logic_level_opt on</param>
@@ -816,14 +824,14 @@
         </Run>
     </Runs>
     <MultiSeed>
-        <Property Enable="true" GenBit="true" EndStep="route" Random="false" Num="1" Init="5" Jobs="1" Save="1" Step="1">
+        <Property Enable="true" GenBit="true" EndStep="route" Random="false" Num="1" Init="18" Jobs="1" Save="1" Step="1">
             <Filter enabled="false">
                 <congestion>100</congestion>
                 <place_swns>0</place_swns>
                 <route_swns>0</route_swns>
             </Filter>
         </Property>
-        <Seeds select="5">5 </Seeds>
+        <Seeds select="18">18 </Seeds>
     </MultiSeed>
     <Project_Settings>
     </Project_Settings>
