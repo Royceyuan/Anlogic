@@ -810,7 +810,7 @@
                     <hfn_opt_effort>low</hfn_opt_effort>
                     <logic_level_opt>on</logic_level_opt>
                     <opt_timing>high</opt_timing>
-                    <seed>20</seed>
+                    <seed>17</seed>
                 </PlaceProperty>
                 <RouteProperty>
                     <effort>routability</effort>
@@ -818,7 +818,7 @@
                 </RouteProperty>
             </Strategy>
             <UserParams>
-                <param>set_param place seed 20</param>
+                <param>set_param place seed 17</param>
                 <param>set_param place effort high</param>
                 <param>set_param place hfn_opt_effort low</param>
                 <param>set_param place opt_timing high</param>
@@ -827,14 +827,14 @@
         </Run>
     </Runs>
     <MultiSeed>
-        <Property Enable="true" GenBit="true" EndStep="route" Random="false" Num="1" Init="20" Jobs="1" Save="1" Step="1">
+        <Property Enable="true" GenBit="true" EndStep="route" Random="false" Num="1" Init="17" Jobs="1" Save="1" Step="1">
             <Filter enabled="false">
                 <congestion>100</congestion>
                 <place_swns>0</place_swns>
                 <route_swns>0</route_swns>
             </Filter>
         </Property>
-        <Seeds select="20">20 </Seeds>
+        <Seeds select="17">17 </Seeds>
     </MultiSeed>
     <Project_Settings>
     </Project_Settings>

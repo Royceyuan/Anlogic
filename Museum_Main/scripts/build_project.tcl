@@ -24,11 +24,10 @@ if {[info exists ::env(OFFLINE_AV_ROUTE)] && $::env(OFFLINE_AV_ROUTE)==1} {
     place
     set_param route fix_hold off
     set_param route effort routability
+    set_param route hold_fix_iteration 12
     route
     fix_hold
     set_param route fix_hold on
-    set_param route hold_fix_iteration 12
-    fix_hold -eco
     update_timing -mode final
     drc_check -all
     report_area -io_info -file [file join $folder final.area]

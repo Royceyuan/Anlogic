@@ -49,26 +49,27 @@
 | 参数 | 主板 | 副板 |
 |---|---|---|
 | 综合 `pack_effort` | high | medium |
-| 布局种子 | 20 | 9 |
+| 布局种子 | 17 | 9 |
 | 布局 `effort` | high | high |
 | 布局 `hfn_opt_effort` | low | medium |
 | 布局 `opt_timing` | high | high |
 | 布局 `logic_level_opt` | on | on |
 | 布线 `effort` | routability | routability |
+| 布线 `hold_fix_iteration` | 12 | TD 默认值 |
 
 物理实现按照“布局 → 布线 → 独立hold修复 → 最终时序分析 → bit生成”的顺序执行。
 
-主板手动单次浏览版采用种子 20，副板采用种子 9。两块板的位流与对应时序报告均保存在各自的 `release/` 目录。
+主板使用种子 17，副板使用种子 9。两块板的位流与对应时序报告均保存在各自的 `release/` 目录。
 
 | 工程 | Setup WNS | Setup TNS | Hold WNS | Hold TNS |
 |---|---:|---:|---:|---:|
-| 主板手动单次浏览版 | +0.059 ns | 0.000 ns | +0.030 ns | 0.000 ns |
+| 主板 TD 图形界面构建 | +0.297 ns | 0.000 ns | +0.030 ns | 0.000 ns |
 | 副板 | +0.115 ns | 0.000 ns | +0.021 ns | 0.000 ns |
 
 在图形界面重新构建后，TD 将运行结果写入以下目录。
 
 ```text
-Museum_Main/museum_main_final_Runs/phy_1/seed_20/
+Museum_Main/museum_main_final_Runs/phy_1/seed_17/
   museum_main_final.bit
   museum_main_final_phy.ts
   museum_main_final_pr.timing
@@ -83,7 +84,8 @@ TD 在运行目录的 `best_result/` 中保存筛选出的实现结果。`releas
 
 ## 上板与配套素材
 
-- 主板 [单次浏览版 bit](Museum_Main/release/manual_forward_trial_20261113/museum_main_manual_forward.bit) · [时序汇总](Museum_Main/release/manual_forward_trial_20261113/final.ts) · [详细时序报告](Museum_Main/release/manual_forward_trial_20261113/final.timing)
+- 主板 [TD 图形界面生成的 bit](Museum_Main/release/manual_forward_gui_20261113/museum_main_final.bit) · [时序汇总](Museum_Main/release/manual_forward_gui_20261113/museum_main_final_phy.ts) · [详细时序报告](Museum_Main/release/manual_forward_gui_20261113/museum_main_final_pr.timing)
+- 主板 [同版 RTL 的种子 20 位流](Museum_Main/release/manual_forward_trial_20261113/museum_main_manual_forward.bit) · [详细时序报告](Museum_Main/release/manual_forward_trial_20261113/final.timing)。该位流由命令行额外执行一次 `fix_hold -eco` 后生成。
 - 副板 [最终 bit](Museum_Secondary/release/museum_secondary_final.bit) · [时序汇总](Museum_Secondary/release/museum_secondary_final_phy.ts) · [详细时序报告](Museum_Secondary/release/museum_secondary_final_pr.timing)
 
 主板支持24位BMP读取、多尺寸图片适配、0.5×／1×／2×缩放、1×／2×／3×讲解、字幕、波形和转场。讲解中按 KEY4，画面收拢并平移回到总览，系统随后重新准备讲解音频和字幕。副板以640×480、30fps播放本地RGB565视频，放大输出至720p；文物视频保持1×播放，讲解字幕跟随主板进度。总览和手动浏览时播放宣传片，进入讲解后副板静音，应急状态下优先显示疏散指引。
