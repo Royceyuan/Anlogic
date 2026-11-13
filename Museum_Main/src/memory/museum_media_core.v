@@ -883,6 +883,8 @@ always @(posedge clk_50m or negedge write_rst_n) begin
                     if (!manual_mode || !lecture_active || lecture_finished ||
                         remote_command_payload[63:56] != {5'd0, lecture_artifact_index} ||
                         remote_command_payload[55:48] > 8'd3 ||
+                        (REUSE_OVERVIEW_SLOTS &&
+                         remote_command_payload[49:48] != (lecture_display_slot + 2'd1)) ||
                         remote_command_payload[47:32] != 16'd0)
                         remote_command_result <= 8'd5;
                     else if (!manual_cache_ready)
@@ -3733,7 +3735,8 @@ assign main5_entry_ready = !lecture_active && !recovery_busy && !key4_rearming &
                         !manual_reload_pending && !emergency_active_50m &&
                         overview_cache_ready && museum_preload_valid &&
                         lecture_cache_ready &&
-                        (manual_mode ? manual_cache_ready : (audio_prepared && subtitle_entry_ready)) &&
+                        (manual_mode ? (REUSE_OVERVIEW_SLOTS || manual_cache_ready) :
+                         (audio_prepared && subtitle_entry_ready)) &&
                         lecture_artifact_index == museum_preload_index &&
                         (REUSE_OVERVIEW_SLOTS ? full_home_valid[overview_selected_ctrl] :
                          main5_sw_ff2[2:0] == museum_preload_index);

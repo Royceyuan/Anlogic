@@ -1,7 +1,7 @@
 # Run with TD's td_commands_prompt.exe. Checks configuration without compilation.
 set repo [file normalize [file join [file dirname [info script]] ../..]]
 foreach {board project seed pack} {
-    Museum_Main museum_main_final 5 high
+    Museum_Main museum_main_final 20 high
     Museum_Secondary museum_secondary_final 9 medium
 } {
     set entry [file join $repo $board $project.al]
@@ -13,7 +13,11 @@ foreach {board project seed pack} {
     }
     import_device eagle_s20.db -package EG4S20BG256
     open_project $entry -noanalyze
-    foreach {stage param expected} [list gate pack_effort $pack place seed $seed place effort high place opt_timing high place logic_level_opt on route effort routability route fix_hold on] {
+    set expected_params [list gate pack_effort $pack place seed $seed place effort high place opt_timing high place logic_level_opt on route effort routability route fix_hold on]
+    if {$board eq "Museum_Main"} {
+        lappend expected_params place hfn_opt_effort low route hold_fix_iteration 12
+    }
+    foreach {stage param expected} $expected_params {
         set run [expr {$stage eq "gate" ? "syn_1" : "phy_1"}]
         if {[get_param $stage $param -run $run] ne $expected} {
             error "$board: incorrect $run/$stage/$param"

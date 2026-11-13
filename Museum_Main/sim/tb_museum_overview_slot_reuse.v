@@ -34,6 +34,13 @@ module tb_museum_overview_slot_reuse;
             @(negedge clk); audio_tick=0;
         end
     endtask
+    task choose_manual_image;
+        input [1:0] image;
+        begin
+            @(negedge clk); manual_image=image; manual_image_set=1;
+            @(negedge clk); manual_image_set=0;
+        end
+    endtask
     task finish_load;
         input [1:0] detail;
         input [2:0] target, artifact;
@@ -104,23 +111,49 @@ module tb_museum_overview_slot_reuse;
         confirm=1;
         @(negedge clk); confirm=0;
         if (!active || slot!=3) $fatal(1,"immediate next selection entered before its full view");
-        @(negedge clk); rst_n=0; displayed=5; selected=4; home_valid=31;
+        @(negedge clk); rst_n=0; displayed=5; selected=1; home_valid=31;
         @(negedge clk); rst_n=1; manual_value=1; manual_set=1;
         @(negedge clk); manual_set=0;
-        finish_load(1,0,4);
-        finish_load(2,1,4);
-        finish_load(3,2,4);
-        wait (manual_ready);
+        wait (ready);
+        repeat (2) @(negedge clk);
+        if (request) $fatal(1,"manual detail load started before KEY2");
         confirm=1;
         @(negedge clk); confirm=0;
-        manual_image=3; manual_image_set=1;
-        @(negedge clk); manual_image_set=0; displayed=2;
-        repeat(5) @(negedge clk);
-        if (slot!=2 || request || !manual_ready) $fatal(1,"manual browse restored a detail slot");
-        manual_image=1; manual_image_set=1;
-        @(negedge clk); manual_image_set=0;
-        if (slot!=0) $fatal(1,"manual browse did not retain earlier detail");
-        $display("PASS five artifacts: detail slots, late-image hold, transition-safe restore and final full-view reuse");
+        if (!active || slot!=1) $fatal(1,"manual did not enter on cached full view");
+        displayed=1;
+        choose_manual_image(1);
+        if (phase!=0) $fatal(1,"manual selected incomplete detail");
+        finish_load(1,0,1);
+        choose_manual_image(3);
+        if (phase!=0) $fatal(1,"manual skipped detail 1");
+        choose_manual_image(1);
+        if (phase!=1 || slot!=0) $fatal(1,"manual did not show detail 1");
+        displayed=0;
+        finish_load(2,2,1);
+        choose_manual_image(2);
+        if (phase!=2 || slot!=2) $fatal(1,"manual did not show detail 2");
+        displayed=2; busy=1;
+        finish_load(3,3,1);
+        repeat (2) @(negedge clk);
+        if (request) $fatal(1,"manual overwrote detail 1 during transition");
+        busy=0;
+        finish_load(0,0,0);
+        choose_manual_image(3);
+        if (phase!=3 || slot!=3) $fatal(1,"manual did not show detail 3");
+        displayed=3;
+        finish_load(0,2,2);
+        choose_manual_image(0);
+        if (phase!=0 || slot!=1 || !final_full || !active)
+            $fatal(1,"manual did not reuse its original slot as final full view");
+        busy=1;
+        repeat (3) @(negedge clk);
+        if (request || !active) $fatal(1,"manual exited or restored before final full view was visible");
+        displayed=1; busy=0;
+        wait (!active);
+        @(negedge clk); displayed=5;
+        finish_load(0,3,3);
+        if (home_valid!=31) $fatal(1,"manual left overview slots unrestored");
+        $display("PASS five automatic artifacts and manual forward-only slot reuse with automatic return");
         $finish;
     end
     initial begin #20000; $fatal(1,"slot reuse timeout"); end

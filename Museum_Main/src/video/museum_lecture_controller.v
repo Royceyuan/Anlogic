@@ -93,15 +93,17 @@ assign audio_frame_index = audio_frames_played;
 // Image cache only: background audio/subtitles may still need preparation.
 assign cached_artifact = queued_ready ? {1'b0, queued_artifact} :
                          cache_ready && current_cache_intact ? {1'b0, artifact_index} : 4'hf;
+wire [1:0] next_manual_image = display_slot + 2'd1;
 assign manual_cache_ready = REUSE_OVERVIEW_SLOTS ?
-    cache_ready && (&ready_details) && !(|restored_details) && !preloading :
+    cache_ready && displayed_frame_slot==display_frame_slot && !display_transition_busy &&
+    (next_manual_image==0 || ready_details[next_manual_image]) :
     cache_ready && current_cache_intact && !preloading;
 
 reg [1:0] detail_to_load;
 reg [2:0] home_to_restore;
 integer home;
 wire [4:0] restore_candidates = ~full_home_valid & ~failed_home;
-wire can_restore_while_playing = lecture_active && !manual_mode &&
+wire can_restore_while_playing = lecture_active &&
     (displayed_frame_slot == display_frame_slot) && !display_transition_busy;
 reg auto_return_error;
 always @(posedge clk or negedge rst_n)
@@ -109,7 +111,7 @@ always @(posedge clk or negedge rst_n)
     else auto_return_error<=REUSE_OVERVIEW_SLOTS && media_error && !lecture_finished;
 always @* begin
     detail_to_load = 0;
-    if (lecture_active || (manual_mode && preload_valid && cache_ready)) begin
+    if (lecture_active) begin
         if (!ready_details[3] && !final_full_active)
             detail_to_load = 3;
         if (!ready_details[2] && display_slot<=2 && !final_full_active)
@@ -187,17 +189,14 @@ always @(posedge clk or negedge rst_n) begin
             if (!preloading && loading_allowed && overview_ready &&
                 !(manual_set && manual_value) &&
                 !(preload_valid && !lecture_active && artifact_index!=preload_index)) begin
-                if (detail_to_load!=0 && !lecture_finished &&
-                    (lecture_active || (manual_mode && full_home_valid[artifact_index]))) begin
+                if (detail_to_load!=0 && !lecture_finished) begin
                     load_slot<=detail_to_load;
                     load_frame_slot<=detail_frame_slot(current_full_slot,detail_to_load);
                     load_artifact_index<=artifact_index;
                     load_request<=1;
                     preloading<=1;
                     retry_used<=0;
-                end else if (home_to_restore<5 &&
-                             !(lecture_active && waiting_for_image) &&
-                             !(manual_mode && preload_valid && full_home_valid[artifact_index])) begin
+                end else if (home_to_restore<5 && !(lecture_active && waiting_for_image)) begin
                     load_slot<=0;
                     load_frame_slot<=home_to_restore;
                     load_artifact_index<=home_to_restore;
@@ -320,8 +319,7 @@ always @(posedge clk or negedge rst_n) begin
 
         if (!lecture_active && enable && preload_valid && cache_ready &&
             artifact_index==selected_index && (audio_prepared || manual_mode) && confirm_pulse &&
-            (!REUSE_OVERVIEW_SLOTS || (full_home_valid[artifact_index] &&
-                                      (!manual_mode || manual_cache_ready))) &&
+            (!REUSE_OVERVIEW_SLOTS || full_home_valid[artifact_index]) &&
             !(ENABLE_MANUAL && manual_set)) begin
             lecture_active<=1; lecture_paused<=0; lecture_finished<=0; display_slot<=0;
             audio_frames_played<=0; end_hold_count<=0; queued_valid<=0; queued_ready<=0;
@@ -339,10 +337,15 @@ always @(posedge clk or negedge rst_n) begin
             end else if (!lecture_finished &&
                          (manual_mode || (!REUSE_OVERVIEW_SLOTS && ENABLE_MANUAL &&
                                          manual_set && manual_value))) begin
-                // Silent browsing retains all four images; it never resumes an old timeline.
-                if (ENABLE_MANUAL && manual_image_set) begin
+                if (ENABLE_MANUAL && manual_image_set &&
+                    (!REUSE_OVERVIEW_SLOTS ||
+                     (manual_cache_ready && manual_image==next_manual_image))) begin
                     display_slot<=manual_image;
-                    final_full_active<=0;
+                    if (REUSE_OVERVIEW_SLOTS && next_manual_image==0) begin
+                        lecture_finished<=1;
+                        return_full_pending<=1;
+                        final_full_active<=1;
+                    end else if (!REUSE_OVERVIEW_SLOTS) final_full_active<=0;
                 end
             end else if (!lecture_finished) begin
                 if (key_pause) lecture_paused<=~lecture_paused;
@@ -391,10 +394,8 @@ always @(posedge clk or negedge rst_n) begin
                 final_full_active<=0;
                 if (REUSE_OVERVIEW_SLOTS) begin
                     media_error<=0;
-                    if (!manual_mode) begin
-                        ready_details<=0;
-                        restored_details<=0;
-                    end
+                    ready_details<=0;
+                    restored_details<=0;
                 end else if (queued_ready && preload_valid && preload_index==queued_artifact) begin
                     artifact_index<=queued_artifact; current_full_slot<=next_full_slot;
                     cache_ready<=1; current_cache_intact<=1;

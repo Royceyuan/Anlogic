@@ -455,7 +455,7 @@
                     <Attr Name="UsedInSyn" Val="true"/>
                     <Attr Name="UsedInP&R" Val="true"/>
                     <Attr Name="BelongTo" Val="design_1"/>
-                    <Attr Name="CompileOrder" Val="98"/>
+                    <Attr Name="CompileOrder" Val="90"/>
                 </FileInfo>
             </File>
             <File Path="src/video/museum_subtitle_overlay.v">
@@ -807,31 +807,34 @@
             <Strategy Name="Default_PhysicalDesign_Strategy">
                 <PlaceProperty>
                     <effort>high</effort>
+                    <hfn_opt_effort>low</hfn_opt_effort>
                     <logic_level_opt>on</logic_level_opt>
                     <opt_timing>high</opt_timing>
-                    <seed>18</seed>
+                    <seed>20</seed>
                 </PlaceProperty>
                 <RouteProperty>
                     <effort>routability</effort>
+                    <hold_fix_iteration>12</hold_fix_iteration>
                 </RouteProperty>
             </Strategy>
             <UserParams>
-                <param>set_param place seed 18</param>
+                <param>set_param place seed 20</param>
                 <param>set_param place effort high</param>
+                <param>set_param place hfn_opt_effort low</param>
                 <param>set_param place opt_timing high</param>
                 <param>set_param place logic_level_opt on</param>
             </UserParams>
         </Run>
     </Runs>
     <MultiSeed>
-        <Property Enable="true" GenBit="true" EndStep="route" Random="false" Num="1" Init="18" Jobs="1" Save="1" Step="1">
+        <Property Enable="true" GenBit="true" EndStep="route" Random="false" Num="1" Init="20" Jobs="1" Save="1" Step="1">
             <Filter enabled="false">
                 <congestion>100</congestion>
                 <place_swns>0</place_swns>
                 <route_swns>0</route_swns>
             </Filter>
         </Property>
-        <Seeds select="18">18 </Seeds>
+        <Seeds select="20">20 </Seeds>
     </MultiSeed>
     <Project_Settings>
     </Project_Settings>

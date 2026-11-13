@@ -18,6 +18,7 @@ if {[info exists ::env(OFFLINE_AV_ROUTE)] && $::env(OFFLINE_AV_ROUTE)==1} {
     source seed/formal/build_config.tcl
     set_param place seed $formal_place_seed
     set_param place effort high
+    set_param place hfn_opt_effort low
     set_param place opt_timing high
     set_param place logic_level_opt on
     place
@@ -26,6 +27,8 @@ if {[info exists ::env(OFFLINE_AV_ROUTE)] && $::env(OFFLINE_AV_ROUTE)==1} {
     route
     fix_hold
     set_param route fix_hold on
+    set_param route hold_fix_iteration 12
+    fix_hold -eco
     update_timing -mode final
     drc_check -all
     report_area -io_info -file [file join $folder final.area]
