@@ -28,6 +28,7 @@ module tb_museum_media_core #(
     parameter integer KEY4_TRANSITION_TEST = 0,
     parameter integer SLOT_REUSE_TEST = 0,
     parameter integer KEY4_OPENING_TEST = 0,
+    parameter integer PANEL_SWITCH_TEST = 0,
     parameter integer PLL_STARTUP_TEST = 0,
     parameter integer LOCAL_MANUAL_TEST = 0,
     parameter integer LIGHT_BAND_TEST = 0
@@ -116,8 +117,9 @@ module tb_museum_media_core #(
         .ENABLE_MAIN5_CONTROLS(MAIN5_CONTROLS_TEST || MAIN5_REMOTE_TEST),
         .ENABLE_MAIN5_REMOTE(MAIN5_REMOTE_TEST),
         .ENABLE_LOCAL_MANUAL_TEST(LOCAL_MANUAL_TEST),
+        .ENABLE_PANEL_SWITCHES(PANEL_SWITCH_TEST),
         .REUSE_OVERVIEW_SLOTS(SLOT_REUSE_TEST),
-        .KEY_DEBOUNCE_BITS(LOCAL_MANUAL_TEST ? 2 : 19),
+        .KEY_DEBOUNCE_BITS((LOCAL_MANUAL_TEST || PANEL_SWITCH_TEST) ? 2 : 19),
         .ENABLE_MUSEUM_OVERVIEW(MAIN3_ZOOM_TEST || MAIN5_CONTROLS_TEST || MAIN5_REMOTE_TEST),
         .ENABLE_MUSEUM_LECTURE(MAIN3_ZOOM_TEST || MAIN5_CONTROLS_TEST || MAIN5_REMOTE_TEST),
 `endif
@@ -557,7 +559,61 @@ module tb_museum_media_core #(
             if (dut.recovery_state!==3'd0 || !dut.manual_media_restart)
                 $fatal(1,"second KEY4 did not rearm cached media");
             if (!KEY4_OPENING_TEST) release dut.sd_read_active;
-            if (SLOT_REUSE_TEST) begin
+            if (PANEL_SWITCH_TEST) begin
+                key4_check_overview_hold=0;
+                force dut.lecture_active=1'b1;
+                force dut.transition_active_ff2_50m=1'b0;
+                sw[1]=1;
+                repeat(24) @(negedge clk_50m);
+                if (dut.manual_mode) $fatal(1,"SW2 applied inside an automatic lecture");
+                release dut.lecture_active;
+                repeat(8) @(negedge clk_50m);
+                if (!dut.manual_mode || dut.main5_display[42]!==1'b1)
+                    $fatal(1,"SW2 did not apply upon returning to overview");
+                remote_command_type=8'h17;
+                remote_command_payload=0;
+                remote_command_valid=1;
+                @(negedge clk_50m); remote_command_valid=0;
+                if (!dut.manual_mode || remote_command_result!=3)
+                    $fatal(1,"old remote mode command overrode SW2");
+                force dut.lecture_active=1'b1;
+                sw[1]=0;
+                repeat(24) @(negedge clk_50m);
+                if (!dut.manual_mode) $fatal(1,"SW2 applied inside manual browsing");
+                release dut.lecture_active;
+                repeat(8) @(negedge clk_50m);
+                if (dut.manual_mode || dut.main5_display[42]!==1'b0)
+                    $fatal(1,"SW2 did not restore automatic mode");
+                release dut.transition_active_ff2_50m;
+
+                force dut.normal_audio_sample_valid=1'b1;
+                force dut.normal_audio_sample_left=16'sh12ab;
+                force dut.normal_audio_sample_right=16'sh9abc;
+                force dut.emergency_alarm_valid=1'b1;
+                force dut.emergency_alarm_left=16'sh5678;
+                sw[2]=1;
+                repeat(24) @(negedge clk_50m);
+                if (dut.hdmi_audio_left || dut.hdmi_audio_right || !dut.audio_sample_valid ||
+                    dut.audio_sample_left!==16'h12ab) $fatal(1,"SW3 changed source PCM or cadence");
+                @(negedge dut.video_frame_tick); sw[3]=1;
+                repeat(24) @(negedge clk_50m);
+                if (dut.panel_hide_overlay) $fatal(1,"SW4 changed overlay in mid-frame");
+                @(posedge dut.video_frame_tick); @(posedge dut.video_clk); @(negedge dut.video_clk);
+                if (!dut.panel_hide_overlay || dut.emergency_active_50m)
+                    $fatal(1,"SW4 did not hide overlays at the frame boundary");
+                sw[2]=0;
+                repeat(24) @(negedge clk_50m);
+                if (dut.hdmi_audio_left!==16'h12ab || dut.hdmi_audio_right!==16'h9abc)
+                    $fatal(1,"SW4 muted HDMI audio");
+                sw[2]=1; sw[0]=1;
+                repeat(24) @(negedge clk_50m);
+                if (!dut.emergency_active_50m || dut.main5_mode!=3 ||
+                    dut.hdmi_audio_left!==16'h5678 || !dut.audio_sample_valid)
+                    $fatal(1,"SW1 emergency did not override normal mute");
+                @(posedge dut.video_frame_tick); @(posedge dut.video_clk); @(negedge dut.video_clk);
+                if (!dut.emergency_video_active) $fatal(1,"SW1 did not enable emergency video");
+                $display("PASS main panel switches: deferred mode, PCM mute, frame-boundary hide, emergency priority");
+            end else if (SLOT_REUSE_TEST) begin
                 key4_check_overview_hold=0;
                 // A switch request is rejected while either mode owns the
                 // exhibit. The secondary retries its switch on the overview.

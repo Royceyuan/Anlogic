@@ -1,8 +1,8 @@
 # Run with TD's td_commands_prompt.exe. Checks configuration without compilation.
 set repo [file normalize [file join [file dirname [info script]] ../..]]
 foreach {board project seed pack} {
-    Museum_Main museum_main_final 17 high
-    Museum_Secondary museum_secondary_final 9 medium
+    Museum_Main museum_main_final 20 high
+    Museum_Secondary museum_secondary_final 17 medium
 } {
     set entry [file join $repo $board $project.al]
     set f [open $entry r]

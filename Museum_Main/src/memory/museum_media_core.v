@@ -93,6 +93,7 @@ module museum_media_core #(
     ,parameter integer ENABLE_MAIN5_REMOTE = 0
     ,parameter integer ENABLE_GUIDE_AUDIO = 0
     ,parameter integer ENABLE_LOCAL_MANUAL_TEST = 0
+    ,parameter integer ENABLE_PANEL_SWITCHES = 0
     ,parameter integer REUSE_OVERVIEW_SLOTS = 0
     ,parameter integer LECTURE_CLOCK_HZ = 50_000_000
     ,parameter integer OVERVIEW_CROP_X0_0 = 384
@@ -679,6 +680,48 @@ wire [2:0] lecture_report_phase = REUSE_OVERVIEW_SLOTS ?
     lecture_display_frame_slot;
 reg manual_overview_ff1, manual_overview_ff2;
 reg [3:0] main5_sw_ff1, main5_sw_ff2;
+wire [2:0] panel_switch;
+wire panel_manual = panel_switch[0];
+wire panel_mode_pending = ENABLE_PANEL_SWITCHES && panel_manual != manual_mode;
+reg [1:0] panel_video_ff1, panel_video_ff2;
+reg panel_hide_overlay;
+wire panel_mute_hdmi = panel_video_ff2[0] && !emergency_video_ff2;
+generate if (ENABLE_PANEL_SWITCHES) begin : g_panel_switches
+    reg [2:0] candidate, stable;
+    reg [KEY_DEBOUNCE_BITS+1:0] count;
+    always @(posedge clk_50m or negedge write_rst_n) begin
+        if (!write_rst_n) begin
+            candidate <= 0;
+            stable <= 0;
+            count <= 0;
+        end else if (main5_sw_ff2[3:1] != candidate) begin
+            candidate <= main5_sw_ff2[3:1];
+            count <= 0;
+        end else if (candidate != stable) begin
+            count <= count + 1'b1;
+            if (&count) stable <= candidate;
+        end
+    end
+    assign panel_switch = stable;
+end else begin : g_no_panel_switches
+    assign panel_switch = 3'b000;
+end endgenerate
+
+always @(posedge video_clk or negedge video_rst_n) begin
+    if (!video_rst_n) begin
+        panel_video_ff1 <= 2'b00;
+        panel_video_ff2 <= 2'b00;
+        panel_hide_overlay <= 1'b0;
+    end else begin
+        panel_video_ff1 <= panel_switch[2:1];
+        panel_video_ff2 <= panel_video_ff1;
+        if (video_frame_tick) panel_hide_overlay <= panel_video_ff2[1];
+    end
+end
+wire panel_mode_set = panel_mode_pending && !manual_set_pulse &&
+    overview_cache_ready && manual_overview_ff2 && !lecture_active &&
+    !lecture_finished && !main5_remote_busy && !key_press_pulse[3] &&
+    !overview_confirm_pulse && !voice_handoff_pending && !lecture_confirm_pulse;
 wire local_manual_changed;
 wire [2:0] local_manual_switch;
 generate if (ENABLE_LOCAL_MANUAL_TEST) begin : g_local_manual_test
@@ -766,8 +809,8 @@ always @(posedge clk_50m or negedge write_rst_n) begin
                 main5_temperature_applied <= main5_temperature_shadow;
             end
         end
-        if (local_manual_set) begin
-            manual_value <= local_manual_switch==3'd5;
+        if ((panel_mode_set && !remote_command_valid) || local_manual_set) begin
+            manual_value <= ENABLE_PANEL_SWITCHES ? panel_manual : local_manual_switch==3'd5;
             manual_set_pulse <= 1'b1;
         end else if (manual_key_next) begin
             browse_image_index <= lecture_display_slot + 2'd1;
@@ -868,6 +911,8 @@ always @(posedge clk_50m or negedge write_rst_n) begin
                     if (remote_command_payload[63:56] > 8'd1 ||
                         remote_command_payload[55:32] != 24'd0)
                         remote_command_result <= 8'd5;
+                    else if (ENABLE_PANEL_SWITCHES)
+                        remote_command_result <= 8'd3;
                     else if (!overview_cache_ready || lecture_finished ||
                              (REUSE_OVERVIEW_SLOTS ?
                               (lecture_active || !manual_overview_ff2 ||
@@ -904,7 +949,7 @@ always @(posedge clk_50m or negedge write_rst_n) begin
         emergency_50m_ff1 <= 1'b0;
         emergency_50m_ff2 <= 1'b0;
     end else begin
-        emergency_50m_ff1 <= ENABLE_MAIN4 && sw[3];
+        emergency_50m_ff1 <= ENABLE_MAIN4 && (ENABLE_PANEL_SWITCHES ? sw[0] : sw[3]);
         emergency_50m_ff2 <= emergency_50m_ff1;
     end
 end
@@ -1142,6 +1187,8 @@ wire signed [15:0] audio_sample_left = emergency_video_ff2 ? emergency_alarm_lef
                                                               normal_audio_sample_left;
 wire signed [15:0] audio_sample_right = emergency_video_ff2 ? emergency_alarm_right :
                                                                normal_audio_sample_right;
+wire [15:0] hdmi_audio_left = panel_mute_hdmi ? 16'd0 : audio_sample_left;
+wire [15:0] hdmi_audio_right = panel_mute_hdmi ? 16'd0 : audio_sample_right;
 wire audio_frame_consumed_toggle;
 reg audio_frame_toggle_ff1, audio_frame_toggle_ff2, audio_frame_toggle_seen;
 wire audio_frame_pulse_50m = audio_frame_toggle_ff2 != audio_frame_toggle_seen;
@@ -1235,7 +1282,9 @@ generate
             // Keep the finished overview visible during the KEY4 media reset.
             .enable(overview_mode && (!recovery_busy ||
                     (ENABLE_MAIN3 && manual_overview_ff2 && !emergency_active_50m))),
-            .media_ready(REUSE_OVERVIEW_SLOTS ? main5_entry_ready :
+            .media_ready(REUSE_OVERVIEW_SLOTS ?
+                         (main5_entry_ready && !panel_mode_pending &&
+                          !(ENABLE_PANEL_SWITCHES && manual_set_pulse)) :
                          (overview_cache_ready && museum_preload_valid &&
                          lecture_cache_ready &&
                          (manual_mode || (audio_prepared && subtitle_entry_ready)) &&
@@ -1653,6 +1702,7 @@ generate
                     (ENABLE_MAIN5_CONTROLS &&
                      (overview_enable_video || !normal_waveform_visible_ff2)))),
             .emergency(emergency_video_active),
+            .hide(panel_hide_overlay && !emergency_video_active),
             .frame_tick(video_frame_tick), .hs_i(video_audio_input_hs),
             .vs_i(video_audio_input_vs), .de_i(video_audio_input_de), .x_i(video_audio_input_x),
             .y_i(video_audio_input_y), .rgb_i(video_audio_input_rgb), .hs_o(video_post_audio_hs),
@@ -1705,6 +1755,7 @@ generate
             .name_wr_data(osd_name_wr_data), .name_ready(osd_name_ready),
             .video_clk(video_clk), .video_rst_n(video_rst_n),
             .video_frame_tick(video_frame_tick),
+            .hide(panel_hide_overlay),
             .hs_i(video_status_hs), .vs_i(video_status_vs),
             .de_i(video_status_de), .x_i(video_status_x),
             .y_i(video_status_y), .rgb_i(video_status_rgb),
@@ -3489,8 +3540,9 @@ generate
     if (ENABLE_MAIN3 && VIDEO_MODE_1280 && ENABLE_MUSEUM_OVERVIEW) begin : g_museum_status_osd
         museum_status_osd #(.SHOW_PERCENT(ENABLE_MAIN5_REMOTE)) u_museum_status_osd (
             .clk(video_clk), .rst_n(video_rst_n),
-            .panel_enable(!ENABLE_MAIN5_CONTROLS || !overview_enable_video ||
-                          overview_osd_visible_ff2),
+            .panel_enable(!panel_hide_overlay &&
+                          (!ENABLE_MAIN5_CONTROLS || !overview_enable_video ||
+                           overview_osd_visible_ff2)),
             .hs_i(video_overview_hs), .vs_i(video_overview_vs),
             .de_i(video_overview_de), .x_i(video_overview_x),
             .y_i(video_overview_y), .rgb_i(video_overview_rgb),
@@ -3657,8 +3709,8 @@ generate
             .I_axis_s_user(axis_user), .I_axis_s_valid(axis_valid), .I_axis_s_last(axis_last),
             .I_axis_s_data(axis_data), .O_axis_s_ready(axis_ready),
             .I_audio_valid(audio_sample_valid),
-            .I_audio_left_data({audio_sample_left,8'd0}),
-            .I_audio_right_data({audio_sample_right,8'd0}),
+            .I_audio_left_data({hdmi_audio_left,8'd0}),
+            .I_audio_right_data({hdmi_audio_right,8'd0}),
             .I_acr_valid(acr_valid), .I_acr_cts(acr_cts), .I_acr_n(acr_n),
             .O_video_locked(), .O_ddc_scl(hdmi1_ddc_scl), .IO_ddc_sda(hdmi1_ddc_sda),
             .O_ch0_tmds_data(audio_tmds_ch0), .O_ch1_tmds_data(audio_tmds_ch1),

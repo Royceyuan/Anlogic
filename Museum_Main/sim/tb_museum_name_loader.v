@@ -24,7 +24,7 @@ museum_subtitle_overlay #(.ENABLE_NAMES(1)) dut (
  .subtitle_ready(),.subtitle_total_frames(),.scene_timing_valid(),
  .scene_cut1(),.scene_cut2(),.scene_cut3(),.scene_cut4(),
  .format_error(),.file_error(),
- .video_clk(clk),.video_rst_n(rst_n),.video_frame_tick(1'b0),
+ .video_clk(clk),.video_rst_n(rst_n),.video_frame_tick(1'b0),.hide(1'b0),
  .hs_i(1'b1),.vs_i(1'b1),.de_i(1'b0),
  .x_i(11'd0),.y_i(10'd0),.rgb_i(24'd0),
  .hs_o(),.vs_o(),.de_o(),.x_o(),.y_o(),.rgb_o()

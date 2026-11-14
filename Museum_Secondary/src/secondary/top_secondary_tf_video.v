@@ -191,6 +191,7 @@ wire [23:0] rgb={pixel[15:11],pixel[15:13],pixel[10:5],pixel[10:9],pixel[4:0],pi
 wire hs_final,vs_final,de_final,audio_valid,acr_valid;
 wire [23:0] rgb_final;
 wire [31:0] audio_data;
+wire guide_mute_pixel;
 wire [19:0] acr_cts,acr_n;
 generate if(AV_ENABLE)begin:g_av
     wire pcm_request,pcm_valid,pcm_has_data,pcm_underflow,muted_ack,missed_reply;
@@ -270,8 +271,9 @@ generate if(AV_ENABLE)begin:g_av
         .source_clk(clk),.source_rst_n(rst_n),
         // All admitted frames in this target are 640x480/30. Report a source
         // format only after a complete front frame exists, not the HDMI mode.
-        .source_data({6'd0,core_front_valid,core_front_valid&&core_front_epoch==active_generation&&active_id==254,media_status[15:0]}),
+        .source_data({media_status[16],5'd0,core_front_valid,core_front_valid&&core_front_epoch==active_generation&&active_id==254,media_status[15:0]}),
         .target_clk(pixel_clk),.target_rst_n(pixel_rst_n),.target_data(pixel_status));
+    assign guide_mute_pixel=pixel_status[23];
     wire overlay_visible;
     reg subtitle_valid_q,subtitle_done_q;
     reg [7:0] subtitle_data_q;
@@ -301,13 +303,15 @@ end else begin:g_silent
     assign pcm_accept=1;assign resume_frame=0;assign guide_start_position=0;assign guide_position=0;
     assign subtitle_sd_start=0;assign subtitle_sd_lba=0;assign offline_muted_ack=1;
     assign audio_valid=0;assign audio_data=0;assign acr_valid=0;assign acr_cts=0;assign acr_n=6144;
+    assign guide_mute_pixel=0;
     assign hs_final=hs_scaled;assign vs_final=vs_scaled;assign de_final=de_scaled;assign rgb_final=rgb;
 end endgenerate
 wire [7:0] pairs;
 secondary_hdmi_local_pairs #(.HDMI_PACKETS(AV_ENABLE),.AUDIO_ENABLE(AV_ENABLE)) u_encoder(
     .pixel_clk(pixel_clk),.serial_clk(serial_clk),.rst_n(pixel_rst_n),
     .hs(~hs_final),.vs(~vs_final),.de(de_final),.rgb(rgb_final),.pairs(pairs),
-    .audio_valid(audio_valid),.audio_data(audio_data),.acr_valid(acr_valid),.acr_cts(acr_cts),.acr_n(acr_n),
+    .audio_valid(audio_valid),.audio_data(guide_mute_pixel ? 32'd0 : audio_data),
+    .acr_valid(acr_valid),.acr_cts(acr_cts),.acr_n(acr_n),
     .encoder_ready(),.encoder_blank(),.symbols());
 wire [3:0] serial_out;
 assign {hdmi_b_clk_p,hdmi_b_d2_p,hdmi_b_d1_p,hdmi_b_d0_p}=serial_out;

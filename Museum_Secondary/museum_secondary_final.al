@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Project Version="3" Minor="2" Path="D:/VSCode/CodeFiles/Git_TD/Museum_Dual_FPGA/Museum_Secondary">
+<Project Version="3" Minor="2" Path="D:/VSCode/CodeFiles/Git_TD/Museum_Dual_FPGA_backup2/Museum_Secondary">
     <Project_Created_Time></Project_Created_Time>
     <TD_Version>6.2.168116</TD_Version>
     <Name>museum_secondary_final</Name>
@@ -554,14 +554,14 @@
                     <effort>high</effort>
                     <logic_level_opt>on</logic_level_opt>
                     <opt_timing>high</opt_timing>
-                    <seed>9</seed>
+                    <seed>17</seed>
                 </PlaceProperty>
                 <RouteProperty>
                     <effort>routability</effort>
                 </RouteProperty>
             </Strategy>
             <UserParams>
-                <param>set_param place seed 9</param>
+                <param>set_param place seed 17</param>
                 <param>set_param place effort high</param>
                 <param>set_param place opt_timing high</param>
                 <param>set_param place logic_level_opt on</param>
@@ -570,14 +570,14 @@
         </Run>
     </Runs>
     <MultiSeed>
-        <Property Enable="true" GenBit="true" EndStep="route" Random="false" Num="1" Init="9" Jobs="1" Save="1" Step="1">
+        <Property Enable="true" GenBit="true" EndStep="route" Random="false" Num="1" Init="17" Jobs="1" Save="1" Step="1">
             <Filter enabled="false">
                 <congestion>100</congestion>
                 <place_swns>0</place_swns>
                 <route_swns>0</route_swns>
             </Filter>
         </Property>
-        <Seeds select="9">9 </Seeds>
+        <Seeds select="17">17 </Seeds>
     </MultiSeed>
     <Project_Settings>
     </Project_Settings>

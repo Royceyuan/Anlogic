@@ -1,0 +1,24 @@
+Location         : C:\Users\ADMINI~1\AppData\Local\Temp\museum_panel_71082dd3a9e7408a8ef67202a47362ff\Museum_Main\museum_main_final_Runs\phy_probe_20\seed_20
+Running with     : Tang Dynasty v6.2.168116
+                   Copyright (c) 2012-2025 Anlogic Inc.
+Top Model        : dual_fpga_museum_terminal_main_board
+Device           : EG4S20BG256
+Speed            : NA
+
+Timing Mode      : final
+Setup            : WNS    59ps  TNS        0ps  NUM_FEPS     0
+Hold             : WNS    27ps  TNS        0ps  NUM_FEPS     0
+
+Flow Statistics  :
+---------------------------------------------------------------------------------------------------
+     command     |  #calls  |  wall time   |  cpu time(s)  |  used memory(mb)  |  peak memory(mb)  
+---------------------------------------------------------------------------------------------------
+      route      |    1     |  5m46s(69%)  |   432(52%)    |       1267        |       1267        
+      place      |    1     |  2m15s(27%)  |   226(27%)    |       1240        |       1264        
+     bitgen      |    1     |    8s(1%)    |   161(19%)    |       1269        |       1269        
+    fix_hold     |    1     |    8s(1%)    |     8(0%)     |       1268        |       1268        
+    import_db    |    1     |    0s(0%)    |     0(0%)     |        307        |        307        
+  import_device  |    1     |    0s(0%)    |     0(0%)     |        105        |        105        
+---------------------------------------------------------------------------------------------------
+      total      |    6     |    8m17s     |      827      |       1269        |       1269        
+---------------------------------------------------------------------------------------------------

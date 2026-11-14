@@ -21,7 +21,7 @@ module top_secondary_offline_av(
     output wire eth_mdc,
     inout wire eth_mdio
 );
-wire application_clk,network_reset,peer_alive,manual_supported;
+wire application_clk,network_reset,peer_alive;
 EG_LOGIC_BUFG u_clock(.i(clk_50m),.o(application_clk));
 wire heartbeat_pulse,display_pulse,control_request,control_ready;
 wire [127:0] heartbeat_data;
@@ -45,12 +45,12 @@ top_secondary_main5e_netdiag #(.SECONDARY_CLIENT(1),.OFFLINE_AUDIO(`OFFLINE_AV_E
     .client_display_pulse(display_pulse),.client_display_data(display_data),
     .client_diagnostic_pulse(),.client_diagnostic_data(),
     .client_control_request(control_request),.client_control_type(control_type),.client_control_payload(control_payload),
-    .client_control_ready(control_ready),.client_manual_supported(manual_supported),.client_control_done(),.client_control_result(),
+    .client_control_ready(control_ready),.client_manual_supported(),.client_control_done(),.client_control_result(),
     .client_output_muted(output_muted),.client_guide_lease_valid(guide_lease_valid),.client_audio_supported(audio_supported));
 secondary_main5e_keys u_keys(.clk(application_clk),.rst(network_reset),.sw(sw),.key_n(key_n),
     .heartbeat_pulse(heartbeat_pulse),.heartbeat_data(heartbeat_data),.display_pulse(display_pulse),.display_data(display_data),
-    .control_ready(control_ready),.control_request(control_request),.peer_alive(peer_alive),.manual_supported(manual_supported),
-    .control_type(control_type),.control_payload(control_payload),.manual_mode(),.manual_next(),.help_switches(help_switches));
+    .control_ready(control_ready),.control_request(control_request),.peer_alive(peer_alive),
+    .control_type(control_type),.control_payload(control_payload),.help_switches(help_switches));
 
 // Compatibility with the existing main heartbeat: observe entry or monotonic
 // progress rewind. A future explicit round field replaces this inference for
@@ -102,7 +102,7 @@ wire [3:0] main_state=!status_seen?4'd0:show_emergency?4'd7:
     lecture_now?(heartbeat_data[103:96]==2||heartbeat_data[68]?4'd5:4'd4):
     heartbeat_data[127:120]==1&&heartbeat_data[69]?4'd2:4'd1;
 wire [2:0] artifact=status_seen&&heartbeat_data[119:112]<=4?heartbeat_data[114:112]:3'd7;
-wire [23:0] status_flags={8'd0,status_seen,heartbeat_data[18:17],artifact,main_state,
+wire [23:0] status_flags={7'd0,help_switches[2],status_seen,heartbeat_data[18:17],artifact,main_state,
     link_state,show_emergency,help_switches[3],peer_alive&&lecture_now,guide_audio_enable};
 top_secondary_tf_video #(.OFFLINE_LINK(1),.AV_ENABLE(`OFFLINE_AV_ENABLE)) u_video(
     .clk_50m(application_clk),.key_reset_n(1'b1),.key_pause_n(1'b1),

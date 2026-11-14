@@ -31,7 +31,7 @@ module museum_subtitle_overlay #(
     output reg format_error, output reg file_error,
     output reg name_wr_en, output reg [10:0] name_wr_addr,
     output reg [7:0] name_wr_data, output reg name_ready,
-    input wire video_clk, input wire video_rst_n, input wire video_frame_tick,
+    input wire video_clk, input wire video_rst_n, input wire video_frame_tick, input wire hide,
     input wire hs_i, input wire vs_i, input wire de_i,
     input wire [10:0] x_i, input wire [9:0] y_i, input wire [23:0] rgb_i,
     output reg hs_o, output reg vs_o, output reg de_o,
@@ -568,7 +568,7 @@ wire [7:0] outline_q = out_bank ? outline1_q : outline0_q;
 
 always @(*) begin
     relative_x = x_i>=current_center ? x_i-current_center : 0;
-    mapped_valid = de_i && visible_sync2 && video_has_cue &&
+    mapped_valid = de_i && !hide && visible_sync2 && video_has_cue &&
                    y_i>=Y_START && y_i<Y_START+HEIGHT &&
                    x_i>=current_center && relative_x<current_width;
     bitmap_rd_addr = ((y_i-Y_START)<<6)+((y_i-Y_START)<<5)+

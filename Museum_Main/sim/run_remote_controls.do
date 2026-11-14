@@ -7,7 +7,8 @@ if {![info exists local_manual_test]} {set local_manual_test 0}
 if {![info exists key4_transition_test]} {set key4_transition_test 0}
 if {![info exists slot_reuse_test]} {set slot_reuse_test 0}
 if {![info exists key4_opening_test]} {set key4_opening_test 0}
-vsim -novopt -c -onfinish stop -lib work_main5_remote tb_museum_media_core -gMAIN5_REMOTE_TEST=1 -gLOCAL_MANUAL_TEST=$local_manual_test -gKEY4_TRANSITION_TEST=$key4_transition_test -gSLOT_REUSE_TEST=$slot_reuse_test -gKEY4_OPENING_TEST=$key4_opening_test
+if {![info exists panel_switch_test]} {set panel_switch_test 0}
+vsim -novopt -c -onfinish stop -lib work_main5_remote tb_museum_media_core -gMAIN5_REMOTE_TEST=1 -gLOCAL_MANUAL_TEST=$local_manual_test -gKEY4_TRANSITION_TEST=$key4_transition_test -gSLOT_REUSE_TEST=$slot_reuse_test -gKEY4_OPENING_TEST=$key4_opening_test -gPANEL_SWITCH_TEST=$panel_switch_test
 run -all
 if {$key4_transition_test && [examine -radix unsigned sim:/tb_museum_media_core/key4_transition_pass]!=1} {quit -code 1 -f}
 quit -f

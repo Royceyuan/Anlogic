@@ -6,6 +6,7 @@ reg frame_tick=0,hs=1,vs=1,de=1,sd_init=1;
 reg [2:0] track=1;
 reg [31:0] audio_frame=0;
 reg paused=0;
+reg hide=0;
 reg [1:0] speed_index=0;
 reg [10:0] x=636;
 reg [9:0] y=676;
@@ -35,7 +36,7 @@ museum_subtitle_overlay #(.PIPE_RAM_OUTPUT(PIPE_RAM_OUTPUT),.ENABLE_SPEED(SPEED_
  .scene_timing_valid(scene_valid),
  .scene_cut1(scene_cut1),.scene_cut2(scene_cut2),.scene_cut3(scene_cut3),.scene_cut4(scene_cut4),
  .format_error(fmt_error),.file_error(file_error),
- .video_clk(vclk),.video_rst_n(vrst),.video_frame_tick(frame_tick),
+ .video_clk(vclk),.video_rst_n(vrst),.video_frame_tick(frame_tick),.hide(hide),
  .hs_i(hs),.vs_i(vs),.de_i(de),.x_i(x),.y_i(y),.rgb_i(rgb),
  .hs_o(hs_o),.vs_o(vs_o),.de_o(de_o),.x_o(x_o),.y_o(y_o),.rgb_o(rgb_o));
 
@@ -134,6 +135,9 @@ initial begin
   @(negedge clk50);i=i+1;
  end
  if(!dut.cue_ready)$fatal(1,"second cue was not prefetched");
+ hide=1;
+ repeat(5)@(negedge vclk);
+ if(rgb_o!==rgb || !de_o || x_o!==x || y_o!==y)$fatal(1,"hidden subtitle altered video");
  audio_frame=100;repeat(8)@(negedge vclk);
  for(i=0;i<9;i=i+1) begin
   @(negedge vclk);frame_tick=1;@(negedge vclk);frame_tick=0;
@@ -159,6 +163,9 @@ initial begin
  for(i=0;i<17;i=i+1) begin
   @(negedge vclk);frame_tick=1;@(negedge vclk);frame_tick=0;
  end
+ repeat(5)@(negedge vclk);
+ if(rgb_o!==rgb)$fatal(1,"next cue leaked while hidden");
+ hide=0;
  repeat(5)@(negedge vclk);
  if(rgb_o!==24'hffffff)$fatal(1,"second cue is not white: %h",rgb_o);
  audio_frame=200;repeat(8)@(negedge vclk);

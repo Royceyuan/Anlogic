@@ -1,5 +1,5 @@
 `timescale 1ns/1ps
-// Both production endpoints, including secondary switch reconciliation.
+// Both production endpoints with mode owned by the main board.
 module tb_mbp1_reconnect;
 reg clk=0, rst=1, main_rst=1, link=1, cable=1, allow_display=1;
 always #5 clk=~clk;
@@ -45,15 +45,14 @@ secondary_main5e_keys keys (
     .clk(clk),.rst(rst),.sw(4'd0),.key_n(4'hf),
     .heartbeat_pulse(hb_pulse),.heartbeat_data(hb_data),
     .display_pulse(display_pulse),.display_data(display_data),
-    .control_ready(ready),.peer_alive(alive),.manual_supported(supported),
+    .control_ready(ready),.peer_alive(alive),
     .control_request(request),.control_type(request_type),.control_payload(request_payload),
-    .manual_mode(),.manual_next(),.help_switches());
+    .help_switches());
 always @(posedge clk) begin
     done<=0;
-    if(main_rst) manual<=0;
-    else if(command_valid&&!done) begin
+    if(!main_rst&&command_valid&&!done) begin
         done<=1; result<=0; commands=commands+1;
-        if(command_type==8'h17) manual<=command_payload[56];
+        if(command_type==8'h17) $fatal(1,"mute requested a change to main mode");
     end
     if(main.send&&main.send_type==8'h01) hello_packets=hello_packets+1;
 end
@@ -77,7 +76,8 @@ task disconnect;
     input target;
     begin
         @(negedge clk);cable=0;link=0;
-        force keys.sw_stable={1'b0,target,2'b00};
+        manual=target;
+        force keys.sw_stable=4'b0100;
         repeat(ticks) @(negedge clk);
         if(alive||supported) $fatal(1,"offline controls must be blocked");
         cable=1;link=1;
@@ -89,7 +89,8 @@ initial begin
     force keys.sw_stable=4'b0000;
     repeat(5) @(negedge clk);rst=0;main_rst=0;
     settle(0);
-    force keys.sw_stable=4'b0100;
+    manual=1;
+    force keys.sw_stable=4'b0000;
     settle(1);
     // Real main and secondary codecs exchange HELLO/ACK/telemetry: no injected
     // capability packet and neither boot ID changes when the cable returns.
@@ -106,10 +107,12 @@ initial begin
     cable=1;link=1;
     repeat(100000) @(negedge clk);
     if(ready||request||manual!=1) $fatal(1,"stale display unlocked control");
-    allow_display=1;
+    allow_display=1; manual=0;
     settle(0);
     // A cable pulled while awaiting an ACK must not replay the old request.
     force keys.sw_stable=4'b0100;
+    force keys.key_press=4'b0010;
+    @(negedge clk); release keys.key_press;
     wait(secondary.control_waiting&&secondary.control_sent);
     disconnect(5000,0);
     // The original preset keys also work after recovery, not only SW3.
@@ -127,6 +130,7 @@ initial begin
     // Packet silence also needs re-handshake even if MDIO misses link loss.
     cable=0;
     repeat(600000) @(negedge clk);
+    manual=1;
     force keys.sw_stable=4'b0100;
     cable=1;
     settle(1);
@@ -135,8 +139,8 @@ initial begin
     repeat(5) @(negedge clk);main_rst=0;
     repeat(1000) @(negedge clk);
     settle(1);
-    if(commands<9) $fatal(1,"mode commands missing");
-    $display("PASS same-boot reconnect, switch reconciliation, timeout, no HELLO loop: commands=%0d",commands);
+    if(commands<1) $fatal(1,"preset command missing");
+    $display("PASS same-boot reconnect, main-owned mode, mute, timeout, no HELLO loop: commands=%0d",commands);
     test_pass=1;$finish;
 end
 initial begin #30000000;$fatal(1,"test timeout");end

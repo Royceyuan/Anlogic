@@ -28,7 +28,7 @@ museum_subtitle_overlay #(.PIPE_RAM_OUTPUT(1)) dut (
     .sd_sec_read(request),.sd_sec_read_addr(address),.sd_sec_read_data(data),
     .sd_sec_read_data_valid(valid),.sd_sec_read_end(done),
     .subtitle_ready(ready),.format_error(format_error),.file_error(file_error),
-    .video_clk(vclk),.video_rst_n(rst),.video_frame_tick(tick),
+    .video_clk(vclk),.video_rst_n(rst),.video_frame_tick(tick),.hide(1'b0),
     .hs_i(1'b1),.vs_i(1'b1),.de_i(1'b0),.x_i(11'd0),.y_i(10'd0),.rgb_i(24'd0)
 );
 function [7:0] disk_byte;

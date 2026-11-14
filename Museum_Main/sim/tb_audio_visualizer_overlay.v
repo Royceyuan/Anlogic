@@ -15,11 +15,12 @@ wire hs_o, vs_o, de_o;
 wire [10:0] x_o;
 wire [9:0] y_o;
 wire [23:0] rgb_o;
+reg hide = 0;
 
 audio_visualizer_overlay #(.ENABLE_EMERGENCY(1)) dut (
     .clk(clk), .rst_n(rst_n), .sample_valid(sample_valid),
     .sample_left(sample_left), .sample_right(sample_right), .pause(pause),
-    .emergency(emergency),
+    .emergency(emergency), .hide(hide),
     .frame_tick(frame_tick),
     .hs_i(1'b1), .vs_i(1'b1), .de_i(de_i), .x_i(x_i), .y_i(y_i), .rgb_i(rgb_i),
     .hs_o(hs_o), .vs_o(vs_o), .de_o(de_o), .x_o(x_o), .y_o(y_o), .rgb_o(rgb_o)
@@ -72,6 +73,12 @@ initial begin
     x_i = 11'd128; y_i = 10'd600; rgb_i = 24'h123456;
     repeat (4) @(posedge clk);
     if (rgb_o == 24'h123456) $fatal(1, "fresh visualizer frame was not shown");
+    hide = 1;
+    #1;
+    if (rgb_o != 24'h123456 || !dut.display_valid) $fatal(1,"hide reset or displayed waveform");
+    hide = 0;
+    #1;
+    if (rgb_o == 24'h123456) $fatal(1,"unhide lost current waveform");
     emergency = 1;
     #1;
     if (rgb_o != 24'hff3030) $fatal(1, "emergency visualizer was not red");

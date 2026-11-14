@@ -49,7 +49,7 @@
 | 参数 | 主板 | 副板 |
 |---|---|---|
 | 综合 `pack_effort` | high | medium |
-| 布局种子 | 17 | 9 |
+| 布局种子 | 20 | 17 |
 | 布局 `effort` | high | high |
 | 布局 `hfn_opt_effort` | low | medium |
 | 布局 `opt_timing` | high | high |
@@ -59,22 +59,22 @@
 
 物理实现按照“布局 → 布线 → 独立hold修复 → 最终时序分析 → bit生成”的顺序执行。
 
-主板使用种子 17，副板使用种子 9。两块板的位流与对应时序报告均保存在各自的 `release/` 目录。
+两块板的位流与对应时序报告均保存在各自的 `release/` 目录。
 
 | 工程 | Setup WNS | Setup TNS | Hold WNS | Hold TNS |
 |---|---:|---:|---:|---:|
-| 主板 TD 图形界面构建 | +0.297 ns | 0.000 ns | +0.030 ns | 0.000 ns |
-| 副板 | +0.115 ns | 0.000 ns | +0.021 ns | 0.000 ns |
+| 主板拨码版 | +0.059 ns | 0.000 ns | +0.027 ns | 0.000 ns |
+| 副板拨码版 | +0.105 ns | 0.000 ns | +0.022 ns | 0.000 ns |
 
 在图形界面重新构建后，TD 将运行结果写入以下目录。
 
 ```text
-Museum_Main/museum_main_final_Runs/phy_1/seed_17/
+Museum_Main/museum_main_final_Runs/phy_1/seed_20/
   museum_main_final.bit
   museum_main_final_phy.ts
   museum_main_final_pr.timing
 
-Museum_Secondary/museum_secondary_final_Runs/phy_1/seed_9/
+Museum_Secondary/museum_secondary_final_Runs/phy_1/seed_17/
   museum_secondary_final.bit
   museum_secondary_final_phy.ts
   museum_secondary_final_pr.timing
@@ -84,13 +84,24 @@ TD 在运行目录的 `best_result/` 中保存筛选出的实现结果。`releas
 
 ## 上板与配套素材
 
-- 主板 [TD 图形界面生成的 bit](Museum_Main/release/manual_forward_gui_20261113/museum_main_final.bit) · [时序汇总](Museum_Main/release/manual_forward_gui_20261113/museum_main_final_phy.ts) · [详细时序报告](Museum_Main/release/manual_forward_gui_20261113/museum_main_final_pr.timing)
-- 主板 [同版 RTL 的种子 20 位流](Museum_Main/release/manual_forward_trial_20261113/museum_main_manual_forward.bit) · [详细时序报告](Museum_Main/release/manual_forward_trial_20261113/final.timing)。该位流由命令行额外执行一次 `fix_hold -eco` 后生成。
-- 副板 [最终 bit](Museum_Secondary/release/museum_secondary_final.bit) · [时序汇总](Museum_Secondary/release/museum_secondary_final_phy.ts) · [详细时序报告](Museum_Secondary/release/museum_secondary_final_pr.timing)
+- 主板 [拨码版 bit](Museum_Main/release/panel_switches_20261114/museum_main_final.bit) · [时序汇总](Museum_Main/release/panel_switches_20261114/museum_main_final_phy.ts) · [详细时序报告](Museum_Main/release/panel_switches_20261114/museum_main_final_pr.timing)
+- 副板 [拨码版 bit](Museum_Secondary/release/panel_switches_20261114/museum_secondary_final.bit) · [时序汇总](Museum_Secondary/release/panel_switches_20261114/museum_secondary_final_phy.ts) · [详细时序报告](Museum_Secondary/release/panel_switches_20261114/museum_secondary_final_pr.timing)
 
 主板支持24位BMP读取、多尺寸图片适配、0.5×／1×／2×缩放、1×／2×／3×讲解、字幕、波形和转场。讲解中按 KEY4，画面收拢并平移回到总览，系统随后重新准备讲解音频和字幕。副板以640×480、30fps播放本地RGB565视频，放大输出至720p；文物视频保持1×播放，讲解字幕跟随主板进度。总览和手动浏览时播放宣传片，进入讲解后副板静音，应急状态下优先显示疏散指引。
 
 手动浏览时，在总览按 KEY2 显示所选文物的全貌，按 KEY3 依次查看三张细节。下一张细节加载完毕后即可切换。最后一次按 KEY3 复用开场全貌帧槽，随后自动回到总览。
+
+### 拨码开关
+
+| 位置 | 开关 | `0` | `1` |
+|---|---|---|---|
+| 主板 | SW1 | 正常展陈 | 双板应急 |
+| 主板 | SW2 | 自动讲解 | 手动切图 |
+| 主板 | SW3 | 讲解声音开启 | 主板讲解静音 |
+| 主板 | SW4 | 显示叠加层 | 隐藏 OSD、字幕和音频波形 |
+| 副板 | SW3 | 导览旁白开启 | 副板导览静音 |
+
+SW2 在总览生效，文物页内拨动时在返回总览后应用。SW3 静音期间，画面和字幕按当前进度推进。主板 SW4 的叠加层显隐在帧边界生效，切回显示后沿用 KEY3 设置的总览 OSD 状态。双板应急画面和主板提示音优先。
 
 ### 主板TF卡
 

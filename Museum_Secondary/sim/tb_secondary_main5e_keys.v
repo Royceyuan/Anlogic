@@ -5,21 +5,21 @@ always #5 clk=~clk;
 reg [127:0] hb=128'h01020001000000800000000000000000;
 reg [95:0] display=96'h000302030301000000000000;
 reg hb_pulse=0, display_pulse=0;
-reg ready=1, peer_alive=1, supported=1;
+reg ready=1, peer_alive=1;
 reg [3:0] switches=0;
 reg passed=0;
 wire request;
 wire [7:0] request_type;
 wire [63:0] request_payload;
-wire manual_mode, manual_next;
+wire [3:0] debounced_switches;
 secondary_main5e_keys dut (
     .clk(clk), .rst(rst), .sw(switches), .key_n(4'hf),
     .heartbeat_pulse(hb_pulse), .heartbeat_data(hb),
     .display_pulse(display_pulse), .display_data(display),
-    .control_ready(ready), .peer_alive(peer_alive), .manual_supported(supported),
+    .control_ready(ready), .peer_alive(peer_alive),
     .control_request(request),
     .control_type(request_type), .control_payload(request_payload),
-    .manual_mode(manual_mode), .manual_next(manual_next), .help_switches()
+    .help_switches(debounced_switches)
 );
 task press;
     input [3:0] keys;
@@ -70,7 +70,7 @@ initial begin
     force dut.sw_stable=4'b1000;
     force dut.key_press=4'b0001;
     #1;
-    if (manual_mode || manual_next || dut.help_switches != 4'b1000)
+    if (debounced_switches != 4'b1000)
         $fatal(1,"SW4 must only enable help, never the old local carousel");
     @(negedge clk);
     if (!request || request_type != 8'h13)
@@ -85,22 +85,14 @@ initial begin
     @(negedge clk);
     force dut.sw_stable=4'b1100;
     @(negedge clk);
-    if (!request || request_type!=8'h17 || request_payload!=64'h0100000000000000)
-        $fatal(1,"SW3 enter mode");
-    ready=0;
+    if (request || !debounced_switches[2])
+        $fatal(1,"SW3 mute must not issue a mode request");
     press(4'b0001);
-    if (manual_next || request) $fatal(1,"SW3 KEY1 must not step carousel or queue an image");
-    ready=1;
-    repeat(3) @(negedge clk);
-    if (request) $fatal(1,"mode mismatch must not flood requests");
-    // BUSY permits a new attempt only after fresh main telemetry.
-    snapshot();
-    if (!request || request_type!=8'h17) $fatal(1,"mode BUSY did not retry on fresh heartbeat");
-    ready=0;
+    if (!request || request_type!=8'h13)
+        $fatal(1,"mute blocked a preset in automatic mode");
     hb[127:120]=2; hb[103:96]=5;
     display[42]=1;
     snapshot();
-    ready=1;
     repeat(2) @(negedge clk);
     press(4'b1000);
     if (!request || request_type!=8'h13 || request_payload!=64'h0301000000000000)
@@ -134,15 +126,14 @@ initial begin
     @(negedge clk);
     force dut.sw_stable=4'b1000;
     @(negedge clk);
-    if (!request || request_type!=8'h17 || request_payload!=0)
-        $fatal(1,"SW3 exit mode");
-    ready=0;
+    if (request || debounced_switches[2])
+        $fatal(1,"unmute must not issue a mode request");
+    press(4'b0001);
+    if (!request || request_type!=8'h13)
+        $fatal(1,"SW3 disagreed with main mode and blocked a preset");
     display[42]=0; hb[127:120]=1; hb[103:96]=0;
     hb[111:104]=8'hff; display[39:32]=8'hff;
     snapshot();
-    ready=1;
-    repeat(3) @(negedge clk);
-    if (request) $fatal(1,"normal mode must not send repeated exit commands");
     // After mode-off/recovery, all normal key groups must work again.
     force dut.sw_stable=4'b0001;
     snapshot(); press(4'b0010);
@@ -159,58 +150,26 @@ initial begin
     @(negedge clk);
     hb[127:120]=1; hb[79:72]=0; hb[103:96]=0;
     hb[111:104]=8'hff; display[39:32]=8'hff;
-    // MAIN KEY4 clearing actual mode must reconcile a still-high SW3.
-    force dut.sw_stable=4'b0100;
-    snapshot();
-    if (!request || request_type!=8'h17) $fatal(1,"recovery did not re-arm desired mode");
-    ready=0;
-    peer_alive=0;
-    repeat(2) @(negedge clk);
-    peer_alive=1; ready=1; supported=0;
-    snapshot();
-    press(4'b0100);
-    if (request) $fatal(1,"old peer must not receive unsupported manual commands");
-    supported=1;
-    hb[95:88]=1;
-    snapshot();
-    if (request) $fatal(1,"emergency must block mode re-arm");
-    hb[95:88]=0;
-    snapshot();
-    if (!request || request_type!=8'h17) $fatal(1,"valid state must re-arm after emergency");
-    repeat(12) begin
-        snapshot();
-        if (!request || request_type!=8'h17)
-            $fatal(1,"slow startup must not exhaust switch reconciliation");
-        repeat(8) begin
-            @(negedge clk);
-            if (request) $fatal(1,"retry requires a fresh heartbeat");
-        end
-    end
-    hb[70]=1;
-    snapshot();
-    if (request) $fatal(1,"KEY4 recovery must block mode requests");
-    hb[70]=0;
-    snapshot();
-    if (!request || request_type!=8'h17) $fatal(1,"held SW3 must re-arm after KEY4 recovery");
     release dut.sw_stable;
-    // Real cold boot: SW3 is already high; no physical edge after reset.
+    // Cold boot with the mute switch already asserted.
     rst=1; switches=4'b0100; peer_alive=0; ready=0;
-    display[42]=0;
     repeat(3) @(negedge clk); rst=0;
     repeat(1000010) @(negedge clk);
-    if (dut.sw_stable!=4'b0100 || request)
-        $fatal(1,"initial switch sampling or disconnected suppression");
+    if (!debounced_switches[2] || request)
+        $fatal(1,"initial mute switch sampling");
     peer_alive=1; ready=1;
-    repeat(3) @(negedge clk);
+    press(4'b0100);
     if (request) $fatal(1,"startup must wait for fresh peer status");
-    snapshot();
-    if (!request || request_type!=8'h17 || request_payload!=64'h0100000000000000)
-        $fatal(1,"initial manual switch was not synchronized");
-    ready=0; display[42]=1; snapshot(); ready=1;
-    repeat(12) begin
-        snapshot();
-        if (request) $fatal(1,"matching applied mode must stop reconciliation");
-    end
+    hb[95:88]=1;
+    snapshot(); press(4'b0100);
+    if (request) $fatal(1,"emergency must block controls");
+    hb[95:88]=0; hb[70]=1;
+    snapshot(); press(4'b0100);
+    if (request) $fatal(1,"recovery must block controls");
+    hb[70]=0;
+    snapshot(); press(4'b0100);
+    if (!request || request_type!=8'h13)
+        $fatal(1,"controls did not recover while mute is held");
     passed=1;
     $display("PASS tb_secondary_main5e_keys");
     $finish;

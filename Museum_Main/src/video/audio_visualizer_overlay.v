@@ -6,7 +6,7 @@ module audio_visualizer_overlay #(
 ) (
     input wire clk, input wire rst_n, input wire sample_valid,
     input wire signed [15:0] sample_left, input wire signed [15:0] sample_right,
-    input wire pause, input wire emergency,
+    input wire pause, input wire emergency, input wire hide,
     input wire frame_tick, input wire hs_i, input wire vs_i, input wire de_i,
     input wire [10:0] x_i, input wire [9:0] y_i, input wire [23:0] rgb_i,
     output wire hs_o, output wire vs_o, output wire de_o,
@@ -66,7 +66,7 @@ wire in_bar_span = de_s2 && x_s2 >= BAR_X0 && x_s2 < BAR_X0 + 11'd1024 &&
 wire [10:0] bar_offset = x_s2 - BAR_X0;
 wire [5:0] bar_draw_index = bar_offset[9:4];
 wire in_bar = in_bar_span && bar_offset[3:0] < 4'd6;
-wire bar_hit = !pause && display_valid && in_bar &&
+wire bar_hit = !pause && !hide && display_valid && in_bar &&
                y_s2 >= (CENTER_Y - bar_height_s2) &&
                y_s2 <= (CENTER_Y + bar_height_s2);
 
