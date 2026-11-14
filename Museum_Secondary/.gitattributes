@@ -7,6 +7,7 @@ seed/**/*.db filter=lfs diff=lfs merge=lfs -text
 src/** -text
 vendor/** -text
 constraints/** -text
+sim/secondary_hdmi_source_switch.v -text
 *.mp4 filter=lfs diff=lfs merge=lfs -text
 assets/**/*.wav filter=lfs diff=lfs merge=lfs -text
 assets/**/*.srt -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
