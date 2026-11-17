@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Project Version="3" Minor="2" Path="D:/VSCode/CodeFiles/Git_TD/Museum_Dual_FPGA_backup2/Museum_Main">
+<Project Version="3" Minor="2" Path="D:/VSCode/CodeFiles/Git_TD/Museum_Dual_FPGA/Museum_Main">
     <Project_Created_Time></Project_Created_Time>
     <TD_Version>6.2.168116</TD_Version>
     <Name>museum_main_final</Name>

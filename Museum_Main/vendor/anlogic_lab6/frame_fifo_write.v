@@ -77,7 +77,7 @@ assign O_wr_busy = (state == S_WRITE_BURST || (state == S_CHECK_FIFO && into_bur
 // 128-word bursts, overwriting the first 32 words of the next row.
 assign wr_burst_finish = (burst_cnt >= BURST_SIZE) ||
                          (write_cnt + burst_cnt >= write_len_latch);
-assign App_wr_en = App_wr_en_d0 && (burst_cnt != 0 || !Sdr_busy);
+assign App_wr_en = App_wr_en_d0 && (burst_cnt != 0 || !Sdr_busy);		//sdram从fifo取数使能
 
 
 always@(posedge mem_clk or posedge rst)
