@@ -18,7 +18,7 @@ wire [31:0] fs_fat_start,fs_data_start,fs_root_cluster;
 reg [7:0] header[0:511];
 integer i,j,k,seen=0,frames=0,requests=0;
 reg [31:0] crc;
-fat32_mvid_reader #(.HEIGHT(480)) dut(.*);
+fat32_mvid_reader #(.HEIGHT(480)) dut(.skip_frames(2'd0),.*);
 function [31:0] crc_byte;
     input [31:0] c;input [7:0] b;
     reg [31:0] v;integer n;

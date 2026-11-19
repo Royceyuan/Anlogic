@@ -11,7 +11,7 @@ wire sd_start,ready,frame_busy,frame_done,byte_valid,pcm_valid,frame_has_audio;
 wire [31:0] sd_lba,sd_blocks,frame_index,frame_count;
 wire [7:0] byte_data,pcm_byte,error,stage,fs_sectors_per_cluster;
 wire [31:0] fs_fat_start,fs_data_start,fs_root_cluster;
-fat32_mvid_reader #(.HEIGHT(480),.INPUT_VERSION(2),.DYNAMIC_STEM(1),.SEEK_ENABLE(1)) dut(.*);
+fat32_mvid_reader #(.HEIGHT(480),.INPUT_VERSION(2),.DYNAMIC_STEM(1),.SEEK_ENABLE(1)) dut(.skip_frames(2'd0),.*);
 localparam DATA=2049,HEADER=DATA+5*64,RECORD=621056,FRAMES=1800;
 reg [7:0] boot[0:511],root[0:511],header[0:511];
 integer i,j,fat_reads=0,phase=0,cluster,seek_clusters,expected_reads;

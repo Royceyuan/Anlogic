@@ -61,7 +61,7 @@ initial begin
     if(file_id!=4||generation!=before_generation+1)$fatal(1,"leaving manual blocked automatic lecture");
     $display("PASS manual 5->3->5 transitions/wrap retain GUIDE epoch; automatic transitions retain exhibit epoch");
     guide_lease_valid=0;#1;if(guide_audio_enable)$fatal(1,"revoked lease still audible");
-    $display("PASS guide/preload/manual, 1x video independent of 1x2x3x audio, pause/help, emergency and lease gating");
+    $display("PASS guide/preload/manual, speed changes retain the current video file, pause/help, emergency and lease gating");
     $display("PASS tb_secondary_offline_scene_control");$finish;
 end
 initial begin #100000;$fatal(1,"timeout");end

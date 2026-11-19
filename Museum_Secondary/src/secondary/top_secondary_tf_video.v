@@ -108,6 +108,9 @@ wire pcm_accept,core_front_valid;
 wire [31:0] core_front_epoch;
 wire [31:0] guide_position,guide_start_position;
 wire [31:0] resume_frame;
+// The request and heartbeat status arrive through separate CDC mailboxes.
+wire [1:0] movie_skip=AV_ENABLE&&active_id<=4&&media_status[1]&&
+    active_id=={5'd0,media_status[12:10]}?media_status[14:13]:2'd0;
 generate if(OFFLINE_LINK)begin:g_file_control
     secondary_offline_file_control u_files(.clk(clk),.rst_n(rst_n),
         .requested_id(media_request[8:1]),.requested_generation(media_request[40:9]),
@@ -142,7 +145,7 @@ always @(posedge clk)begin
 end
 fat32_mvid_reader #(.HEIGHT(VIDEO_HEIGHT),.FPS(VIDEO_FPS),.INPUT_VERSION(OFFLINE_LINK?2:1),
     .DYNAMIC_STEM(OFFLINE_LINK),.SEEK_ENABLE(AV_ENABLE)) u_movie(.clk(clk),.rst_n(reader_rst_n),.card_ready(card_ready),.next_frame(movie_start),
-    .selected_stem(selected_stem),.start_frame(resume_frame),.frame_has_audio(frame_has_audio),
+    .selected_stem(selected_stem),.start_frame(resume_frame),.skip_frames(movie_skip),.frame_has_audio(frame_has_audio),
     .fs_sectors_per_cluster(fs_spc),.fs_fat_start(fs_fat),.fs_data_start(fs_data),.fs_root_cluster(fs_root),
     .pcm_valid(pcm_byte_valid),.pcm_byte(pcm_byte_data),
     .sd_start(movie_sd_start),.sd_lba(movie_sd_lba),.sd_blocks(movie_sd_blocks),.sd_done(AV_ENABLE?movie_done_q:movie_sd_done),
@@ -218,7 +221,12 @@ generate if(AV_ENABLE)begin:g_av
     end
     assign guide_start_position=guide_start_samples;
     wire clear_audio=stream_clear||!reader_rst_n||!file_ready;
-    wire consume=frame_has_audio&&core_front_valid&&core_front_epoch==active_generation&&
+    // A file change holds the stream until the new frame epoch is ready.
+    reg front_is_current;
+    always @(posedge clk or negedge rst_n)
+        if(!rst_n)front_is_current<=0;
+        else front_is_current<=core_front_valid&&core_front_epoch==active_generation;
+    wire consume=frame_has_audio&&front_is_current&&
         !effective_pause&&!stream_hold&&file_error==0&&card_error==0&&frame_error==0;
     mvid_pcm_commit u_pcm(.clk(clk),.rst_n(rst_n),.clear(clear_audio),.frame_begin(movie_start),
         .frame_has_audio(frame_has_audio),.frame_done(movie_done),.frame_abort(file_error!=0||card_error!=0),

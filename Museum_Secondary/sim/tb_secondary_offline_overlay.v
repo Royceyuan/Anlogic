@@ -12,6 +12,17 @@ always #5 clk=~clk;
 secondary_offline_overlay dut(.*);
 task latch;
 begin @(negedge clk);frame_tick=1;@(negedge clk);frame_tick=0;repeat(4)@(negedge clk);end endtask
+task check_pixel;
+input [10:0] px;
+input [9:0] py;
+input [23:0] expected;
+begin
+    @(negedge clk);x=px;y=py;de=1;
+    repeat(7)@(negedge clk);
+    if(de_o!==1'b1||rgb_o!==expected)
+        $fatal(1,"Pixel %0d,%0d got %h expected %h",px,py,rgb_o,expected);
+    de=0;repeat(6)@(negedge clk);
+end endtask
 task capture;
 input [1023:0] filename;
 input integer expected;
@@ -44,6 +55,15 @@ initial begin
     status[5:4]=1;status[9:6]=4;status[12:10]=0;status[14:13]=1;status[15]=1;status[0]=1;status[17]=1;
     latch();audio_valid=1;repeat(800)@(negedge clk);audio_valid=0;repeat(3)@(negedge clk);latch();
     if(!dut.u_wave.display_valid)$fatal(1,"Main visualizer frame was not published");
+    check_pixel(384,620,24'h4ec9e8);
+    status[23]=1;
+    check_pixel(384,620,rgb);
+    check_pixel(1011,100,rgb);
+    check_pixel(1012,100,24'h203040);
+    if(!visible||dut.u_wave.pause||!dut.u_wave.display_valid)
+        $fatal(1,"SW3 hid the OSD or reset PCM history");
+    status[23]=0;
+    check_pixel(384,620,24'h4ec9e8);
     status[2]=1;repeat(3)@(negedge clk);
     if(!visible)$fatal(1,"SW4 gate changed inside a frame");
     status[2]=0;
@@ -59,7 +79,7 @@ initial begin
     status[2]=0;latch();
     capture("_build_secondary/overlay_emergency_ready_visible.ppm",0);
     if(dut.u_wave.pause!==1'b1)$fatal(1,"Emergency waveform was not suppressed");
-    $display("PASS full 720p overlay raster: exact main-board bars, four OSD rows, frame-latched SW4 keeps history, emergency survives hide");$finish;
+    $display("PASS full 720p overlay raster: exact main-board bars, four OSD rows, SW3 waveform-only mute, frame-latched SW4, emergency survives hide");$finish;
 end
 initial begin #60000000;$fatal(1,"Overlay timeout");end
 endmodule

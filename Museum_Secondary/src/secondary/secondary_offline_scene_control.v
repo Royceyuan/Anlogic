@@ -1,7 +1,7 @@
 `timescale 1ns/1ps
 `default_nettype none
-// 50MHz business-state consumer. Video stays 1x; only subtitle_position follows
-// the main audio clock. guide_lease_valid must come from the checked lease protocol,
+// 50MHz business-state consumer. Main-clock subtitle timing and video stride
+// are handled separately. guide_lease_valid must come from the checked lease protocol,
 // never directly from a switch or an unvalidated packet.
 module secondary_offline_scene_control #(parameter integer OSD_SWITCH=0)(
     input wire clk,rst,peer_alive,heartbeat_pulse,

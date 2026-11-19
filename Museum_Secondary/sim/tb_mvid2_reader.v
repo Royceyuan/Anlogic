@@ -9,6 +9,7 @@ wire [31:0] sd_lba,sd_blocks,frame_index,frame_count;
 wire [7:0] byte_data,pcm_byte,error,stage;
 wire [63:0] selected_stem="GUIDE   ";
 reg [31:0] start_frame=0;
+reg [1:0] skip_frames=2;
 wire frame_has_audio;
 wire [7:0] fs_sectors_per_cluster;
 wire [31:0] fs_fat_start,fs_data_start,fs_root_cluster;
@@ -22,7 +23,8 @@ fat32_mvid_reader #(.WIDTH(16),.HEIGHT(16),.INPUT_VERSION(2),.DYNAMIC_STEM(1),.S
     .sd_valid(reader_valid),.sd_done(reader_done),.sd_data(reader_data),.*);
 reg [7:0] disk[0:65535];
 integer i,j,k,f,p,sector,bytes_seen=0,pcm_seen=0,frames_seen=0;
-integer want_pcm=PB;
+integer want_pcm=PB,expected_frame=-1;
+wire [31:0] expected_pixel_frame=expected_frame<0?frames_seen%3:expected_frame;
 reg fail_audio=0;
 reg [31:0] crc;
 function [31:0] crc_byte;
@@ -64,7 +66,7 @@ task init_disk;
 endtask
 always @(posedge clk) if(rst_n)begin
     if(byte_valid)begin
-        if(byte_data!==(((bytes_seen*7)^((frames_seen%3+1)*31))&255))$fatal(1,"pixel mismatch");
+        if(byte_data!==(((bytes_seen*7)^((expected_pixel_frame+1)*31))&255))$fatal(1,"pixel mismatch");
         bytes_seen=bytes_seen+1;
     end
     if(pcm_valid)begin
@@ -80,6 +82,8 @@ initial forever begin
     @(negedge clk);
     if(sd_start)begin
         if(sd_blocks==0||sd_lba+sd_blocks>128)$fatal(1,"read out of bounds");
+        if(expected_frame>=0&&dut.operation==4&&(sd_lba!=9+2*expected_frame||sd_blocks!=1))
+            $fatal(1,"Unexpected pixel read while skipping: lba=%0d expected frame=%0d",sd_lba,expected_frame);
         for(j=0;j<sd_blocks*512;j=j+1)begin @(negedge clk);sd_valid=1;sd_data=disk[sd_lba*512+j];end
         @(negedge clk);sd_valid=0;
         repeat(3)@(negedge clk);
@@ -95,6 +99,14 @@ task frame;
     begin @(negedge clk);next_frame=1;@(negedge clk);next_frame=0;
         wait(frame_done||error);repeat(2)@(negedge clk);end
 endtask
+task stride_frame;input [1:0] step;input integer index;
+    integer count_before;
+    begin
+        skip_frames=step;expected_frame=index;count_before=frames_seen;
+        frame();
+        if(error||frames_seen!=count_before+1)$fatal(1,"Stride %0d failed for index %0d",step,index);
+    end
+endtask
 initial begin
     init_disk();reset_reader();wait(ready||error);
     if(error||frame_count!=3)$fatal(1,"v2 mount %h/%h",stage,error);
@@ -106,7 +118,7 @@ initial begin
     frame();frame();
     if(error||frame_index!=1)$fatal(1,"Resume/loop failed");
     $display("PASS fragmented file resume at frame two and normal EOF loop");
-    start_frame=0;
+    start_frame=0;skip_frames=0;
     init_disk();want_pcm=0;
     put32(1024+28,512+3*FB+9216);
     put32(7*512+28,2);put32(7*512+32,3*FB);put32(7*512+40,FB);
@@ -119,6 +131,24 @@ initial begin
     if(error)$fatal(1,"silent/caption v2 rejected %h",error);
     for(k=0;k<5;k=k+1)begin frame();if(error)$fatal(1,"silent v2 failed %h",error);end
     $display("PASS silent exhibit v2 with caption tail, zero PCM and loop");
+    put32(1024+28,512+5*FB+9216);put32(7*512+16,5);put32(7*512+32,5*FB);
+    put32(7*512+60,512+5*FB);header_crc();
+    for(f=3;f<5;f=f+1)for(p=0;p<FB;p=p+1)
+        disk[(9+f*2)*512+p]=(p*7)^((f+1)*31);
+    reset_reader();wait(ready||error);
+    stride_frame(2,0); // A new file always starts on frame zero.
+    stride_frame(0,1);
+    stride_frame(1,3);
+    repeat(80)begin
+        @(negedge clk);if(sd_start||frame_busy||frames_seen!=3)$fatal(1,"Advanced without a frame request");
+    end
+    stride_frame(2,1); // 3x wraps at EOF on the fragmented chain.
+    stride_frame(2,4);
+    stride_frame(2,2);
+    stride_frame(0,3);
+    stride_frame(3,4); // Reserved stride falls back to 1x.
+    $display("PASS requested 1x/2x/3x stride, pause, wrap and no skipped video reads");
+    expected_frame=-1;skip_frames=0;
     want_pcm=PB;
     init_disk();put32(7*512+40,RECORD+512);header_crc();reset_reader();wait(error);
     if(error!=7||ready)$fatal(1,"invalid stride accepted");

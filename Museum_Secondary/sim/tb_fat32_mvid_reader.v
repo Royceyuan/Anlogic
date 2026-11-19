@@ -14,7 +14,7 @@ wire [31:0] start_frame=0;
 wire frame_has_audio;
 wire [7:0] fs_sectors_per_cluster;
 wire [31:0] fs_fat_start,fs_data_start,fs_root_cluster;
-fat32_mvid_reader #(.WIDTH(WIDTH),.HEIGHT(HEIGHT),.FPS(FPS)) dut(.*);
+fat32_mvid_reader #(.WIDTH(WIDTH),.HEIGHT(HEIGHT),.FPS(FPS)) dut(.skip_frames(2'd0),.*);
 reg [7:0] disk[0:65535];
 integer i,j,k,bytes_seen=0,frames_seen=0,requests=0;
 integer clusters[0:6];

@@ -24,6 +24,8 @@ secondary_offline_request_cdc #(.WIDTH(34),.INITIAL(34'd0)) u_control(
 reg request,reply,request_seen,waiting;
 reg [1:0] request_sync,reply_sync,muted_sync;
 reg [31:0] reply_data,reply_epoch;
+reg [31:0] last_sample;
+always @(posedge clk)last_sample<=total_samples-1'b1;
 reg reply_has_data;
 reg pixel_muted;
 assign muted_ack=muted_sync[1];
@@ -38,7 +40,7 @@ always @(posedge clk or negedge rst_n)begin
         if(waiting&&pcm_valid)begin
             waiting<=0;reply<=request_seen;reply_data<=pcm_data;
             reply_has_data<=pcm_has_data;reply_epoch<=epoch;
-            if(pcm_has_data)position<=total_samples!=0&&position==total_samples-1'b1 ? 0 : position+1'b1;
+            if(pcm_has_data)position<=total_samples!=0&&position==last_sample ? 0 : position+1'b1;
         end else if(!waiting&&request_sync[1]!=request_seen)begin
             request_seen<=request_sync[1];
             if(consume)begin pcm_request<=1;waiting<=1;end

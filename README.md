@@ -88,8 +88,9 @@ TD 在运行目录的 `best_result/` 中保存筛选出的实现结果。`releas
 
 - 主板 [拨码版 bit](Museum_Main/release/panel_switches_20261114/museum_main_final.bit) · [时序汇总](Museum_Main/release/panel_switches_20261114/museum_main_final_phy.ts) · [详细时序报告](Museum_Main/release/panel_switches_20261114/museum_main_final_pr.timing)
 - 副板 [拨码版 bit](Museum_Secondary/release/panel_switches_20261114/museum_secondary_final.bit) · [时序汇总](Museum_Secondary/release/panel_switches_20261114/museum_secondary_final_phy.ts) · [详细时序报告](Museum_Secondary/release/panel_switches_20261114/museum_secondary_final_pr.timing)
+- 副板 [倍速与 OSD v02 bit](Museum_Secondary/release/speed_osd_v02/museum_secondary_offline_speed_osd_v02.bit) · [构建与验证记录](Museum_Secondary/release/speed_osd_v02/README.md)
 
-主板支持24位BMP读取、多尺寸图片适配、0.5×／1×／2×缩放、1×／2×／3×讲解、字幕、波形和转场。讲解中按 KEY4，画面收拢并平移回到总览，系统随后重新准备讲解音频和字幕。副板以640×480、30fps播放本地RGB565视频，放大输出至720p；文物视频保持1×播放，讲解字幕跟随主板进度。总览和手动浏览时播放宣传片，进入讲解后副板静音，应急状态下优先显示疏散指引。
+主板支持24位BMP读取、多尺寸图片适配、0.5×／1×／2×缩放、1×／2×／3×讲解、字幕、波形和转场。讲解中按 KEY4，画面收拢并平移回到总览，系统随后重新准备讲解音频和字幕。副板以640×480、30fps播放本地RGB565视频，放大输出至720p；倍速与 OSD v02 的文物视频和讲解字幕均跟随主板倍速，字幕仍以主板讲解进度为准。总览和手动浏览时播放宣传片，进入讲解后副板静音，应急状态下优先显示疏散指引。
 
 手动浏览时，在总览按 KEY2 显示所选文物的全貌，按 KEY3 依次查看三张细节。下一张细节加载完毕后即可切换。最后一次按 KEY3 复用开场全貌帧槽，随后自动回到总览。
 

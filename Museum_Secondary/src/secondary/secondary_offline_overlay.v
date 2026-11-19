@@ -41,7 +41,8 @@ audio_visualizer_overlay #(.COMPACT(1)) u_wave(
     .pause(!applied[0]||emergency),.emergency(1'b0),.frame_tick(frame_tick),
     .hs_i(hs),.vs_i(vs),.de_i(de),.x_i(x),.y_i(y),.rgb_i(rgb),
     .hs_o(wave_hs),.vs_o(wave_vs),.de_o(wave_de),.x_o(wave_x),.y_o(wave_y),.rgb_o(visualizer_rgb));
-wire [23:0] wave_rgb=visible?visualizer_rgb:base_rgb_s2;
+// Use the same pixel-domain SW3 bit as HDMI audio; keep the status panel visible.
+wire [23:0] wave_rgb=visible&&!status[23]?visualizer_rgb:base_rgb_s2;
 always @*begin
     text_valid=0;text_x=0;text_y=0;text_row=0;text_line=0;
     if(emergency)begin
@@ -57,8 +58,8 @@ always @*begin
         end
         text_line=offline_line(text_row,applied);
         end
-    end else if(visible&&wave_x>=880&&wave_x<1264&&wave_y>=24&&wave_y<112)begin
-        text_x=wave_x-880;text_y=(wave_y-24)%24;
+    end else if(visible&&wave_x>=1024&&wave_x<1264&&wave_y>=24&&wave_y<112)begin
+        text_x=wave_x-1024;text_y=(wave_y-24)%24;
         if(text_y<16)begin
             text_valid=1;
             if(wave_y<48)text_line=line0;else if(wave_y<72)text_line=line1;
@@ -88,7 +89,7 @@ always @(posedge clk or negedge rst_n)begin
         hs_q<=wave_hs;vs_q<=wave_vs;de_q<=wave_de;rgb_q<=wave_rgb;
         text_q<=text_valid;col_q<=text_x[3:0];
         glyph_address<={glyph_code,text_y[3:0]};
-        osd_q<=wave_x>=868&&wave_x<1276&&wave_y>=12&&wave_y<124;
+        osd_q<=wave_x>=1012&&wave_x<1276&&wave_y>=12&&wave_y<124;
         emergency_q<=emergency;emergency_ready_q<=applied[16];visible_q<=visible;
         hs_s2<=hs_q;vs_s2<=vs_q;de_s2<=de_q;text_s2<=text_q;col_s2<=col_q;rgb_s2<=rgb_q;
         osd_s2<=osd_q;emergency_s2<=emergency_q;emergency_ready_s2<=emergency_ready_q;visible_s2<=visible_q;

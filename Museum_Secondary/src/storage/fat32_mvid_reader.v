@@ -10,6 +10,7 @@ module fat32_mvid_reader #(
     input wire clk,rst_n,card_ready,next_frame,
     input wire [63:0] selected_stem,
     input wire [31:0] start_frame,
+    input wire [1:0] skip_frames,
     output wire frame_has_audio,
     output wire [7:0] fs_sectors_per_cluster,
     output wire [31:0] fs_fat_start,fs_data_start,fs_root_cluster,
@@ -55,7 +56,8 @@ reg fat_for_root,found,end_directory,name_match,deleted;
 reg [7:0] attr;
 reg [31:0] entry_cluster,entry_size;
 reg [23:0] sectors_left;
-reg seeking;
+reg seeking,played_frame;
+reg [1:0] skips_left;
 reg [FRAME_COUNT_BITS-1:0] checked_seek_frame;
 reg [23:0] seek_video_sectors,seek_pcm_sectors;
 reg boot_geometry_ok;
@@ -95,6 +97,7 @@ wire v2_layout_ok=header_flags[31:2]==0&&header_record==FRAME_BYTES+header_pcm_s
     v2_audio_ok&&header_timebase==1000&&header_flags[1]==(header_cues!=0)&&
     (header_media_id<=4||header_media_id==254||header_media_id==255)&&
     caption_size=={32'd0,header_sub_bytes};
+wire [23:0] record_sectors=FRAME_SECTORS+((INPUT_VERSION==2&&header_flags[0])?13:0);
 wire [31:0] fat_span=num_fats==2?sectors_per_fat<<1:sectors_per_fat;
 wire [31:0] cluster_available=sectors_per_cluster-cluster_sector;
 wire [31:0] run_blocks=sectors_left<cluster_available?sectors_left:cluster_available;
@@ -170,7 +173,7 @@ always @(posedge clk or negedge rst_n) begin
         sectors_per_cluster<=0;cluster_shift<=0;root_cluster<=0;current_cluster<=0;
         first_cluster<=0;file_size<=0;fat_next<=0;max_cluster<=0;cluster_sector<=0;root_scanned<=0;
         fat_for_root<=0;found<=0;end_directory<=0;name_match<=0;deleted<=0;attr<=0;
-        entry_cluster<=0;entry_size<=0;sectors_left<=0;seeking<=0;header_magic<=0;header_frames<=0;
+        entry_cluster<=0;entry_size<=0;sectors_left<=0;seeking<=0;played_frame<=0;skips_left<=0;header_magic<=0;header_frames<=0;
         checked_seek_frame<=0;seek_video_sectors<=0;seek_pcm_sectors<=0;boot_geometry_ok<=0;
         header_frame_bytes<=0;header_format<=0;header_flags<=0;header_version<=0;header_size<=0;
         header_width<=0;header_height<=0;header_fps_n<=0;header_fps_d<=0;header_payload<=0;
@@ -368,7 +371,7 @@ always @(posedge clk or negedge rst_n) begin
                 length_ok<=header_payload==checked_payload&&
                     (INPUT_VERSION==1?checked_payload+512=={32'd0,file_size}:
                      header_sub_offset==checked_payload+512&&
-                     checked_payload+512+{32'd0,header_sub_bytes}=={32'd0,file_size});
+                     header_sub_offset+{32'd0,header_sub_bytes}=={32'd0,file_size});
                 state<=HEADER_COMMIT;
             end
             HEADER_COMMIT:begin
@@ -381,8 +384,12 @@ always @(posedge clk or negedge rst_n) begin
                     end else begin cluster_sector<=1;ready<=1;state<=READY;end
                 end
             end
-            READY:if(next_frame) begin frame_busy<=1;frame_position<=0;
-                sectors_left<=FRAME_SECTORS+((INPUT_VERSION==2&&header_flags[0])?13:0);state<=RUN;end
+            READY:if(next_frame) begin
+                frame_busy<=1;frame_position<=0;sectors_left<=record_sectors;state<=RUN;
+                // Open at the first frame; subsequent requests sample the new stride.
+                skips_left<=SEEK_ENABLE&&INPUT_VERSION==2&&played_frame&&
+                    !frame_has_audio&&skip_frames<=2?skip_frames:2'd0;
+            end
             RUN:begin
                 if(seeking)begin
                     if(sectors_left>=sectors_per_cluster)begin
@@ -390,7 +397,19 @@ always @(posedge clk or negedge rst_n) begin
                         fat_for_root<=0;operation<=FAT;sd_lba<=fat_start+(current_cluster>>7);
                         sd_blocks<=1;fat_next<=0;state<=REQUEST;
                     end else begin
-                        cluster_sector<=sectors_left[7:0];seeking<=0;ready<=1;state<=READY;
+                        cluster_sector<=sectors_left[7:0];seeking<=0;
+                        if(frame_busy)sectors_left<=record_sectors;
+                        else begin ready<=1;state<=READY;end
+                    end
+                end else if(skips_left!=0)begin
+                    // Walk FAT links without issuing any reads for skipped pixels.
+                    // The cursor may be one sector past the current cluster.
+                    skips_left<=skips_left-1'b1;
+                    if(frame_index==last_frame_index)begin
+                        frame_index<=0;current_cluster<=first_cluster;cluster_sector<=1;
+                    end else begin
+                        frame_index<=frame_index+1'b1;
+                        sectors_left<=FRAME_SECTORS+cluster_sector;seeking<=1;
                     end
                 end else if(cluster_sector==sectors_per_cluster) begin
                     fat_for_root<=0;operation<=FAT;sd_lba<=fat_start+(current_cluster>>7);sd_blocks<=1;
@@ -420,6 +439,7 @@ always @(posedge clk or negedge rst_n) begin
         endcase
         // Advance only after the consumer has observed the completed frame.
         if(frame_done) begin
+            played_frame<=1;
             sd_blocks<=1;
             if(frame_index==last_frame_index) begin frame_index<=0;current_cluster<=first_cluster;cluster_sector<=1;end
             else frame_index<=frame_index+1'b1;
